@@ -54,13 +54,20 @@
             };
 
             socket.onmessage = (event) => {
-                const chunk = new EncodedVideoChunk({
-                    type: 'delta', // Assume delta; production should detect keyframes
-                    timestamp: performance.now(),
-                    data: event.data
-                });
-                decoder.decode(chunk);
-            };
+    // Check if we are actually getting data
+    console.log("Data received, size:", event.data.byteLength);
+
+    try {
+        const chunk = new EncodedVideoChunk({
+            type: 'key', // Force 'key' for the first few frames to help decoder sync
+            timestamp: performance.now(),
+            data: event.data
+        });
+        decoder.decode(chunk);
+    } catch (e) {
+        console.error("Decoding error:", e);
+    }
+};
 
             socket.onclose = () => {
                 startBtn.disabled = false;
@@ -75,3 +82,4 @@
 </body>
 
 </html>
+

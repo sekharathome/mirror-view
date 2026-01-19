@@ -59,7 +59,7 @@
 
     try {
         const chunk = new EncodedVideoChunk({
-            type: 'key', // Force 'key' for the first few frames to help decoder sync
+           type: (event.data.byteLength > 10000) ? 'key' : 'delta'
             timestamp: performance.now(),
             data: event.data
         });
@@ -82,4 +82,5 @@
 </body>
 
 </html>
+
 

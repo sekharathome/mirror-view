@@ -1,5 +1,5 @@
 {
-  "name": "mirror-relay",
+  "name": "wss://mirror-view.onrender.com",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
@@ -8,4 +8,5 @@
   "dependencies": {
     "ws": "^8.16.0"
   }
+
 }

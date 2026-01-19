@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Screen Mirror Receiver</title>
+    <style>
+        body { background: #121212; color: white; display: flex; flex-direction: column; align-items: center; }
+        canvas { border: 2px solid #333; max-width: 90%; height: auto; margin-top: 20px; }
+        .controls { margin-top: 20px; }
+        button { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        button:disabled { background: #444; }
+    </style>
+</head>
+<body>
+    <h2>Mobile Screen Mirror</h2>
+    <div class="controls">
+        <button id="startBtn">Start Viewing</button>
+        <button id="stopBtn" disabled>Stop</button>
+    </div>
+    <canvas id="screenCanvas" width="720" height="1280"></canvas>
+
+    <script>
+        const canvas = document.getElementById('screenCanvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        let socket;
+        let decoder;
+
+        // Replace this with your Render URL (e.g., wss://mirror-relay.onrender.com)
+        const SERVER_URL = "wss://screen-mirror-relay.onrender.com";
+
+        async function initDecoder() {
+            decoder = new VideoDecoder({
+                output: (frame) => {
+                    ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+                    frame.close();
+                },
+                error: (e) => console.error("Decoder Error:", e)
+            });
+
+            // H.264 Baseline profile configuration
+            await decoder.configure({ codec: 'avc1.42E01E', codedWidth: 720, codedHeight: 1280 });
+        }
+
+        startBtn.onclick = async () => {
+            await initDecoder();
+            socket = new WebSocket(SERVER_URL);
+            socket.binaryType = 'arraybuffer';
+
+            socket.onopen = () => {
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+            };
+
+            socket.onmessage = (event) => {
+                const chunk = new EncodedVideoChunk({
+                    type: 'delta', // Assume delta; production should detect keyframes
+                    timestamp: performance.now(),
+                    data: event.data
+                });
+                decoder.decode(chunk);
+            };
+
+            socket.onclose = () => {
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            };
+        };
+
+        stopBtn.onclick = () => {
+            if (socket) socket.close();
+        };
+    </script>
+</body>
+</html>

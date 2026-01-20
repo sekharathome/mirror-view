@@ -1,51 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>WebRTC Screen Mirror</title>
+    <title>SystemSync Viewer</title>
     <style>
-        body { background: #121212; color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; }
-        video { width: 90%; max-width: 800px; border: 2px solid #333; margin-top: 20px; background: black; }
-        .status { margin: 10px; color: #007bff; }
+        body { background: #000; color: #fff; text-align: center; }
+        canvas { width: 100%; max-width: 450px; border: 1px solid #444; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <h2>Private WebRTC Mirror</h2>
-    <div id="status" class="status">Waiting for phone...</div>
-    <video id="remoteVideo" autoplay playsinline></video>
-
+    <h2>SystemSync Mirror</h2>
+    <canvas id="canvas" width="720" height="1280"></canvas>
     <script>
-        const statusDiv = document.getElementById('status');
-        const remoteVideo = document.getElementById('remoteVideo');
-        
-        // Update this URL to your Render URL
-        const socket = new WebSocket("wss://mirror-view.onrender.com");
-        
-        const pc = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const SERVER_URL = "wss://mirror-view.onrender.com"; // YOUR RENDER URL
+
+        let decoder = new VideoDecoder({
+            output: frame => { ctx.drawImage(frame, 0, 0); frame.close(); },
+            error: e => console.error(e)
         });
 
-        pc.ontrack = (event) => {
-            statusDiv.innerText = "Receiving Stream...";
-            remoteVideo.srcObject = event.streams[0];
-        };
+        decoder.configure({ codec: 'avc1.42E01E', codedWidth: 720, codedHeight: 1280 });
 
-        socket.onmessage = async (event) => {
-            const data = JSON.parse(event.data);
-            
-            if (data.sdp && data.type === 'offer') {
-                await pc.setRemoteDescription(new RTCSessionDescription(data));
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-                socket.send(JSON.stringify(pc.localDescription));
-                statusDiv.innerText = "Handshake complete. Connecting...";
-            } else if (data.candidate) {
-                await pc.addIceCandidate(new RTCIceCandidate(data));
-            }
-        };
-
-        pc.oniceconnectionstatechange = () => {
-            statusDiv.innerText = "Connection: " + pc.iceConnectionState;
+        const ws = new WebSocket(SERVER_URL);
+        ws.binaryType = 'arraybuffer';
+        ws.onmessage = (e) => {
+            const isKey = e.data.byteLength > 8000; // Keyframes are much larger
+            try {
+                decoder.decode(new EncodedVideoChunk({
+                    type: isKey ? 'key' : 'delta',
+                    timestamp: performance.now(),
+                    data: e.data
+                }));
+            } catch(x) {}
         };
     </script>
 </body>

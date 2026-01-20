@@ -2,85 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Screen Mirror Receiver</title>
+    <title>WebRTC Screen Mirror</title>
     <style>
-        body { background: #121212; color: white; display: flex; flex-direction: column; align-items: center; }
-        canvas { border: 2px solid #333; max-width: 90%; height: auto; margin-top: 20px; }
-        .controls { margin-top: 20px; }
-        button { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
-        button:disabled { background: #444; }
+        body { background: #121212; color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; }
+        video { width: 90%; max-width: 800px; border: 2px solid #333; margin-top: 20px; background: black; }
+        .status { margin: 10px; color: #007bff; }
     </style>
 </head>
 <body>
-    <h2>Mobile Screen Mirror</h2>
-    <div class="controls">
-        <button id="startBtn">Start Viewing</button>
-        <button id="stopBtn" disabled>Stop</button>
-    </div>
-    <canvas id="screenCanvas" width="720" height="1280"></canvas>
+    <h2>Private WebRTC Mirror</h2>
+    <div id="status" class="status">Waiting for phone...</div>
+    <video id="remoteVideo" autoplay playsinline></video>
 
     <script>
-        const canvas = document.getElementById('screenCanvas');
-        const ctx = canvas.getContext('2d');
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        let socket;
-        let decoder;
-
-        // Replace this with your Render URL (e.g., wss://mirror-relay.onrender.com)
-        const SERVER_URL = "wss://mirror-view.onrender.com";
-
-        async function initDecoder() {
-            decoder = new VideoDecoder({
-                output: (frame) => {
-                    ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
-                    frame.close();
-                },
-                error: (e) => console.error("Decoder Error:", e)
-            });
-
-            // H.264 Baseline profile configuration
-            await decoder.configure({ codec: 'avc1.42E01E', codedWidth: 720, codedHeight: 1280 });
-        }
-
-        startBtn.onclick = async () => {
-            await initDecoder();
-            socket = new WebSocket(SERVER_URL);
-            socket.binaryType = 'arraybuffer';
-
-            socket.onopen = () => {
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-            };
-
-            socket.onmessage = (event) => {
-    // Check if we are actually getting data
-    console.log("Data received, size:", event.data.byteLength);
-
-    try {
-        const chunk = new EncodedVideoChunk({
-           type: (event.data.byteLength > 10000) ? 'key' : 'delta'
-            timestamp: performance.now(),
-            data: event.data
+        const statusDiv = document.getElementById('status');
+        const remoteVideo = document.getElementById('remoteVideo');
+        
+        // Update this URL to your Render URL
+        const socket = new WebSocket("wss://mirror-view.onrender.com");
+        
+        const pc = new RTCPeerConnection({
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
         });
-        decoder.decode(chunk);
-    } catch (e) {
-        console.error("Decoding error:", e);
-    }
-};
 
-            socket.onclose = () => {
-                startBtn.disabled = false;
-                stopBtn.disabled = true;
-            };
+        pc.ontrack = (event) => {
+            statusDiv.innerText = "Receiving Stream...";
+            remoteVideo.srcObject = event.streams[0];
         };
 
-        stopBtn.onclick = () => {
-            if (socket) socket.close();
+        socket.onmessage = async (event) => {
+            const data = JSON.parse(event.data);
+            
+            if (data.sdp && data.type === 'offer') {
+                await pc.setRemoteDescription(new RTCSessionDescription(data));
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                socket.send(JSON.stringify(pc.localDescription));
+                statusDiv.innerText = "Handshake complete. Connecting...";
+            } else if (data.candidate) {
+                await pc.addIceCandidate(new RTCIceCandidate(data));
+            }
+        };
+
+        pc.oniceconnectionstatechange = () => {
+            statusDiv.innerText = "Connection: " + pc.iceConnectionState;
         };
     </script>
 </body>
-
 </html>
-
-

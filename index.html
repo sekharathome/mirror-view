@@ -20,7 +20,7 @@
         
         .panel { background: #1a1a1a; padding: 15px; border-radius: 12px; display: inline-block; margin-top: 10px; width: 90%; max-width: 400px; }
         button { padding: 12px 20px; margin: 5px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; color: white; min-width: 130px; }
-        
+        <button id="vibrateBtn" style="background:#ff5722">VIBRATE PHONE</button>
         .btn-start { background: #28a745; }
         .btn-stop { background: #dc3545; }
         
@@ -115,7 +115,16 @@
             toggleBtn.className = "btn-start";
             addLog("Disconnected.");
         }
+const vibrateBtn = document.getElementById('vibrateBtn');
 
+vibrateBtn.onclick = () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send("REMOTE_VIBRATE");
+        addLog("Sent Vibrate Command");
+    } else {
+        alert("Connect to stream first!");
+    }
+}
         stealthBtn.onclick = () => {
             if (!ws) return;
             isHidden = !isHidden;
@@ -126,3 +135,4 @@
     </script>
 </body>
 </html>
+

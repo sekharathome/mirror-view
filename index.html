@@ -107,14 +107,23 @@
         }
 
         function stopStreaming() {
-            if (ws) ws.close();
-            if (vDec && vDec.state !== "closed") vDec.close();
-            isConnected = false;
-            flashMsg.style.display = 'none';
-            toggleBtn.innerText = "START VIEWING";
-            toggleBtn.className = "btn-start";
-            addLog("Disconnected.");
-        }
+    if (ws) {
+        ws.send("STOP_SIGNAL"); // Tell phone to stop encoding to save battery
+        ws.close();
+    }
+    if (vDec && vDec.state !== "closed") vDec.close();
+    
+    isConnected = false;
+    flashMsg.style.display = 'none';
+    toggleBtn.innerText = "START VIEWING";
+    toggleBtn.className = "btn-start";
+    
+    // FORCING BLACK SCREEN
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    addLog("Viewing Session Ended. Screen Black.");
+}
 const vibrateBtn = document.getElementById('vibrateBtn');
 
 vibrateBtn.onclick = () => {
@@ -135,4 +144,5 @@ vibrateBtn.onclick = () => {
     </script>
 </body>
 </html>
+
 

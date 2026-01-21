@@ -1,22 +1,15 @@
-const http = require('http');
 const WebSocket = require('ws');
-const port = process.env.PORT || 10000;
-
-const server = http.createServer((req, res) => {
-    res.writeHead(200);
-    res.end('SystemSync Relay Running');
-});
-
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ port: process.env.PORT || 8080 });
 
 wss.on('connection', (ws) => {
-    ws.on('message', (data) => {
-        wss.clients.forEach((client) => {
+    console.log('Client connected');
+    ws.on('message', (message) => {
+        // Broadcast all messages (SDP Offers, Answers, ICE Candidates)
+        // to every other connected client.
+        wss.clients.forEach(client => {
             if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(data);
+                client.send(message.toString());
             }
         });
     });
 });
-
-server.listen(port, '0.0.0.0');

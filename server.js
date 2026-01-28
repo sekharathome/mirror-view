@@ -7,18 +7,20 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.use(express.static(path.join(__dirname)));
 
 wss.on('connection', (ws) => {
+    console.log('Client connected');
     ws.on('message', (message) => {
-        const data = message.toString();
-        // Broadcast EVERYTHING (commands, SDP, and ICE candidates)
+        // Broadcast everything (Commands and Screenshot Frames)
         wss.clients.forEach(client => {
             if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(data);
+                // Ensure message is sent as a string for Base64 compatibility
+                client.send(message.toString());
             }
         });
     });
 });
-server.listen(process.env.PORT || 8080);
 
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

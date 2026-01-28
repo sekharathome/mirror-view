@@ -1,14 +1,26 @@
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 8080 });
+const http = require('http');
+const express = require('express');
+const path = require('path');
 
-console.log("Signaling Server started on port 8080...");
+const app = express();
+const port = process.env.PORT || 8080;
+
+// Serve the index.html file to the browser
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+console.log(`Server is running on port ${port}`);
 
 wss.on('connection', (ws) => {
-    console.log("New connection established.");
+    console.log("Client connected (Phone or Browser)");
 
     ws.on('message', (message) => {
-        // Broadcast the message to all other connected clients
-        // This allows the Phone to send data to the Browser and vice versa
+        // Relay messages to all OTHER clients
         wss.clients.forEach((client) => {
             if (client !== ws && client.readyState === WebSocket.OPEN) {
                 client.send(message.toString());
@@ -16,7 +28,7 @@ wss.on('connection', (ws) => {
         });
     });
 
-    ws.on('close', () => {
-        console.log("Connection closed.");
-    });
+    ws.on('close', () => console.log("Client disconnected"));
 });
+
+server.listen(port);

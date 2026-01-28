@@ -3,35 +3,45 @@
 <head>
     <title>Mirror View Control</title>
     <style>
-        body { background: #000; color: #fff; text-align: center; font-family: sans-serif; }
-        #remoteView { width: 320px; border: 2px solid #00ff00; background: #222; min-height: 500px; }
-        button { margin: 5px; padding: 12px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; }
+        body { background: #121212; color: #fff; text-align: center; font-family: sans-serif; }
+        #remoteView { 
+            width: 360px; 
+            min-height: 640px; 
+            border: 3px solid #00ff00; 
+            background: #000;
+            margin-top: 20px;
+        }
+        .controls { margin-top: 20px; }
+        button { padding: 12px 20px; margin: 5px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; }
         .start { background: #28a745; color: white; }
         .stop { background: #dc3545; color: white; }
     </style>
 </head>
 <body>
     <h1>Remote Control Panel</h1>
-    <img id="remoteView" src="" alt="Waiting for stream..." /><br>
+    <img id="remoteView" src="" alt="Waiting for mobile connection..." /><br>
     
-    <button class="start" onclick="sendCommand('START_SCREEN')">Enable Auto-ScreenCast</button>
-    <button class="stop" onclick="sendCommand('STOP_SCREEN')">Stop & Disconnect</button>
+    <div class="controls">
+        <button class="start" onclick="sendCommand('START_SCREEN')">Enable Auto-ScreenCast</button>
+        <button class="stop" onclick="sendCommand('STOP_SCREEN')">Stop & Disconnect</button>
+    </div>
 
     <script>
         const ws = new WebSocket('wss://mirror-view.onrender.com');
         const view = document.getElementById('remoteView');
 
+        ws.onmessage = (event) => {
+            const data = event.data;
+            // Check if the message is a frame from the phone
+            if (data.startsWith("FRAME:")) {
+                const base64Data = data.substring(6);
+                view.src = "data:image/jpeg;base64," + base64Data;
+            }
+        };
+
         function sendCommand(cmd) {
             ws.send(cmd);
         }
-
-        ws.onmessage = (event) => {
-            const data = event.data;
-            if (data.startsWith("FRAME:")) {
-                // Update the image source with the Base64 frame
-                view.src = "data:image/jpeg;base64," + data.substring(6);
-            }
-        };
     </script>
 </body>
 </html>

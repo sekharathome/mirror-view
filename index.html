@@ -25,7 +25,12 @@
         function sendCommand(cmd) {
             ws.send(cmd);
         }
-
+const peerConnection = new RTCPeerConnection({
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+});
+        peerConnection.ontrack = (event) => {
+    document.getElementById('remoteView').srcObject = event.streams[0];
+};
         function takeScreenshot() {
             const canvas = document.createElement('canvas');
             const video = document.getElementById('remoteView');
@@ -52,16 +57,29 @@
                 btn.innerText = "Start Recording";
             }
         }
-
+ws.onmessage = async (message) => {
+    const data = JSON.parse(message.data);
+    if (data.sdp) {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        if (data.sdp.type === 'offer') {
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            ws.send(JSON.stringify({ sdp: peerConnection.localDescription }));
+        }
+    } else if (data.ice) {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(data.ice));
+    }
+};
         function saveVideo() {
             const blob = new Blob(recordedChunks, { type: 'video/webm' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'capture.webm';
-            a.click();
+            a.click();A
             recordedChunks = [];
         }
     </script>
 </body>
 </html>
+

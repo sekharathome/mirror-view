@@ -1,24 +1,22 @@
 const WebSocket = require('ws');
-const port = process.env.PORT || 8080;
-const wss = new WebSocket.Server({ port });
+const wss = new WebSocket.Server({ port: 8080 });
 
-console.log(`Signaling server running on port ${port}`);
+console.log("Signaling Server started on port 8080...");
 
 wss.on('connection', (ws) => {
-    console.log('New client connected');
+    console.log("New connection established.");
 
     ws.on('message', (message) => {
-        // Parse the incoming message to handle commands or signaling
-        const data = JSON.parse(message);
-        
-        // Broadcast signaling (Offer/Answer/ICE) or Commands (Vibrate/Hide) 
-        // to everyone except the sender.
+        // Broadcast the message to all other connected clients
+        // This allows the Phone to send data to the Browser and vice versa
         wss.clients.forEach((client) => {
             if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify(data));
+                client.send(message.toString());
             }
         });
     });
 
-    ws.on('close', () => console.log('Client disconnected'));
+    ws.on('close', () => {
+        console.log("Connection closed.");
+    });
 });

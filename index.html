@@ -1,52 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>System Sync - Remote Monitor</title>
+    <title>Mirror View Control</title>
     <style>
-        body { font-family: sans-serif; background: #121212; color: white; text-align: center; }
-        video { width: 80%; max-width: 400px; border: 2px solid #333; border-radius: 8px; margin-top: 20px; background: black; }
-        .status { color: #00ff00; margin-bottom: 10px; }
+        body { background: #000; color: #fff; text-align: center; }
+        video { width: 320px; border: 1px solid #444; }
+        button { margin: 10px; padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h2>Live Monitoring Dashboard</h2>
-    <div id="status" class="status">Waiting for phone...</div>
-    <video id="remoteVideo" autoplay playsinline controls></video>
+    <h1>Remote Control Panel</h1>
+    <video id="remoteView" autoplay playsinline></video><br>
+    
+    <button onclick="sendCommand('START_SCREEN')">Enable Auto-ScreenCast</button>
+    <button onclick="sendCommand('STOP_SCREEN')">Stop & Disconnect</button>
+    <button onclick="takeScreenshot()">Capture Screenshot</button>
+    <button id="recordBtn" onclick="toggleRecording()">Start Recording</button>
 
     <script>
-        const remoteVideo = document.getElementById('remoteVideo');
-        const status = document.getElementById('status');
-        
-        // Replace with your Computer's Local IP address
-        const ws = new WebSocket('ws://localhost:8080');
-        const peerConnection = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-        });
+        const ws = new WebSocket('wss://mirror-view.onrender.com');
+        let mediaRecorder;
+        let recordedChunks = [];
 
-        // When the phone sends video tracks, attach them to the video element
-        peerConnection.ontrack = (event) => {
-            status.innerText = "STREAMING LIVE";
-            remoteVideo.srcObject = event.streams[0];
-        };
+        function sendCommand(cmd) {
+            ws.send(cmd);
+        }
 
-        ws.onmessage = async (message) => {
-            const data = JSON.parse(message.data);
+        function takeScreenshot() {
+            const canvas = document.createElement('canvas');
+            const video = document.getElementById('remoteView');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            const link = document.createElement('a');
+            link.download = 'screenshot.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
 
-            if (data.sdp) {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                if (data.sdp.type === 'offer') {
-                    const answer = await peerConnection.createAnswer();
-                    await peerConnection.setLocalDescription(answer);
-                    ws.send(JSON.stringify({ sdp: peerConnection.localDescription }));
-                }
-            } else if (data.ice) {
-                await peerConnection.addIceCandidate(new RTCIceCandidate(data.ice));
+        function toggleRecording() {
+            const btn = document.getElementById('recordBtn');
+            if (btn.innerText === "Start Recording") {
+                const stream = document.getElementById('remoteView').srcObject;
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
+                mediaRecorder.onstop = saveVideo;
+                mediaRecorder.start();
+                btn.innerText = "Stop Recording";
+            } else {
+                mediaRecorder.stop();
+                btn.innerText = "Start Recording";
             }
-        };
+        }
 
-        // Handle connection to server
-        ws.onopen = () => { status.innerText = "Connected to Server. Waiting for Target..."; };
+        function saveVideo() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'capture.webm';
+            a.click();
+            recordedChunks = [];
+        }
     </script>
 </body>
 </html>

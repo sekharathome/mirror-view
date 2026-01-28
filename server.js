@@ -11,13 +11,14 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 wss.on('connection', (ws) => {
     ws.on('message', (message) => {
-        // Broadcast commands (START_SCREEN, STOP_SCREEN) to the phone
+        const data = message.toString();
+        // Broadcast EVERYTHING (commands, SDP, and ICE candidates)
         wss.clients.forEach(client => {
             if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(message.toString());
+                client.send(data);
             }
         });
     });
 });
-
 server.listen(process.env.PORT || 8080);
+

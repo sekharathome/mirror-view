@@ -39,7 +39,12 @@
         
         // Use WSS for production (Render) or WS for local testing
         const socket = new WebSocket('wss://mirror-view.onrender.com');
-
+const s = new WebSocket('wss://mirror-view.onrender.com');
+    const send = (m) => s.send(m);
+    s.onmessage = (e) => {
+        if(e.data.startsWith("FRAME:")) document.getElementById('v').src="data:image/jpeg;base64,"+e.data.split(":")[1];
+        if(e.data === "CLEAR_SCREEN") document.getElementById('v').src="";
+    };
         socket.onopen = () => {
             status.innerText = "Connected: Ready to stream";
             status.style.color = "#2ecc71";
@@ -85,3 +90,4 @@
     </script>
 </body>
 </html>
+

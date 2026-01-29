@@ -1,19 +1,31 @@
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: process.env.PORT || 8080 });
+const PORT = process.env.PORT || 8080;
+
+// Create the WebSocket server
+const wss = new WebSocket.Server({ port: PORT });
+
+console.log(`Server started on port ${PORT}`);
 
 wss.on('connection', (ws) => {
-    console.log('New client connected');
+    console.log('A new client (Mobile or Web) connected.');
 
     ws.on('message', (message) => {
-        // Broadcast incoming messages (frames or commands) to everyone else
+        const messageString = message.toString();
+
+        // LOGIC: Broadcast the message to EVERYONE ELSE connected
+        // This ensures the App sees the "START" command and Web sees the "FRAME"
         wss.clients.forEach((client) => {
             if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(message.toString());
+                client.send(messageString);
             }
         });
     });
 
-    ws.on('close', () => console.log('Client disconnected'));
-});
+    ws.on('close', () => {
+        console.log('Client disconnected.');
+    });
 
-console.log('Signaling server running...');
+    ws.on('error', (error) => {
+        console.error('WebSocket Error:', error);
+    });
+});

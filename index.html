@@ -1,45 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>SystemSync - Remote View</title>
+    <title>SystemSync Monitor</title>
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; }
-        #screenCanvas { border: 2px solid #333; background: black; width: 360px; height: auto; }
-        .controls { margin-top: 20px; }
-        button { padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; border: none; }
-        .start { background: #2ecc71; color: white; }
-        .stop { background: #e74c3c; color: white; }
+        body { background: #111; color: white; text-align: center; font-family: sans-serif; }
+        canvas { background: #000; width: 360px; height: auto; border: 2px solid #444; margin-top: 20px; }
+        .btn { padding: 15px 30px; margin: 10px; cursor: pointer; border-radius: 8px; border: none; font-weight: bold; }
+        #start { background: #27ae60; color: white; }
+        #stop { background: #c0392b; color: white; }
     </style>
 </head>
 <body>
-    <h2>Remote Monitor</h2>
-    <canvas id="screenCanvas"></canvas>
+    <h2>SystemSync Remote View</h2>
+    <div id="status">Connecting...</div>
+    <canvas id="display"></canvas>
     <div class="controls">
-        <button class="start" onclick="send('START_SCREEN')">START SCREEN</button>
-        <button class="stop" onclick="send('STOP_SCREEN')">STOP SCREEN</button>
+        <button id="start" class="btn" onclick="sendCmd('START_SCREEN')">START SCREEN</button>
+        <button id="stop" class="btn" onclick="sendCmd('STOP_SCREEN')">STOP SCREEN</button>
     </div>
-    <script>
-        const canvas = document.getElementById('screenCanvas');
-        const ctx = canvas.getContext('2d');
-        const socket = new WebSocket('wss://mirror-view.onrender.com');
 
-        socket.onmessage = (event) => {
-            const data = event.data;
-            if (data.startsWith("FRAME:")) {
+    <script>
+        const canvas = document.getElementById('display');
+        const ctx = canvas.getContext('2d');
+        const status = document.getElementById('status');
+        const ws = new WebSocket('wss://mirror-view.onrender.com');
+
+        ws.onopen = () => { status.innerText = "Connected to Server"; status.style.color = "#27ae60"; };
+        ws.onclose = () => { status.innerText = "Disconnected"; status.style.color = "#c0392b"; };
+        
+        ws.onmessage = (event) => {
+            if (event.data.startsWith("FRAME:")) {
                 const img = new Image();
                 img.onload = () => {
                     canvas.width = img.width;
                     canvas.height = img.height;
                     ctx.drawImage(img, 0, 0);
                 };
-                img.src = "data:image/jpeg;base64," + data.substring(6);
-            } else if (data === "CLEAR_SCREEN") {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                img.src = "data:image/jpeg;base64," + event.data.substring(6);
             }
         };
 
-        function send(cmd) { if (socket.readyState === WebSocket.OPEN) socket.send(cmd); }
+        function sendCmd(cmd) {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(cmd);
+                console.log("Sent: " + cmd);
+            }
+        }
     </script>
 </body>
 </html>

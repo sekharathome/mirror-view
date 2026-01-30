@@ -3,33 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SystemSync - Remote Monitor</title>
+    <title>SystemSync - Web Controller</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: #1a1a1a; color: white; text-align: center; margin: 0; padding: 20px; 
-        }
-        #screen-container { 
-            width: 300px; height: 600px; border: 8px solid #333; border-radius: 20px; 
-            margin: 20px auto; overflow: hidden; background: black; 
-        }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; text-align: center; margin: 0; padding: 20px; }
+        #screen-container { width: 320px; height: 580px; border: 8px solid #333; border-radius: 20px; margin: 20px auto; overflow: hidden; background: black; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         canvas { width: 100%; height: 100%; object-fit: contain; }
-        .controls { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
-        button { 
-            padding: 12px 25px; font-size: 14px; cursor: pointer; border: none; 
-            border-radius: 5px; font-weight: bold; transition: 0.3s;
-        }
-        /* Toggle Styles */
+        .controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 400px; margin: 0 auto; }
+        button { padding: 12px 20px; font-size: 13px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.3s; flex: 1 1 140px; }
+        
         .btn-start { background: #2ecc71; color: white; }
         .btn-stop { background: #e74c3c; color: white; }
-        .btn-action { background: #3498db; color: white; }
-        #status { color: #aaa; margin-top: 10px; font-size: 14px; }
+        .btn-capture { background: #3498db; color: white; }
+        .btn-record { background: #f39c12; color: white; }
+        .recording-active { animation: pulse 1.5s infinite; background: #c0392b !important; }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        #status { color: #aaa; margin-bottom: 10px; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <h2>SystemSync Remote Monitor</h2>
-    <div id="status">Connecting to server...</div>
+    <div id="status">Connecting...</div>
 
     <div id="screen-container">
         <canvas id="display"></canvas>
@@ -37,9 +32,8 @@
 
     <div class="controls">
         <button id="toggleBtn" class="btn-start" onclick="toggleStream()">START SCREEN</button>
-        
-        <button class="btn-action" onclick="sendCmd('CAPTURE_IMAGE')">SCREENSHOT</button>
-        <button class="btn-action" onclick="sendCmd('CAPTURE_VIDEO')">RECORD VIDEO</button>
+        <button class="btn-capture" onclick="takeScreenshot()">TAKE SCREENSHOT</button>
+        <button id="recordBtn" class="btn-record" onclick="toggleRecording()">START RECORDING</button>
     </div>
 
     <script>
@@ -47,15 +41,16 @@
         const ctx = canvas.getContext('2d');
         const status = document.getElementById('status');
         const toggleBtn = document.getElementById('toggleBtn');
+        const recordBtn = document.getElementById('recordBtn');
         
         let isStreaming = false;
+        let mediaRecorder;
+        let recordedChunks = [];
+        let isRecording = false;
+
         const socket = new WebSocket('wss://mirror-view.onrender.com');
 
-        socket.onopen = () => {
-            status.innerText = "Connected: Ready";
-            status.style.color = "#2ecc71";
-        };
-
+        socket.onopen = () => { status.innerText = "Connected"; status.style.color = "#2ecc71"; };
         socket.onmessage = (event) => {
             if (event.data.startsWith("FRAME:")) {
                 const img = new Image();
@@ -68,7 +63,7 @@
             }
         };
 
-        // Logic to toggle between START and STOP
+        // 1. TOGGLE START/STOP
         function toggleStream() {
             if (!isStreaming) {
                 sendCmd('START_SCREEN');
@@ -80,18 +75,60 @@
                 toggleBtn.innerText = "START SCREEN";
                 toggleBtn.className = "btn-start";
                 isStreaming = false;
-                // Clear the canvas when stopping
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
         }
 
-        function sendCmd(cmd) {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(cmd);
-                console.log("Command Sent:", cmd);
+        // 2. WEB-SIDE SCREENSHOT
+        function takeScreenshot() {
+            const link = document.createElement('a');
+            link.download = `screenshot_${Date.now()}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        }
+
+        // 3. WEB-SIDE VIDEO RECORDING
+        function toggleRecording() {
+            if (!isRecording) {
+                startRecording();
             } else {
-                alert("Server connection lost!");
+                stopRecording();
             }
+        }
+
+        function startRecording() {
+            recordedChunks = [];
+            // Capture the canvas stream at 25 FPS
+            const stream = canvas.captureStream(25);
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
+
+            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+            mediaRecorder.onstop = downloadVideo;
+
+            mediaRecorder.start();
+            isRecording = true;
+            recordBtn.innerText = "STOP RECORDING";
+            recordBtn.classList.add('recording-active');
+        }
+
+        function stopRecording() {
+            mediaRecorder.stop();
+            isRecording = false;
+            recordBtn.innerText = "START RECORDING";
+            recordBtn.classList.remove('recording-active');
+        }
+
+        function downloadVideo() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `recording_${Date.now()}.webm`;
+            a.click();
+        }
+
+        function sendCmd(cmd) {
+            if (socket.readyState === WebSocket.OPEN) socket.send(cmd);
         }
     </script>
 </body>

@@ -7,90 +7,19 @@ const wss = new WebSocket.Server({ port });
 wss.on('connection', (ws) => {
     console.log('New client connected');
 
-   <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SystemSync - Remote Monitor</title>
-    <style>
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: #1a1a1a; color: white; text-align: center; margin: 0; padding: 20px; 
-        }
-        #screen-container { 
-            width: 300px; height: 600px; border: 8px solid #333; border-radius: 20px; 
-            margin: 20px auto; overflow: hidden; background: black; 
-        }
-        canvas { width: 100%; height: 100%; object-fit: contain; }
-        .controls { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
-        button { 
-            padding: 12px 25px; font-size: 14px; cursor: pointer; border: none; 
-            border-radius: 5px; font-weight: bold; 
-        }
-        .start { background: #2ecc71; color: white; }
-        .stop { background: #e74c3c; color: white; }
-        #status { color: #aaa; margin-top: 10px; font-size: 14px; }
-    </style>
-</head>
-<body>
+    ws.on('message', (data) => {
+        // Convert the incoming data (buffer) to a string
+        const message = data.toString();
 
-    <h2>SystemSync Remote Monitor</h2>
-    <div id="status">Connecting to server...</div>
-
-    <div id="screen-container">
-        <canvas id="display"></canvas>
-    </div>
-
-    <div class="controls">
-        <button class="start" onclick="sendCmd('START_SCREEN')">START SCREEN</button>
-        <button class="stop" onclick="sendCmd('STOP_SCREEN')">STOP SCREEN</button>
-    </div>
-
-    <script>
-        const canvas = document.getElementById('display');
-        const ctx = canvas.getContext('2d');
-        const status = document.getElementById('status');
-        
-        // Ensure this URL matches your Render deployment
-        const socket = new WebSocket('wss://mirror-view.onrender.com');
-
-        socket.onopen = () => {
-            status.innerText = "Connected: Ready to stream";
-            status.style.color = "#2ecc71";
-        };
-
-        socket.onclose = () => {
-            status.innerText = "Disconnected: Server offline";
-            status.style.color = "#e74c3c";
-        };
-
-        socket.onmessage = (event) => {
-            if (event.data.startsWith("FRAME:")) {
-                // Strips "FRAME:" prefix and draws to canvas
-                const img = new Image();
-                img.onload = () => {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                };
-                img.src = "data:image/jpeg;base64," + event.data.substring(6);
-            } else if (event.data === "CLEAR_SCREEN") {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Broadcast the message to every OTHER connected client
+        // This sends the "FRAME:" data from the phone to the web browser
+        // and "START_SCREEN" commands from the browser to the phone.
+        wss.clients.forEach((client) => {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+                client.send(message);
             }
-        };
-
-        function sendCmd(cmd) {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(cmd);
-                console.log("Sent:", cmd);
-            } else {
-                alert("Not connected!");
-            }
-        }
-    </script>
-</body>
-</html>
+        });
+    });
 
     ws.on('close', () => {
         console.log('Client disconnected');
@@ -102,4 +31,3 @@ wss.on('connection', (ws) => {
 });
 
 console.log(`Server is running on port ${port}`);
-

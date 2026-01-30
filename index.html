@@ -39,46 +39,39 @@
     </div>
 
     <script>
-        const canvas = document.getElementById('display');
-        const ctx = canvas.getContext('2d');
-        const status = document.getElementById('status');
-        
-        // Ensure this URL matches your Render deployment
-        const socket = new WebSocket('wss://mirror-view.onrender.com');
+    const canvas = document.getElementById('display'); // MATCHES <canvas id="display">
+    const ctx = canvas.getContext('2d');
+    const status = document.getElementById('status');
+    
+    const socket = new WebSocket('wss://mirror-view.onrender.com');
 
-        socket.onopen = () => {
-            status.innerText = "Connected: Ready to stream";
-            status.style.color = "#2ecc71";
-        };
+    socket.onopen = () => {
+        status.innerText = "Connected: Ready to stream";
+        status.style.color = "#2ecc71";
+    };
 
-        socket.onclose = () => {
-            status.innerText = "Disconnected: Server offline";
-            status.style.color = "#e74c3c";
-        };
-
-        socket.onmessage = (event) => {
-            if (event.data.startsWith("FRAME:")) {
-                // Strips "FRAME:" prefix and draws to canvas
-                const img = new Image();
-                img.onload = () => {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                };
-                img.src = "data:image/jpeg;base64," + event.data.substring(6);
-            } else if (event.data === "CLEAR_SCREEN") {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
-        };
-
-        function sendCmd(cmd) {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(cmd);
-                console.log("Sent:", cmd);
-            } else {
-                alert("Not connected!");
-            }
+    socket.onmessage = (event) => {
+        if (event.data.startsWith("FRAME:")) {
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = "data:image/jpeg;base64," + event.data.substring(6);
         }
-    </script>
+    };
+
+    // THIS NAME MUST MATCH THE BUTTON'S onclick="sendCmd(...)"
+    function sendCmd(cmd) {
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(cmd);
+            console.log("Sent to server:", cmd);
+        } else {
+            console.error("Socket not connected");
+        }
+    }
+</script>
 </body>
 </html>
+

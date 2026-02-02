@@ -35,7 +35,9 @@
         <button class="btn-capture" onclick="takeScreenshot()">TAKE SCREENSHOT</button>
         <button id="recordBtn" class="btn-record" onclick="toggleRecording()">START RECORDING</button>
     </div>
-
+<div id="status-container">
+    Device Status: <span id="status-indicator" style="color: gray;">CHECKING...</span>
+</div>
     <script>
         const canvas = document.getElementById('display');
         const ctx = canvas.getContext('2d');
@@ -52,7 +54,16 @@
 
         socket.onopen = () => { status.innerText = "Connected"; status.style.color = "#2ecc71"; };
         socket.onmessage = (event) => {
-            if (event.data.startsWith("FRAME:")) {
+            const data = event.data;
+        if (data.startsWith("STATUS:")) {
+            const status = data.split(":")[1];
+            const el = document.getElementById('status-indicator');
+            el.innerText = status;
+            el.style.color = (status === "ONLINE") ? "green" : "red";
+        }
+            // Ask for status as soon as we open the web page
+    socket.onopen = () => socket.send("GET_STATUS");
+            if (data.startsWith("FRAME:")) {
                 const img = new Image();
                 img.onload = () => {
                     canvas.width = img.width;
@@ -147,4 +158,5 @@ function downloadVideo() {
     </script>
 </body>
 </html>
+
 

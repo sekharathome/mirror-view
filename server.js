@@ -1,28 +1,42 @@
 const WebSocket = require('ws');
+const wss = new WebSocket.Server({ port: process.env.PORT || 8080 });
 
-const port = process.env.PORT || 8080;
-const wss = new WebSocket.Server({ port });
+let deviceSocket = null;
 
 wss.on('connection', (ws) => {
     console.log('New client connected');
 
-    ws.on('message', (data) => {
-        const message = data.toString();
-
-        // DEBUG LOG: This will show you if the web button is working
-        if (!message.startsWith("FRAME:")) {
-            console.log("Command received from Web:", message);
+    ws.on('message', (message) => {
+        // 1. Device identification
+        if (message === 'I_AM_DEVICE') {
+            deviceSocket = ws;
+            deviceSocket.isAlive = true;
+            broadcastStatus("ONLINE");
+            console.log("Device is now Online");
         }
 
-        wss.clients.forEach((client) => {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(message);
-            }
-        });
+        // 2. Handle Status Requests from Web Panel
+        if (message === 'GET_STATUS') {
+            const status = (deviceSocket && deviceSocket.readyState === WebSocket.OPEN) ? "ONLINE" : "OFFLINE";
+            ws.send("STATUS:" + status);
+        }
+
+        // ... rest of your screen frame forwarding logic ...
     });
 
-    ws.on('close', () => console.log('Client disconnected'));
-    ws.on('error', (error) => console.error('WebSocket Error:', error));
+    ws.on('close', () => {
+        if (ws === deviceSocket) {
+            deviceSocket = null;
+            broadcastStatus("OFFLINE");
+            console.log("Device went Offline");
+        }
+    });
 });
 
-console.log(`Server is running on port ${port}`);
+function broadcastStatus(status) {
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send("STATUS:" + status);
+        }
+    });
+}

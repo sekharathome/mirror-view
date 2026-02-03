@@ -45,13 +45,32 @@
             overflow: hidden; 
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
             display: flex; align-items: center; justify-content: center;
+            position: relative;
         }
-        /* We use an IMG tag because it's smoother for MJPEG-style streams */
         #display { 
             width: 100%; height: 100%; 
             object-fit: contain; 
             display: block;
         }
+
+        /* Flash Message / Toast Styles */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #f39c12;
+            color: #000;
+            text-align: center;
+            border-radius: 5px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(243, 156, 18, 0.4);
+        }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
 
         /* Button Grid */
         .controls { 
@@ -71,24 +90,23 @@
             font-weight: 600; 
             color: white; 
             flex: 1 1 120px;
-            transition: transform 0.1s, opacity 0.2s;
+            transition: 0.2s;
         }
         button:active { transform: scale(0.96); }
 
-        /* Button Colors */
         .btn-start { background: #27ae60; }
         .btn-stop { background: #c0392b; }
         .btn-shot { background: #2980b9; }
         .btn-record { background: #f39c12; }
         
-        /* Recording Pulse Animation */
         .recording-active { 
             background: #e74c3c !important; 
             animation: pulse 1.5s infinite; 
         }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
+        @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
 
-        /* Hidden canvas for recording processing */
         #hidden-canvas { display: none; }
     </style>
 </head>
@@ -102,22 +120,22 @@
     </div>
 
     <div id="screen-wrapper">
-        <img id="display" src="" alt="Waiting for stream..." />
+        <img id="display" src="" alt="Screen Off" />
     </div>
+
+    <div id="toast">Enable the Start screen first</div>
 
     <canvas id="hidden-canvas"></canvas>
 
     <div class="controls">
         <button id="toggleBtn" class="btn-start" onclick="toggleScreen()">START SCREEN</button>
-        <button class="btn-shot" onclick="takeScreenshot()">SCREENSHOT</button>
-        <button id="recordBtn" class="btn-record" onclick="toggleRecording()">START RECORDING</button>
+        <button class="btn-shot" onclick="handleScreenshot()">SCREENSHOT</button>
+        <button id="recordBtn" class="btn-record" onclick="handleRecording()">START RECORDING</button>
     </div>
 
     <script>
-        // --- CONFIGURATION ---
-        const WS_URL = "wss://mirror-view.onrender.com"; // Change to your Render URL
+        const WS_URL = "wss://mirror-view.onrender.com"; 
         
-        // --- VARIABLES ---
         const imgDisplay = document.getElementById('display');
         const canvas = document.getElementById('hidden-canvas');
         const ctx = canvas.getContext('2d');
@@ -125,49 +143,32 @@
         const statusText = document.getElementById('status-text');
         const toggleBtn = document.getElementById('toggleBtn');
         const recordBtn = document.getElementById('recordBtn');
+        const toast = document.getElementById('toast');
 
         let ws;
-        let isStreaming = false;
+        let isStreaming = false; // Core state variable
         let isRecording = false;
         let mediaRecorder;
         let recordedChunks = [];
-        let drawInterval;
 
-        // --- WEBSOCKET CONNECTION ---
         function connect() {
             ws = new WebSocket(WS_URL);
-
-            ws.onopen = () => {
-                console.log("Connected to WebSocket");
-                ws.send("I_AM_WEB"); // Identify ourselves
-                statusText.innerText = "Waiting for Device...";
-            };
-
+            ws.onopen = () => { ws.send("I_AM_WEB"); statusText.innerText = "Waiting for Device..."; };
             ws.onmessage = (event) => {
                 const msg = event.data;
-
-                // A. Handle Status Updates (Online/Offline)
-                if (msg.startsWith("STATUS:")) {
-                    updateStatus(msg.split(":")[1]);
-                }
-                
-                // B. Handle Video Frames
-                else if (msg.startsWith("FRAME:")) {
+                if (msg.startsWith("STATUS:")) { updateStatus(msg.split(":")[1]); }
+                else if (msg.startsWith("FRAME:") && isStreaming) {
                     const base64 = msg.split("FRAME:")[1];
                     imgDisplay.src = "data:image/jpeg;base64," + base64;
-                    
-                    // If recording, draw this frame to the hidden canvas
-                    if (isRecording) {
-                        drawFrameToCanvas();
-                    }
+                    if (isRecording) { drawFrameToCanvas(); }
                 }
             };
+            ws.onclose = () => { updateStatus("OFFLINE"); setTimeout(connect, 3000); };
+        }
 
-            ws.onclose = () => {
-                updateStatus("OFFLINE");
-                statusText.innerText = "Disconnected (Retrying...)";
-                setTimeout(connect, 3000); // Auto-reconnect
-            };
+        function showToast() {
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
         }
 
         function updateStatus(status) {
@@ -179,18 +180,12 @@
                 statusDot.className = "status-dot offline";
                 statusText.innerText = "Device Offline";
                 statusText.style.color = "#e74c3c";
-                // Reset buttons if device dies
-                if (isStreaming) toggleScreen(); 
-                if (isRecording) toggleRecording();
+                if (isStreaming) toggleScreen();
             }
         }
 
-        // --- BUTTON FUNCTION 1: START/STOP SCREEN ---
         function toggleScreen() {
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                alert("Server not connected.");
-                return;
-            }
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
 
             if (!isStreaming) {
                 ws.send("START_SCREEN");
@@ -201,76 +196,66 @@
                 ws.send("STOP_SCREEN");
                 toggleBtn.innerText = "START SCREEN";
                 toggleBtn.className = "btn-start";
-                imgDisplay.src = ""; // Clear screen
                 isStreaming = false;
+                imgDisplay.src = ""; // Clear the screen immediately
+                if (isRecording) stopRecording(); // Stop recording if screen is turned off
             }
         }
 
-        // --- BUTTON FUNCTION 2: SCREENSHOT ---
-        function takeScreenshot() {
-            if (!imgDisplay.src || imgDisplay.src.length < 100) {
-                alert("No video feed active!");
+        // --- Screenshot Logic with Flash Message ---
+        function handleScreenshot() {
+            if (!isStreaming) {
+                showToast();
                 return;
             }
+            takeScreenshot();
+        }
 
+        function takeScreenshot() {
+            if (!imgDisplay.src) return;
             const link = document.createElement('a');
             link.download = `screenshot_${getTimestamp()}.png`;
             link.href = imgDisplay.src;
             link.click();
         }
 
-        // --- BUTTON FUNCTION 3: VIDEO RECORDING ---
-        function toggleRecording() {
-            if (!isRecording) {
-                startRecording();
-            } else {
-                stopRecording();
+        // --- Recording Logic with Flash Message ---
+        function handleRecording() {
+            if (!isStreaming) {
+                showToast();
+                return;
             }
+            toggleRecording();
+        }
+
+        function toggleRecording() {
+            if (!isRecording) startRecording();
+            else stopRecording();
         }
 
         function startRecording() {
-            if (!imgDisplay.src || imgDisplay.src.length < 100) {
-                alert("Start the screen stream first!");
-                return;
-            }
-
-            // Prepare canvas dimensions to match the video
             canvas.width = imgDisplay.naturalWidth || 360;
             canvas.height = imgDisplay.naturalHeight || 640;
-
-            const stream = canvas.captureStream(25); // 25 FPS
+            const stream = canvas.captureStream(25);
             mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
             recordedChunks = [];
-
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) recordedChunks.push(e.data);
-            };
-
+            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
             mediaRecorder.onstop = saveVideoFile;
-
             mediaRecorder.start();
             isRecording = true;
-            
-            // Visual updates
             recordBtn.innerText = "STOP RECORDING";
             recordBtn.classList.add('recording-active');
         }
 
         function stopRecording() {
-            if (!mediaRecorder) return;
-            mediaRecorder.stop();
+            if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
             isRecording = false;
-            
-            // Visual updates
             recordBtn.innerText = "START RECORDING";
             recordBtn.classList.remove('recording-active');
         }
 
-        // Helper: Copy the IMG tag to CANVAS so MediaRecorder can grab it
         function drawFrameToCanvas() {
-            if (isRecording) {
-                ctx.drawImage(imgDisplay, 0, 0, canvas.width, canvas.height);
-            }
+            if (isRecording) ctx.drawImage(imgDisplay, 0, 0, canvas.width, canvas.height);
         }
 
         function saveVideoFile() {
@@ -282,15 +267,9 @@
             a.click();
         }
 
-        // Utility: Timestamp for filenames
-        function getTimestamp() {
-            const now = new Date();
-            return now.toISOString().replace(/[:.]/g, '-');
-        }
+        function getTimestamp() { return new Date().toISOString().replace(/[:.]/g, '-'); }
 
-        // Start connection on load
         connect();
-
     </script>
 </body>
 </html>

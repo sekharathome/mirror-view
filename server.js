@@ -9,35 +9,33 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         const msg = message.toString();
 
-        // 1. Device identification
+        // 1. Device Identification
         if (msg === 'I_AM_DEVICE') {
             deviceSocket = ws;
-            broadcastStatus("ONLINE");
-            broadcastLog("SYSTEM: Mobile device has connected.");
+            broadcastToWeb("STATUS:ONLINE");
+            broadcastLog("SYSTEM: Mobile device is now ONLINE.");
         }
 
-        // 2. Handle Status Requests
+        // 2. Handle Web Status Request
         if (msg === 'GET_STATUS') {
             const status = (deviceSocket && deviceSocket.readyState === WebSocket.OPEN) ? "ONLINE" : "OFFLINE";
             ws.send("STATUS:" + status);
         }
 
-        // 3. Command Forwarding with Web Notification
+        // 3. Command Forwarding (Web -> Device) with Action Logs
         if (msg.startsWith('START_SCREEN') || msg === 'STOP_SCREEN') {
             if (deviceSocket && deviceSocket.readyState === WebSocket.OPEN) {
-                // Forward the actual action to the mobile
                 deviceSocket.send(msg);
-                
-                // Throw a message back to the web client to confirm the action
-                const actionDetail = msg.includes("AUDIO") ? "Screen Stream with Audio" : "Screen Stream";
-                broadcastLog(`ACTION: Sending '${msg}' to mobile. Action: ${actionDetail}`);
+                const desc = msg.includes("AUDIO") ? "Screen with Audio" : "Screen only";
+                broadcastLog(`ACTION: Web clicked ${msg}. Command sent to mobile (${desc}).`);
             } else {
-                broadcastLog("ERROR: Cannot send action. Device is OFFLINE.");
+                broadcastLog("ERROR: Device is OFFLINE. Cannot send " + msg);
             }
         }
 
-        // Forward battery/status info
-        if (msg.startsWith('STATUS_DATA:')) {
+        // 4. Data Forwarding (Device -> Web)
+        // Forward Frames, Battery (STATUS_DATA), or Confirmation Logs
+        if (msg.startsWith('FRAME:') || msg.startsWith('STATUS_DATA:') || msg.startsWith('LOG:')) {
             broadcastToWeb(msg);
         }
     });
@@ -51,21 +49,8 @@ wss.on('connection', (ws) => {
     });
 });
 
-// Sends logs to the Web Panel only
 function broadcastLog(logText) {
-    wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send("LOG:" + logText);
-        }
-    });
-}
-
-function broadcastStatus(status) {
-    wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send("STATUS:" + status);
-        }
-    });
+    broadcastToWeb("LOG:" + logText);
 }
 
 function broadcastToWeb(data) {

@@ -2,54 +2,76 @@ const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: process.env.PORT || 8080 });
 
 let deviceSocket = null;
-let webSocket = null;
 
 wss.on('connection', (ws) => {
-    console.log('Client connected');
+    console.log('New client connected');
 
     ws.on('message', (message) => {
         const msg = message.toString();
 
-        // 1. Identify the Android Device
+        // 1. Device identification
         if (msg === 'I_AM_DEVICE') {
             deviceSocket = ws;
-            console.log('DEVICE CONNECTED');
-            broadcastToWeb("STATUS:ONLINE");
+            broadcastStatus("ONLINE");
+            broadcastLog("SYSTEM: Mobile device has connected.");
         }
-        // 2. Identify the Web Browser
-        else if (msg === 'I_AM_WEB') {
-            webSocket = ws;
-            // Send current status immediately upon connection
+
+        // 2. Handle Status Requests
+        if (msg === 'GET_STATUS') {
             const status = (deviceSocket && deviceSocket.readyState === WebSocket.OPEN) ? "ONLINE" : "OFFLINE";
             ws.send("STATUS:" + status);
         }
-        // 3. Handle Video Frames (Forward Device -> Web)
-        else if (msg.startsWith('FRAME:')) {
-            if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-                webSocket.send(msg);
+
+        // 3. Command Forwarding with Web Notification
+        if (msg.startsWith('START_SCREEN') || msg === 'STOP_SCREEN') {
+            if (deviceSocket && deviceSocket.readyState === WebSocket.OPEN) {
+                // Forward the actual action to the mobile
+                deviceSocket.send(msg);
+                
+                // Throw a message back to the web client to confirm the action
+                const actionDetail = msg.includes("AUDIO") ? "Screen Stream with Audio" : "Screen Stream";
+                broadcastLog(`ACTION: Sending '${msg}' to mobile. Action: ${actionDetail}`);
+            } else {
+                broadcastLog("ERROR: Cannot send action. Device is OFFLINE.");
             }
         }
-        // 4. Handle Commands (Forward Web -> Device)
-        else if (msg === 'START_SCREEN' || msg === 'STOP_SCREEN') {
-            if (deviceSocket && deviceSocket.readyState === WebSocket.OPEN) {
-                deviceSocket.send(msg);
-            }
+
+        // Forward battery/status info
+        if (msg.startsWith('STATUS_DATA:')) {
+            broadcastToWeb(msg);
         }
     });
 
     ws.on('close', () => {
         if (ws === deviceSocket) {
-            console.log('DEVICE DISCONNECTED');
             deviceSocket = null;
-            broadcastToWeb("STATUS:OFFLINE");
+            broadcastStatus("OFFLINE");
+            broadcastLog("SYSTEM: Mobile device disconnected.");
         }
     });
 });
 
-function broadcastToWeb(msg) {
+// Sends logs to the Web Panel only
+function broadcastLog(logText) {
     wss.clients.forEach(client => {
-        if (client !== deviceSocket && client.readyState === WebSocket.OPEN) {
-            client.send(msg);
+        if (client.readyState === WebSocket.OPEN) {
+            client.send("LOG:" + logText);
+        }
+    });
+}
+
+function broadcastStatus(status) {
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send("STATUS:" + status);
+        }
+    });
+}
+
+function broadcastToWeb(data) {
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(data);
         }
     });
 }

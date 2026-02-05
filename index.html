@@ -1,37 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>SystemSync - Pro Control Panel</title>
-    <style>
-        :root { --sidebar-bg: #2c3e50; --active-teal: #1abc9c; --main-bg: #f4f7f6; --phone-frame: #1a1a1a; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--main-bg); overflow: hidden; }
-        
-        /* Sidebar Navigation */
-        #sidebar { width: 250px; background: var(--sidebar-bg); color: #ecf0f1; display: flex; flex-direction: column; flex-shrink: 0; }
-        .sidebar-header { padding: 25px; font-size: 22px; font-weight: bold; background: #1a252f; text-align: center; border-bottom: 1px solid #34495e; }
-        .nav-item { padding: 18px 25px; cursor: pointer; border-bottom: 1px solid #34495e; transition: 0.3s; display: flex; align-items: center; gap: 12px; }
-        .nav-item:hover { background: #3e5871; }
-        .nav-item.active { background: var(--active-teal); color: white; border-right: 5px solid white; }
+<meta charset="UTF-8">
+<title>SystemSync - Pro Control Panel</title>
 
-        /* Main Area */
-        #main-wrapper { flex-grow: 1; display: flex; flex-direction: column; }
-        header { height: 65px; background: white; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; padding: 0 35px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        #content-area { padding: 30px; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+<style>
+:root { --sidebar-bg: #2c3e50; --active-teal: #1abc9c; --main-bg: #f4f7f6; --phone-frame: #1a1a1a; }
 
-        /* Setup Card */
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 500px; text-align: center; }
-    
-
-    /* ===== ULTRA DEVICE ENGINE (ADD ONLY) ===== */
-
-/* Stage depth for 3D */
-#content-area{
-    perspective:1800px;
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    background: var(--main-bg);
+    overflow: hidden;
 }
 
-/* Premium metallic edge upgrade */
-#phone-mockup{
+/* Sidebar */
+#sidebar {
+    width: 250px;
+    background: var(--sidebar-bg);
+    color: #ecf0f1;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.sidebar-header {
+    padding: 25px;
+    font-size: 22px;
+    font-weight: bold;
+    background: #1a252f;
+    text-align: center;
+    border-bottom: 1px solid #34495e;
+}
+
+.nav-item {
+    padding: 18px 25px;
+    cursor: pointer;
+    border-bottom: 1px solid #34495e;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-item:hover { background: #3e5871; }
+.nav-item.active {
+    background: var(--active-teal);
+    color: white;
+    border-right: 5px solid white;
+}
+
+/* Main */
+#main-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    height: 65px;
+    background: white;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 35px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#content-area {
+    padding: 30px;
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    perspective: 1800px; /* 3D depth */
+}
+
+/* Card */
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+}
+
+/* ================= PREMIUM PHONE ================= */
+
+#phone-mockup {
+
+    width: min(360px, 92vw);
+    aspect-ratio: 9 / 16;
+
+    border-radius: 42px;
+    padding: 12px;
+
+    border: 6px solid transparent;
+    background:
+        linear-gradient(#000,#000) padding-box,
+        linear-gradient(145deg, #cfcfcf, #8a8a8a, #e6e6e6) border-box;
+
+    box-shadow:
+        0 30px 80px rgba(0,0,0,.9),
+        inset 0 0 12px rgba(255,255,255,.04);
+
+    position: relative;
+    margin-top: 10px;
+
     transform-style: preserve-3d;
     transition: transform .35s ease;
 }
@@ -53,9 +134,7 @@
     pointer-events:none;
 }
 
-/* Dynamic island */
-#phone-mockup::marker{ content:""; } /* harmless safety */
-
+/* Dynamic Island */
 .dynamic-island{
     position:absolute;
     top:8px;
@@ -68,7 +147,26 @@
     box-shadow: inset 0 -2px 6px rgba(255,255,255,.12);
 }
 
-/* Neon mode */
+/* Screen */
+#phone-screen {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    border-radius: 32px;
+    overflow: hidden;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Neon Mode */
 .neon-border{
     background:
       linear-gradient(#000,#000) padding-box,
@@ -79,12 +177,48 @@
         0 0 70px rgba(255,0,234,.6);
 }
 
-/* Landscape rotation */
+/* Landscape */
 .landscape{
     transform: rotate(90deg);
 }
-    </style>
+
+/* Floating animation */
+#phone-mockup{
+    animation: float 7s ease-in-out infinite;
+}
+
+@keyframes float{
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(-16px);}
+}
+
+/* Buttons */
+.action-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+
+.btn {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.btn-start { background: var(--active-teal); color: white; width: 100%; padding: 15px; font-size: 16px; }
+.btn-stop { background: #e74c3c; color: white; }
+.btn-snap { background: #3498db; color: white; }
+.btn-rec-off { background: #95a5a6; color: white; }
+.btn-rec-on { background: #f39c12; color: white; animation: blink 1s infinite; }
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+</style>
 </head>
+
 <body>
 
 <div id="sidebar">
@@ -96,158 +230,185 @@
 </div>
 
 <div id="main-wrapper">
-    <header>
-        <div>Status: <span id="status-ind" style="color: red; font-weight: bold;">OFFLINE</span></div>
-        <div id="meta">SystemSync v1.0</div>
-    </header>
+<header>
+    <div>Status: <span id="status-ind" style="color: red; font-weight: bold;">OFFLINE</span></div>
+    <div id="meta">SystemSync v1.0</div>
+</header>
 
-    <div id="content-area">
-        <div id="setup-view" class="card">
-            <h2 style="margin-top:0;">Mirror Setup</h2>
-            <div style="margin: 20px 0; text-align: left;">
-                <label>Audio Capture Mode:</label>
-                <select id="audio-opt" style="width:100%; padding:10px; border-radius:5px; margin-top:5px; border:1px solid #ccc;">
-                    <option value="off">No Audio</option>
-                    <option value="mic">Microphone (Listen)</option>
-                    <option value="system">System Sound (Android 10+)</option>
-                </select>
-            </div>
-            <button class="btn btn-start" onclick="startStream()">▶ START SCREEN</button>
-        </div>
+<div id="content-area">
 
-        <div id="stream-view" style="display:none; text-align: center;">
-            <div class="action-bar">
-                <button class="btn btn-stop" onclick="stopStream()">STOP</button>
-                <button class="btn btn-snap" onclick="takeShot()">SNAPSHOT</button>
-                <button id="rec-btn" class="btn btn-rec-off" onclick="toggleRecord()">RECORD OFF</button>
-            </div>
-            <div style="margin-bottom:15px;">
-    <button class="btn btn-snap" onclick="rotatePhone()">Rotate</button>
-    <button class="btn btn-snap" onclick="toggleNeon()">Neon</button>
+<div id="setup-view" class="card">
+    <h2 style="margin-top:0;">Mirror Setup</h2>
+
+    <div style="margin: 20px 0; text-align: left;">
+        <label>Audio Capture Mode:</label>
+        <select id="audio-opt" style="width:100%; padding:10px; border-radius:5px; margin-top:5px; border:1px solid #ccc;">
+            <option value="off">No Audio</option>
+            <option value="mic">Microphone (Listen)</option>
+            <option value="system">System Sound (Android 10+)</option>
+        </select>
+    </div>
+
+    <button class="btn btn-start" onclick="startStream()">▶ START SCREEN</button>
 </div>
 
-            <div id="phone-mockup">
-                <div class="dynamic-island"></div>
+<div id="stream-view" style="display:none; text-align: center;">
+
+    <div class="action-bar">
+        <button class="btn btn-stop" onclick="stopStream()">STOP</button>
+        <button class="btn btn-snap" onclick="takeShot()">SNAPSHOT</button>
+        <button id="rec-btn" class="btn btn-rec-off" onclick="toggleRecord()">RECORD OFF</button>
+        <button class="btn btn-snap" onclick="rotatePhone()">Rotate</button>
+        <button class="btn btn-snap" onclick="toggleNeon()">Neon</button>
+    </div>
+
+    <div id="phone-mockup">
+        <div class="dynamic-island"></div>
+
+        <div id="phone-screen">
+            <canvas id="display"></canvas>
         </div>
     </div>
+
+</div>
+</div>
 </div>
 
 <script>
-    const socket = new WebSocket('wss://mirror-view.onrender.com');
-    const canvas = document.getElementById('display');
-    const ctx = canvas.getContext('2d');
-    
-    let isStreaming = false;
-    let audioCtx = null;
-    let nextAudioTime = 0;
-    
-    // Recording vars
-    let mediaRecorder;
-    let recordedChunks = [];
-    let isRecording = false;
 
-    socket.onopen = () => {
-        // ID ourselves to the server so it knows we are the web controller
-        socket.send("I_AM_WEB");
-    };
+const socket = new WebSocket('wss://mirror-view.onrender.com');
+const canvas = document.getElementById('display');
+const ctx = canvas.getContext('2d');
 
-    socket.onmessage = (event) => {
-        const data = event.data;
+let isStreaming = false;
+let audioCtx = null;
+let nextAudioTime = 0;
 
-        if (data === "PING") {
-            socket.send("PONG");
-            return;
-        }
+let mediaRecorder;
+let recordedChunks = [];
+let isRecording = false;
 
-        if (data.startsWith("FRAME:") && isStreaming) {
-            const img = new Image();
-            img.onload = () => {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-            };
-            img.src = "data:image/jpeg;base64," + data.substring(6);
-        } else if (data.startsWith("AUDIO:")) {
-            playPcm(data.substring(6));
-        } else if (data.startsWith("STATUS:")) {
-            const s = data.substring(7);
-            document.getElementById('status-ind').innerText = s;
-            document.getElementById('status-ind').style.color = (s === "ONLINE") ? "#1abc9c" : "red";
-        }
-    };
+socket.onopen = () => {
+    socket.send("I_AM_WEB");
+};
 
-    function playPcm(base64) {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const binary = atob(base64);
-        const bytes = new Int16Array(binary.length / 2);
-        for (let i = 0; i < bytes.length; i++) {
-            bytes[i] = (binary.charCodeAt(i * 2) & 0xFF) | (binary.charCodeAt(i * 2 + 1) << 8);
-        }
-        const buffer = audioCtx.createBuffer(1, bytes.length, 44100);
-        buffer.getChannelData(0).set(Array.from(bytes).map(v => v / 32768.0));
-        const source = audioCtx.createBufferSource();
-        source.buffer = buffer; source.connect(audioCtx.destination);
-        const startTime = Math.max(audioCtx.currentTime, nextAudioTime);
-        source.start(startTime);
-        nextAudioTime = startTime + buffer.duration;
+socket.onmessage = (event) => {
+    const data = event.data;
+
+    if (data === "PING") {
+        socket.send("PONG");
+        return;
     }
 
-    function startStream() {
-        const audio = document.getElementById('audio-opt').value;
-        socket.send(`START_SCREEN:${audio}`);
-        document.getElementById('setup-view').style.display = 'none';
-        document.getElementById('stream-view').style.display = 'block';
-        isStreaming = true;
+    if (data.startsWith("FRAME:") && isStreaming) {
+        const img = new Image();
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+        };
+        img.src = "data:image/jpeg;base64," + data.substring(6);
+    }
+    else if (data.startsWith("AUDIO:")) {
+        playPcm(data.substring(6));
+    }
+    else if (data.startsWith("STATUS:")) {
+        const s = data.substring(7);
+        document.getElementById('status-ind').innerText = s;
+        document.getElementById('status-ind').style.color = (s === "ONLINE") ? "#1abc9c" : "red";
+    }
+};
+
+function playPcm(base64) {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const binary = atob(base64);
+    const bytes = new Int16Array(binary.length / 2);
+
+    for (let i = 0; i < bytes.length; i++) {
+        bytes[i] = (binary.charCodeAt(i * 2) & 0xFF) | (binary.charCodeAt(i * 2 + 1) << 8);
     }
 
-    function stopStream() {
-        socket.send("STOP_SCREEN");
-        location.reload(); 
-    }
+    const buffer = audioCtx.createBuffer(1, bytes.length, 44100);
+    buffer.getChannelData(0).set(Array.from(bytes).map(v => v / 32768.0));
 
-    function takeShot() {
-        const link = document.createElement('a');
-        link.download = `snapshot_${Date.now()}.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-    }
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
 
-    function toggleRecord() {
-        const btn = document.getElementById('rec-btn');
-        if (!isRecording) {
-            recordedChunks = [];
-            const stream = canvas.captureStream(30);
-            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
-            mediaRecorder.onstop = saveVideo;
-            mediaRecorder.start();
-            
-            btn.innerText = "RECORDING ON";
-            btn.className = "btn btn-rec-on";
-            isRecording = true;
-        } else {
-            mediaRecorder.stop();
-            btn.innerText = "RECORD OFF";
-            btn.className = "btn btn-rec-off";
-            isRecording = false;
-        }
-    }
+    const startTime = Math.max(audioCtx.currentTime, nextAudioTime);
+    source.start(startTime);
+    nextAudioTime = startTime + buffer.duration;
+}
 
-    function saveVideo() {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `record_${Date.now()}.webm`;
-        a.click();
-    }
+function startStream() {
+    const audio = document.getElementById('audio-opt').value;
+    socket.send(`START_SCREEN:${audio}`);
 
-    /* ===== ULTRA PREMIUM INTERACTIONS ===== */
+    document.getElementById('setup-view').style.display = 'none';
+    document.getElementById('stream-view').style.display = 'block';
+
+    isStreaming = true;
+}
+
+function stopStream() {
+    socket.send("STOP_SCREEN");
+    location.reload();
+}
+
+function takeShot() {
+    const link = document.createElement('a');
+    link.download = `snapshot_${Date.now()}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+}
+
+function toggleRecord() {
+    const btn = document.getElementById('rec-btn');
+
+    if (!isRecording) {
+        recordedChunks = [];
+
+        const stream = canvas.captureStream(30);
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) recordedChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = saveVideo;
+        mediaRecorder.start();
+
+        btn.innerText = "RECORDING ON";
+        btn.className = "btn btn-rec-on";
+
+        isRecording = true;
+    }
+    else {
+        mediaRecorder.stop();
+
+        btn.innerText = "RECORD OFF";
+        btn.className = "btn btn-rec-off";
+
+        isRecording = false;
+    }
+}
+
+function saveVideo() {
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `record_${Date.now()}.webm`;
+    a.click();
+}
+
+/* ===== ULTRA PREMIUM INTERACTIONS ===== */
 
 const phone = document.getElementById("phone-mockup");
 
-/* Mouse 3D tilt */
+/* 3D tilt */
 document.addEventListener("mousemove",(e)=>{
-
     if(!phone) return;
 
     const x = (window.innerWidth/2 - e.clientX)/22;
@@ -257,12 +418,12 @@ document.addEventListener("mousemove",(e)=>{
         `rotateY(${x}deg) rotateX(${-y}deg)`;
 });
 
-/* Rotate portrait ↔ landscape */
+/* Rotate */
 function rotatePhone(){
     phone.classList.toggle("landscape");
 }
 
-/* Neon toggle */
+/* Neon */
 function toggleNeon(){
     phone.classList.toggle("neon-border");
 }
@@ -270,9 +431,3 @@ function toggleNeon(){
 </script>
 </body>
 </html>
-
-
-
-
-
-

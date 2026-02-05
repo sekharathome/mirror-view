@@ -5,74 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SystemSync - Professional Panel</title>
     <style>
-        :root { --sidebar-bg: #34495e; --active-teal: #1abc9c; --main-bg: #f4f7f6; }
+        :root { --sidebar-bg: #2c3e50; --active-teal: #1abc9c; --main-bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--main-bg); overflow: hidden; }
         
-        #sidebar { width: 250px; background: var(--sidebar-bg); color: #ecf0f1; display: flex; flex-direction: column; flex-shrink: 0; }
-        .nav-item { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #2c3e50; transition: 0.3s; }
-        .nav-item.active { background: var(--active-teal); }
+        /* Sidebar Design */
+        #sidebar { width: 260px; background: var(--sidebar-bg); color: #ecf0f1; display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-header { padding: 25px; font-size: 22px; font-weight: bold; background: #1a252f; text-align: center; border-bottom: 1px solid #34495e; }
+        .nav-item { padding: 18px 25px; cursor: pointer; border-bottom: 1px solid #34495e; transition: 0.3s; display: flex; align-items: center; gap: 12px; }
+        .nav-item:hover { background: #3e5871; }
+        .nav-item.active { background: var(--active-teal); color: white; }
         
-        #main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
-        header { height: 60px; background: white; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+        /* Main Layout */
+        #main-wrapper { flex-grow: 1; display: flex; flex-direction: column; }
+        header { height: 65px; background: white; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; padding: 0 35px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
-        #content-area { padding: 30px; flex-grow: 1; overflow-y: auto; }
-        .live-card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
+        #content-area { padding: 35px; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        .live-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 600px; text-align: center; }
+
+        /* Media Controls */
+        #screen-container { margin: 20px auto; border: 10px solid #333; border-radius: 20px; background: #000; overflow: hidden; display: inline-block; }
+        canvas { display: block; max-width: 100%; height: auto; }
         
-        canvas { max-width: 100%; border: 2px solid #34495e; border-radius: 5px; background: #000; }
-        .btn-start { background: var(--active-teal); color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-stop { background: #e74c3c; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
-        
-        #log-window { background: #2c3e50; color: #1abc9c; padding: 15px; border-radius: 5px; height: 150px; overflow-y: auto; font-family: monospace; font-size: 13px; margin-top: 20px; }
+        .btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+        .btn { padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .btn-primary { background: var(--active-teal); color: white; }
+        .btn-secondary { background: #3498db; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+
+        #log-window { width: 100%; max-width: 600px; background: #1a252f; color: #2ecc71; padding: 15px; border-radius: 8px; height: 140px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 13px; margin-top: 25px; text-align: left; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <div style="padding: 20px; font-size: 20px; font-weight: bold; background: #2c3e50;">SystemSync Pro</div>
-    <div class="nav-item active">Live Viewing</div>
-    <div class="nav-item">Device Info</div>
-    <div class="nav-item">Remote Logs</div>
+    <div class="sidebar-header">SystemSync</div>
+    <div class="nav-item active">Live Streaming</div>
+    <div class="nav-item">Device Control</div>
+    <div class="nav-item">File Manager</div>
     <div class="nav-item">Settings</div>
 </div>
 
 <div id="main-wrapper">
     <header>
-        <div>Status: <span id="status-ind" style="font-weight: bold; color: red;">OFFLINE</span></div>
-        <div id="device-meta">Battery: <span id="batt-lvl">--</span> <span id="charge-stat"></span></div>
+        <div><strong>Status:</strong> <span id="status-ind" style="color: red;">OFFLINE</span></div>
+        <div>
+            Battery: <span id="batt-lvl">--</span> <span id="charge-stat"></span>
+        </div>
     </header>
 
     <div id="content-area">
         <div id="setup-view" class="live-card">
-            <h3>Stream Configuration</h3>
+            <h2 style="margin-top:0;">Stream Setup</h2>
+            <p>Select audio and click Start to begin mirroring.</p>
             
-            <div style="margin-bottom: 20px;">
-                <label>Audio Source:</label>
-                <select id="audio-opt" style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+            <div style="margin: 25px 0;">
+                <label>Audio Mode:</label><br>
+                <select id="audio-opt" style="padding:10px; width:220px; margin-top:8px; border-radius:5px;">
                     <option value="off">No Audio</option>
-                    <option value="mic">Microphone</option>
-                    <option value="system">System Audio (Android 10+)</option>
+                    <option value="mic">Microphone (Listen)</option>
+                    <option value="system">Internal System Audio</option>
                 </select>
             </div>
 
-            <div style="margin-bottom: 20px;">
-                <button class="btn-start" onclick="startStream()">▶ START SCREEN</button>
-                <button onclick="takeShot()" style="margin-left:10px; padding: 12px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">SNAPSHOT</button>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="startStream()">START SCREEN</button>
+                <button class="btn btn-secondary" onclick="takeShot()">SNAPSHOT</button>
             </div>
 
-            <div>
-                <input type="checkbox" id="record-toggle"> <label for="record-toggle">Record session to browser</label>
+            <div style="margin-top:20px; color:#7f8c8d;">
+                <input type="checkbox" id="record-toggle"> Record Session
             </div>
         </div>
 
-        <div id="stream-view" style="display:none;">
-            <button class="btn-stop" onclick="stopStream()">STOP STREAM</button>
-            <div class="live-card">
+        <div id="stream-view" style="display:none; text-align: center;">
+            <button class="btn btn-danger" onclick="stopStream()">STOP STREAMING</button>
+            <div id="screen-container">
                 <canvas id="display"></canvas>
             </div>
         </div>
 
         <div id="log-window">
-            <div id="logs">SYSTEM: Panel initialized. Waiting for device...</div>
+            <div id="logs">LOG: Waiting for device connection...</div>
         </div>
     </div>
 </div>
@@ -81,6 +94,7 @@
     const socket = new WebSocket('wss://mirror-view.onrender.com');
     const canvas = document.getElementById('display');
     const ctx = canvas.getContext('2d');
+    
     let isStreaming = false;
     let audioCtx = null;
     let nextAudioTime = 0;
@@ -88,6 +102,7 @@
     socket.onmessage = (event) => {
         const data = event.data;
 
+        // VIDEO RENDERING
         if (data.startsWith("FRAME:") && isStreaming) {
             const img = new Image();
             img.onload = () => {
@@ -97,19 +112,25 @@
             };
             img.src = "data:image/jpeg;base64," + data.substring(6);
         }
+        
+        // AUDIO PLAYBACK
         else if (data.startsWith("AUDIO:")) {
             playPcm(data.substring(6));
         }
+
+        // STATUS UPDATES
         else if (data.startsWith("STATUS:")) {
             const s = data.substring(7);
             document.getElementById('status-ind').innerText = s;
-            document.getElementById('status-ind').style.color = (s === "ONLINE") ? "green" : "red";
+            document.getElementById('status-ind').style.color = (s === "ONLINE") ? "#2ecc71" : "#e74c3c";
         }
+        
+        // LOGS
         else if (data.startsWith("LOG:")) {
-            const div = document.createElement('div');
-            div.innerText = `> ${data.substring(4)}`;
+            const entry = document.createElement('div');
+            entry.innerText = `> ${data.substring(4)}`;
             const logs = document.getElementById('logs');
-            logs.appendChild(div);
+            logs.appendChild(entry);
             document.getElementById('log-window').scrollTop = logs.scrollHeight;
         }
     };
@@ -123,9 +144,7 @@
         }
         const buffer = audioCtx.createBuffer(1, bytes.length, 44100);
         const channelData = buffer.getChannelData(0);
-        for (let i = 0; i < bytes.length; i++) {
-            channelData[i] = bytes[i] / 32768.0;
-        }
+        for (let i = 0; i < bytes.length; i++) { channelData[i] = bytes[i] / 32768.0; }
         const source = audioCtx.createBufferSource();
         source.buffer = buffer;
         source.connect(audioCtx.destination);

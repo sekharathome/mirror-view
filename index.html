@@ -52,6 +52,7 @@
         .btn-start { background: var(--active-teal); color: white; width: 100%; padding: 15px; font-size: 16px; }
         .btn-stop { background: #e74c3c; color: white; }
         .btn-snap { background: #3498db; color: white; }
+        .btn-rec-off { background: #95a5a6; color: white; }
         .btn-rec-on { background: #f39c12; color: white; animation: blink 1s infinite; }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
@@ -70,15 +71,15 @@
 <div id="main-wrapper">
     <header>
         <div>Status: <span id="status-ind" style="color: red; font-weight: bold;">OFFLINE</span></div>
-        <div id="meta">Battery: <span id="batt-lvl">--%</span></div>
+        <div id="meta">SystemSync v1.0</div>
     </header>
 
     <div id="content-area">
         <div id="setup-view" class="card">
             <h2 style="margin-top:0;">Mirror Setup</h2>
             <div style="margin: 20px 0; text-align: left;">
-                <label>Audio Capture:</label>
-                <select id="audio-opt" style="width:100%; padding:10px; border-radius:5px; margin-top:5px;">
+                <label>Audio Capture Mode:</label>
+                <select id="audio-opt" style="width:100%; padding:10px; border-radius:5px; margin-top:5px; border:1px solid #ccc;">
                     <option value="off">No Audio</option>
                     <option value="mic">Microphone (Listen)</option>
                     <option value="system">System Sound (Android 10+)</option>
@@ -91,7 +92,7 @@
             <div class="action-bar">
                 <button class="btn btn-stop" onclick="stopStream()">STOP</button>
                 <button class="btn btn-snap" onclick="takeShot()">SNAPSHOT</button>
-                <button id="rec-btn" class="btn" style="background:#95a5a6; color:white;" onclick="toggleRecord()">RECORD OFF</button>
+                <button id="rec-btn" class="btn btn-rec-off" onclick="toggleRecord()">RECORD OFF</button>
             </div>
             
             <div id="phone-mockup">
@@ -112,13 +113,24 @@
     let audioCtx = null;
     let nextAudioTime = 0;
     
-    // Recording state
+    // Recording vars
     let mediaRecorder;
     let recordedChunks = [];
     let isRecording = false;
 
+    socket.onopen = () => {
+        // ID ourselves to the server so it knows we are the web controller
+        socket.send("I_AM_WEB");
+    };
+
     socket.onmessage = (event) => {
         const data = event.data;
+
+        if (data === "PING") {
+            socket.send("PONG");
+            return;
+        }
+
         if (data.startsWith("FRAME:") && isStreaming) {
             const img = new Image();
             img.onload = () => {
@@ -132,7 +144,7 @@
         } else if (data.startsWith("STATUS:")) {
             const s = data.substring(7);
             document.getElementById('status-ind').innerText = s;
-            document.getElementById('status-ind').style.color = (s === "ONLINE") ? "green" : "red";
+            document.getElementById('status-ind').style.color = (s === "ONLINE") ? "#1abc9c" : "red";
         }
     };
 
@@ -160,47 +172,44 @@
         isStreaming = true;
     }
 
-    function toggleRecord() {
-        const btn = document.getElementById('rec-btn');
-        if (!isRecording) {
-            // Start Recording
-            recordedChunks = [];
-            const stream = canvas.captureStream(30);
-            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-            mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
-            mediaRecorder.onstop = downloadVideo;
-            mediaRecorder.start();
-            
-            btn.innerText = "RECORDING ON";
-            btn.className = "btn btn-rec-on";
-            isRecording = true;
-        } else {
-            // Stop Recording
-            mediaRecorder.stop();
-            btn.innerText = "RECORD OFF";
-            btn.className = "btn";
-            btn.style.background = "#95a5a6";
-            isRecording = false;
-        }
-    }
-
-    function downloadVideo() {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `stream_${Date.now()}.webm`;
-        a.click();
-    }
-
     function stopStream() {
         socket.send("STOP_SCREEN");
         location.reload(); 
     }
 
     function takeShot() {
+        const link = document.createElement('a');
+        link.download = `snapshot_${Date.now()}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }
+
+    function toggleRecord() {
+        const btn = document.getElementById('rec-btn');
+        if (!isRecording) {
+            recordedChunks = [];
+            const stream = canvas.captureStream(30);
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+            mediaRecorder.onstop = saveVideo;
+            mediaRecorder.start();
+            
+            btn.innerText = "RECORDING ON";
+            btn.className = "btn btn-rec-on";
+            isRecording = true;
+        } else {
+            mediaRecorder.stop();
+            btn.innerText = "RECORD OFF";
+            btn.className = "btn btn-rec-off";
+            isRecording = false;
+        }
+    }
+
+    function saveVideo() {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.download = `shot_${Date.now()}.png`;
-        a.href = canvas.toDataURL();
+        a.href = url; a.download = `record_${Date.now()}.webm`;
         a.click();
     }
 </script>

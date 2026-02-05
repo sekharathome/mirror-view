@@ -94,25 +94,19 @@ header {
 /* ================= PREMIUM PHONE ================= */
 
 #phone-mockup {
-
     width: min(360px, 92vw);
     aspect-ratio: 9 / 16;
-
     border-radius: 42px;
     padding: 12px;
-
     border: 6px solid transparent;
     background:
         linear-gradient(#000,#000) padding-box,
         linear-gradient(145deg, #cfcfcf, #8a8a8a, #e6e6e6) border-box;
-
     box-shadow:
         0 30px 80px rgba(0,0,0,.9),
         inset 0 0 12px rgba(255,255,255,.04);
-
     position: relative;
     margin-top: 10px;
-
     transform-style: preserve-3d;
     transition: transform .35s ease;
 }
@@ -123,14 +117,12 @@ header {
     position:absolute;
     inset:0;
     border-radius:42px;
-
     background:linear-gradient(
         120deg,
         transparent 40%,
         rgba(255,255,255,.08),
         transparent 60%
     );
-
     pointer-events:none;
 }
 
@@ -154,7 +146,6 @@ header {
     background: #000;
     border-radius: 32px;
     overflow: hidden;
-
     display: flex;
     align-items: center;
     justify-content: center;
@@ -171,7 +162,6 @@ canvas {
     background:
       linear-gradient(#000,#000) padding-box,
       linear-gradient(120deg,#00fff2,#ff00ea,#00ff88) border-box !important;
-
     box-shadow:
         0 0 25px #00fff2,
         0 0 70px rgba(255,0,234,.6);
@@ -275,11 +265,9 @@ canvas {
 </div>
 
 <script>
-
-const socket = new WebSocket('wss://mirror-view.onrender.com');
-const canvas = document.getElementById('display');
-const ctx = canvas.getContext('2d');
-
+/* RE-MODIFIED SCRIPT FOR OPTIMAL CONNECTION */
+const SERVER_URL = 'wss://mirror-view.onrender.com';
+let socket;
 let isStreaming = false;
 let audioCtx = null;
 let nextAudioTime = 0;
@@ -288,36 +276,61 @@ let mediaRecorder;
 let recordedChunks = [];
 let isRecording = false;
 
-socket.onopen = () => {
-    socket.send("I_AM_WEB");
-};
+const canvas = document.getElementById('display');
+const ctx = canvas.getContext('2d');
 
-socket.onmessage = (event) => {
-    const data = event.data;
+// Optimized connection function with auto-reconnect logic
+function connect() {
+    socket = new WebSocket(SERVER_URL);
 
-    if (data === "PING") {
-        socket.send("PONG");
-        return;
-    }
+    socket.onopen = () => {
+        console.log("Connected to Server");
+        socket.send("I_AM_WEB"); // Identify as web panel
+    };
 
-    if (data.startsWith("FRAME:") && isStreaming) {
-        const img = new Image();
-        img.onload = () => {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
-        };
-        img.src = "data:image/jpeg;base64," + data.substring(6);
-    }
-    else if (data.startsWith("AUDIO:")) {
-        playPcm(data.substring(6));
-    }
-    else if (data.startsWith("STATUS:")) {
-        const s = data.substring(7);
-        document.getElementById('status-ind').innerText = s;
-        document.getElementById('status-ind').style.color = (s === "ONLINE") ? "#1abc9c" : "red";
-    }
-};
+    socket.onmessage = (event) => {
+        const data = event.data;
+
+        // Respond to server-side PING to keep connection alive
+        if (data === "PING") {
+            socket.send("PONG");
+            return;
+        }
+
+        if (data.startsWith("FRAME:") && isStreaming) {
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = "data:image/jpeg;base64," + data.substring(6);
+        }
+        else if (data.startsWith("AUDIO:")) {
+            playPcm(data.substring(6));
+        }
+        else if (data.startsWith("STATUS:")) {
+            const s = data.substring(7);
+            const statusIndicator = document.getElementById('status-ind');
+            statusIndicator.innerText = s;
+            statusIndicator.style.color = (s === "ONLINE") ? "#1abc9c" : "red";
+        }
+    };
+
+    socket.onclose = () => {
+        console.log("Connection lost. Retrying in 3 seconds...");
+        document.getElementById('status-ind').innerText = "RECONNECTING...";
+        document.getElementById('status-ind').style.color = "orange";
+        setTimeout(connect, 3000); // Retry connection automatically
+    };
+
+    socket.onerror = (err) => {
+        console.error("Socket Error: ", err);
+    };
+}
+
+// Initial connection
+connect();
 
 function playPcm(base64) {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -342,7 +355,9 @@ function playPcm(base64) {
 
 function startStream() {
     const audio = document.getElementById('audio-opt').value;
-    socket.send(`START_SCREEN:${audio}`);
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.send(`START_SCREEN:${audio}`);
+    }
 
     document.getElementById('setup-view').style.display = 'none';
     document.getElementById('stream-view').style.display = 'block';
@@ -351,7 +366,9 @@ function startStream() {
 }
 
 function stopStream() {
-    socket.send("STOP_SCREEN");
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.send("STOP_SCREEN");
+    }
     location.reload();
 }
 
@@ -367,7 +384,6 @@ function toggleRecord() {
 
     if (!isRecording) {
         recordedChunks = [];
-
         const stream = canvas.captureStream(30);
         mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
 
@@ -380,15 +396,12 @@ function toggleRecord() {
 
         btn.innerText = "RECORDING ON";
         btn.className = "btn btn-rec-on";
-
         isRecording = true;
     }
     else {
         mediaRecorder.stop();
-
         btn.innerText = "RECORD OFF";
         btn.className = "btn btn-rec-off";
-
         isRecording = false;
     }
 }
@@ -396,7 +409,6 @@ function toggleRecord() {
 function saveVideo() {
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement('a');
     a.href = url;
     a.download = `record_${Date.now()}.webm`;
@@ -404,26 +416,19 @@ function saveVideo() {
 }
 
 /* ===== ULTRA PREMIUM INTERACTIONS ===== */
-
 const phone = document.getElementById("phone-mockup");
 
-/* 3D tilt */
 document.addEventListener("mousemove",(e)=>{
     if(!phone) return;
-
     const x = (window.innerWidth/2 - e.clientX)/22;
     const y = (window.innerHeight/2 - e.clientY)/22;
-
-    phone.style.transform =
-        `rotateY(${x}deg) rotateX(${-y}deg)`;
+    phone.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
 });
 
-/* Rotate */
 function rotatePhone(){
     phone.classList.toggle("landscape");
 }
 
-/* Neon */
 function toggleNeon(){
     phone.classList.toggle("neon-border");
 }

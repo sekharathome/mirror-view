@@ -21,74 +21,68 @@
 
         /* Setup Card */
         .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 500px; text-align: center; }
-        
-        /* PHONE BODY */
-#phone-mockup {
-    width: min(360px, 92vw);
-    aspect-ratio: 9 / 16;
+    
 
-    background: linear-gradient(145deg, #111, #050505);
-    border-radius: 42px;
-    padding: 12px;
+    /* ===== ULTRA DEVICE ENGINE (ADD ONLY) ===== */
 
-    border: 6px solid transparent;
-background:
-    linear-gradient(#000,#000) padding-box,
-    linear-gradient(145deg, #cfcfcf, #8a8a8a, #e6e6e6) border-box;
+/* Stage depth for 3D */
+#content-area{
+    perspective:1800px;
+}
 
+/* Premium metallic edge upgrade */
+#phone-mockup{
+    transform-style: preserve-3d;
+    transition: transform .35s ease;
+}
+
+/* Glass reflection */
+#phone-mockup::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius:42px;
+
+    background:linear-gradient(
+        120deg,
+        transparent 40%,
+        rgba(255,255,255,.08),
+        transparent 60%
+    );
+
+    pointer-events:none;
+}
+
+/* Dynamic island */
+#phone-mockup::marker{ content:""; } /* harmless safety */
+
+.dynamic-island{
+    position:absolute;
+    top:8px;
+    left:50%;
+    transform:translateX(-50%);
+    width:120px;
+    height:26px;
+    background:#050505;
+    border-radius:20px;
+    box-shadow: inset 0 -2px 6px rgba(255,255,255,.12);
+}
+
+/* Neon mode */
+.neon-border{
+    background:
+      linear-gradient(#000,#000) padding-box,
+      linear-gradient(120deg,#00fff2,#ff00ea,#00ff88) border-box !important;
 
     box-shadow:
-        0 30px 80px rgba(0,0,0,.9),
-        inset 0 0 12px rgba(255,255,255,.04);
-
-    position: relative;
-    margin-top: 10px;
+        0 0 25px #00fff2,
+        0 0 70px rgba(255,0,234,.6);
 }
 
-/* SPEAKER */
-#phone-mockup::before {
-    content: "";
-    position: absolute;
-    top: 6px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90px;
-    height: 10px;
-    background: #111;
-    border-radius: 20px;
+/* Landscape rotation */
+.landscape{
+    transform: rotate(90deg);
 }
-
-/* SCREEN */
-#phone-screen {
-    width: 100%;
-    height: 100%;
-    background: #000;
-    border-radius: 32px;
-    overflow: hidden;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* CANVAS */
-canvas {
-    width: 100%;
-    height: 100%;
-    display: block; /* removes inline spacing */
-}
-
-
-        /* Controls Layout */
-        .action-bar { display: flex; gap: 10px; margin-bottom: 20px; }
-        .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
-        .btn-start { background: var(--active-teal); color: white; width: 100%; padding: 15px; font-size: 16px; }
-        .btn-stop { background: #e74c3c; color: white; }
-        .btn-snap { background: #3498db; color: white; }
-        .btn-rec-off { background: #95a5a6; color: white; }
-        .btn-rec-on { background: #f39c12; color: white; animation: blink 1s infinite; }
-
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -127,12 +121,13 @@ canvas {
                 <button class="btn btn-snap" onclick="takeShot()">SNAPSHOT</button>
                 <button id="rec-btn" class="btn btn-rec-off" onclick="toggleRecord()">RECORD OFF</button>
             </div>
-            
+            <div style="margin-bottom:15px;">
+    <button class="btn btn-snap" onclick="rotatePhone()">Rotate</button>
+    <button class="btn btn-snap" onclick="toggleNeon()">Neon</button>
+</div>
+
             <div id="phone-mockup">
-                <div id="phone-screen">
-                    <canvas id="display"></canvas>
-                </div>
-            </div>
+                <div class="dynamic-island"></div>
         </div>
     </div>
 </div>
@@ -245,9 +240,37 @@ canvas {
         a.href = url; a.download = `record_${Date.now()}.webm`;
         a.click();
     }
+
+    /* ===== ULTRA PREMIUM INTERACTIONS ===== */
+
+const phone = document.getElementById("phone-mockup");
+
+/* Mouse 3D tilt */
+document.addEventListener("mousemove",(e)=>{
+
+    if(!phone) return;
+
+    const x = (window.innerWidth/2 - e.clientX)/22;
+    const y = (window.innerHeight/2 - e.clientY)/22;
+
+    phone.style.transform =
+        `rotateY(${x}deg) rotateX(${-y}deg)`;
+});
+
+/* Rotate portrait ↔ landscape */
+function rotatePhone(){
+    phone.classList.toggle("landscape");
+}
+
+/* Neon toggle */
+function toggleNeon(){
+    phone.classList.toggle("neon-border");
+}
+
 </script>
 </body>
 </html>
+
 
 
 

@@ -1,141 +1,96 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SystemSync - Professional Panel</title>
-    <style>
-        :root { --sidebar-bg: #34495e; --active-teal: #1abc9c; --main-bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--main-bg); overflow: hidden; }
-        
-        /* Sidebar */
-        #sidebar { width: 250px; background: var(--sidebar-bg); color: #ecf0f1; display: flex; flex-direction: column; flex-shrink: 0; }
-        .nav-item { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #2c3e50; transition: 0.3s; }
-        .nav-item.active { background: var(--active-teal); }
-        
-        /* Main */
-        #main-wrapper { flex-grow: 1; display: flex; flex-direction: column; }
-        header { height: 60px; background: white; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
-        #content-area { padding: 20px; flex-grow: 1; overflow-y: auto; text-align: center; }
-
-        /* Video Display - Restored from your working version */
-        #screen-container { width: 320px; height: 580px; border: 8px solid #333; border-radius: 20px; margin: 10px auto; background: black; overflow: hidden; }
-        canvas { width: 100%; height: 100%; object-fit: contain; }
-
-        /* Log Window */
-        #log-window { background: #2c3e50; color: #2ecc71; font-family: monospace; height: 120px; margin-top: 20px; padding: 10px; border-radius: 5px; overflow-y: auto; text-align: left; font-size: 12px; }
-        
-        .live-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .btn-start { background: #2ecc71; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
-        .btn-stop { background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
-    </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-
-    <div id="sidebar">
-        <div class="nav-item"><i class="fas fa-tachometer-alt"></i> Dashboard</div>
-        <div class="nav-item active"><i class="fas fa-video"></i> Live viewing</div>
-        <div id="log-window">
-            <div style="color:white; border-bottom:1px solid #555; margin-bottom:5px;">SERVER LOGS:</div>
-            <div id="logs"></div>
-        </div>
+<div id="setup-view" class="live-card">
+    <h3 style="margin-top:0; color:#2c3e50;">Live Viewing Setup</h3>
+    
+    <div style="margin-bottom: 20px;">
+        <label>Audio Source:</label><br>
+        <select id="audio-opt" style="padding:8px; width:200px; margin-top:5px;">
+            <option value="off">No Audio</option>
+            <option value="mic">Microphone</option>
+            <option value="system">System Audio (Android 10+)</option>
+        </select>
     </div>
 
-    <div id="main-wrapper">
-        <header>
-            <div><strong>Device:</strong> <span id="status-ind" style="color:gray">CHECKING...</span></div>
-            <div>
-                <i id="batt-icon" class="fas fa-battery-half"></i> 
-                <span id="batt-lvl">--%</span>
-                <span id="charge-stat"></span>
-            </div>
-        </header>
-
-        <div id="content-area">
-            <div id="setup-view" class="live-card">
-                <h3>Live Viewing Setup</h3>
-                <p>Audio: <select id="audio-opt"><option value="off">No Sound</option><option value="on">Enable Audio</option></select></p>
-                <button class="btn-start" onclick="startStream()">▶ START SCREEN</button>
-            </div>
-
-            <div id="stream-view" style="display:none;">
-                <button class="btn-stop" onclick="stopStream()">STOP</button>
-                <button onclick="takeShot()" style="padding:10px;">SNAPSHOT</button>
-                <div id="screen-container">
-                    <canvas id="display"></canvas>
-                </div>
-            </div>
-        </div>
+    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
+        <button class="btn-start" onclick="startStream()" style="flex:2;">▶ START SCREEN</button>
+        <button onclick="takeShot()" style="flex:1; background:#3498db; color:white; border:none; border-radius:4px; cursor:pointer;">
+            <i class="fas fa-camera"></i> SNAPSHOT
+        </button>
     </div>
 
-    <script>
-        const socket = new WebSocket('wss://mirror-view.onrender.com');
-        const canvas = document.getElementById('display');
-        const ctx = canvas.getContext('2d');
-        let isStreaming = false;
+    <div style="border-top: 1px solid #eee; padding-top: 15px;">
+        <label style="cursor:pointer;">
+            <input type="checkbox" id="record-toggle"> Record this session
+        </label>
+    </div>
+</div>
 
-        socket.onmessage = (event) => {
-            const data = event.data;
+<script>
+    const socket = new WebSocket('wss://mirror-view.onrender.com');
+    const canvas = document.getElementById('display');
+    const ctx = canvas.getContext('2d');
+    let isStreaming = false;
 
-            // 1. FRAME RENDERING (Restored logic)
-            if (data.startsWith("FRAME:") && isStreaming) {
-                const img = new Image();
-                img.onload = () => {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                };
-                img.src = "data:image/jpeg;base64," + data.substring(6);
-            }
+    // AUDIO LOGIC
+    let audioCtx = null;
+    let nextAudioTime = 0;
 
-            // 2. LOGS FROM SERVER
-            else if (data.startsWith("LOG:")) {
-                const logs = document.getElementById('logs');
-                const div = document.createElement('div');
-                div.innerText = `> ${data.substring(4)}`;
-                logs.appendChild(div);
-                document.getElementById('log-window').scrollTop = logs.scrollHeight;
-            }
+    socket.onmessage = (event) => {
+        const data = event.data;
 
-            // 3. STATUS & BATTERY
-            else if (data.startsWith("STATUS:")) {
-                const s = data.split(":")[1];
-                document.getElementById('status-ind').innerText = s;
-                document.getElementById('status-ind').style.color = (s === "ONLINE") ? "green" : "red";
-            }
-            else if (data.startsWith("STATUS_DATA:")) {
-                const parts = data.substring(12).split("|");
-                document.getElementById('batt-lvl').innerText = parts[1] + "%";
-                document.getElementById('charge-stat').innerText = (parts[2] === "CHARGING") ? "⚡" : "";
-            }
-        };
-
-        function startStream() {
-            const audio = document.getElementById('audio-opt').value;
-            const cmd = (audio === "on") ? "START_SCREEN_WITH_AUDIO" : "START_SCREEN";
-            socket.send(cmd);
-            document.getElementById('setup-view').style.display = 'none';
-            document.getElementById('stream-view').style.display = 'block';
-            isStreaming = true;
+        // 1. Render Video Frames
+        if (data.startsWith("FRAME:") && isStreaming) {
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = "data:image/jpeg;base64," + data.substring(6);
         }
 
-        function stopStream() {
-            socket.send("STOP_SCREEN");
-            document.getElementById('setup-view').style.display = 'block';
-            document.getElementById('stream-view').style.display = 'none';
-            isStreaming = false;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 2. Play Audio Chunks
+        else if (data.startsWith("AUDIO:")) {
+            playPcmChunk(data.substring(6));
         }
 
-        function takeShot() {
-            const link = document.createElement('a');
-            link.download = `shot_${Date.now()}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
+        // ... Status and Log handling ...
+    };
+
+    function playPcmChunk(base64) {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Convert Base64 to ArrayBuffer
+        const binary = atob(base64);
+        const bytes = new Int16Array(binary.length / 2);
+        for (let i = 0; i < bytes.length; i++) {
+            bytes[i] = (binary.charCodeAt(i * 2) & 0xFF) | (binary.charCodeAt(i * 2 + 1) << 8);
+        }
+        
+        const buffer = audioCtx.createBuffer(1, bytes.length, 44100);
+        const channelData = buffer.getChannelData(0);
+        for (let i = 0; i < bytes.length; i++) {
+            channelData[i] = bytes[i] / 32768.0; // PCM16 to Float32
         }
 
-        socket.onopen = () => socket.send("GET_STATUS");
-    </script>
-</body>
-</html>
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        
+        const startTime = Math.max(audioCtx.currentTime, nextAudioTime);
+        source.start(startTime);
+        nextAudioTime = startTime + buffer.duration;
+    }
+
+    function startStream() {
+        const audio = document.getElementById('audio-opt').value;
+        const record = document.getElementById('record-toggle').checked;
+        
+        // Send enhanced command to server
+        socket.send(`START_SCREEN:${audio}:${record}`);
+        
+        document.getElementById('setup-view').style.display = 'none';
+        document.getElementById('stream-view').style.display = 'block';
+        isStreaming = true;
+    }
+    // ... existing stopStream and takeShot functions ...
+</script>

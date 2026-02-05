@@ -1,62 +1,82 @@
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: process.env.PORT || 8080 });
 
-let deviceSocket = null;
+console.log("SystemSync Server Started on port " + (process.env.PORT || 8080));
 
 wss.on('connection', (ws) => {
-    console.log('New client connected');
+    ws.isAlive = true;
+    ws.type = "unknown"; // Initially unknown until identification message
+
+    console.log("\n[CONNECT] New client connected.");
 
     ws.on('message', (message) => {
-        const msg = message.toString();
+        let msgString = message.toString();
 
-        // 1. Device Identification
-        if (msg === 'I_AM_DEVICE') {
-            deviceSocket = ws;
-            broadcastToWeb("STATUS:ONLINE");
-            broadcastLog("SYSTEM: Mobile device is now ONLINE.");
+        // 1. Identification Logic (Critical for "Online" status)
+        if (msgString === "I_AM_DEVICE") {
+            ws.type = "DEVICE";
+            console.log("[STATUS] Device (Phone) Registered.");
+            broadcast("STATUS:ONLINE"); 
+            return;
+        }
+        if (msgString === "I_AM_WEB") {
+            ws.type = "WEB_PANEL";
+            console.log("[STATUS] Web Control Panel Registered.");
+            return;
         }
 
-        // 2. Handle Web Status Request
-        if (msg === 'GET_STATUS') {
-            const status = (deviceSocket && deviceSocket.readyState === WebSocket.OPEN) ? "ONLINE" : "OFFLINE";
-            ws.send("STATUS:" + status);
+        // 2. Command Logging
+        if (msgString.startsWith("START_SCREEN")) {
+            console.log(`[COMMAND] Web Panel -> Device: START STREAM (${msgString.split(':')[1]} audio)`);
+        }
+        if (msgString === "STOP_SCREEN") {
+            console.log("[COMMAND] Web Panel -> Device: STOP STREAM");
         }
 
-        // 3. Command Forwarding (Web -> Device) with Action Logs
-        if (msg.startsWith('START_SCREEN') || msg === 'STOP_SCREEN') {
-            if (deviceSocket && deviceSocket.readyState === WebSocket.OPEN) {
-                deviceSocket.send(msg);
-                const desc = msg.includes("AUDIO") ? "Screen with Audio" : "Screen only";
-                broadcastLog(`ACTION: Web clicked ${msg}. Command sent to mobile (${desc}).`);
-            } else {
-                broadcastLog("ERROR: Device is OFFLINE. Cannot send " + msg);
-            }
+        // 3. Keep-Alive Heartbeat
+        if (msgString === "PONG") {
+            ws.isAlive = true;
+            return;
         }
 
-        // 4. Data Forwarding (Device -> Web)
-        // Forward Frames, Battery (STATUS_DATA), or Confirmation Logs
-        if (msg.startsWith('FRAME:') || msg.startsWith('STATUS_DATA:') || msg.startsWith('LOG:')) {
-            broadcastToWeb(msg);
+        // 4. Data Relaying (Frames and Audio)
+        // We send data from the Device to the Web Panel and vice-versa
+        broadcast(message, ws);
+    });
+
+    ws.on('close', (code, reason) => {
+        console.log(`[DISCONNECT] A ${ws.type} disconnected. Code: ${code}`);
+        if (ws.type === "DEVICE") {
+            broadcast("STATUS:OFFLINE");
+            console.log("[ALERT] Device connection lost.");
         }
     });
 
-    ws.on('close', () => {
-        if (ws === deviceSocket) {
-            deviceSocket = null;
-            broadcastStatus("OFFLINE");
-            broadcastLog("SYSTEM: Mobile device disconnected.");
-        }
+    ws.on('error', (err) => {
+        console.error(`[ERROR] WebSocket error: ${err.message}`);
     });
+
+    // Send initial ping to check if client is still there
+    ws.send("PING");
 });
 
-function broadcastLog(logText) {
-    broadcastToWeb("LOG:" + logText);
-}
-
-function broadcastToWeb(data) {
-    wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
+// Broadcast function: Sends data to everyone EXCEPT the sender
+function broadcast(data, sender) {
+    wss.clients.forEach((client) => {
+        if (client !== sender && client.readyState === WebSocket.OPEN) {
             client.send(data);
         }
     });
 }
+
+// Heartbeat Interval (Prevents Render.com or Heroku from killing the connection)
+setInterval(() => {
+    wss.clients.forEach((ws) => {
+        if (ws.isAlive === false) {
+            console.log("[CLEANUP] Terminating inactive connection.");
+            return ws.terminate();
+        }
+        ws.isAlive = false;
+        ws.send("PING"); // Expecting "PONG" back
+    });
+}, 30000);

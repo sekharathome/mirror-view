@@ -2,60 +2,103 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SystemSync - Pro Control</title>
+    <title>SystemSync - Pro Control Panel</title>
     <style>
-        :root { --sidebar-bg: #34495e; --active-teal: #1abc9c; --main-bg: #f4f7f6; }
+        :root { --sidebar-bg: #2c3e50; --active-teal: #1abc9c; --main-bg: #f4f7f6; --phone-frame: #1a1a1a; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--main-bg); overflow: hidden; }
+        
+        /* Sidebar Navigation */
         #sidebar { width: 250px; background: var(--sidebar-bg); color: #ecf0f1; display: flex; flex-direction: column; flex-shrink: 0; }
-        .nav-item { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #2c3e50; transition: 0.3s; display: flex; align-items: center; gap: 10px; }
+        .sidebar-header { padding: 25px; font-size: 22px; font-weight: bold; background: #1a252f; text-align: center; border-bottom: 1px solid #34495e; }
+        .nav-item { padding: 18px 25px; cursor: pointer; border-bottom: 1px solid #34495e; transition: 0.3s; display: flex; align-items: center; gap: 12px; }
+        .nav-item:hover { background: #3e5871; }
         .nav-item.active { background: var(--active-teal); color: white; border-right: 5px solid white; }
-        #main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
-        header { height: 60px; background: white; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .container { padding: 30px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 100%; max-width: 800px; text-align: center; }
-        #display-wrap { border: 10px solid #333; border-radius: 20px; background: #000; display: inline-block; margin-top: 20px; overflow: hidden; }
-        canvas { display: block; max-width: 100%; height: auto; }
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-start { background: var(--active-teal); color: white; }
+
+        /* Main Area */
+        #main-wrapper { flex-grow: 1; display: flex; flex-direction: column; }
+        header { height: 65px; background: white; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; padding: 0 35px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        #content-area { padding: 30px; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+
+        /* Setup Card */
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 500px; text-align: center; }
+        
+        /* Phone Mockup Portrait Mode */
+        #phone-mockup {
+            width: 320px;
+            height: 620px;
+            background: var(--phone-frame);
+            border-radius: 40px;
+            padding: 15px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            border: 4px solid #333;
+            position: relative;
+            margin-top: 10px;
+        }
+        #phone-screen {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            border-radius: 25px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        canvas { width: 100%; height: 100%; object-fit: contain; }
+
+        /* Controls Layout */
+        .action-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
+        .btn-start { background: var(--active-teal); color: white; width: 100%; padding: 15px; font-size: 16px; }
         .btn-stop { background: #e74c3c; color: white; }
+        .btn-snap { background: #3498db; color: white; }
+        .btn-rec-on { background: #f39c12; color: white; animation: blink 1s infinite; }
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
 <div id="sidebar">
-    <div style="padding: 25px; font-size: 20px; font-weight: bold; background: #2c3e50;">SystemSync Pro</div>
-    <div class="nav-item"><i class="fas fa-home"></i> Dashboard</div>
-    <div class="nav-item active"><i class="fas fa-video"></i> Live viewing</div>
-    <div class="nav-item"><i class="fas fa-folder"></i> File Explorer</div>
-    <div class="nav-item"><i class="fas fa-cog"></i> Settings</div>
+    <div class="sidebar-header">SystemSync</div>
+    <div class="nav-item">🏠 Dashboard</div>
+    <div class="nav-item active">📱 Live Viewing</div>
+    <div class="nav-item">📁 File Explorer</div>
+    <div class="nav-item">⚙️ Settings</div>
 </div>
 
 <div id="main-wrapper">
     <header>
         <div>Status: <span id="status-ind" style="color: red; font-weight: bold;">OFFLINE</span></div>
-        <div>Battery: <span id="batt-lvl">--%</span> <span id="charge-stat"></span></div>
+        <div id="meta">Battery: <span id="batt-lvl">--%</span></div>
     </header>
 
-    <div class="container">
+    <div id="content-area">
         <div id="setup-view" class="card">
-            <h2>Screen Mirroring</h2>
-            <div style="margin: 20px 0;">
-                <label>Audio Mode:</label>
-                <select id="audio-opt" style="padding: 8px; border-radius: 4px;">
+            <h2 style="margin-top:0;">Mirror Setup</h2>
+            <div style="margin: 20px 0; text-align: left;">
+                <label>Audio Capture:</label>
+                <select id="audio-opt" style="width:100%; padding:10px; border-radius:5px; margin-top:5px;">
                     <option value="off">No Audio</option>
-                    <option value="mic">Microphone</option>
-                    <option value="system">System Audio</option>
+                    <option value="mic">Microphone (Listen)</option>
+                    <option value="system">System Sound (Android 10+)</option>
                 </select>
             </div>
-            <button class="btn btn-start" onclick="startStream()">START STREAM</button>
-            <div style="margin-top:15px;"><input type="checkbox" id="rec-check"> Record Session</div>
+            <button class="btn btn-start" onclick="startStream()">▶ START SCREEN</button>
         </div>
 
-        <div id="stream-view" class="card" style="display:none;">
-            <button class="btn btn-stop" onclick="stopStream()">STOP</button>
-            <button class="btn" style="background:#3498db; color:white; margin-left:10px;" onclick="takeShot()">SNAPSHOT</button>
-            <div id="display-wrap"><canvas id="display"></canvas></div>
+        <div id="stream-view" style="display:none; text-align: center;">
+            <div class="action-bar">
+                <button class="btn btn-stop" onclick="stopStream()">STOP</button>
+                <button class="btn btn-snap" onclick="takeShot()">SNAPSHOT</button>
+                <button id="rec-btn" class="btn" style="background:#95a5a6; color:white;" onclick="toggleRecord()">RECORD OFF</button>
+            </div>
+            
+            <div id="phone-mockup">
+                <div id="phone-screen">
+                    <canvas id="display"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -64,14 +107,25 @@
     const socket = new WebSocket('wss://mirror-view.onrender.com');
     const canvas = document.getElementById('display');
     const ctx = canvas.getContext('2d');
-    let isStreaming = false, audioCtx = null, nextAudioTime = 0;
-    let recorder, chunks = [];
+    
+    let isStreaming = false;
+    let audioCtx = null;
+    let nextAudioTime = 0;
+    
+    // Recording state
+    let mediaRecorder;
+    let recordedChunks = [];
+    let isRecording = false;
 
     socket.onmessage = (event) => {
         const data = event.data;
         if (data.startsWith("FRAME:") && isStreaming) {
             const img = new Image();
-            img.onload = () => { canvas.width = img.width; canvas.height = img.height; ctx.drawImage(img, 0, 0); };
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+            };
             img.src = "data:image/jpeg;base64," + data.substring(6);
         } else if (data.startsWith("AUDIO:")) {
             playPcm(data.substring(6));
@@ -83,16 +137,19 @@
     };
 
     function playPcm(base64) {
-        if (!audioCtx) audioCtx = new AudioContext();
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const binary = atob(base64);
         const bytes = new Int16Array(binary.length / 2);
-        for (let i = 0; i < bytes.length; i++) { bytes[i] = (binary.charCodeAt(i*2) & 0xFF) | (binary.charCodeAt(i*2+1) << 8); }
+        for (let i = 0; i < bytes.length; i++) {
+            bytes[i] = (binary.charCodeAt(i * 2) & 0xFF) | (binary.charCodeAt(i * 2 + 1) << 8);
+        }
         const buffer = audioCtx.createBuffer(1, bytes.length, 44100);
         buffer.getChannelData(0).set(Array.from(bytes).map(v => v / 32768.0));
         const source = audioCtx.createBufferSource();
         source.buffer = buffer; source.connect(audioCtx.destination);
-        const start = Math.max(audioCtx.currentTime, nextAudioTime);
-        source.start(start); nextAudioTime = start + buffer.duration;
+        const startTime = Math.max(audioCtx.currentTime, nextAudioTime);
+        source.start(startTime);
+        nextAudioTime = startTime + buffer.duration;
     }
 
     function startStream() {
@@ -101,20 +158,51 @@
         document.getElementById('setup-view').style.display = 'none';
         document.getElementById('stream-view').style.display = 'block';
         isStreaming = true;
-        if(document.getElementById('rec-check').checked) {
-            recorder = new MediaRecorder(canvas.captureStream(), {mimeType: 'video/webm'});
-            recorder.ondataavailable = e => chunks.push(e.data);
-            recorder.onstop = () => {
-                const blob = new Blob(chunks, {type: 'video/webm'});
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-                a.download = `rec_${Date.now()}.webm`; a.click(); chunks = [];
-            };
-            recorder.start();
+    }
+
+    function toggleRecord() {
+        const btn = document.getElementById('rec-btn');
+        if (!isRecording) {
+            // Start Recording
+            recordedChunks = [];
+            const stream = canvas.captureStream(30);
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
+            mediaRecorder.onstop = downloadVideo;
+            mediaRecorder.start();
+            
+            btn.innerText = "RECORDING ON";
+            btn.className = "btn btn-rec-on";
+            isRecording = true;
+        } else {
+            // Stop Recording
+            mediaRecorder.stop();
+            btn.innerText = "RECORD OFF";
+            btn.className = "btn";
+            btn.style.background = "#95a5a6";
+            isRecording = false;
         }
     }
 
-    function stopStream() { socket.send("STOP_SCREEN"); location.reload(); }
-    function takeShot() { const a = document.createElement('a'); a.download = 'shot.png'; a.href = canvas.toDataURL(); a.click(); }
+    function downloadVideo() {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `stream_${Date.now()}.webm`;
+        a.click();
+    }
+
+    function stopStream() {
+        socket.send("STOP_SCREEN");
+        location.reload(); 
+    }
+
+    function takeShot() {
+        const a = document.createElement('a');
+        a.download = `shot_${Date.now()}.png`;
+        a.href = canvas.toDataURL();
+        a.click();
+    }
 </script>
 </body>
 </html>

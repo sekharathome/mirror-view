@@ -2,73 +2,60 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SystemSync - Professional Control Panel</title>
+    <title>SystemSync - Pro Control</title>
     <style>
-        :root { --sidebar-bg: #2c3e50; --teal: #1abc9c; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); }
-        
-        /* Sidebar */
-        #sidebar { width: 260px; background: var(--sidebar-bg); color: white; display: flex; flex-direction: column; }
-        .side-header { padding: 25px; font-size: 20px; font-weight: bold; background: #1a252f; text-align: center; }
-        .nav-item { padding: 15px 25px; cursor: pointer; border-bottom: 1px solid #34495e; transition: 0.3s; }
-        .nav-item.active { background: var(--teal); }
-
-        /* Main Content */
-        #main { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
-        header { height: 60px; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; border-bottom: 1px solid #ddd; }
-        
+        :root { --sidebar-bg: #34495e; --active-teal: #1abc9c; --main-bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--main-bg); overflow: hidden; }
+        #sidebar { width: 250px; background: var(--sidebar-bg); color: #ecf0f1; display: flex; flex-direction: column; flex-shrink: 0; }
+        .nav-item { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #2c3e50; transition: 0.3s; display: flex; align-items: center; gap: 10px; }
+        .nav-item.active { background: var(--active-teal); color: white; border-right: 5px solid white; }
+        #main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        header { height: 60px; background: white; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .container { padding: 30px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 700px; text-align: center; }
-        
-        canvas { background: #000; border-radius: 8px; width: 100%; max-height: 500px; object-fit: contain; border: 5px solid #333; }
-        .controls { margin-top: 20px; display: flex; gap: 10px; justify-content: center; }
-        
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 100%; max-width: 800px; text-align: center; }
+        #display-wrap { border: 10px solid #333; border-radius: 20px; background: #000; display: inline-block; margin-top: 20px; overflow: hidden; }
+        canvas { display: block; max-width: 100%; height: auto; }
         .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-start { background: var(--teal); color: white; }
+        .btn-start { background: var(--active-teal); color: white; }
         .btn-stop { background: #e74c3c; color: white; }
-        .btn-snap { background: #3498db; color: white; }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
 <div id="sidebar">
-    <div class="side-header">SystemSync Pro</div>
-    <div class="nav-item active">Live Streaming</div>
-    <div class="nav-item">Device Files</div>
-    <div class="nav-item">Action Logs</div>
+    <div style="padding: 25px; font-size: 20px; font-weight: bold; background: #2c3e50;">SystemSync Pro</div>
+    <div class="nav-item"><i class="fas fa-home"></i> Dashboard</div>
+    <div class="nav-item active"><i class="fas fa-video"></i> Live viewing</div>
+    <div class="nav-item"><i class="fas fa-folder"></i> File Explorer</div>
+    <div class="nav-item"><i class="fas fa-cog"></i> Settings</div>
 </div>
 
-<div id="main">
+<div id="main-wrapper">
     <header>
-        <div><strong>Status:</strong> <span id="status" style="color:red">OFFLINE</span></div>
-        <div>Battery: <span id="batt">--%</span></div>
+        <div>Status: <span id="status-ind" style="color: red; font-weight: bold;">OFFLINE</span></div>
+        <div>Battery: <span id="batt-lvl">--%</span> <span id="charge-stat"></span></div>
     </header>
 
     <div class="container">
-        <div id="setup-card" class="card">
-            <h2>Stream Setup</h2>
+        <div id="setup-view" class="card">
+            <h2>Screen Mirroring</h2>
             <div style="margin: 20px 0;">
-                <label>Audio Source:</label>
-                <select id="audio-opt" style="padding:8px; border-radius:4px;">
+                <label>Audio Mode:</label>
+                <select id="audio-opt" style="padding: 8px; border-radius: 4px;">
                     <option value="off">No Audio</option>
                     <option value="mic">Microphone</option>
                     <option value="system">System Audio</option>
                 </select>
             </div>
-            <div class="controls">
-                <button class="btn btn-start" onclick="startStream()">START STREAM</button>
-                <button class="btn btn-snap" onclick="takeShot()">SNAPSHOT</button>
-            </div>
-            <div style="margin-top:15px;">
-                <input type="checkbox" id="record-check"> <label>Record session to disk</label>
-            </div>
+            <button class="btn btn-start" onclick="startStream()">START STREAM</button>
+            <div style="margin-top:15px;"><input type="checkbox" id="rec-check"> Record Session</div>
         </div>
 
-        <div id="stream-view" class="card" style="display:none; margin-top:20px;">
-            <button class="btn btn-stop" onclick="stopStream()">STOP STREAMING</button>
-            <div style="margin-top:15px;">
-                <canvas id="display"></canvas>
-            </div>
+        <div id="stream-view" class="card" style="display:none;">
+            <button class="btn btn-stop" onclick="stopStream()">STOP</button>
+            <button class="btn" style="background:#3498db; color:white; margin-left:10px;" onclick="takeShot()">SNAPSHOT</button>
+            <div id="display-wrap"><canvas id="display"></canvas></div>
         </div>
     </div>
 </div>
@@ -77,93 +64,57 @@
     const socket = new WebSocket('wss://mirror-view.onrender.com');
     const canvas = document.getElementById('display');
     const ctx = canvas.getContext('2d');
-    let isStreaming = false;
-    
-    // Audio Context for Listening
-    let audioCtx = null;
-    let nextAudioTime = 0;
-
-    // Recording Variables
-    let mediaRecorder;
-    let recordedChunks = [];
+    let isStreaming = false, audioCtx = null, nextAudioTime = 0;
+    let recorder, chunks = [];
 
     socket.onmessage = (event) => {
         const data = event.data;
-
         if (data.startsWith("FRAME:") && isStreaming) {
             const img = new Image();
-            img.onload = () => {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-            };
+            img.onload = () => { canvas.width = img.width; canvas.height = img.height; ctx.drawImage(img, 0, 0); };
             img.src = "data:image/jpeg;base64," + data.substring(6);
-        }
-        else if (data.startsWith("AUDIO:")) {
+        } else if (data.startsWith("AUDIO:")) {
             playPcm(data.substring(6));
+        } else if (data.startsWith("STATUS:")) {
+            const s = data.substring(7);
+            document.getElementById('status-ind').innerText = s;
+            document.getElementById('status-ind').style.color = (s === "ONLINE") ? "green" : "red";
         }
     };
 
     function playPcm(base64) {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (!audioCtx) audioCtx = new AudioContext();
         const binary = atob(base64);
         const bytes = new Int16Array(binary.length / 2);
-        for (let i = 0; i < bytes.length; i++) {
-            bytes[i] = (binary.charCodeAt(i * 2) & 0xFF) | (binary.charCodeAt(i * 2 + 1) << 8);
-        }
+        for (let i = 0; i < bytes.length; i++) { bytes[i] = (binary.charCodeAt(i*2) & 0xFF) | (binary.charCodeAt(i*2+1) << 8); }
         const buffer = audioCtx.createBuffer(1, bytes.length, 44100);
-        buffer.getChannelData(0).set(Array.from(bytes).map(v => v / 32768));
+        buffer.getChannelData(0).set(Array.from(bytes).map(v => v / 32768.0));
         const source = audioCtx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioCtx.destination);
-        const startTime = Math.max(audioCtx.currentTime, nextAudioTime);
-        source.start(startTime);
-        nextAudioTime = startTime + buffer.duration;
+        source.buffer = buffer; source.connect(audioCtx.destination);
+        const start = Math.max(audioCtx.currentTime, nextAudioTime);
+        source.start(start); nextAudioTime = start + buffer.duration;
     }
 
     function startStream() {
         const audio = document.getElementById('audio-opt').value;
         socket.send(`START_SCREEN:${audio}`);
-        
-        document.getElementById('setup-card').style.display = 'none';
+        document.getElementById('setup-view').style.display = 'none';
         document.getElementById('stream-view').style.display = 'block';
         isStreaming = true;
-
-        if (document.getElementById('record-check').checked) {
-            startRecording();
+        if(document.getElementById('rec-check').checked) {
+            recorder = new MediaRecorder(canvas.captureStream(), {mimeType: 'video/webm'});
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, {type: 'video/webm'});
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                a.download = `rec_${Date.now()}.webm`; a.click(); chunks = [];
+            };
+            recorder.start();
         }
     }
 
-    function startRecording() {
-        const stream = canvas.captureStream(30); // 30 FPS
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-        mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
-        mediaRecorder.onstop = saveRecording;
-        mediaRecorder.start();
-    }
-
-    function saveRecording() {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `recording_${Date.now()}.webm`;
-        a.click();
-        recordedChunks = [];
-    }
-
-    function stopStream() {
-        socket.send("STOP_SCREEN");
-        if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
-        location.reload(); // Quickest way to reset state
-    }
-
-    function takeShot() {
-        const link = document.createElement('a');
-        link.download = `shot_${Date.now()}.png`;
-        link.href = canvas.toDataURL();
-        link.click();
-    }
+    function stopStream() { socket.send("STOP_SCREEN"); location.reload(); }
+    function takeShot() { const a = document.createElement('a'); a.download = 'shot.png'; a.href = canvas.toDataURL(); a.click(); }
 </script>
 </body>
 </html>

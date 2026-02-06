@@ -3,87 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SystemSync - Optimized Controller</title>
+    <title>SystemSync - Advanced Controller</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; text-align: center; margin: 0; padding: 20px; }
-        .status-container { background: #1e1e1e; display: inline-flex; align-items: center; padding: 10px 20px; border-radius: 30px; margin-bottom: 20px; }
-        .status-dot { height: 12px; width: 12px; background-color: #555; border-radius: 50%; margin-right: 10px; transition: all 0.3s ease; }
+        /* Dark Theme Setup */
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: #121212; 
+            color: white; 
+            text-align: center; 
+            margin: 0; padding: 20px; 
+        }
+
+        /* Device Status Bar */
+        .status-container {
+            background: #1e1e1e;
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            border-radius: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .status-dot {
+            height: 12px; width: 12px;
+            background-color: #555;
+            border-radius: 50%;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
         .online { background-color: #00ff00; box-shadow: 0 0 10px #00ff00; }
-        .offline { background-color: #ff0000; box-shadow: 0 0 10px #ff0000; }
-        .screen-container { position: relative; display: inline-block; border: 8px solid #333; border-radius: 20px; overflow: hidden; background: #000; }
-        #screen-view { max-width: 100%; max-height: 70vh; display: block; }
-        .controls { margin-top: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-        button { padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-start { background: #00ff00; color: #000; }
-        .btn-stop { background: #ff4444; color: white; }
-        .btn-record { background: #3498db; color: white; }
-        .recording-active { animation: pulse 1.5s infinite; background: #e74c3c !important; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        .offline { background-color: #ff0000; box-shadow: 0 0 5px #ff0000; }
+        #status-text { font-weight: bold; color: #aaa; }
+
+        /* Phone Screen Container */
+        #screen-wrapper { 
+            width: 320px; height: 600px; 
+            background: #000; 
+            margin: 0 auto 20px; 
+            border: 8px solid #333; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        #display { 
+            width: 100%; height: 100%; 
+            object-fit: contain; 
+            display: block;
+        }
+
+        /* Flash Message / Toast Styles */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #f39c12;
+            color: #000;
+            text-align: center;
+            border-radius: 5px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(243, 156, 18, 0.4);
+        }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+
+        /* Button Grid */
+        .controls { 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            gap: 12px; 
+            max-width: 400px; 
+            margin: 0 auto; 
+        }
+        button { 
+            padding: 12px 18px; 
+            font-size: 14px; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            color: white; 
+            flex: 1 1 120px;
+            transition: 0.2s;
+        }
+        button:active { transform: scale(0.96); }
+
+        .btn-start { background: #27ae60; }
+        .btn-stop { background: #c0392b; }
+        .btn-shot { background: #2980b9; }
+        .btn-record { background: #f39c12; }
+        
+        .recording-active { 
+            background: #e74c3c !important; 
+            animation: pulse 1.5s infinite; 
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
+        @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
+
+        #hidden-canvas { display: none; }
     </style>
 </head>
 <body>
 
+    <h2>SystemSync Monitor</h2>
+
     <div class="status-container">
-        <div id="status-dot" class="status-dot"></div>
-        <span id="status-text">DEVICE OFFLINE</span>
+        <span id="status-dot" class="status-dot"></span>
+        <span id="status-text">Connecting...</span>
     </div>
 
-    <div class="screen-container">
-        <img id="screen-view" src="about:blank" alt="Waiting for screen...">
-        <canvas id="record-canvas" style="display:none;"></canvas>
+    <div id="screen-wrapper">
+        <img id="display" src="" alt="Screen Off" />
     </div>
+
+    <div id="toast">Enable the Start screen first</div>
+
+    <canvas id="hidden-canvas"></canvas>
 
     <div class="controls">
-        <button class="btn-start" onclick="sendCommand('START_STREAM')">START STREAM</button>
-        <button class="btn-stop" onclick="sendCommand('STOP_STREAM')">STOP STREAM</button>
-        <button id="record-btn" class="btn-record" onclick="toggleRecording()">START RECORDING</button>
-        <button style="background:#8e44ad; color:white;" onclick="takeScreenshot()">SCREENSHOT</button>
+        <button id="toggleBtn" class="btn-start" onclick="toggleScreen()">START SCREEN</button>
+        <button class="btn-shot" onclick="handleScreenshot()">SCREENSHOT</button>
+        <button id="recordBtn" class="btn-record" onclick="handleRecording()">START RECORDING</button>
     </div>
 
     <script>
-        const SERVER_URL = 'wss://mirror-view.onrender.com';
-        let socket;
-        const imgDisplay = document.getElementById('screen-view');
+        const WS_URL = "wss://mirror-view.onrender.com"; 
+        
+        const imgDisplay = document.getElementById('display');
+        const canvas = document.getElementById('hidden-canvas');
+        const ctx = canvas.getContext('2d');
         const statusDot = document.getElementById('status-dot');
         const statusText = document.getElementById('status-text');
-        const recordBtn = document.getElementById('record-btn');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const recordBtn = document.getElementById('recordBtn');
+        const toast = document.getElementById('toast');
 
-        // Recording variables
-        const canvas = document.getElementById('record-canvas');
-        const ctx = canvas.getContext('2d');
+        let ws;
+        let isStreaming = false; // Core state variable
+        let isRecording = false;
         let mediaRecorder;
         let recordedChunks = [];
-        let isRecording = false;
-        let forceRedrawInterval; // FIX: Keep the recording active
 
         function connect() {
-            socket = new WebSocket(SERVER_URL);
-            socket.onopen = () => socket.send("I_AM_WEB");
-
-            socket.onmessage = (event) => {
-                const data = event.data;
-                if (data.startsWith("FRAME:")) {
-                    imgDisplay.src = "data:image/jpeg;base64," + data.substring(6);
-                    // Draw to hidden canvas immediately if recording
-                    if (isRecording) drawFrameToCanvas();
-                } else if (data === "STATUS:ONLINE") {
-                    statusDot.className = "status-dot online";
-                    statusText.innerText = "DEVICE ONLINE";
-                } else if (data === "STATUS:OFFLINE") {
-                    statusDot.className = "status-dot offline";
-                    statusText.innerText = "DEVICE OFFLINE";
+            ws = new WebSocket(WS_URL);
+            ws.onopen = () => { ws.send("I_AM_WEB"); statusText.innerText = "Waiting for Device..."; };
+            ws.onmessage = (event) => {
+                const msg = event.data;
+                if (msg.startsWith("STATUS:")) { updateStatus(msg.split(":")[1]); }
+                else if (msg.startsWith("FRAME:") && isStreaming) {
+                    const base64 = msg.split("FRAME:")[1];
+                    imgDisplay.src = "data:image/jpeg;base64," + base64;
+                    if (isRecording) { drawFrameToCanvas(); }
                 }
             };
-
-            socket.onclose = () => {
-                statusDot.className = "status-dot";
-                statusText.innerText = "RECONNECTING...";
-                setTimeout(connect, 3000);
-            };
+            ws.onclose = () => { updateStatus("OFFLINE"); setTimeout(connect, 3000); };
         }
 
-        function sendCommand(cmd) {
-            if (socket && socket.readyState === WebSocket.OPEN) socket.send(cmd);
+        function showToast() {
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        function updateStatus(status) {
+            if (status === "ONLINE") {
+                statusDot.className = "status-dot online";
+                statusText.innerText = "Device Online";
+                statusText.style.color = "#2ecc71";
+            } else {
+                statusDot.className = "status-dot offline";
+                statusText.innerText = "Device Offline";
+                statusText.style.color = "#e74c3c";
+                if (isStreaming) toggleScreen();
+            }
+        }
+
+        function toggleScreen() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+            if (!isStreaming) {
+                ws.send("START_SCREEN");
+                toggleBtn.innerText = "STOP SCREEN";
+                toggleBtn.className = "btn-stop";
+                isStreaming = true;
+            } else {
+                ws.send("STOP_SCREEN");
+                toggleBtn.innerText = "START SCREEN";
+                toggleBtn.className = "btn-start";
+                isStreaming = false;
+                imgDisplay.src = ""; // Clear the screen immediately
+                if (isRecording) stopRecording(); // Stop recording if screen is turned off
+            }
+        }
+
+        // --- Screenshot Logic with Flash Message ---
+        function handleScreenshot() {
+            if (!isStreaming) {
+                showToast();
+                return;
+            }
+            takeScreenshot();
+        }
+
+        function takeScreenshot() {
+            if (!imgDisplay.src) return;
+            const link = document.createElement('a');
+            link.download = `screenshot_${getTimestamp()}.png`;
+            link.href = imgDisplay.src;
+            link.click();
+        }
+
+        // --- Recording Logic with Flash Message ---
+        function handleRecording() {
+            if (!isStreaming) {
+                showToast();
+                return;
+            }
+            toggleRecording();
         }
 
         function toggleRecording() {
@@ -91,41 +233,52 @@
             else stopRecording();
         }
 
-        function startRecording() {
-            // Match canvas size to the incoming image
-            canvas.width = imgDisplay.naturalWidth || 360;
-            canvas.height = imgDisplay.naturalHeight || 640;
+        // ... existing variables ...
+let forceRedrawInterval; // ADD THIS
 
-            const stream = canvas.captureStream(25); // 25 FPS for video stability
-            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
-            recordedChunks = [];
+function startRecording() {
+    canvas.width = imgDisplay.naturalWidth || 360;
+    canvas.height = imgDisplay.naturalHeight || 640;
 
-            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
-            mediaRecorder.onstop = saveVideoFile;
-            mediaRecorder.start(1000); // 1s data chunks
+    // FIX 1: Explicitly set codec to VP8 for high compatibility
+    const stream = canvas.captureStream(30); 
+    mediaRecorder = new MediaRecorder(stream, { 
+        mimeType: 'video/webm;codecs=vp8' 
+    });
 
-            // FIX: Force the canvas to redraw every 100ms. 
-            // This ensures the MediaRecorder sees "movement" even if the phone is static.
-            forceRedrawInterval = setInterval(drawFrameToCanvas, 100);
+    recordedChunks = [];
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = saveVideoFile;
+    mediaRecorder.start(1000);
 
-            isRecording = true;
-            recordBtn.innerText = "STOP RECORDING";
-            recordBtn.classList.add('recording-active');
+    // FIX 2: This is the "Optimized Canvas Logic"
+    // It forces the canvas to redraw every 100ms so the recorder doesn't go blank
+    forceRedrawInterval = setInterval(() => {
+        if (imgDisplay.complete && imgDisplay.naturalWidth > 0) {
+            ctx.drawImage(imgDisplay, 0, 0, canvas.width, canvas.height);
         }
+    }, 100);
 
-        function stopRecording() {
-            clearInterval(forceRedrawInterval);
-            if (mediaRecorder) mediaRecorder.stop();
-            isRecording = false;
-            recordBtn.innerText = "START RECORDING";
-            recordBtn.classList.remove('recording-active');
-        }
+    isRecording = true;
+    recordBtn.innerText = "STOP RECORDING";
+    recordBtn.classList.add('recording-active');
+}
+
+function stopRecording() {
+    // FIX 3: Clear the redraw interval when stopped
+    clearInterval(forceRedrawInterval);
+    
+    if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+    isRecording = false;
+    recordBtn.innerText = "START RECORDING";
+    recordBtn.classList.remove('recording-active');
+}
+
+// Ensure your existing socket.onmessage still calls drawFrameToCanvas() 
+// but the setInterval above is what actually fixes the blank video.
 
         function drawFrameToCanvas() {
-            // Draw current imgDisplay content to the recording canvas
-            if (imgDisplay.complete && imgDisplay.naturalWidth > 0) {
-                ctx.drawImage(imgDisplay, 0, 0, canvas.width, canvas.height);
-            }
+            if (isRecording) ctx.drawImage(imgDisplay, 0, 0, canvas.width, canvas.height);
         }
 
         function saveVideoFile() {
@@ -133,16 +286,11 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `SystemSync_Record_${Date.now()}.webm`;
+            a.download = `recording_${getTimestamp()}.webm`;
             a.click();
         }
 
-        function takeScreenshot() {
-            const a = document.createElement('a');
-            a.href = imgDisplay.src;
-            a.download = `SystemSync_Snap_${Date.now()}.jpg`;
-            a.click();
-        }
+        function getTimestamp() { return new Date().toISOString().replace(/[:.]/g, '-'); }
 
         connect();
     </script>

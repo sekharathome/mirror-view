@@ -1,438 +1,275 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>SystemSync - Pro Control Panel</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SystemSync - Advanced Controller</title>
+    <style>
+        /* Dark Theme Setup */
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: #121212; 
+            color: white; 
+            text-align: center; 
+            margin: 0; padding: 20px; 
+        }
 
-<style>
-:root { --sidebar-bg: #2c3e50; --active-teal: #1abc9c; --main-bg: #f4f7f6; --phone-frame: #1a1a1a; }
+        /* Device Status Bar */
+        .status-container {
+            background: #1e1e1e;
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            border-radius: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .status-dot {
+            height: 12px; width: 12px;
+            background-color: #555;
+            border-radius: 50%;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+        .online { background-color: #00ff00; box-shadow: 0 0 10px #00ff00; }
+        .offline { background-color: #ff0000; box-shadow: 0 0 5px #ff0000; }
+        #status-text { font-weight: bold; color: #aaa; }
 
-body {
-    font-family: 'Segoe UI', sans-serif;
-    margin: 0;
-    display: flex;
-    height: 100vh;
-    background: var(--main-bg);
-    overflow: hidden;
-}
+        /* Phone Screen Container */
+        #screen-wrapper { 
+            width: 320px; height: 600px; 
+            background: #000; 
+            margin: 0 auto 20px; 
+            border: 8px solid #333; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        #display { 
+            width: 100%; height: 100%; 
+            object-fit: contain; 
+            display: block;
+        }
 
-/* Sidebar */
-#sidebar {
-    width: 250px;
-    background: var(--sidebar-bg);
-    color: #ecf0f1;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-}
+        /* Flash Message / Toast Styles */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #f39c12;
+            color: #000;
+            text-align: center;
+            border-radius: 5px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(243, 156, 18, 0.4);
+        }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
 
-.sidebar-header {
-    padding: 25px;
-    font-size: 22px;
-    font-weight: bold;
-    background: #1a252f;
-    text-align: center;
-    border-bottom: 1px solid #34495e;
-}
+        /* Button Grid */
+        .controls { 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            gap: 12px; 
+            max-width: 400px; 
+            margin: 0 auto; 
+        }
+        button { 
+            padding: 12px 18px; 
+            font-size: 14px; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            color: white; 
+            flex: 1 1 120px;
+            transition: 0.2s;
+        }
+        button:active { transform: scale(0.96); }
 
-.nav-item {
-    padding: 18px 25px;
-    cursor: pointer;
-    border-bottom: 1px solid #34495e;
-    transition: 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
+        .btn-start { background: #27ae60; }
+        .btn-stop { background: #c0392b; }
+        .btn-shot { background: #2980b9; }
+        .btn-record { background: #f39c12; }
+        
+        .recording-active { 
+            background: #e74c3c !important; 
+            animation: pulse 1.5s infinite; 
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
+        @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
 
-.nav-item:hover { background: #3e5871; }
-.nav-item.active {
-    background: var(--active-teal);
-    color: white;
-    border-right: 5px solid white;
-}
-
-/* Main */
-#main-wrapper {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-header {
-    height: 65px;
-    background: white;
-    border-bottom: 1px solid #ddd;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 35px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-#content-area {
-    padding: 30px;
-    flex-grow: 1;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    perspective: 1800px; /* 3D depth */
-}
-
-/* Card */
-.card {
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    width: 100%;
-    max-width: 500px;
-    text-align: center;
-}
-
-/* ================= PREMIUM PHONE ================= */
-
-#phone-mockup {
-    width: min(360px, 92vw);
-    aspect-ratio: 9 / 16;
-    border-radius: 42px;
-    padding: 12px;
-    border: 6px solid transparent;
-    background:
-        linear-gradient(#000,#000) padding-box,
-        linear-gradient(145deg, #cfcfcf, #8a8a8a, #e6e6e6) border-box;
-    box-shadow:
-        0 30px 80px rgba(0,0,0,.9),
-        inset 0 0 12px rgba(255,255,255,.04);
-    position: relative;
-    margin-top: 10px;
-    transform-style: preserve-3d;
-    transition: transform .35s ease;
-}
-
-/* Glass reflection */
-#phone-mockup::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    border-radius:42px;
-    background:linear-gradient(
-        120deg,
-        transparent 40%,
-        rgba(255,255,255,.08),
-        transparent 60%
-    );
-    pointer-events:none;
-}
-
-/* Dynamic Island */
-.dynamic-island{
-    position:absolute;
-    top:8px;
-    left:50%;
-    transform:translateX(-50%);
-    width:120px;
-    height:26px;
-    background:#050505;
-    border-radius:20px;
-    box-shadow: inset 0 -2px 6px rgba(255,255,255,.12);
-}
-
-/* Screen */
-#phone-screen {
-    width: 100%;
-    height: 100%;
-    background: #000;
-    border-radius: 32px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-
-/* Neon Mode */
-.neon-border{
-    background:
-      linear-gradient(#000,#000) padding-box,
-      linear-gradient(120deg,#00fff2,#ff00ea,#00ff88) border-box !important;
-    box-shadow:
-        0 0 25px #00fff2,
-        0 0 70px rgba(255,0,234,.6);
-}
-
-/* Landscape */
-.landscape{
-    transform: rotate(90deg);
-}
-
-/* Floating animation */
-#phone-mockup{
-    animation: float 7s ease-in-out infinite;
-}
-
-@keyframes float{
-    0%,100%{transform:translateY(0);}
-    50%{transform:translateY(-16px);}
-}
-
-/* Buttons */
-.action-bar { display: flex; gap: 10px; margin-bottom: 20px; }
-
-.btn {
-    padding: 10px 18px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 13px;
-}
-
-.btn-start { background: var(--active-teal); color: white; width: 100%; padding: 15px; font-size: 16px; }
-.btn-stop { background: #e74c3c; color: white; }
-.btn-snap { background: #3498db; color: white; }
-.btn-rec-off { background: #95a5a6; color: white; }
-.btn-rec-on { background: #f39c12; color: white; animation: blink 1s infinite; }
-
-@keyframes blink {
-    0% { opacity: 1; }
-    50% { opacity: 0.6; }
-    100% { opacity: 1; }
-}
-
-</style>
+        #hidden-canvas { display: none; }
+    </style>
 </head>
-
 <body>
 
-<div id="sidebar">
-    <div class="sidebar-header">SystemSync</div>
-    <div class="nav-item">🏠 Dashboard</div>
-    <div class="nav-item active">📱 Live Viewing</div>
-    <div class="nav-item">📁 File Explorer</div>
-    <div class="nav-item">⚙️ Settings</div>
-</div>
+    <h2>SystemSync Monitor</h2>
 
-<div id="main-wrapper">
-<header>
-    <div>Status: <span id="status-ind" style="color: red; font-weight: bold;">OFFLINE</span></div>
-    <div id="meta">SystemSync v1.0</div>
-</header>
-
-<div id="content-area">
-
-<div id="setup-view" class="card">
-    <h2 style="margin-top:0;">Mirror Setup</h2>
-
-    <div style="margin: 20px 0; text-align: left;">
-        <label>Audio Capture Mode:</label>
-        <select id="audio-opt" style="width:100%; padding:10px; border-radius:5px; margin-top:5px; border:1px solid #ccc;">
-            <option value="off">No Audio</option>
-            <option value="mic">Microphone (Listen)</option>
-            <option value="system">System Sound (Android 10+)</option>
-        </select>
+    <div class="status-container">
+        <span id="status-dot" class="status-dot"></span>
+        <span id="status-text">Connecting...</span>
     </div>
 
-    <button class="btn btn-start" onclick="startStream()">▶ START SCREEN</button>
-</div>
-
-<div id="stream-view" style="display:none; text-align: center;">
-
-    <div class="action-bar">
-        <button class="btn btn-stop" onclick="stopStream()">STOP</button>
-        <button class="btn btn-snap" onclick="takeShot()">SNAPSHOT</button>
-        <button id="rec-btn" class="btn btn-rec-off" onclick="toggleRecord()">RECORD OFF</button>
-        <button class="btn btn-snap" onclick="rotatePhone()">Rotate</button>
-        <button class="btn btn-snap" onclick="toggleNeon()">Neon</button>
+    <div id="screen-wrapper">
+        <img id="display" src="" alt="Screen Off" />
     </div>
 
-    <div id="phone-mockup">
-        <div class="dynamic-island"></div>
+    <div id="toast">Enable the Start screen first</div>
 
-        <div id="phone-screen">
-            <canvas id="display"></canvas>
-        </div>
+    <canvas id="hidden-canvas"></canvas>
+
+    <div class="controls">
+        <button id="toggleBtn" class="btn-start" onclick="toggleScreen()">START SCREEN</button>
+        <button class="btn-shot" onclick="handleScreenshot()">SCREENSHOT</button>
+        <button id="recordBtn" class="btn-record" onclick="handleRecording()">START RECORDING</button>
     </div>
 
-</div>
-</div>
-</div>
+    <script>
+        const WS_URL = "wss://mirror-view.onrender.com"; 
+        
+        const imgDisplay = document.getElementById('display');
+        const canvas = document.getElementById('hidden-canvas');
+        const ctx = canvas.getContext('2d');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const recordBtn = document.getElementById('recordBtn');
+        const toast = document.getElementById('toast');
 
-<script>
-/* RE-MODIFIED SCRIPT FOR OPTIMAL CONNECTION */
-const SERVER_URL = 'wss://mirror-view.onrender.com';
-let socket;
-let isStreaming = false;
-let audioCtx = null;
-let nextAudioTime = 0;
+        let ws;
+        let isStreaming = false; // Core state variable
+        let isRecording = false;
+        let mediaRecorder;
+        let recordedChunks = [];
 
-let mediaRecorder;
-let recordedChunks = [];
-let isRecording = false;
-
-const canvas = document.getElementById('display');
-const ctx = canvas.getContext('2d');
-
-// Optimized connection function with auto-reconnect logic
-function connect() {
-    socket = new WebSocket(SERVER_URL);
-
-    socket.onopen = () => {
-        console.log("Connected to Server");
-        socket.send("I_AM_WEB"); // Identify as web panel
-    };
-
-    socket.onmessage = (event) => {
-        const data = event.data;
-
-        // Respond to server-side PING to keep connection alive
-        if (data === "PING") {
-            socket.send("PONG");
-            return;
-        }
-
-        if (data.startsWith("FRAME:") && isStreaming) {
-            const img = new Image();
-            img.onload = () => {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
+        function connect() {
+            ws = new WebSocket(WS_URL);
+            ws.onopen = () => { ws.send("I_AM_WEB"); statusText.innerText = "Waiting for Device..."; };
+            ws.onmessage = (event) => {
+                const msg = event.data;
+                if (msg.startsWith("STATUS:")) { updateStatus(msg.split(":")[1]); }
+                else if (msg.startsWith("FRAME:") && isStreaming) {
+                    const base64 = msg.split("FRAME:")[1];
+                    imgDisplay.src = "data:image/jpeg;base64," + base64;
+                    if (isRecording) { drawFrameToCanvas(); }
+                }
             };
-            img.src = "data:image/jpeg;base64," + data.substring(6);
+            ws.onclose = () => { updateStatus("OFFLINE"); setTimeout(connect, 3000); };
         }
-        else if (data.startsWith("AUDIO:")) {
-            playPcm(data.substring(6));
+
+        function showToast() {
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
         }
-        else if (data.startsWith("STATUS:")) {
-            const s = data.substring(7);
-            const statusIndicator = document.getElementById('status-ind');
-            statusIndicator.innerText = s;
-            statusIndicator.style.color = (s === "ONLINE") ? "#1abc9c" : "red";
+
+        function updateStatus(status) {
+            if (status === "ONLINE") {
+                statusDot.className = "status-dot online";
+                statusText.innerText = "Device Online";
+                statusText.style.color = "#2ecc71";
+            } else {
+                statusDot.className = "status-dot offline";
+                statusText.innerText = "Device Offline";
+                statusText.style.color = "#e74c3c";
+                if (isStreaming) toggleScreen();
+            }
         }
-    };
 
-    socket.onclose = () => {
-        console.log("Connection lost. Retrying in 3 seconds...");
-        document.getElementById('status-ind').innerText = "RECONNECTING...";
-        document.getElementById('status-ind').style.color = "orange";
-        setTimeout(connect, 3000); // Retry connection automatically
-    };
+        function toggleScreen() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
 
-    socket.onerror = (err) => {
-        console.error("Socket Error: ", err);
-    };
-}
+            if (!isStreaming) {
+                ws.send("START_SCREEN");
+                toggleBtn.innerText = "STOP SCREEN";
+                toggleBtn.className = "btn-stop";
+                isStreaming = true;
+            } else {
+                ws.send("STOP_SCREEN");
+                toggleBtn.innerText = "START SCREEN";
+                toggleBtn.className = "btn-start";
+                isStreaming = false;
+                imgDisplay.src = ""; // Clear the screen immediately
+                if (isRecording) stopRecording(); // Stop recording if screen is turned off
+            }
+        }
 
-// Initial connection
-connect();
+        // --- Screenshot Logic with Flash Message ---
+        function handleScreenshot() {
+            if (!isStreaming) {
+                showToast();
+                return;
+            }
+            takeScreenshot();
+        }
 
-function playPcm(base64) {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const binary = atob(base64);
-    const bytes = new Int16Array(binary.length / 2);
+        function takeScreenshot() {
+            if (!imgDisplay.src) return;
+            const link = document.createElement('a');
+            link.download = `screenshot_${getTimestamp()}.png`;
+            link.href = imgDisplay.src;
+            link.click();
+        }
 
-    for (let i = 0; i < bytes.length; i++) {
-        bytes[i] = (binary.charCodeAt(i * 2) & 0xFF) | (binary.charCodeAt(i * 2 + 1) << 8);
-    }
+        // --- Recording Logic with Flash Message ---
+        function handleRecording() {
+            if (!isStreaming) {
+                showToast();
+                return;
+            }
+            toggleRecording();
+        }
 
-    const buffer = audioCtx.createBuffer(1, bytes.length, 44100);
-    buffer.getChannelData(0).set(Array.from(bytes).map(v => v / 32768.0));
+        function toggleRecording() {
+            if (!isRecording) startRecording();
+            else stopRecording();
+        }
 
-    const source = audioCtx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioCtx.destination);
+        function startRecording() {
+            canvas.width = imgDisplay.naturalWidth || 360;
+            canvas.height = imgDisplay.naturalHeight || 640;
+            const stream = canvas.captureStream(25);
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            recordedChunks = [];
+            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+            mediaRecorder.onstop = saveVideoFile;
+            mediaRecorder.start();
+            isRecording = true;
+            recordBtn.innerText = "STOP RECORDING";
+            recordBtn.classList.add('recording-active');
+        }
 
-    const startTime = Math.max(audioCtx.currentTime, nextAudioTime);
-    source.start(startTime);
-    nextAudioTime = startTime + buffer.duration;
-}
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+            isRecording = false;
+            recordBtn.innerText = "START RECORDING";
+            recordBtn.classList.remove('recording-active');
+        }
 
-function startStream() {
-    const audio = document.getElementById('audio-opt').value;
-    if (socket.readyState === WebSocket.OPEN) {
-        socket.send(`START_SCREEN:${audio}`);
-    }
+        function drawFrameToCanvas() {
+            if (isRecording) ctx.drawImage(imgDisplay, 0, 0, canvas.width, canvas.height);
+        }
 
-    document.getElementById('setup-view').style.display = 'none';
-    document.getElementById('stream-view').style.display = 'block';
+        function saveVideoFile() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `recording_${getTimestamp()}.webm`;
+            a.click();
+        }
 
-    isStreaming = true;
-}
+        function getTimestamp() { return new Date().toISOString().replace(/[:.]/g, '-'); }
 
-function stopStream() {
-    if (socket.readyState === WebSocket.OPEN) {
-        socket.send("STOP_SCREEN");
-    }
-    location.reload();
-}
-
-function takeShot() {
-    const link = document.createElement('a');
-    link.download = `snapshot_${Date.now()}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-}
-
-function toggleRecord() {
-    const btn = document.getElementById('rec-btn');
-
-    if (!isRecording) {
-        recordedChunks = [];
-        const stream = canvas.captureStream(30);
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-
-        mediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) recordedChunks.push(e.data);
-        };
-
-        mediaRecorder.onstop = saveVideo;
-        mediaRecorder.start();
-
-        btn.innerText = "RECORDING ON";
-        btn.className = "btn btn-rec-on";
-        isRecording = true;
-    }
-    else {
-        mediaRecorder.stop();
-        btn.innerText = "RECORD OFF";
-        btn.className = "btn btn-rec-off";
-        isRecording = false;
-    }
-}
-
-function saveVideo() {
-    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `record_${Date.now()}.webm`;
-    a.click();
-}
-
-/* ===== ULTRA PREMIUM INTERACTIONS ===== */
-const phone = document.getElementById("phone-mockup");
-
-document.addEventListener("mousemove",(e)=>{
-    if(!phone) return;
-    const x = (window.innerWidth/2 - e.clientX)/22;
-    const y = (window.innerHeight/2 - e.clientY)/22;
-    phone.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
-});
-
-function rotatePhone(){
-    phone.classList.toggle("landscape");
-}
-
-function toggleNeon(){
-    phone.classList.toggle("neon-border");
-}
-
-</script>
+        connect();
+    </script>
 </body>
 </html>

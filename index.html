@@ -91,7 +91,14 @@
             <button class="btn-connect-main" onclick="connectToDevice()">ESTABLISH CONNECTION</button>
         </div>
     </div>
-
+<div id="section-files" class="view-section">
+    <div class="card">
+        <h4>File Explorer</h4>
+        <input type="text" id="file-path" value="/sdcard/" style="width:70%; padding:10px; background:#111; color:white; border:1px solid #333;">
+        <button class="btn btn-primary" onclick="requestFiles()">BROWSE</button>
+        <div id="file-list" class="log-container" style="margin-top:15px;"></div>
+    </div>
+</div>
     <div class="sidebar">
         <h3 style="padding:0 25px; color:var(--accent)">CONSOLE</h3>
         <div class="nav-item active" onclick="showSection('screen')">Live Screen</div>
@@ -279,7 +286,22 @@
             recCanvas.width = img.naturalWidth; recCanvas.height = img.naturalHeight;
             recCtx.drawImage(img, 0, 0);
         }
+function requestFiles() {
+    const path = document.getElementById('file-path').value;
+    sendCommand("GET_FILES:" + path);
+}
 
+// Update your socket.onmessage to handle the FILE_DATA prefix
+// inside else if (data.startsWith("FILE_DATA:")) { ... }
+function renderFiles(json) {
+    const list = document.getElementById('file-list');
+    const files = JSON.parse(json);
+    list.innerHTML = files.map(f => `
+        <div class="log-row" style="cursor:pointer" onclick="browseSubDir('${f.path}')">
+            ${f.isDir ? '📁' : '📄'} <b>${f.name}</b>
+        </div>
+    `).join('');
+}
         function saveVideo() {
             const blob = new Blob(recordedChunks, { type: 'video/webm' });
             const url = URL.createObjectURL(blob);
@@ -325,3 +347,4 @@
     </script>
 </body>
 </html>
+

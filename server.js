@@ -1,55 +1,109 @@
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: process.env.PORT || 8080 });
+const http = require('http');
 
-let deviceSocket = null;
-let webSocket = null;
+const PORT = process.env.PORT || 3000;
+const server = http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end("SystemSync Server is Running...");
+});
+
+const wss = new WebSocket.Server({ server });
+
+// Store active connections
+// devices: { socketId: ws, name: "Samsung S21" }
+// controllers: { socketId: ws, targetDeviceId: "device_socket_id" }
+let devices = new Map();
+let controllers = new Map();
 
 wss.on('connection', (ws) => {
-    console.log('Client connected');
+    // Assign a unique ID to every connection
+    const socketId = Math.random().toString(36).substr(2, 9);
+    ws.id = socketId;
+
+    console.log(`New connection: ${socketId}`);
 
     ws.on('message', (message) => {
-        const msg = message.toString();
+        const data = message.toString();
 
-        // 1. Identify the Android Device
-        if (msg === 'I_AM_DEVICE') {
-            deviceSocket = ws;
-            console.log('DEVICE CONNECTED');
-            broadcastToWeb("STATUS:ONLINE");
+        // --- DEVICE REGISTRATION ---
+        if (data.startsWith("REGISTER_DEVICE:")) {
+            const deviceName = data.split(":")[1];
+            ws.isDevice = true;
+            ws.deviceName = deviceName;
+            devices.set(socketId, ws);
+            console.log(`Device registered: ${deviceName} (${socketId})`);
+            broadcastDeviceList();
         }
-        // 2. Identify the Web Browser
-        else if (msg === 'I_AM_WEB') {
-            webSocket = ws;
-            // Send current status immediately upon connection
-            const status = (deviceSocket && deviceSocket.readyState === WebSocket.OPEN) ? "ONLINE" : "OFFLINE";
-            ws.send("STATUS:" + status);
+
+        // --- CONTROLLER INITIALIZATION ---
+        else if (data === "I_AM_CONTROLLER") {
+            ws.isDevice = false;
+            controllers.set(socketId, ws);
+            // Send current devices to the new controller
+            sendDeviceList(ws);
         }
-        // 3. Handle Video Frames (Forward Device -> Web)
-        else if (msg.startsWith('FRAME:')) {
-            if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-                webSocket.send(msg);
-            }
+
+        // --- DEVICE SELECTION ---
+        else if (data.startsWith("SELECT_DEVICE:")) {
+            const targetId = data.split(":")[1];
+            ws.targetDeviceId = targetId;
+            console.log(`Controller ${socketId} selected device ${targetId}`);
         }
-        // 4. Handle Commands (Forward Web -> Device)
-        else if (msg === 'START_SCREEN' || msg === 'STOP_SCREEN') {
-            if (deviceSocket && deviceSocket.readyState === WebSocket.OPEN) {
-                deviceSocket.send(msg);
+
+        // --- DATA ROUTING (THE SWITCHBOARD) ---
+        else {
+            if (ws.isDevice) {
+                // If message comes from PHONE, send to all controllers watching it
+                controllers.forEach(ctrl => {
+                    if (ctrl.targetDeviceId === ws.id) {
+                        ctrl.send(data);
+                    }
+                });
+            } else {
+                // If message comes from WEB, send ONLY to the selected device
+                if (ws.targetDeviceId) {
+                    const targetDevice = devices.get(ws.targetDeviceId);
+                    if (targetDevice) {
+                        targetDevice.send(data);
+                    }
+                }
             }
         }
     });
 
     ws.on('close', () => {
-        if (ws === deviceSocket) {
-            console.log('DEVICE DISCONNECTED');
-            deviceSocket = null;
-            broadcastToWeb("STATUS:OFFLINE");
+        if (ws.isDevice) {
+            devices.delete(ws.id);
+            console.log(`Device disconnected: ${ws.deviceName}`);
+            broadcastDeviceList();
+        } else {
+            controllers.delete(ws.id);
         }
     });
 });
 
-function broadcastToWeb(msg) {
-    wss.clients.forEach(client => {
-        if (client !== deviceSocket && client.readyState === WebSocket.OPEN) {
-            client.send(msg);
-        }
+// Helper: Send list of devices to one controller
+function sendDeviceList(targetSocket) {
+    const list = Array.from(devices.values()).map(d => ({
+        id: d.id,
+        name: d.deviceName
+    }));
+    targetSocket.send("DEVICE_LIST:" + JSON.stringify(list));
+}
+
+// Helper: Notify all web apps when a phone joins/leaves
+function broadcastDeviceList() {
+    const list = Array.from(devices.values()).map(d => ({
+        id: d.id,
+        name: d.deviceName
+    }));
+    const payload = "DEVICE_LIST:" + JSON.stringify(list);
+    
+    controllers.forEach(ctrl => {
+        ctrl.send(payload);
     });
 }
+
+server.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+});

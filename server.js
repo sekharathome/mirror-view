@@ -2,108 +2,125 @@ const WebSocket = require('ws');
 const http = require('http');
 
 const PORT = process.env.PORT || 3000;
+
 const server = http.createServer((req, res) => {
     res.writeHead(200);
-    res.end("SystemSync Server is Running...");
+    res.end("SystemSync Signaling Server Running");
 });
 
 const wss = new WebSocket.Server({ server });
 
-// Store active connections
-// devices: { socketId: ws, name: "Samsung S21" }
-// controllers: { socketId: ws, targetDeviceId: "device_socket_id" }
 let devices = new Map();
 let controllers = new Map();
 
+function sendDeviceList() {
+
+    const list = Array.from(devices.values()).map(d => ({
+        id: d.id,
+        name: d.name
+    }));
+
+    const payload = JSON.stringify({
+        type: "DEVICE_LIST",
+        devices: list
+    });
+
+    controllers.forEach(ws => ws.send(payload));
+}
+
 wss.on('connection', (ws) => {
-    // Assign a unique ID to every connection
-    const socketId = Math.random().toString(36).substr(2, 9);
-    ws.id = socketId;
 
-    console.log(`New connection: ${socketId}`);
+    ws.id = cryptoRandomId();
 
-    ws.on('message', (message) => {
-        const data = message.toString();
+    ws.on('message', (msg) => {
 
-        // --- DEVICE REGISTRATION ---
-        if (data.startsWith("REGISTER_DEVICE:")) {
-            const deviceName = data.split(":")[1];
-            ws.isDevice = true;
-            ws.deviceName = deviceName;
-            devices.set(socketId, ws);
-            console.log(`Device registered: ${deviceName} (${socketId})`);
-            broadcastDeviceList();
+        let data;
+
+        try {
+            data = JSON.parse(msg);
+        } catch {
+            return;
         }
 
-        // --- CONTROLLER INITIALIZATION ---
-        else if (data === "I_AM_CONTROLLER") {
-            ws.isDevice = false;
-            controllers.set(socketId, ws);
-            // Send current devices to the new controller
-            sendDeviceList(ws);
-        }
+        switch (data.type) {
 
-        // --- DEVICE SELECTION ---
-        else if (data.startsWith("SELECT_DEVICE:")) {
-            const targetId = data.split(":")[1];
-            ws.targetDeviceId = targetId;
-            console.log(`Controller ${socketId} selected device ${targetId}`);
-        }
+            // ✅ DEVICE CONNECT
+            case "REGISTER_DEVICE":
 
-        // --- DATA ROUTING (THE SWITCHBOARD) ---
-        else {
-            if (ws.isDevice) {
-                // If message comes from PHONE, send to all controllers watching it
-                controllers.forEach(ctrl => {
-                    if (ctrl.targetDeviceId === ws.id) {
-                        ctrl.send(data);
-                    }
-                });
-            } else {
-                // If message comes from WEB, send ONLY to the selected device
-                if (ws.targetDeviceId) {
-                    const targetDevice = devices.get(ws.targetDeviceId);
-                    if (targetDevice) {
-                        targetDevice.send(data);
-                    }
-                }
-            }
+                ws.isDevice = true;
+                ws.name = data.name;
+
+                devices.set(ws.id, ws);
+                sendDeviceList();
+
+                break;
+
+            // ✅ CONTROLLER CONNECT
+            case "REGISTER_CONTROLLER":
+
+                ws.isDevice = false;
+                controllers.set(ws.id, ws);
+
+                sendDeviceList();
+                break;
+
+            // ✅ SELECT DEVICE
+            case "SELECT_DEVICE":
+
+                ws.target = data.deviceId;
+                break;
+
+            // ✅ SIGNALING RELAY
+            case "OFFER":
+            case "ANSWER":
+            case "ICE":
+
+                relay(ws, data);
+                break;
+
+            // ✅ COMMAND RELAY
+            case "COMMAND":
+
+                relay(ws, data);
+                break;
         }
     });
 
     ws.on('close', () => {
-        if (ws.isDevice) {
-            devices.delete(ws.id);
-            console.log(`Device disconnected: ${ws.deviceName}`);
-            broadcastDeviceList();
-        } else {
-            controllers.delete(ws.id);
+
+        devices.delete(ws.id);
+        controllers.delete(ws.id);
+
+        sendDeviceList();
+    });
+});
+
+function relay(sender, data) {
+
+    let target;
+
+    if (sender.isDevice) {
+
+        controllers.forEach(ctrl => {
+            if (ctrl.target === sender.id) {
+                ctrl.send(JSON.stringify(data));
+            }
+        });
+
+    } else {
+
+        target = devices.get(sender.target);
+
+        if (target) {
+            target.send(JSON.stringify(data));
         }
-    });
-});
-
-// Helper: Send list of devices to one controller
-function sendDeviceList(targetSocket) {
-    const list = Array.from(devices.values()).map(d => ({
-        id: d.id,
-        name: d.deviceName
-    }));
-    targetSocket.send("DEVICE_LIST:" + JSON.stringify(list));
+    }
 }
 
-// Helper: Notify all web apps when a phone joins/leaves
-function broadcastDeviceList() {
-    const list = Array.from(devices.values()).map(d => ({
-        id: d.id,
-        name: d.deviceName
-    }));
-    const payload = "DEVICE_LIST:" + JSON.stringify(list);
-    
-    controllers.forEach(ctrl => {
-        ctrl.send(payload);
-    });
+function cryptoRandomId() {
+    return Math.random().toString(36).substring(2, 12);
 }
 
-server.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
-});
+server.listen(PORT, () =>
+    console.log("Signaling server running on port", PORT)
+);

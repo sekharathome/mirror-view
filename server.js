@@ -1,5 +1,6 @@
 const WebSocket = require('ws');
 const http = require('http');
+const { randomUUID } = require('crypto');
 
 const PORT = process.env.PORT || 3000;
 
@@ -10,9 +11,42 @@ const server = http.createServer((req, res) => {
 
 const wss = new WebSocket.Server({ server });
 
+/*
+    devices:
+    id -> websocket
+*/
 let devices = new Map();
+
+/*
+    controllers:
+    id -> websocket
+*/
 let controllers = new Map();
 
+
+// ✅ HEARTBEAT (Prevents ghost connections)
+setInterval(() => {
+
+    wss.clients.forEach(ws => {
+
+        if (ws.isAlive === false) {
+
+            console.log("Terminating dead socket:", ws.id);
+
+            devices.delete(ws.id);
+            controllers.delete(ws.id);
+
+            return ws.terminate();
+        }
+
+        ws.isAlive = false;
+        ws.ping();
+    });
+
+}, 30000);
+
+
+// ✅ SEND DEVICE LIST TO CONTROLLERS
 function sendDeviceList() {
 
     const list = Array.from(devices.values()).map(d => ({
@@ -25,52 +59,83 @@ function sendDeviceList() {
         devices: list
     });
 
-    controllers.forEach(ws => ws.send(payload));
+    controllers.forEach(ws => {
+
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(payload);
+        }
+    });
 }
 
+
+// ✅ CONNECTION
 wss.on('connection', (ws) => {
 
-    ws.id = cryptoRandomId();
+    ws.id = randomUUID();
+    ws.isAlive = true;
+
+    console.log("New connection:", ws.id);
+
+    ws.on('pong', () => {
+        ws.isAlive = true;
+    });
+
 
     ws.on('message', (msg) => {
 
         let data;
 
+        // ✅ SAFE JSON PARSE
         try {
+
             data = JSON.parse(msg);
-        } catch {
+
+            if (!data.type) return;
+
+        } catch (err) {
+
+            console.log("Invalid JSON:", msg.toString());
             return;
         }
 
         switch (data.type) {
 
-            // ✅ DEVICE CONNECT
+            // ✅ DEVICE REGISTER
             case "REGISTER_DEVICE":
 
                 ws.isDevice = true;
-                ws.name = data.name;
+                ws.name = data.name || "Android Device";
 
                 devices.set(ws.id, ws);
-                sendDeviceList();
 
+                console.log("Device registered:", ws.name);
+
+                sendDeviceList();
                 break;
 
-            // ✅ CONTROLLER CONNECT
+
+            // ✅ CONTROLLER REGISTER
             case "REGISTER_CONTROLLER":
 
                 ws.isDevice = false;
+
                 controllers.set(ws.id, ws);
+
+                console.log("Controller connected");
 
                 sendDeviceList();
                 break;
+
 
             // ✅ SELECT DEVICE
             case "SELECT_DEVICE":
 
                 ws.target = data.deviceId;
+                console.log("Controller selected device:", ws.target);
                 break;
 
-            // ✅ SIGNALING RELAY
+
+            // ✅ SIGNALING (WebRTC)
             case "OFFER":
             case "ANSWER":
             case "ICE":
@@ -78,7 +143,8 @@ wss.on('connection', (ws) => {
                 relay(ws, data);
                 break;
 
-            // ✅ COMMAND RELAY
+
+            // ✅ COMMAND (Start screen, cam etc)
             case "COMMAND":
 
                 relay(ws, data);
@@ -86,41 +152,60 @@ wss.on('connection', (ws) => {
         }
     });
 
+
+    // ✅ CLEAN DISCONNECT
     ws.on('close', () => {
+
+        console.log("Disconnected:", ws.id);
 
         devices.delete(ws.id);
         controllers.delete(ws.id);
 
         sendDeviceList();
     });
+
+
+    ws.on('error', (err) => {
+
+        console.log("Socket error:", err.message);
+
+        devices.delete(ws.id);
+        controllers.delete(ws.id);
+    });
+
 });
 
+
+// ✅ RELAY ENGINE
 function relay(sender, data) {
 
-    let target;
-
+    // DEVICE → CONTROLLER
     if (sender.isDevice) {
 
         controllers.forEach(ctrl => {
-            if (ctrl.target === sender.id) {
+
+            if (ctrl.target === sender.id &&
+                ctrl.readyState === WebSocket.OPEN) {
+
                 ctrl.send(JSON.stringify(data));
             }
         });
 
-    } else {
+    }
 
-        target = devices.get(sender.target);
+    // CONTROLLER → DEVICE
+    else {
 
-        if (target) {
+        const target = devices.get(sender.target);
+
+        if (target && target.readyState === WebSocket.OPEN) {
+
             target.send(JSON.stringify(data));
         }
     }
 }
 
-function cryptoRandomId() {
-    return Math.random().toString(36).substring(2, 12);
-}
 
 server.listen(PORT, () =>
-    console.log("Signaling server running on port", PORT)
+    console.log("✅ Signaling server running on port", PORT)
 );

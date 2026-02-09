@@ -49,14 +49,8 @@ button{
     font-weight:bold;
 }
 
-.start{
-    background:#00d2ff;
-}
-
-.stop{
-    background:#ff4b2b;
-    color:white;
-}
+.start{ background:#00d2ff; }
+.stop{ background:#ff4b2b; color:white; }
 
 video{
     margin-top:15px;
@@ -75,9 +69,7 @@ video{
 
 <body>
 
-<header>
-SystemSync Remote Console
-</header>
+<header>SystemSync Remote Console</header>
 
 <div id="panel">
 
@@ -99,75 +91,91 @@ STOP STREAM
 
 <video id="screen-display" autoplay playsinline></video>
 
-<div id="status" class="status">Connecting to server...</div>
+<div id="status" class="status">Connecting...</div>
 
 </div>
 
 <script>
 
 const SERVER = "wss://mirror-view.onrender.com";
-const socket = new WebSocket(SERVER);
 
+let socket;
 let pc;
 let selectedDevice = null;
+let pendingIce = [];
 
-// --------------------
-// CONNECT TO SIGNALING
-// --------------------
+// 🔥 AUTO CONNECT
+connectSocket();
 
-socket.onopen = () => {
+function connectSocket(){
 
-    updateStatus("Connected to signaling server");
+    socket = new WebSocket(SERVER);
 
-    socket.send(JSON.stringify({
-        type:"REGISTER_CONTROLLER"
-    }));
-};
+    socket.onopen = () => {
 
-// --------------------
-// RECEIVE SIGNALS
-// --------------------
+        updateStatus("Connected to signaling");
 
-socket.onmessage = async (event)=>{
+        socket.send(JSON.stringify({
+            type:"REGISTER_CONTROLLER"
+        }));
+    };
 
-    const msg = JSON.parse(event.data);
+    socket.onclose = () => {
 
-    switch(msg.type){
+        updateStatus("Reconnecting...");
+        setTimeout(connectSocket,3000);
+    };
 
-        case "DEVICE_LIST":
-            populateDevices(msg.devices);
-            break;
+    socket.onerror = () => {
+        socket.close();
+    };
 
-        case "OFFER":
+    socket.onmessage = async (event)=>{
 
-            await createPeer();
+        const msg = JSON.parse(event.data);
 
-            await pc.setRemoteDescription(
-                new RTCSessionDescription(msg)
-            );
+        switch(msg.type){
 
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
+            case "DEVICE_LIST":
+                populateDevices(msg.devices);
+                break;
 
-            socket.send(JSON.stringify({
-                type:"ANSWER",
-                sdp:answer.sdp
-            }));
+            case "OFFER":
 
-            break;
+                await createPeer();
 
-        case "ICE":
+                await pc.setRemoteDescription(
+                    new RTCSessionDescription(msg)
+                );
 
-            if(pc){
-                pc.addIceCandidate(msg.candidate);
-            }
+                // 🔥 Apply queued ICE
+                pendingIce.forEach(c=>pc.addIceCandidate(c));
+                pendingIce = [];
 
-            break;
-    }
-};
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
 
-// --------------------
-// DEVICE LIST
+                socket.send(JSON.stringify({
+                    type:"ANSWER",
+                    sdp:answer.sdp,
+                    deviceId:selectedDevice
+                }));
+
+                break;
+
+            case "ICE":
+
+                if(pc && pc.remoteDescription){
+                    pc.addIceCandidate(msg.candidate);
+                }else{
+                    pendingIce.push(msg.candidate);
+                }
+
+                break;
+        }
+    };
+}
+
 // --------------------
 
 function populateDevices(devices){
@@ -189,8 +197,6 @@ function populateDevices(devices){
 }
 
 // --------------------
-// CONNECT TO DEVICE
-// --------------------
 
 function connectToDevice(){
 
@@ -205,8 +211,6 @@ function connectToDevice(){
     updateStatus("Device selected");
 }
 
-// --------------------
-// CREATE WEBRTC PEER
 // --------------------
 
 async function createPeer(){
@@ -233,14 +237,20 @@ async function createPeer(){
 
             socket.send(JSON.stringify({
                 type:"ICE",
-                candidate:e.candidate
+                candidate:e.candidate,
+                deviceId:selectedDevice
             }));
+        }
+    };
+
+    pc.onconnectionstatechange = () => {
+
+        if(pc.connectionState==="disconnected"){
+            updateStatus("Stream disconnected");
         }
     };
 }
 
-// --------------------
-// SEND COMMAND
 // --------------------
 
 function sendCommand(cmd){
@@ -252,7 +262,8 @@ function sendCommand(cmd){
 
     socket.send(JSON.stringify({
         type:"COMMAND",
-        command:cmd
+        command:cmd,
+        deviceId:selectedDevice
     }));
 }
 

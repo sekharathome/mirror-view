@@ -65,7 +65,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    const ws = new WebSocket("wss://" + window.location.host);
+    const ws = new WebSocket("wss://mirror-view.onrender.com");
     let mapInstance = null;
 
     ws.onopen = () => ws.send("I_AM_WEB");
@@ -141,3 +141,4 @@
 </script>
 </body>
 </html>
+

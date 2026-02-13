@@ -8,7 +8,7 @@ let webSocket = null;
 
 // Simple in‑memory authentication (replace with real tokens in production)
 const DEVICE_SECRET = "your-device-secret-here";
-const WEB_TOKEN = "your-web-token-here";
+const WEB_TOKEN = "my-web-token-456";
 
 // Heartbeat ping-pong
 setInterval(() => {
@@ -165,3 +165,4 @@ function handleLegacyMessage(ws, msg) {
 }
 
 console.log(`🚀 Server running on port ${PORT}`);
+

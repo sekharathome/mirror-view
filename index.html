@@ -413,6 +413,9 @@ function startLiveCam(camera) {
         liveCamStream = e.streams[0];
         document.getElementById('liveCamVideo').srcObject = liveCamStream;
     };
+    liveCamPC.oniceconnectionstatechange = () => {
+    console.log('ICE connection state:', liveCamPC.iceConnectionState);
+};
     liveCamPC.onicecandidate = (e) => {
         if (e.candidate) {
             console.log('Sending ICE candidate', e.candidate);
@@ -515,15 +518,24 @@ function stopLiveCam() {
 
 // Handle incoming camera offer
 function handleCameraOffer(msg) {
+    console.log('handleCameraOffer', msg);
+    console.log('SDP length:', msg.sdp ? msg.sdp.length : 0);
     if (!liveCamPC) {
         console.error('No live camera peer connection');
         return;
     }
     const offer = new RTCSessionDescription({ type: 'offer', sdp: msg.sdp });
     liveCamPC.setRemoteDescription(offer)
-        .then(() => liveCamPC.createAnswer())
-        .then(answer => liveCamPC.setLocalDescription(answer))
         .then(() => {
+            console.log('Remote description set, creating answer');
+            return liveCamPC.createAnswer();
+        })
+        .then(answer => {
+            console.log('Answer created, SDP length:', answer.sdp.length);
+            return liveCamPC.setLocalDescription(answer);
+        })
+        .then(() => {
+            console.log('Local description set, sending ANSWER');
             ws.send(JSON.stringify({
                 type: 'ANSWER',
                 requestId: msg.requestId,
@@ -612,6 +624,7 @@ function stopRecording() {
 
     // ---------- JSON HANDLER ----------
     function handleJSON(json) {
+        console.log('handleJSON received:', json.type, json);
         switch (json.type) {
             case 'SMS_DATA':
                 dataType = 'sms';
@@ -1127,6 +1140,7 @@ function stopRecording() {
 </script>
 </body>
 </html>
+
 
 
 

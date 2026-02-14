@@ -395,10 +395,7 @@
     }
 }
 // In handleJSON, add a case for CAMERA_OFFER with logging
-case 'CAMERA_OFFER':
-    console.log('📥 Received CAMERA_OFFER', msg);
-    handleCameraOffer(msg);
-    break;
+
 
 // Also add logging in startLiveCam:
 function startLiveCam(camera) {
@@ -672,6 +669,7 @@ function stopRecording() {
                 showNotification('Screen share started');
                 break;
             case 'CAMERA_OFFER':
+                console.log('📥 Received CAMERA_OFFER', msg);
                 handleCameraOffer(msg);
                 break;
             case 'SCREEN_SHARE_STOPPED':
@@ -1129,5 +1127,6 @@ function stopRecording() {
 </script>
 </body>
 </html>
+
 
 

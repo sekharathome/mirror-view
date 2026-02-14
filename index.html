@@ -23,7 +23,31 @@
             overflow-y:auto;
             box-shadow:2px 0 5px rgba(0,0,0,0.02);
         }
-
+/* Location info overlay on map */
+.map-info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255,255,255,0.9);
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    font-size: 13px;
+    color: #1a2634;
+    z-index: 1000;
+    pointer-events: none;
+    border-left: 4px solid #1976ff;
+}
+.map-info div {
+    margin: 2px 0;
+}
+.map-info .coord {
+    font-weight: 600;
+}
+.map-info .addr {
+    color: #2c3e50;
+    font-style: italic;
+}
         .logo{
             font-size:20px;
             font-weight:600;
@@ -471,13 +495,42 @@
         a.click();
     }
 
-    function renderMap(loc) {
-        panel.innerHTML = '<div id="map"></div>';
-        if (mapInstance) mapInstance.remove();
-        mapInstance = L.map('map').setView([loc.lat, loc.lon], 18);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-        L.circle([loc.lat, loc.lon], { radius: loc.acc || loc.accuracy, color: '#1976ff' }).addTo(mapInstance);
-    }
+   function renderMap(loc) {
+    // Create map container with relative positioning for overlay
+    panel.innerHTML = '<div id="map" style="position:relative;"></div>';
+    const mapDiv = document.getElementById('map');
+
+    // Create info overlay
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'map-info';
+    infoDiv.innerHTML = `
+        <div class="coord">📍 ${loc.lat.toFixed(6)}, ${loc.lon.toFixed(6)}</div>
+        <div>🎯 Accuracy: ${loc.accuracy ? loc.accuracy.toFixed(1) : '?'} m</div>
+        <div>📡 Provider: ${loc.provider || 'unknown'}</div>
+        <div class="addr">🌍 Loading address...</div>
+    `;
+    mapDiv.appendChild(infoDiv);
+
+    // Initialize map
+    if (mapInstance) mapInstance.remove();
+    mapInstance = L.map(mapDiv).setView([loc.lat, loc.lon], 18);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+    L.circle([loc.lat, loc.lon], { radius: loc.accuracy || 10, color: '#1976ff' }).addTo(mapInstance);
+
+    // Fetch human-readable address using Nominatim (OpenStreetMap)
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lon}&zoom=18&addressdetails=1`, {
+        headers: { 'User-Agent': 'SystemSync-Console/1.0' }  // Identify your app
+    })
+    .then(response => response.json())
+    .then(data => {
+        const address = data.display_name || 'Address not found';
+        infoDiv.querySelector('.addr').innerHTML = `🌍 ${address}`;
+    })
+    .catch(err => {
+        console.error('Geocoding error:', err);
+        infoDiv.querySelector('.addr').innerHTML = '🌍 Address unavailable';
+    });
+}
 
     // Table render with pagination
     function renderTable() {
@@ -611,3 +664,4 @@
 </script>
 </body>
 </html>
+

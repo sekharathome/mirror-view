@@ -394,7 +394,80 @@
         startLiveCam(camera);
     }
 }
+// In handleJSON, add a case for CAMERA_OFFER with logging
+case 'CAMERA_OFFER':
+    console.log('📥 Received CAMERA_OFFER', msg);
+    handleCameraOffer(msg);
+    break;
 
+// Also add logging in startLiveCam:
+function startLiveCam(camera) {
+    console.log('startLiveCam', camera);
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert('Not connected');
+        return;
+    }
+    currentLiveCam = camera;
+    panel.innerHTML = '<video id="liveCamVideo" autoplay playsinline></video>';
+    liveCamPC = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+    console.log('liveCamPC created');
+    liveCamPC.ontrack = (e) => {
+        console.log('ontrack', e.streams[0]);
+        liveCamStream = e.streams[0];
+        document.getElementById('liveCamVideo').srcObject = liveCamStream;
+    };
+    liveCamPC.onicecandidate = (e) => {
+        if (e.candidate) {
+            console.log('Sending ICE candidate', e.candidate);
+            ws.send(JSON.stringify({
+                type: 'ICE_CANDIDATE',
+                candidate: e.candidate.candidate,
+                sdpMid: e.candidate.sdpMid,
+                sdpMLineIndex: e.candidate.sdpMLineIndex
+            }));
+        }
+    };
+    // Send command to device
+    const cmd = {
+        type: 'COMMAND',
+        command: 'START_CAMERA_STREAM',
+        requestId: generateRequestId(),
+        params: { camera: camera }
+    };
+    console.log('Sending command', cmd);
+    ws.send(JSON.stringify(cmd));
+    // Update UI
+    document.getElementById('liveFrontBtn').parentElement.style.display = 'none';
+    document.getElementById('liveBackBtn').parentElement.style.display = 'none';
+    document.getElementById('stopLiveCamBtn').style.display = 'block';
+}
+
+function handleCameraOffer(msg) {
+    console.log('handleCameraOffer', msg);
+    if (!liveCamPC) {
+        console.error('No live camera peer connection');
+        return;
+    }
+    const offer = new RTCSessionDescription({ type: 'offer', sdp: msg.sdp });
+    liveCamPC.setRemoteDescription(offer)
+        .then(() => {
+            console.log('Remote description set, creating answer');
+            return liveCamPC.createAnswer();
+        })
+        .then(answer => {
+            console.log('Answer created', answer);
+            return liveCamPC.setLocalDescription(answer);
+        })
+        .then(() => {
+            console.log('Local description set, sending ANSWER');
+            ws.send(JSON.stringify({
+                type: 'ANSWER',
+                requestId: msg.requestId,
+                sdp: liveCamPC.localDescription.sdp
+            }));
+        })
+        .catch(e => console.error('Error handling camera offer:', e));
+}
 function startLiveCam(camera) {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
         alert('Not connected');
@@ -1056,4 +1129,5 @@ function stopRecording() {
 </script>
 </body>
 </html>
+
 

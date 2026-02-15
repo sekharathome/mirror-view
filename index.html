@@ -836,22 +836,28 @@
             return;
         }
         panel.innerHTML = '<div style="text-align:center;">Live audio streaming...<br><audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio></div>';
-        liveAudioPC = new RTCPeerConnection({ iceServers: [
- { urls:'stun:stun.l.google.com:19302'},
- {
-   urls:'turn:openrelay.metered.ca:80',
-   username:'openrelayproject',
-   credential:'openrelayproject'
- }
-] });
+        liveAudioPC = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
         liveAudioPC.ontrack = (e) => {
             console.log('Live audio ontrack', e.streams[0]);
+            const audioTracks = e.streams[0].getAudioTracks();
+            console.log('Audio tracks count:', audioTracks.length);
+            if (audioTracks.length === 0) {
+                console.error('No audio tracks in received stream');
+            } else {
+                console.log('Audio track enabled:', audioTracks[0].enabled);
+            }
             liveAudioStream = e.streams[0];
             const audioEl = document.getElementById('liveAudio');
             if (audioEl) {
                 audioEl.srcObject = liveAudioStream;
-                // Force play in case autoplay is blocked
-                audioEl.play().catch(err => console.log('Autoplay prevented, user must click play', err));
+                audioEl.play().catch(err => {
+                    console.log('Autoplay prevented, user must click play', err);
+                    // Show a message to user
+                    const msg = document.createElement('p');
+                    msg.innerText = 'Click the play button above to hear audio.';
+                    msg.style.color = 'red';
+                    audioEl.parentNode.appendChild(msg);
+                });
             }
         };
         liveAudioPC.onicecandidate = (e) => {
@@ -864,10 +870,6 @@
                 }));
             }
         };
-        liveAudioPC.addTransceiver("audio", {
-            direction: "recvonly"
-        });
-
         liveAudioPC.oniceconnectionstatechange = () => {
             console.log('Live audio ICE state:', liveAudioPC.iceConnectionState);
         };
@@ -1244,4 +1246,3 @@
 </script>
 </body>
 </html>
-

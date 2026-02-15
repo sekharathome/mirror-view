@@ -436,7 +436,7 @@
             <button class="live-btn" onclick="startLiveStream()">See Live</button>
         </div>
 
-        <!-- Live Audio button (NEW) -->
+        <!-- Live Audio button -->
         <button onclick="toggleLiveAudio()"><span>🎤</span> <span id="liveAudioBtn">Live Audio</span></button>
         <button onclick="stopLiveAudio()" style="display:none;" id="stopLiveAudioBtn">⏹ Stop Live Audio</button>
 
@@ -767,6 +767,7 @@
 
         liveCamPC = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
         liveCamPC.ontrack = (e) => {
+            console.log('Live cam ontrack', e.streams[0]);
             liveCamStream = e.streams[0];
             document.getElementById('liveCamVideo').srcObject = liveCamStream;
         };
@@ -837,8 +838,14 @@
         panel.innerHTML = '<div style="text-align:center;">Live audio streaming...<br><audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio></div>';
         liveAudioPC = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
         liveAudioPC.ontrack = (e) => {
+            console.log('Live audio ontrack', e.streams[0]);
             liveAudioStream = e.streams[0];
-            document.getElementById('liveAudio').srcObject = liveAudioStream;
+            const audioEl = document.getElementById('liveAudio');
+            if (audioEl) {
+                audioEl.srcObject = liveAudioStream;
+                // Force play in case autoplay is blocked
+                audioEl.play().catch(err => console.log('Autoplay prevented, user must click play', err));
+            }
         };
         liveAudioPC.onicecandidate = (e) => {
             if (e.candidate) {

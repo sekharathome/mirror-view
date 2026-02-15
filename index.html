@@ -915,6 +915,13 @@
     }
 
     function handleAudioOffer(msg) {
+        liveAudioPC.ontrack = (e)=>{
+    const audio = document.getElementById("liveAudio");
+    audio.srcObject = e.streams[0];
+    audio.muted = false;
+    audio.play();
+};
+
         if (!liveAudioPC) {
             console.error('No live audio peer connection');
             return;
@@ -1271,3 +1278,4 @@
 </script>
 </body>
 </html>
+

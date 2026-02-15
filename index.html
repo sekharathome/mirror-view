@@ -474,6 +474,31 @@
     // ---------- CONFIG ----------
     const WS_URL = "wss://mirror-view.onrender.com";
 
+    // ---------- ICE SERVERS (from provided credentials) ----------
+    const ICE_SERVERS = [
+        { urls: "stun:stun.relay.metered.ca:80" },
+        {
+            urls: "turn:standard.relay.metered.ca:80",
+            username: "dc05b4f4ae8aaae1fff19747",
+            credential: "OrIiLL1BH86B17iP"
+        },
+        {
+            urls: "turn:standard.relay.metered.ca:80?transport=tcp",
+            username: "dc05b4f4ae8aaae1fff19747",
+            credential: "OrIiLL1BH86B17iP"
+        },
+        {
+            urls: "turn:standard.relay.metered.ca:443",
+            username: "dc05b4f4ae8aaae1fff19747",
+            credential: "OrIiLL1BH86B17iP"
+        },
+        {
+            urls: "turns:standard.relay.metered.ca:443?transport=tcp",
+            username: "dc05b4f4ae8aaae1fff19747",
+            credential: "OrIiLL1BH86B17iP"
+        }
+    ];
+
     // ---------- GLOBALS ----------
     let ws;
     let pc = null;                     // WebRTC peer for screen share
@@ -765,7 +790,7 @@
             </div>
         `;
 
-        liveCamPC = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        liveCamPC = new RTCPeerConnection({ iceServers: ICE_SERVERS });
         liveCamPC.ontrack = (e) => {
             console.log('Live cam ontrack', e.streams[0]);
             liveCamStream = e.streams[0];
@@ -836,7 +861,7 @@
             return;
         }
         panel.innerHTML = '<div style="text-align:center;">Live audio streaming...<br><audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio></div>';
-        liveAudioPC = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        liveAudioPC = new RTCPeerConnection({ iceServers: ICE_SERVERS });
         liveAudioPC.ontrack = (e) => {
             console.log('Live audio ontrack', e.streams[0]);
             const audioTracks = e.streams[0].getAudioTracks();
@@ -852,7 +877,6 @@
                 audioEl.srcObject = liveAudioStream;
                 audioEl.play().catch(err => {
                     console.log('Autoplay prevented, user must click play', err);
-                    // Show a message to user
                     const msg = document.createElement('p');
                     msg.innerText = 'Click the play button above to hear audio.';
                     msg.style.color = 'red';
@@ -1081,6 +1105,9 @@
                     <div class="file-toolbar">
                         <button onclick="navigateUp()">⬆ Up</button>
                         <span class="file-path">${currentPath}</span>
+                        <div class="download-selected">
+                    <button onclick="downloadSelected()">Download Selected (${selectedFiles.length})</button>
+                </div>
                     </div>
                 </div>
         `;
@@ -1134,9 +1161,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="download-selected">
-                    <button onclick="downloadSelected()">Download Selected (${selectedFiles.length})</button>
-                </div>
+                
             `;
         }
 
@@ -1195,7 +1220,7 @@
     // ---------- SCREEN SHARE WEBRTC ----------
     function handleOffer(sdp) {
         if (!pc) {
-            pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+            pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
             pc.ontrack = (e) => {
                 panel.innerHTML = '<video autoplay playsinline style="width:100%; height:100%;"></video>';
                 document.querySelector('video').srcObject = e.streams[0];

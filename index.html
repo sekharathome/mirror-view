@@ -934,6 +934,7 @@
         console.log('handleJSON:', json.type, json);
         switch (json.type) {
             case 'SMS_DATA':
+                console.log('📩 SMS_DATA received', json.data);
                 dataType = 'sms';
                 currentData = json.data;
                 renderTable();
@@ -1440,3 +1441,4 @@
 </script>
 </body>
 </html>
+

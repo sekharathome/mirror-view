@@ -1385,7 +1385,7 @@
        ws.onopen = () => {
     console.log('WebSocket connected');
     // Send registration – adjust the format to match the server's expectation
-    ws.send('CONTROLLER');  // or JSON.stringify({ type: 'register', role: 'web' })
+    ws.send('I_AM_WEB');  // or JSON.stringify({ type: 'register', role: 'web' })
     setStatus('ONLINE');
     panel.innerHTML = '✅ Connected to server. Ready.';
 };
@@ -1444,5 +1444,6 @@
 </script>
 </body>
 </html>
+
 
 

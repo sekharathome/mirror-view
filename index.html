@@ -553,19 +553,22 @@
     };
     console.log('Attempting to create Firestore room:', roomId);
     try {
-        await setDoc(doc(db, "rooms", roomId), roomData);
+        // Race setDoc against a timeout
+        const setDocPromise = setDoc(doc(db, "rooms", roomId), roomData);
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('setDoc timed out after 10 seconds')), 10000)
+        );
+        await Promise.race([setDocPromise, timeoutPromise]);
         console.log(`✅ Room created (${streamType}):`, roomId);
         showNotification(`Room created: ${roomId}`);
-        // Store room ID per type
         if (streamType === 'screen') screenRoomId = roomId;
         else if (streamType === 'camera') cameraRoomId = roomId;
         else if (streamType === 'audio') audioRoomId = roomId;
-
         listenForRoomAnswer(roomId, streamType);
         return roomId;
     } catch (e) {
         console.error('❌ Failed to create room:', e);
-        showNotification('Firebase error: ' + e.message);
+        showNotification('Firebase error: ' + (e.message || 'unknown error'));
         return null;
     }
 }
@@ -1558,6 +1561,7 @@ async function toggleScreen() {
 </script>
 </body>
 </html>
+
 
 
 

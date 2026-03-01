@@ -954,28 +954,27 @@ async function toggleScreen() {
     }
 
     // ---------- COMMAND SENDING (JSON) ----------
-    function sendCommand(command, params = {}) {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
-            return;
-        }
-        const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-        const payload = {
-            type: 'COMMAND',
-            command: command,
-            requestId: requestId,
-            params: params,
-            timestamp: Date.now()
-        };
-        const json = JSON.stringify(payload);
-        console.log('📤 Sending command:', json); // <-- Added logging
-        ws.send(json);
-        panel.innerHTML = `📤 Command sent: ${command}`;
-        // Set pending command for response handling
-        pendingCommand = command;
-        // Clear after 10 seconds in case no response
-        setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
+ function sendCommand(command, params = {}) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        console.error('WebSocket not open – cannot send command:', command);
+        panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
+        return;
     }
+    const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    const payload = {
+        type: 'COMMAND',
+        command: command,
+        requestId: requestId,
+        params: params,
+        timestamp: Date.now()
+    };
+    const json = JSON.stringify(payload);
+    console.log('📤 Sending command:', json);
+    ws.send(json);
+    panel.innerHTML = `📤 Command sent: ${command}`;
+    pendingCommand = command;
+    setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
+}
 
     // ---------- PLAIN TEXT SENDING (for hideApp/showApp and file downloads) ----------
     function sendPlainText(msg) {
@@ -1559,5 +1558,6 @@ async function toggleScreen() {
 </script>
 </body>
 </html>
+
 
 

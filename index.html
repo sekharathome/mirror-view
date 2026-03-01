@@ -733,44 +733,64 @@
         return pc;
     }
 
-    // ---------- SCREEN SHARE ----------
-    async function toggleScreen() {
-        if (screenActive) {
-            // Stop screen share
-            if (screenPC) screenPC.close();
+   // ---------- SCREEN SHARE ----------
+async function toggleScreen() {
+    console.log('toggleScreen called, current screenActive:', screenActive);
+    if (screenActive) {
+        // Stop screen share
+        console.log('Stopping screen share...');
+        if (screenPC) {
+            screenPC.close();
             screenPC = null;
-            if (screenRoomId) {
-                try {
-                    await updateDoc(doc(db, "rooms", screenRoomId), { status: "ended" });
-                } catch (e) { console.error(e); }
-                screenRoomId = null;
-            }
-            if (screenRoomUnsub) screenRoomUnsub();
-            document.getElementById('screenBtn').innerText = 'Start Screen';
-            screenActive = false;
-            panel.innerHTML = 'Ready.';
-        } else {
-            // Start screen share
-            panel.innerHTML = '<h2>Starting screen share...</h2>';
-            screenPC = createPeerConnection('screen');
+        }
+        if (screenRoomId) {
             try {
-                const offer = await screenPC.createOffer();
-                await screenPC.setLocalDescription(offer);
-                const roomId = await createWebRTCRoom(offer.sdp, 'screen');
-                if (!roomId) return;
-                screenRoomId = roomId;
-                // Notify Android via WebSocket to join the room
-                sendCommand('JOIN_ROOM', { roomId: roomId, type: 'screen' });
-                document.getElementById('screenBtn').innerText = 'Stop Screen';
-                screenActive = true;
-            } catch (e) {
-                console.error('Screen share initiation failed:', e);
-                showNotification('Failed to start screen share');
-                screenPC = null;
+                await updateDoc(doc(db, "rooms", screenRoomId), { status: "ended" });
+                console.log('Room status set to ended');
+            } catch (e) { console.error('Error ending room:', e); }
+            screenRoomId = null;
+        }
+        if (screenRoomUnsub) {
+            screenRoomUnsub();
+            screenRoomUnsub = null;
+        }
+        document.getElementById('screenBtn').innerText = 'Start Screen';
+        screenActive = false;
+        panel.innerHTML = 'Ready.';
+        console.log('Screen share stopped');
+    } else {
+        // Start screen share
+        console.log('Starting screen share...');
+        panel.innerHTML = '<h2>Starting screen share...</h2>';
+        screenPC = createPeerConnection('screen');
+        try {
+            console.log('Creating offer...');
+            const offer = await screenPC.createOffer();
+            console.log('Offer created, setting local description...');
+            await screenPC.setLocalDescription(offer);
+            console.log('Local description set, creating Firebase room...');
+            const roomId = await createWebRTCRoom(offer.sdp, 'screen');
+            if (!roomId) {
+                console.error('Room creation failed – aborting.');
+                panel.innerHTML = 'Ready.';
+                return;
             }
+            screenRoomId = roomId;
+            console.log('Room created with ID:', roomId);
+            // Notify Android via WebSocket to join the room
+            console.log('Sending JOIN_ROOM command...');
+            sendCommand('JOIN_ROOM', { roomId: roomId, type: 'screen' });
+            document.getElementById('screenBtn').innerText = 'Stop Screen';
+            screenActive = true;
+            console.log('Screen share initiation completed');
+        } catch (e) {
+            console.error('❌ Screen share initiation failed:', e);
+            showNotification('Failed to start screen share: ' + e.message);
+            screenPC = null;
+            panel.innerHTML = 'Ready.';
         }
     }
-
+}
     // ---------- SNAP SCREEN (capture current video frame) ----------
     function snapScreen() {
         const video = document.querySelector('video');
@@ -1537,3 +1557,4 @@
 </script>
 </body>
 </html>
+

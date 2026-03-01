@@ -1012,33 +1012,68 @@
         }, 'image/png');
     }
 
-    function toggleRecording() {
-        const video = document.getElementById('liveCamVideo');
-        if (!video || !video.srcObject) {
-            alert('No live stream');
-            return;
-        }
-        if (mediaRecorder && mediaRecorder.state === 'recording') {
-            mediaRecorder.stop();
-            document.getElementById('recordBtn').innerText = 'Record Video';
+   function toggleRecording() {
+    const video = document.getElementById('liveCamVideo');
+    if (!video || !video.srcObject) {
+        alert('No live stream');
+        return;
+    }
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        document.getElementById('recordBtn').innerText = 'Record Video';
+    } else {
+        recordedChunks = [];
+
+        // Create canvas with swapped dimensions (for 90° rotation)
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const stream = video.srcObject;
+
+        // Wait for video metadata to be ready
+        if (video.videoWidth === 0) {
+            video.onloadedmetadata = () => startCanvasRecording(video, canvas, ctx, stream);
         } else {
-            recordedChunks = [];
-            const stream = video.srcObject;
-            mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `recording_${Date.now()}.webm`;
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-            mediaRecorder.start();
-            document.getElementById('recordBtn').innerText = 'Stop Recording';
+            startCanvasRecording(video, canvas, ctx, stream);
         }
     }
+}
+
+function startCanvasRecording(video, canvas, ctx, originalStream) {
+    // Swap width and height for 90° rotation
+    canvas.width = video.videoHeight;
+    canvas.height = video.videoWidth;
+
+    // Draw video frame rotated 90° clockwise (corrects 90° CCW)
+    function drawVideoFrame() {
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(90 * Math.PI / 180);
+        ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2,
+                     video.videoWidth, video.videoHeight);
+        ctx.restore();
+        requestAnimationFrame(drawVideoFrame);
+    }
+    drawVideoFrame();
+
+    // Capture canvas stream and add audio from original stream
+    const canvasStream = canvas.captureStream(30); // 30 fps
+    originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+
+    mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+    mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
+    mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `recording_${Date.now()}.webm`;
+        a.click();
+        URL.revokeObjectURL(url);
+        canvasStream.getTracks().forEach(track => track.stop());
+    };
+    mediaRecorder.start();
+    document.getElementById('recordBtn').innerText = 'Stop Recording';
+}
 
     // ---------- APP ICON TOGGLE ----------
     function toggleAppIcon() {
@@ -1345,3 +1380,4 @@
 </script>
 </body>
 </html>
+

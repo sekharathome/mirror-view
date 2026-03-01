@@ -512,8 +512,21 @@
     }
 
     // ---------- PEER CONNECTION CREATORS ----------
-    function createPeerConnection(streamType, onTrackCallback) {
+    function createPeerConnection(streamType, onTrackCallback, useMic = false) {
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+
+        // Add transceivers to receive media
+        if (streamType === 'screen') {
+            pc.addTransceiver('video', { direction: 'recvonly' });
+        } else if (streamType === 'camera') {
+            pc.addTransceiver('video', { direction: 'recvonly' });
+            if (useMic) {
+                pc.addTransceiver('audio', { direction: 'recvonly' });
+            }
+        } else if (streamType === 'audio') {
+            pc.addTransceiver('audio', { direction: 'recvonly' });
+        }
+
         pc.ontrack = onTrackCallback;
         pc.onicecandidate = (e) => {
             if (e.candidate) {
@@ -525,13 +538,16 @@
             }
         };
         pc.oniceconnectionstatechange = () => {
-            console.log(`${streamType} PC ICE state:`, pc.iceConnectionState);
+            console.log(`${streamType} ICE state:`, pc.iceConnectionState);
             if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
                 if (streamType === 'screen') {
                     screenActive = false;
                     document.getElementById('screenBtn').innerText = 'Start Screen';
                 }
             }
+        };
+        pc.onconnectionstatechange = () => {
+            console.log(`${streamType} connection state:`, pc.connectionState);
         };
         return pc;
     }
@@ -557,6 +573,7 @@
             const pc = getPCForType(msg.streamType);
             if (pc && msg.candidate) {
                 pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(e => console.error('Error adding ICE candidate:', e));
+                console.log('ICE candidate added for', msg.streamType);
             }
         }
     }
@@ -585,7 +602,9 @@
                     </div>
                 `;
                 document.querySelector('video').srcObject = e.streams[0];
-            });
+                console.log('ontrack for screen', e.streams);
+            }, false);
+
             try {
                 const offer = await screenPC.createOffer();
                 await screenPC.setLocalDescription(offer);
@@ -644,7 +663,8 @@
         cameraPC = createPeerConnection('camera', (e) => {
             const video = document.getElementById('liveCamVideo');
             if (video) video.srcObject = e.streams[0];
-        });
+            console.log('ontrack for camera', e.streams);
+        }, useMic);
 
         try {
             const offer = await cameraPC.createOffer();
@@ -691,7 +711,9 @@
                 audioEl.srcObject = e.streams[0];
                 audioEl.play().catch(err => console.log('Autoplay prevented:', err));
             }
-        });
+            console.log('ontrack for audio', e.streams);
+        }, true);
+
         try {
             const offer = await audioPC.createOffer();
             await audioPC.setLocalDescription(offer);
@@ -822,6 +844,7 @@
                 break;
             default:
                 console.log('Unhandled JSON type:', json.type);
+                // If we have a pending command, try to infer the response format
                 if (pendingCommand === 'LIST_FILES' && Array.isArray(json)) {
                     dataType = 'file';
                     currentData = json;
@@ -915,6 +938,7 @@
             downloadBase64(base64, 'downloaded_file');
             pendingCommand = null;
         } else if (msg.startsWith('[') || msg.startsWith('{')) {
+            // Try to parse as JSON (raw response from device)
             try {
                 const parsed = JSON.parse(msg);
                 handleJSON(parsed);

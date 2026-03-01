@@ -472,15 +472,16 @@
     import { initializeApp } from "firebase/app";
     import { getFirestore, doc, setDoc, updateDoc, collection, addDoc, onSnapshot, getDoc } from "firebase/firestore";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc",
-        authDomain: "webviewiot.firebaseapp.com",
-        projectId: "webviewiot",
-        storageBucket: "webviewiot.firebasestorage.app",
-        messagingSenderId: "634777347775",
-        appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a",
-        measurementId: "G-2KW4EJYTRB"
-    };
+   const firebaseConfig = {
+  apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc",
+  authDomain: "webviewiot.firebaseapp.com",
+  databaseURL: "https://webviewiot-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "webviewiot",
+  storageBucket: "webviewiot.firebasestorage.app",
+  messagingSenderId: "634777347775",
+  appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a",
+  measurementId: "G-2KW4EJYTRB"
+};
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -1558,6 +1559,7 @@ async function toggleScreen() {
 </script>
 </body>
 </html>
+
 
 
 

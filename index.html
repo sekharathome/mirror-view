@@ -685,14 +685,14 @@
         }
     }
 
-    function stopLiveStream() {
-        if (cameraPC) {
-            cameraPC.close();
-            cameraPC = null;
-        }
-        sendSignalingMessage({ type: 'STOP_CAMERA' });
-        panel.innerHTML = 'Ready.';
+function stopLiveStream() {
+    if (cameraPC) {
+        cameraPC.close();
+        cameraPC = null;
     }
+    sendSignalingMessage({ type: 'STOP_CAMERA' });
+    panel.innerHTML = 'Ready.';
+}
 
     // ---------- LIVE AUDIO ----------
     async function toggleLiveAudio() {
@@ -1023,13 +1023,10 @@
         document.getElementById('recordBtn').innerText = 'Record Video';
     } else {
         recordedChunks = [];
-
-        // Create canvas with swapped dimensions (for 90° rotation)
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const stream = video.srcObject;
 
-        // Wait for video metadata to be ready
         if (video.videoWidth === 0) {
             video.onloadedmetadata = () => startCanvasRecording(video, canvas, ctx, stream);
         } else {
@@ -1039,15 +1036,14 @@
 }
 
 function startCanvasRecording(video, canvas, ctx, originalStream) {
-    // Swap width and height for 90° rotation
+    // Swap dimensions for 90° rotation
     canvas.width = video.videoHeight;
     canvas.height = video.videoWidth;
 
-    // Draw video frame rotated 90° clockwise (corrects 90° CCW)
     function drawVideoFrame() {
         ctx.save();
         ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(90 * Math.PI / 180);
+        ctx.rotate(90 * Math.PI / 180); // clockwise 90°
         ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2,
                      video.videoWidth, video.videoHeight);
         ctx.restore();
@@ -1055,8 +1051,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
     }
     drawVideoFrame();
 
-    // Capture canvas stream and add audio from original stream
-    const canvasStream = canvas.captureStream(30); // 30 fps
+    const canvasStream = canvas.captureStream(30);
     originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
 
     mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
@@ -1074,7 +1069,6 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
     mediaRecorder.start();
     document.getElementById('recordBtn').innerText = 'Stop Recording';
 }
-
     // ---------- APP ICON TOGGLE ----------
     function toggleAppIcon() {
         if (iconHidden) sendPlainText('showApp');
@@ -1380,4 +1374,5 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 </script>
 </body>
 </html>
+
 

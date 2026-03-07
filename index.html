@@ -383,14 +383,14 @@
             margin-left: 10px;
         }
 
-        /* ---------- MODAL / POPUP STYLES (UPDATED) ---------- */
+         /* ---------- MODAL / POPUP STYLES ---------- */
         .modal-overlay {
-            position: center;
+            position: fixed;
             top: 0;
             left: 0;
-            width: 30%;
+            width: 100%;                          /* full viewport — dark backdrop covers all */
             height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             display: none;
             justify-content: center;
             align-items: center;
@@ -400,42 +400,47 @@
             display: flex;
         }
         .mobile-popup {
-            height: 95vh;               /* full screen height */
-            width: calc(95vh * 9 / 16); /* 9:16 portrait = phone shape */
+            /* Centred portrait phone: 90vh tall, width = height × 9/16 */
+            height: 90vh;
+            width: calc(90vh * 9 / 16);
+            max-width: 95vw;
             background: #1a1a1a;
-            border-radius: 10px;                 /* more pronounced curve */
-            padding: 10px 10px 10px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-            border: 3px solid #333;
+            border-radius: 24px;
+            padding: 0;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.9);
+            border: 2px solid #333;
             color: white;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
         .mobile-popup video {
             width: 100%;
-            min-height: 0;            /* flex shrink fix so it doesn't overflow */
+            flex: 1;                               /* fills all space above buttons */
+            min-height: 0;
             background: black;
-            border-radius: 10px;
-            object-fit: contain;                  /* show entire video without cropping */
-            margin-bottom: 10px;
-            flex: 1;                  /* fills ALL space above the buttons */
+            border-radius: 0;
+            object-fit: contain;
+            display: block;
         }
         .popup-controls {
             display: flex;
-            padding: 14px 12px;
-            background: #111; /* dark strip below the video */
+            gap: 10px;
             justify-content: center;
-            flex-shrink: 0;   /* buttons are never squeezed — always fully visible */
+            flex-wrap: wrap;
+            padding: 14px 12px;
+            background: #111;
+            flex-shrink: 0;
         }
         .popup-controls button {
             width: auto;
             margin: 0;
-            padding: 10px 20px;
+            padding: 10px 18px;
             background: #333;
             color: white;
             border: none;
             border-radius: 40px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 500;
             cursor: pointer;
             transition: 0.2s;
@@ -590,7 +595,12 @@
     const modalRecordBtn = document.getElementById('modalRecordBtn');
     const modalFullscreenBtn = document.getElementById('modalFullscreenBtn');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
-
+   
+    function getFormattedDateTime() {
+        const d = new Date();
+        const pad = (n) => n.toString().padStart(2, '0');
+        return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}-${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+    }
     // ---------- ICE SERVERS ----------
     const ICE_SERVERS = [
         { urls: "stun:stun.relay.metered.ca:80" },
@@ -690,6 +700,10 @@
     }
 
     function closeScreenModal() {
+        // Stop recording if it's active
+        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+            screenMediaRecorder.stop();  // this triggers onstop and saves the file
+        }
         modalOverlay.classList.remove('show');
         document.body.classList.remove('modal-open');
         // Stop screen share if still active
@@ -755,8 +769,8 @@
         canvas.toBlob(blob => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
+            a.download = `screenImage-${getFormattedDateTime()}.png`;
             a.href = url;
-            a.download = `screen_${Date.now()}.png`;
             a.click();
             URL.revokeObjectURL(url);
         }, 'image/png');
@@ -809,7 +823,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `screen_rec_${Date.now()}.webm`;
+            a.download = `screenVideo-${getFormattedDateTime()}.webm`;
             a.click();
             URL.revokeObjectURL(url);
             canvasStream.getTracks().forEach(track => track.stop());
@@ -1562,6 +1576,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 </script>
 </body>
 </html>
+
 
 
 

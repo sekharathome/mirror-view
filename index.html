@@ -400,10 +400,10 @@
             display: flex;
         }
         .mobile-popup {
-            width: min(100vw, 1400px);          /* responsive width, up to 1400px */
-            max-height: 100vh;                   /* never exceed viewport height */
+            height: 100vh;               /* full screen height */
+            width: calc(100vh * 9 / 16); /* 9:16 portrait = phone shape */
             background: #1a1a1a;
-            border-radius: 30px;                 /* more pronounced curve */
+            border-radius: 10px;                 /* more pronounced curve */
             padding: 20px 20px 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.6);
             border: 2px solid #333;
@@ -413,18 +413,19 @@
         }
         .mobile-popup video {
             width: 100%;
-            aspect-ratio: 16 / 9;                /* fixed 16:9 */
+            min-height: 0;            /* flex shrink fix so it doesn't overflow */
             background: black;
-            border-radius: 24px;
+            border-radius: 10px;
             object-fit: contain;                  /* show entire video without cropping */
-            margin-bottom: 20px;
-            flex-shrink: 0;
+            margin-bottom: 10px;
+            flex: 1;                  /* fills ALL space above the buttons */
         }
         .popup-controls {
             display: flex;
-            gap: 12px;
+            padding: 14px 12px;
+            background: #111; /* dark strip below the video */
             justify-content: center;
-            flex-wrap: wrap;
+            flex-shrink: 0;   /* buttons are never squeezed — always fully visible */
         }
         .popup-controls button {
             width: auto;
@@ -1561,5 +1562,6 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 </script>
 </body>
 </html>
+
 
 

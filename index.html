@@ -697,6 +697,13 @@
     function openScreenModal() {
         modalOverlay.classList.add('show');
         document.body.classList.add('modal-open');
+        // Reset recording button and state
+        modalRecordBtn.innerText = '⏺ Record';
+        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+            screenMediaRecorder.stop(); // stop any lingering recording
+            }
+        screenMediaRecorder = null;
+        screenRecordedChunks = [];
     }
 
     function closeScreenModal() {
@@ -1576,6 +1583,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 </script>
 </body>
 </html>
+
 
 
 

@@ -385,7 +385,7 @@
 
         /* ---------- MODAL / POPUP STYLES (UPDATED) ---------- */
         .modal-overlay {
-            position: fixed;
+            position: center;
             top: 0;
             left: 0;
             width: 30%;
@@ -400,13 +400,13 @@
             display: flex;
         }
         .mobile-popup {
-            height: 100vh;               /* full screen height */
-            width: calc(100vh * 9 / 16); /* 9:16 portrait = phone shape */
+            height: 95vh;               /* full screen height */
+            width: calc(95vh * 9 / 16); /* 9:16 portrait = phone shape */
             background: #1a1a1a;
             border-radius: 10px;                 /* more pronounced curve */
-            padding: 20px 20px 20px;
+            padding: 10px 10px 10px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-            border: 2px solid #333;
+            border: 3px solid #333;
             color: white;
             display: flex;
             flex-direction: column;
@@ -1562,6 +1562,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 </script>
 </body>
 </html>
+
 
 
 

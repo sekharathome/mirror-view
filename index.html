@@ -4,7 +4,7 @@
     <title>SystemSync Console</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        /* ---------- your existing styles ---------- */
+        /* ---------- your existing styles (unchanged) ---------- */
         body{
             margin:0;
             background:#f5f7fa;
@@ -383,14 +383,14 @@
             margin-left: 10px;
         }
 
-        /* ---------- MODAL / POPUP STYLES ---------- */
+        /* ---------- MODAL / POPUP STYLES (UPDATED) ---------- */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             display: none;
             justify-content: center;
             align-items: center;
@@ -400,42 +400,45 @@
             display: flex;
         }
         .mobile-popup {
-            width: 360px;           /* typical phone width */
-            max-width: 90%;
+            width: min(95vw, 1400px);          /* responsive width, up to 1400px */
+            max-height: 95vh;                   /* never exceed viewport height */
             background: #1a1a1a;
-            border-radius: 36px;     /* curved like a phone */
-            padding: 20px 15px 25px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            border: 2px solid #444;
-            position: relative;
+            border-radius: 48px;                 /* more pronounced curve */
+            padding: 25px 20px 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            border: 3px solid #333;
             color: white;
+            display: flex;
+            flex-direction: column;
         }
         .mobile-popup video {
             width: 100%;
-            aspect-ratio: 16/9;      /* 16:9 exactly */
+            aspect-ratio: 16 / 9;                /* fixed 16:9 */
             background: black;
-            border-radius: 16px;
-            margin-bottom: 15px;
-            object-fit: contain;
+            border-radius: 24px;
+            object-fit: contain;                  /* show entire video without cropping */
+            margin-bottom: 20px;
+            flex-shrink: 0;
         }
         .popup-controls {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             justify-content: center;
-            margin-bottom: 15px;
             flex-wrap: wrap;
         }
         .popup-controls button {
             width: auto;
             margin: 0;
-            padding: 8px 16px;
+            padding: 10px 20px;
             background: #333;
             color: white;
             border: none;
-            border-radius: 30px;
-            font-size: 13px;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 500;
             cursor: pointer;
             transition: 0.2s;
+            flex: 0 1 auto;
         }
         .popup-controls button:hover {
             background: #1976ff;
@@ -446,11 +449,18 @@
         .popup-controls button.close-btn:hover {
             background: #b71c1c;
         }
-        /* prevent clicks on background when modal is open */
+        .popup-controls button.fullscreen-btn {
+            background: #555;
+        }
+        .popup-controls button.fullscreen-btn:hover {
+            background: #1976ff;
+        }
+
+        /* blur background when modal is open */
         body.modal-open #sidebar,
         body.modal-open #main {
             pointer-events: none;
-            filter: blur(2px);
+            filter: blur(4px);
             transition: filter 0.3s;
         }
     </style>
@@ -462,9 +472,9 @@
     <div class="mobile-popup">
         <video id="modalScreenVideo" autoplay playsinline></video>
         <div class="popup-controls">
-            <button id="modalFullscreenBtn">⛶</button>
             <button id="modalSnapBtn">📸 Snap</button>
             <button id="modalRecordBtn">⏺ Record</button>
+            <button id="modalFullscreenBtn" class="fullscreen-btn">⛶</button>
             <button id="modalCloseBtn" class="close-btn">✖ Close</button>
         </div>
     </div>
@@ -577,6 +587,7 @@
     const modalVideo = document.getElementById('modalScreenVideo');
     const modalSnapBtn = document.getElementById('modalSnapBtn');
     const modalRecordBtn = document.getElementById('modalRecordBtn');
+    const modalFullscreenBtn = document.getElementById('modalFullscreenBtn');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
 
     // ---------- ICE SERVERS ----------
@@ -775,15 +786,7 @@
             }
         }
     }
-// fullscreen toggle function
-function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-        modalVideo.requestFullscreen().catch(err => console.error('Fullscreen error:', err));
-    } else {
-        document.exitFullscreen();
-    }
-}
-modalFullscreenBtn.addEventListener('click', toggleFullscreen);
+
     function startScreenRecording(canvas, ctx, originalStream) {
         canvas.width = modalVideo.videoWidth;
         canvas.height = modalVideo.videoHeight;
@@ -814,9 +817,19 @@ modalFullscreenBtn.addEventListener('click', toggleFullscreen);
         modalRecordBtn.innerText = '⏹ Stop Rec';
     }
 
+    // Fullscreen toggle
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            modalVideo.requestFullscreen().catch(err => console.error('Fullscreen error:', err));
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
     // Attach modal button listeners
     modalSnapBtn.addEventListener('click', snapScreenFromModal);
     modalRecordBtn.addEventListener('click', toggleScreenRecording);
+    modalFullscreenBtn.addEventListener('click', toggleFullscreen);
     modalCloseBtn.addEventListener('click', closeScreenModal);
 
     // ---------- LIVE CAMERA ----------

@@ -248,7 +248,15 @@ const panel = ()=>document.getElementById('main-panel');
 const statusEl = ()=>document.getElementById('status');
 
 // ── Signaling ─────────────────────────────────────────────────────────────────
-function sig(msg){ ws&&ws.readyState===1&&ws.send(JSON.stringify({type:'SIGNALING',data:msg})); }
+function sig(msg){
+  if(!ws||ws.readyState!==1){
+    console.warn('[sig] Cannot send — ws state:', ws?ws.readyState:'null', 'msg type:', msg&&msg.type);
+    return;
+  }
+  const payload=JSON.stringify({type:'SIGNALING',data:msg});
+  console.log('[sig] →', msg.type, msg.streamType||'');
+  ws.send(payload);
+}
 
 function mkPC(streamType, useMic){
   const pc=new RTCPeerConnection({iceServers:ICE});
@@ -283,39 +291,82 @@ function handleSig(msg){
 async function toggleScreen(){
   if(screenActive){
     sig({type:'STOP_SCREEN',streamType:'screen'});
-    screenPC&&screenPC.close(); screenPC=null;
-    stopScreenRec(); screenActive=false;
+    if(screenPC){ screenPC.close(); screenPC=null; }
+    stopScreenRec();
+    screenActive=false;
     document.getElementById('screenBtn').innerText='Screen Share';
-    panel().innerHTML='Ready.'; return;
+    panel().innerHTML='<div style="padding:12px;color:#64748b">Screen share stopped.</div>';
+    return;
   }
-  panel().innerHTML='<p style="color:#94a3b8;padding:20px">⏳ Starting screen share…</p>';
-  screenPC=mkPC('screen',false);
+
+  // Guard: must be connected to relay AND device must be paired
+  if(!ws||ws.readyState!==1){
+    panel().innerHTML='<div style="color:#f87171;padding:12px">⚠ Not connected. Click Reconnect first.</div>';
+    return;
+  }
+
+  // ── Step 1: render toolbar + video into DOM FIRST (synchronous) ─────────────
+  // This guarantees the <video id="screenVideo"> element EXISTS before ontrack fires.
+  // Previously this was done AFTER await createOffer — a race where ontrack could
+  // fire before the video element was in the DOM, silently discarding the stream.
+  document.getElementById('screenBtn').innerText='Stop Screen';
+  panel().innerHTML=`
+    <div class="screen-toolbar">
+      <span style="font-size:12px;color:#64748b;font-weight:600">QUALITY</span>
+      <select id="sqSel">
+        <option value="360p">360p — Low bandwidth</option>
+        <option value="720p" selected>720p — Balanced</option>
+        <option value="1080p">1080p — High quality</option>
+        <option value="1440p">1440p — Ultra HD</option>
+      </select>
+      <button id="screenSnapBtn">📸 Screenshot</button>
+      <button id="screenRecBtn">⏺ Record</button>
+      <button id="screenStopBtn" class="stop">⏹ Stop</button>
+    </div>
+    <div id="screenStatus" style="padding:10px;color:#94a3b8;font-size:13px">⏳ Creating offer…</div>
+    <video id="screenVideo" autoplay playsinline style="width:100%;max-height:72vh;border-radius:8px;background:#000;display:none"></video>`;
+
+  // Bind toolbar buttons immediately (they exist in DOM now)
+  document.getElementById('sqSel').onchange       = e=>changeScreenQ(e.target.value);
+  document.getElementById('screenSnapBtn').onclick = snapScreen;
+  document.getElementById('screenRecBtn').onclick  = toggleScreenRec;
+  document.getElementById('screenStopBtn').onclick = toggleScreen;
+
+  // ── Step 2: create PeerConnection and offer ──────────────────────────────────
   try{
-    const offer=await screenPC.createOffer();
+    screenPC = mkPC('screen', false);
+
+    // Show video once stream arrives, hide status label
+    const origOntrack = screenPC.ontrack;
+    screenPC.ontrack = e => {
+      origOntrack && origOntrack.call(screenPC, e);
+      const v = document.getElementById('screenVideo');
+      const s = document.getElementById('screenStatus');
+      if(v){ v.style.display='block'; v.srcObject=e.streams[0]; }
+      if(s) s.style.display='none';
+    };
+
+    const offer = await screenPC.createOffer();
     await screenPC.setLocalDescription(offer);
-    sig({type:'OFFER',sdp:offer.sdp,streamType:'screen'});
-    screenActive=true;
-    document.getElementById('screenBtn').innerText='Stop Screen';
-    panel().innerHTML=`
-      <div class="screen-toolbar">
-        <span style="font-size:12px;color:#64748b;font-weight:600">QUALITY</span>
-        <select id="sqSel">
-          <option value="360p">360p — Low bandwidth</option>
-          <option value="720p" selected>720p — Balanced</option>
-          <option value="1080p">1080p — High quality</option>
-          <option value="1440p">1440p — Ultra HD</option>
-        </select>
-        <button id="screenSnapBtn">📸 Screenshot</button>
-        <button id="screenRecBtn">⏺ Record</button>
-        <button id="screenStopBtn" class="stop">⏹ Stop</button>
-      </div>
-      <video id="screenVideo" autoplay playsinline style="width:100%;max-height:72vh;border-radius:8px;background:#000"></video>`;
-    // Bind buttons AFTER innerHTML is set
-    document.getElementById('sqSel').onchange=e=>changeScreenQ(e.target.value);
-    document.getElementById('screenSnapBtn').onclick=snapScreen;
-    document.getElementById('screenRecBtn').onclick=toggleScreenRec;
-    document.getElementById('screenStopBtn').onclick=toggleScreen;
-  }catch(e){ console.error(e); screenPC=null; panel().innerHTML='<div style="color:#f87171">Failed: '+e.message+'</div>'; }
+
+    // ── Step 3: send OFFER via signaling — with explicit error if WS not ready ──
+    if(!ws||ws.readyState!==1){
+      throw new Error('WebSocket closed while creating offer. Try again.');
+    }
+    sig({type:'OFFER', sdp:offer.sdp, streamType:'screen'});
+    screenActive = true;
+
+    const statusEl2 = document.getElementById('screenStatus');
+    if(statusEl2) statusEl2.innerText='⏳ Offer sent — waiting for device to answer…';
+    console.log('[Screen] OFFER sent, waiting for ANSWER');
+
+  }catch(e){
+    console.error('[Screen] toggleScreen error:', e);
+    if(screenPC){ screenPC.close(); screenPC=null; }
+    screenActive = false;
+    document.getElementById('screenBtn').innerText='Screen Share';
+    panel().innerHTML=`<div style="color:#f87171;padding:12px">❌ Screen share failed: ${e.message}</div>`;
+  }
 }
 
 const Q_PRESETS={

@@ -361,13 +361,13 @@
             color:white;
             border-color:#1976ff;
         }
-        img, video{
-            max-width:100%;
-            max-height:70vh;
-            border-radius:8px;
-            display:block;
-            margin:0 auto;
-        }
+        img, video {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 8px;
+    display: block;
+    margin: 0 auto;
+}
         audio{
             width:100%;
             margin-top:15px;
@@ -414,27 +414,26 @@
             flex-direction: column;
             overflow: hidden;
         }
-        .mobile-popup video {
-        width: 100%;
-        flex: 1; 
-        min-height: 0;
-        background: black;
-        border-radius: 0;
-        object-fit: contain;
-        display: block;
-        flex-shrink: 0;             /* ← don't let it compress */
-        }
-        .popup-controls {
-       
-        flex-shrink: 0;
-        background: #111;
-        border-top: 1px solid #777;
-        padding: 10px 12px 14px;   /* ← give buttons breathing room */
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 15px;
-        }
+      .mobile-popup video {
+    width: 100%;
+    flex: 1;              /* fills all space above buttons */
+    min-height: 0;
+    background: black;
+    border-radius: 0;
+    object-fit: contain;
+    display: block;
+    /* remove flex-shrink: 0 — it fights against flex: 1 */
+}
+      .popup-controls {
+    flex-shrink: 0;
+    background: #111;
+    border-top: 1px solid #777;
+    padding: 10px 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
         .popup-controls button {
             flex: 1;
             background: #1e1e1e;
@@ -1587,6 +1586,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 </script>
 </body>
 </html>
+
 
 
 

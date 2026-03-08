@@ -403,7 +403,7 @@
             /* Centred portrait phone: 90vh tall, width = height × 9/16 */
             height: 90vh;
             width: calc(90vh * 9 / 16);
-            max-width: 95vw;
+            max-width: 100vw;
             background: #1a1a1a;
             border-radius: 20px;
             padding: 2;
@@ -424,13 +424,14 @@
             display: block;
         }
         .popup-controls {
-            display: flex;
-            gap: 40px;
-            justify-content: center;
-            flex-wrap: wrap;
-            padding: 2px 2px;
-            background: #111;
-            flex-shrink: 0;
+              flex-shrink: 0;
+              background: #111;
+              border-top: 1px solid #777;
+              padding: 1px 1px 1px;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 15px;
         }
         .popup-controls button {
             flex: 1;
@@ -1584,6 +1585,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 </script>
 </body>
 </html>
+
 
 
 

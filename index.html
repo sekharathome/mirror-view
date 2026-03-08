@@ -416,7 +416,7 @@
         }
         .mobile-popup video {
         width: 100%;
-        aspect-ratio: 16 / 9;       /* ← strict 16:9, not flex:1 */
+        flex: 1; 
         min-height: 0;
         background: black;
         border-radius: 0;
@@ -425,7 +425,7 @@
         flex-shrink: 0;             /* ← don't let it compress */
         }
         .popup-controls {
-        margin-top: auto;           /* ← pushes controls to the very bottom */
+       
         flex-shrink: 0;
         background: #111;
         border-top: 1px solid #777;
@@ -1587,6 +1587,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 </script>
 </body>
 </html>
+
 
 
 

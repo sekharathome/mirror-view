@@ -1576,7 +1576,25 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
             setStatus('ERROR');
         };
     }
-
+// Add this inside your <script> (after DOM is ready)
+document.querySelectorAll('input[name="clickCameraSelect"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const flashCheckbox = document.getElementById('clickFlashCheckbox');
+        const flashLabel = flashCheckbox.closest('.camera-option'); // the container div
+        if (this.value === 'front') {
+            flashLabel.style.display = 'none';
+        } else {
+            flashLabel.style.display = ''; // show again
+        }
+    });
+});
+// Also trigger on page load for initial state
+window.addEventListener('load', () => {
+    const selected = document.querySelector('input[name="clickCameraSelect"]:checked');
+    if (selected && selected.value === 'front') {
+        document.getElementById('clickFlashCheckbox').closest('.camera-option').style.display = 'none';
+    }
+});
     // ---------- ATTACH FUNCTIONS TO WINDOW ----------
     window.toggleScreen = toggleScreen;
     window.toggleCameraPanel = toggleCameraPanel;
@@ -1606,6 +1624,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 </script>
 </body>
 </html>
+
 
 
 

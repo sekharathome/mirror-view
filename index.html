@@ -410,56 +410,59 @@
         }
 
         /* The phone frame */
-        .phone-frame {
-            width: calc(76vh * 9 / 16);   /* portrait 9:16 ratio */
-            height: 76vh;
-            max-width: 92vw;
-            background: #111;
-            border-radius: 22px 22px 18px 18px;
-            border: 4px solid #2e2e2e;
-            box-shadow: 0 20px 70px rgba(0,0,0,0.95),
-                        inset 0 0 0 1px rgba(255,255,255,0.06);
-            overflow: hidden;
-            position: relative;
-        }
+     .mobile-popup {
+    height: 90vh;
+    width: calc(90vh * 9 / 16);
+    max-width: 100vw;
+    background: #1a1a1a;
+    border-radius: 20px;
+    padding: 0;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+    border: 5px solid #333;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
 
-        .phone-frame video {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background: #000;
-            display: block;
-        }
+      .mobile-popup video {
+    width: 100%;
+    flex: 1 1 auto;                /* takes all remaining vertical space */
+    min-height: 0;
+    background: black;
+    object-fit: contain;
+    display: block;
+}
 
         /* Control bar sits BELOW the phone frame */
         .popup-controls {
-            width: calc(76vh * 9 / 16);
-            max-width: 92vw;
-            background: #1c1c1e;
-            border-radius: 0 0 14px 14px;
-            border: 4px solid #2e2e2e;
-            border-top: none;
-            padding: 10px 14px 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
+    flex-shrink: 0;                /* stays at bottom */
+    background: #111;
+    border-top: 1px solid #777;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+}
 
-        .popup-controls button {
-            flex: 1;
-            background: #2c2c2e;
-            color: white;
-            border: none;
-            padding: 12px 4px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.1s, background 0.15s;
-        }
+       .popup-controls button {
+    flex: 1;
+    background: #1e1e1e;
+    color: white;
+    border: none;
+    padding: 10px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 20px;               /* bigger icons */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    min-width: 50px;
+}
         .popup-controls button:hover {
             background: #3a3a3c;
             transform: scale(1.05);
@@ -715,30 +718,30 @@
     }
 
     // ---------- MODAL CONTROL ----------
-    function openScreenModal() {
-        modalOverlay.classList.add('show');
-        document.body.classList.add('modal-open');
-        // Reset recording button and state
-        modalRecordBtn.innerText = '🔴';
-        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
-            screenMediaRecorder.stop(); // stop any lingering recording
-            }
-        screenMediaRecorder = null;
-        screenRecordedChunks = [];
+   function openScreenModal() {
+    modalOverlay.classList.add('show');
+    document.body.classList.add('modal-open');
+    // Reset recording button to red dot
+    modalRecordBtn.innerText = '🔴';          // red dot = start recording
+    if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+        screenMediaRecorder.stop();
     }
+    screenMediaRecorder = null;
+    screenRecordedChunks = [];
+}
 
     function closeScreenModal() {
-        // Stop recording if it's active
-        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
-            screenMediaRecorder.stop();  // this triggers onstop and saves the file
-        }
-        modalOverlay.classList.remove('show');
-        document.body.classList.remove('modal-open');
-        // Stop screen share if still active
-        if (screenActive) {
-            toggleScreen();  // this will send STOP_SCREEN and clean up
-        }
+    if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+        screenMediaRecorder.stop();
     }
+    modalOverlay.classList.remove('show');
+    document.body.classList.remove('modal-open');
+    if (screenActive) {
+        toggleScreen();
+    }
+    // Reset record button (in case it was left in green state)
+    modalRecordBtn.innerText = '🔴';
+}
 
     // ---------- SCREEN SHARE (modified for modal) ----------
     async function toggleScreen() {
@@ -809,57 +812,55 @@
     let screenRecordedChunks = [];
 
     function toggleScreenRecording() {
-        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
-            screenMediaRecorder.stop();
-            modalRecordBtn.innerText = '⏺ Record';
-        } else {
-            if (!modalVideo.srcObject) {
-                alert('No screen stream');
-                return;
-            }
-            screenRecordedChunks = [];
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const stream = modalVideo.srcObject;
+    if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+        screenMediaRecorder.stop();
+        modalRecordBtn.innerText = '🔴';      // back to red dot
+    } else {
+        if (!modalVideo.srcObject) {
+            alert('Phone Screen Off');
+            return;
+        }
+        screenRecordedChunks = [];
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const stream = modalVideo.srcObject;
 
-            if (modalVideo.videoWidth === 0) {
-                modalVideo.onloadedmetadata = () => startScreenRecording(canvas, ctx, stream);
-            } else {
-                startScreenRecording(canvas, ctx, stream);
-            }
+        if (modalVideo.videoWidth === 0) {
+            modalVideo.onloadedmetadata = () => startScreenRecording(canvas, ctx, stream);
+        } else {
+            startScreenRecording(canvas, ctx, stream);
         }
     }
+}
 
     function startScreenRecording(canvas, ctx, originalStream) {
-        canvas.width = modalVideo.videoWidth;
-        canvas.height = modalVideo.videoHeight;
+    canvas.width = modalVideo.videoWidth;
+    canvas.height = modalVideo.videoHeight;
 
-        function drawVideoFrame() {
-            ctx.drawImage(modalVideo, 0, 0, canvas.width, canvas.height);
-            requestAnimationFrame(drawVideoFrame);
-        }
-        drawVideoFrame();
-
-        const canvasStream = canvas.captureStream(30);
-        // Add audio tracks if any (screen share usually doesn't have audio, but just in case)
-        originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
-
-        screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
-        screenMediaRecorder.ondataavailable = (e) => screenRecordedChunks.push(e.data);
-        screenMediaRecorder.onstop = () => {
-            const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `screenVideo-${getFormattedDateTime()}.webm`;
-            a.click();
-            URL.revokeObjectURL(url);
-            canvasStream.getTracks().forEach(track => track.stop());
-        };
-        screenMediaRecorder.start();
-        modalRecordBtn.innerText = '⏹ Stop Rec';
+    function drawVideoFrame() {
+        ctx.drawImage(modalVideo, 0, 0, canvas.width, canvas.height);
+        requestAnimationFrame(drawVideoFrame);
     }
+    drawVideoFrame();
 
+    const canvasStream = canvas.captureStream(30);
+    originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+
+    screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+    screenMediaRecorder.ondataavailable = (e) => screenRecordedChunks.push(e.data);
+    screenMediaRecorder.onstop = () => {
+        const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `screenVideo-${getFormattedDateTime()}.webm`;
+        a.click();
+        URL.revokeObjectURL(url);
+        canvasStream.getTracks().forEach(track => track.stop());
+    };
+    screenMediaRecorder.start();
+    modalRecordBtn.innerText = '🟢';          // green dot = stop recording
+}
     // Fullscreen toggle
     function toggleFullscreen() {
         if (!document.fullscreenElement) {
@@ -1604,3 +1605,4 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 </script>
 </body>
 </html>
+

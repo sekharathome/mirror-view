@@ -410,24 +410,30 @@
     box-shadow:0 40px 120px rgba(0,0,0,0.9);
     overflow:hidden;
 }
+.phone-frame{
+    flex:1;
+    display:flex;
+    justify-content:center;
+    align-items:flex-end; /* pushes video just above controls */
+    background:black;
+}
 
-
-     .mobile-popup video{
+   .phone-frame video{
     width:100%;
     aspect-ratio:16/9;
-    background:black;
     object-fit:contain;
-    display:block;
+    background:black;
 }
 
         /* Control bar sits BELOW the phone frame */
-     .popup-controls{
+   .popup-controls{
     flex-shrink:0;
     background:#111;
-    padding:6px;
+    padding:8px;
     display:flex;
     gap:6px;
     justify-content:space-around;
+    align-items:center;
 }
        .popup-controls button {
     flex: 1;
@@ -1604,6 +1610,7 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
 
 
 

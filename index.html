@@ -382,13 +382,7 @@
             cursor: pointer;
             margin-left: 10px;
         }
-.phone-frame{
-    flex:1;
-    display:flex;
-    justify-content:center;
-    align-items:flex-end;
-    background:black;
-}
+
 
 .screen-container{
     width:100%;
@@ -435,15 +429,15 @@
     flex:1;
     display:flex;
     justify-content:center;
-    align-items:flex-end; /* pushes video just above controls */
+    align-items:center;
     background:black;
+    overflow:hidden;
 }
 
-   .phone-frame video{
+.phone-frame video{
     width:100%;
-    aspect-ratio:16/9;
+    height:100%;
     object-fit:contain;
-    background:black;
 }
 
         /* Control bar sits BELOW the phone frame */
@@ -625,6 +619,23 @@
     // Modal elements
     const modalOverlay = document.getElementById('screenModalOverlay');
     const modalVideo = document.getElementById('modalScreenVideo');
+modalVideo.addEventListener("loadedmetadata", () => {
+
+    const w = modalVideo.videoWidth;
+    const h = modalVideo.videoHeight;
+
+    const popup = document.querySelector(".mobile-popup");
+
+    if (h > w) {
+        // Portrait phone
+        popup.style.aspectRatio = "9 / 16";
+    } else {
+        // Landscape screen
+        popup.style.aspectRatio = "16 / 9";
+    }
+
+});
+    
     const modalSnapBtn = document.getElementById('modalSnapBtn');
     const modalRecordBtn = document.getElementById('modalRecordBtn');
     const modalFullscreenBtn = document.getElementById('modalFullscreenBtn');
@@ -1633,6 +1644,7 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
 
 
 

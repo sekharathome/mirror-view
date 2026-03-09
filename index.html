@@ -386,11 +386,11 @@
 
 .screen-container{
     width:100%;
-    aspect-ratio:16/9;
-    background:black;
+    height:100%;
     display:flex;
     justify-content:center;
     align-items:center;
+    background:black;
 }
 
 .screen-container video{
@@ -437,7 +437,9 @@
 .phone-frame video{
     width:100%;
     height:100%;
-    object-fit:contain;
+    max-height:none;
+    max-width:none;
+    object-fit:cover;
 }
 
         /* Control bar sits BELOW the phone frame */
@@ -1644,6 +1646,7 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
 
 
 

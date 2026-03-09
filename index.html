@@ -382,7 +382,28 @@
             cursor: pointer;
             margin-left: 10px;
         }
+.phone-frame{
+    flex:1;
+    display:flex;
+    justify-content:center;
+    align-items:flex-end;
+    background:black;
+}
 
+.screen-container{
+    width:100%;
+    aspect-ratio:16/9;
+    background:black;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.screen-container video{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+}
         /* ---------- MODAL / POPUP STYLES ---------- */
 .modal-overlay{
     position:fixed;
@@ -486,7 +507,9 @@
 <div id="screenModalOverlay" class="modal-overlay">
     <div class="mobile-popup">
         <div class="phone-frame">
+            <div class="screen-container">
             <video id="modalScreenVideo" autoplay playsinline></video>
+            </div>
         </div>
         <div class="popup-controls">
             <button id="modalSnapBtn" title="Snapshot">📸</button>
@@ -1610,6 +1633,7 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
 
 
 

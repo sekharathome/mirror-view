@@ -76,7 +76,25 @@
             #sidebar.show {
                 transform: translateX(0);
             }
-            
+            .phone-frame{
+                flex:1;
+                display:flex;
+                justify-content:center;
+                align-items:center;
+                background:black;
+                overflow:hidden;
+            }
+
+            .phone-frame video{
+                width:100%;
+                height:100%;
+                object-fit:contain;
+            }
+
+            .popup-controls button{
+                width:60px;
+                height:60px;
+            }
             .sidebar-overlay {
                 display: none;
                 position: fixed;
@@ -756,17 +774,16 @@
             display: flex;
         }
 
-        .mobile-popup {
-            width: 360px;
-            height: 640px;
-            display: flex;
-            flex-direction: column;
-            background: #0f0f0f;
-            border-radius: 26px;
-            border: 4px solid #2e2e2e;
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
-            flex-shrink: 0;
+        ..mobile-popup{
+            width:min(90vw,1100px);
+            aspect-ratio:9/16;
+            display:flex;
+            flex-direction:column;
+            background:#0f0f0f;
+            border-radius:26px;
+            border:4px solid #2e2e2e;
+            box-shadow:var(--shadow-lg);
+            overflow:hidden;
         }
 
         .phone-frame {
@@ -896,7 +913,10 @@
 <body>
 
 <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
-
+<button onclick="showActivityTimeline()">
+<span>📜</span>
+<span>Activity Timeline</span>
+</button>
 <div id="screenModalOverlay" class="modal-overlay">
     <div class="mobile-popup" id="mobilePopup">
         <div class="phone-frame">
@@ -1005,6 +1025,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    let activityTimeline = [];
     // ---------- GLOBALS ----------
     const WS_URL = "wss://mirror-view.onrender.com";
     let ws = null;
@@ -1047,6 +1068,12 @@
     const modalFullscreenBtn = document.getElementById('modalFullscreenBtn');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
 
+    function logActivity(action){
+    const time = new Date().toLocaleTimeString();
+    activityTimeline.unshift({time,action});
+    if(activityTimeline.length>100) activityTimeline.pop();
+    }
+    
     function getFormattedDateTime() {
         const d = new Date();
         const pad = (n) => n.toString().padStart(2, '0');
@@ -1074,6 +1101,25 @@
         console.log('📤 Signaling sent:', msg.type);
     }
 
+    function showActivityTimeline(){
+    let html='<h3>Activity Timeline</h3>';
+    html+='<div style="max-height:500px;overflow:auto;">';
+
+    activityTimeline.forEach(e=>{
+        html+=`
+        <div style="
+            padding:10px;
+            border-bottom:1px solid #e0e4e8;
+            display:flex;
+            justify-content:space-between;">
+            <span>${e.action}</span>
+            <span style="color:#7b8a9b">${e.time}</span>
+        </div>`;
+    });
+
+    html+='</div>';
+    panel.innerHTML=html;
+}
     function createPeerConnection(streamType, onTrackCallback, useMic = false) {
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
@@ -2029,19 +2075,45 @@
         }
 
         let headers = [], rows = [];
-        if (dataType === 'sms') {
-            headers = ['Type', 'Number', 'Message', 'Date'];
-            rows = currentData.map(item => [item.type, item.number, item.body, item.date]);
-        } else if (dataType === 'call') {
-            headers = ['Type', 'Number', 'Name', 'Date', 'Duration'];
-            rows = currentData.map(item => [
-                item.type,
-                item.number,
-                item.name || '',
-                item.date,
-                item.duration + 's'
-            ]);
-        } else {
+        if(dataType==='sms'){
+
+let html='<div style="max-height:600px;overflow:auto">';
+
+currentData.forEach(s=>{
+html+=`
+<div style="
+padding:12px;
+border-bottom:1px solid #eee;">
+<b>${s.number}</b>
+<div style="font-size:13px;color:#777">${s.date}</div>
+<div>${s.body}</div>
+</div>`;
+});
+
+html+='</div>';
+panel.innerHTML=html;
+return;
+} else if(dataType==='call'){
+
+let html='<div style="max-height:600px;overflow:auto">';
+
+currentData.forEach(c=>{
+html+=`
+<div style="
+padding:12px;
+border-bottom:1px solid #eee;">
+<b>${c.number}</b>
+<div>${c.type}</div>
+<div style="font-size:13px;color:#777">
+${c.date} | ${c.duration}s
+</div>
+</div>`;
+});
+
+html+='</div>';
+panel.innerHTML=html;
+return;
+} else {
             panel.innerHTML = '<p>Unknown data type</p>';
             return;
         }
@@ -2339,3 +2411,4 @@
 </script>
 </body>
 </html>
+

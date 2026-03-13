@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        /* Your existing CSS remains exactly the same - I'll keep it as is */
+        /* Your existing CSS remains exactly the same */
         :root {
             --primary-color: #1976ff;
             --primary-dark: #0d5bca;
@@ -1893,7 +1893,6 @@
     }
 
     function handlePlainText(msg) {
-        // FIXED: Better handling of file downloads
         if (msg.startsWith("dl ")) {
             console.log('Download request:', msg);
             return; // This is a command, not a response
@@ -1933,7 +1932,6 @@
         } else if (msg.startsWith("AUDIO_RECORDING:")) {
             showAudio(msg.substring(16));
         } else if (msg.startsWith("FILE_DATA:")) {
-            // FIXED: Handle file downloads properly
             const base64 = msg.substring(10);
             downloadBase64(base64, 'downloaded_file_' + Date.now());
             showNotification('File downloaded');
@@ -2106,7 +2104,6 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(a.href);
             showNotification(`Downloaded: ${filename}`);
         } catch (e) {
             console.error('Download error:', e);
@@ -2269,6 +2266,12 @@
 
         html += '</div>';
         panel.innerHTML = html;
+    }
+
+    // FIXED: Added the missing gotoPage function
+    function gotoPage(page) {
+        currentPage = page;
+        renderTable();
     }
 
     function handleFolderClick(path) {

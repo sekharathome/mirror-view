@@ -99,7 +99,7 @@
                 display: block;
             }
             
-            #main {
+            #main {\n            height: 100vh;
                 width: 100%;
                 height: 100%;
             }
@@ -284,9 +284,10 @@
             white-space: nowrap;
         }
 
-        #main {
+        #main {\n            height: 100vh;
             flex: 1;
             display: flex;
+            height: 100vh;
             flex-direction: column;
             min-width: 0;
             background: var(--bg-main);
@@ -296,6 +297,7 @@
             flex: 1;
             padding: 20px;
             overflow: auto;
+            min-height: 0; /* required: allows flex child to shrink below content size */
         }
 
         #main-panel {
@@ -839,15 +841,20 @@
             border: none;
         }
 
+        /* ── Screen-share modal: strict 9:16, viewport-relative ────────────
+           The popup height = 92vh. Width is always height × (9/16) so the
+           aspect ratio is locked regardless of screen size or zoom level.
+           Controls bar is a fixed 72px — never changes size.
+           Video area fills everything above the controls bar.
+        ─────────────────────────────────────────────────────────────── */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.88);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 10000;
-            overflow-x: auto;
         }
 
         .modal-overlay.show {
@@ -855,114 +862,88 @@
         }
 
         .mobile-popup {
-            width: 360px;
-            height: 640px;
+            /* Height = 92% of viewport height, width locked to 9:16 ratio */
+            height: 92vh;
+            width: calc(92vh * 9 / 16);
+            /* Safety: if screen is narrower than the popup, clamp to 98vw
+               and recalculate height to maintain ratio */
+            max-width: 98vw;
+            max-height: calc(98vw * 16 / 9);
             display: flex;
             flex-direction: column;
             background: #0f0f0f;
-            border-radius: 26px;
-            border: 4px solid #2e2e2e;
-            box-shadow: var(--shadow-lg);
+            border-radius: 20px;
+            border: 3px solid #2e2e2e;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.9);
             overflow: hidden;
             flex-shrink: 0;
         }
 
-        .mobile-popup.landscape {
-            width: 640px;
-            height: 360px;
-        }
-
         .phone-frame {
-            flex: 1;
+            flex: 1;        /* fills ALL space above the controls bar */
+            min-height: 0;  /* critical: allows shrink below content height */
             display: flex;
             justify-content: center;
             align-items: center;
-            background: black;
+            background: #000;
             overflow: hidden;
             width: 100%;
-            height: calc(100% - 84px);
         }
 
         .phone-frame video {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            display: block;
         }
 
+        /* Controls bar: fixed 72px — never moves or resizes */
         .popup-controls {
             flex-shrink: 0;
+            height: 72px;
+            min-height: 72px;
+            max-height: 72px;
             background: #111;
-            padding: 12px;
+            border-top: 1px solid #333;
             display: flex;
             gap: 8px;
             justify-content: center;
             align-items: center;
-            border-top: 1px solid #333;
-            height: 84px;
+            padding: 0 12px;
         }
 
         .popup-controls button {
-            width: 60px;
-            height: 60px;
-            min-width: 60px;
-            max-width: 60px;
+            width: 52px;
+            height: 52px;
+            min-width: 52px;
+            max-width: 52px;
+            min-height: 52px;
+            max-height: 52px;
             padding: 0;
             background: #1e1e1e;
             color: white;
             border: none;
             border-radius: 12px;
             cursor: pointer;
-            font-size: 28px;
+            font-size: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
+            transition: background 0.15s, transform 0.1s;
             margin: 0;
             flex: none;
         }
 
         .popup-controls button.close-btn {
             background: #c0392b;
-            width: 70px;
-            min-width: 70px;
+            width: 62px;
+            min-width: 62px;
+            max-width: 62px;
         }
 
-        .popup-controls button:hover {
-            transform: scale(1.1);
-            background: #3a3a3c;
-        }
-
-        .popup-controls button.close-btn:hover {
-            background: #e74c3c;
-        }
-
-        .popup-controls button:active {
-            transform: scale(0.95);
-        }
-
-        @media (max-width: 400px) {
-            .modal-overlay {
-                justify-content: flex-start;
-                padding: 10px;
-            }
-            
-            .mobile-popup {
-                width: 320px;
-                height: 570px;
-            }
-            
-            .popup-controls button {
-                width: 50px;
-                height: 50px;
-                min-width: 50px;
-                font-size: 24px;
-            }
-            
-            .popup-controls button.close-btn {
-                width: 60px;
-                min-width: 60px;
-            }
-        }
+        .popup-controls button:hover  { background: #3a3a3c; transform: scale(1.08); }
+        .popup-controls button.close-btn:hover { background: #e74c3c; transform: scale(1.08); }
+        .popup-controls button:active { transform: scale(0.94); }
 
         body.modal-open #sidebar,
         body.modal-open #main {
@@ -1077,9 +1058,7 @@
                 <label><input type="checkbox" id="clickFlashCheckbox"> Use flash</label>
             </div>
             <button class="capture-btn" onclick="capturePicture()">TAKE A PICTURE</button>
-            <div class="capture-controls">
-                <button onclick="clearCameraPanel()">🗑 Clear</button>
-            </div>
+            <!-- Clear button moved to image result area (next to Save) -->
         </div>
 
         <button onclick="toggleCameraPanel('live')"><span>📹</span> <span>See Live</span></button>
@@ -2259,6 +2238,9 @@
                 break;
 
             case 'DEVICE_INFO':
+                // Device is actually paired and responding — now set ONLINE
+                setStatus('ONLINE');
+                logActivity('Device paired: ' + (json.model || json.manufacturer || 'unknown'));
                 if (json.batteryLevel !== undefined) {
                     updateBatteryInfo(json.batteryLevel, json.batteryCharging || false);
                 }
@@ -2466,10 +2448,13 @@
 
     function setStatus(s) {
         statusEl.innerText = s;
+        statusEl.classList.remove('offline');
         if (s === 'ONLINE') {
-            statusEl.classList.remove('offline');
             statusEl.style.background = '#e8f5e9';
             statusEl.style.color = '#2e7d32';
+        } else if (s === 'CONNECTED') {
+            statusEl.style.background = '#fff8e1';
+            statusEl.style.color = '#f57f17';
         } else {
             statusEl.classList.add('offline');
             statusEl.style.background = '#ffebee';
@@ -2497,9 +2482,10 @@
 
     function displayCapturedImage(base64) {
         panel.innerHTML = `
-            <img src="data:image/jpeg;base64,${base64}" style="max-width:100%;">
-            <div style="margin-top:10px; text-align:center;">
+            <img src="data:image/jpeg;base64,${base64}" style="max-width:100%; border-radius:8px;">
+            <div style="margin-top:10px; display:flex; gap:10px; justify-content:center;">
                 <button onclick="downloadBase64('${base64}', 'snapshot_${Date.now()}.jpeg')">💾 SAVE IMAGE</button>
+                <button onclick="clearCameraPanel()" style="background:#f44336;">🗑 CLEAR</button>
             </div>
         `;
     }
@@ -2672,19 +2658,6 @@
         });
     }
 
-    function handleIncomingMessage(msg) {
-        try {
-            const json = JSON.parse(msg);
-            if (json.type === 'SIGNALING') {
-                handleSignalingMessage(json.data);
-            } else {
-                handleJSON(json);
-            }
-        } catch (e) {
-            handlePlainText(msg);
-        }
-    }
-
     function connectWebSocket() {
         if (ws) {
             ws.close();
@@ -2694,7 +2667,8 @@
         ws.onopen = () => {
             console.log('WebSocket connected');
             ws.send('I_AM_WEB');
-            setStatus('ONLINE');
+            setStatus('CONNECTED');
+            window._reconnectDelay = 3000; // reset back-off   // relay open — waiting for device
             logActivity('WebSocket connected');
 
             const welcomeMsg = document.getElementById('welcomeMessage');
@@ -2723,12 +2697,16 @@
         ws.onclose = () => {
             console.log('WebSocket closed');
             setStatus('OFFLINE');
-            panel.innerHTML = '🔌 WebSocket disconnected. Click reconnect.';
             ws = null;
-            if (window.deviceListInterval) {
-                clearInterval(window.deviceListInterval);
-            }
+            if (window.deviceListInterval) clearInterval(window.deviceListInterval);
             logActivity('WebSocket disconnected');
+            // Auto-reconnect with back-off: 3s → 6s → 12s → max 30s
+            const delay = Math.min(30000, (window._reconnectDelay || 3000));
+            window._reconnectDelay = delay * 2;
+            console.log(`Reconnecting in ${delay}ms...`);
+            setTimeout(() => {
+                if (!ws) connectWebSocket();
+            }, delay);
         };
         ws.onerror = (err) => {
             console.error('WebSocket error:', err);

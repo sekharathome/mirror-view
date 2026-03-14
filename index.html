@@ -1318,11 +1318,12 @@
             document.getElementById('deviceSelector').value = '';
             showWelcomeMessage(true);
             
-            // Send disconnect signal to device if needed
-            if (ws && ws.readyState === WebSocket.OPEN) {
+            // currentDeviceId is still valid here — send before clearing
+            const disconnectingId = currentDeviceId;
+            if (ws && ws.readyState === WebSocket.OPEN && disconnectingId) {
                 ws.send(JSON.stringify({
                     type: 'DISCONNECT',
-                    deviceId: currentDeviceId
+                    deviceId: disconnectingId
                 }));
             }
 
@@ -1392,8 +1393,10 @@
             console.error('WebSocket not open');
             return;
         }
+        // deviceId required so multi-device server routes to correct device
         const payload = {
             type: 'SIGNALING',
+            deviceId: currentDeviceId,
             data: msg
         };
         ws.send(JSON.stringify(payload));
@@ -1913,25 +1916,39 @@
 
     function handleDeviceRegistration(data) {
         const deviceId = data.deviceId;
-        const deviceName = data.name || data.manufacturer + ' ' + data.model;
+        if (!deviceId) return;
+        const deviceName = data.name || ((data.manufacturer || '') + ' ' + (data.model || '')).trim() || 'Unknown';
 
+        // Merge with existing data so battery/network from DEVICE_INFO isn't lost
+        const existing = devices.get(deviceId) || {};
         devices.set(deviceId, {
+            ...existing,
             id: deviceId,
             name: deviceName,
-            manufacturer: data.manufacturer,
-            model: data.model,
-            androidVersion: data.androidVersion,
+            manufacturer: data.manufacturer || existing.manufacturer,
+            model: data.model || existing.model,
+            androidVersion: data.androidVersion || existing.androidVersion,
+            sdkVersion: data.sdkVersion || existing.sdkVersion,
+            batteryLevel: data.batteryLevel != null ? data.batteryLevel : existing.batteryLevel,
+            batteryCharging: data.batteryCharging != null ? data.batteryCharging : existing.batteryCharging,
+            networkType: data.networkType || existing.networkType,
             lastSeen: Date.now()
         });
 
         updateDeviceSelector();
-        showNotification(`New device connected: ${deviceName}`);
-        logActivity(`Device registered: ${deviceName}`);
 
-        if (devices.size === 1) {
+        // Only notify/log on genuinely new device
+        if (!existing.id) {
+            showNotification(`📱 Device connected: ${deviceName}`);
+            logActivity(`Device registered: ${deviceName}`);
+        }
+
+        // Auto-select first device
+        if (!currentDeviceId) {
             currentDeviceId = deviceId;
             document.getElementById('deviceSelector').value = deviceId;
             showWelcomeMessage(false);
+            logActivity(`Auto-selected device: ${deviceName}`);
         }
     }
 
@@ -2357,14 +2374,24 @@
     function handleJSON(json) {
         console.log('handleJSON:', json.type, json);
 
-        if (json.deviceId && json.deviceId !== currentDeviceId) {
-            console.log('Message from non-selected device:', json.deviceId);
-            if (!devices.has(json.deviceId)) {
+        // Infrastructure messages must ALWAYS pass through regardless of selected device.
+        // These are server-level events, not per-device responses.
+        const infrastructureTypes = new Set([
+            'DEVICE_REGISTRATION', 'DEVICE_LIST', 'DEVICE_OFFLINE',
+            'DEVICE_INFO', 'AUTH_OK', 'AUTH_FAIL', 'DEVICE_SWITCHED'
+        ]);
+
+        if (json.deviceId && json.deviceId !== currentDeviceId
+                && !infrastructureTypes.has(json.type)) {
+            // Message from a device that isn't currently selected.
+            // Still register unknown devices so they appear in the picker.
+            if (json.deviceId && !devices.has(json.deviceId)) {
                 handleDeviceRegistration({
                     deviceId: json.deviceId,
                     name: json.deviceName || 'Unknown Device'
                 });
             }
+            console.log('Skipping response from non-selected device:', json.deviceId);
             return;
         }
 

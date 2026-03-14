@@ -137,7 +137,8 @@ wss.on('connection', (ws, req) => {
         if (ws.role === 'web') {
             const targetDeviceId = json.deviceId;
 
-            if (json.type === 'GET_DEVICE_LIST') {
+            // Handle both names — HTML sends GET_DEVICES, some clients send GET_DEVICE_LIST
+            if (json.type === 'GET_DEVICE_LIST' || json.type === 'GET_DEVICES') {
                 sendDeviceList(ws);
                 return;
             }

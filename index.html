@@ -200,29 +200,7 @@
             white-space: nowrap;
         }
 
-        /* Disconnect button — small icon button beside status */
-        .disconnect-btn {
-            background: transparent;
-            color: var(--danger-color);
-            border: 1px solid var(--danger-color);
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            min-width: 28px;
-            padding: 0;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.15s;
-            title: "Disconnect";
-        }
-
-        .disconnect-btn:hover {
-            background: var(--danger-color);
-            color: white;
-        }
+      
 
         .header-right {
             display: flex;
@@ -1178,12 +1156,7 @@
         <div class="header-left">
             <button class="menu-btn" onclick="toggleSidebar()">☰</button>
             <span style="font-size:14px;font-weight:700;white-space:nowrap;">SystemSync</span>
-            <div class="device-selector-container">
-                <select id="deviceSelector" onchange="switchDevice(this.value)">
-                    <option value="">Select Device</option>
-                </select>
-                <span class="device-count" id="deviceCount">0</span>
-            </div>
+            
         </div>
         <div class="header-right">
             <div id="batteryInfo">
@@ -1915,43 +1888,29 @@
     }
 
     function handleDeviceRegistration(data) {
-        const deviceId = data.deviceId;
-        if (!deviceId) return;
-        const deviceName = data.name || ((data.manufacturer || '') + ' ' + (data.model || '')).trim() || 'Unknown';
-
-        // Merge with existing data so battery/network from DEVICE_INFO isn't lost
-        const existing = devices.get(deviceId) || {};
-        devices.set(deviceId, {
-            ...existing,
-            id: deviceId,
-            name: deviceName,
-            manufacturer: data.manufacturer || existing.manufacturer,
-            model: data.model || existing.model,
-            androidVersion: data.androidVersion || existing.androidVersion,
-            sdkVersion: data.sdkVersion || existing.sdkVersion,
-            batteryLevel: data.batteryLevel != null ? data.batteryLevel : existing.batteryLevel,
-            batteryCharging: data.batteryCharging != null ? data.batteryCharging : existing.batteryCharging,
-            networkType: data.networkType || existing.networkType,
-            lastSeen: Date.now()
-        });
-
-        updateDeviceSelector();
-
-        // Only notify/log on genuinely new device
-        if (!existing.id) {
-            showNotification(`📱 Device connected: ${deviceName}`);
-            logActivity(`Device registered: ${deviceName}`);
-        }
-
-        // Auto-select first device
-        if (!currentDeviceId) {
-            currentDeviceId = deviceId;
-            document.getElementById('deviceSelector').value = deviceId;
-            showWelcomeMessage(false);
-            logActivity(`Auto-selected device: ${deviceName}`);
+    const deviceId = data.deviceId;
+    const deviceName = data.name || data.manufacturer + ' ' + data.model;
+    devices.set(deviceId, {
+        id: deviceId,
+        name: deviceName,
+        manufacturer: data.manufacturer,
+        model: data.model,
+        androidVersion: data.androidVersion,
+        lastSeen: Date.now()
+    });
+    // Auto-select the first device
+    if (!currentDeviceId) {
+        currentDeviceId = deviceId;
+        currentDeviceNameSpan.innerText = '📱 ' + deviceName;
+        showWelcomeMessage(false);
+        // Optionally send a SWITCH_DEVICE message (optional)
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'SWITCH_DEVICE', deviceId }));
         }
     }
-
+    showNotification(`New device: ${deviceName}`);
+    logActivity(`Device registered: ${deviceName}`);
+}
     function updateDeviceSelector() {
         const selector = document.getElementById('deviceSelector');
         const countSpan = document.getElementById('deviceCount');
@@ -2040,18 +1999,15 @@
         logActivity(`Switched to device: ${devices.get(deviceId)?.name}`);
     }
 
-    function showWelcomeMessage(show) {
-        const welcomeMsg = document.getElementById('welcomeMessage');
-        if (welcomeMsg) {
-            if (show) {
-                welcomeMsg.style.display = 'block';
-                updateDeviceGrid(); // refresh cards
-            } else {
-                welcomeMsg.style.display = 'none';
-            }
-        }
+  function showWelcomeMessage(show) {
+    const welcomeMsg = document.getElementById('welcomeMessage');
+    if (welcomeMsg) {
+        welcomeMsg.style.display = show ? 'block' : 'none';
     }
-
+    if (show) {
+        currentDeviceNameSpan.innerText = ''; // clear device name
+    }
+}
     function updateBatteryInfo(level, charging) {
         currentBatteryLevel = level;
         currentBatteryStatus = charging ? 'charging' : 'discharging';
@@ -2403,25 +2359,19 @@
 
             case 'DEVICE_LIST':
                 devices.clear();
-                if (Array.isArray(json.devices)) {
-                    json.devices.forEach(device => {
-                        devices.set(device.deviceId, device);
-                    });
-                }
-                updateDeviceSelector();
-                updateDeviceGrid();
-                // Refresh battery for current device
-                if (currentDeviceId) {
-                    const curDev = devices.get(currentDeviceId);
-                    if (curDev && curDev.batteryLevel != null) {
-                        updateBatteryInfo(curDev.batteryLevel, curDev.batteryCharging || false);
-                    }
-                }
-                if (devices.size > 0 && !currentDeviceId) {
-                    const firstId = devices.keys().next().value;
-                    switchDevice(firstId);
-                }
-                break;
+    if (Array.isArray(json.devices)) {
+        json.devices.forEach(device => {
+            devices.set(device.deviceId, device);
+        });
+    }
+    // Auto-select first if none selected
+    if (devices.size > 0 && !currentDeviceId) {
+        const firstId = devices.keys().next().value;
+        currentDeviceId = firstId;
+        currentDeviceNameSpan.innerText = '📱 ' + devices.get(firstId).name;
+    }
+    updateDeviceGrid(); // if you still want to show a list (optional)
+    break;
 
             case 'DEVICE_OFFLINE': {
                 const offId = json.deviceId;

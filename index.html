@@ -537,6 +537,7 @@
         }
     </style>
 </head>
+   
 <body>
 
 <!-- MODAL OVERLAY (for screen share) -->
@@ -656,13 +657,7 @@
             <button class="reconnect-btn" onclick="manualReconnect()">⟲ Reconnect</button>
         </div>
     </div>
-    <div id="content">
-        <div id="main-panel">
-            🔌 Initializing connection... <br><small>Ensure the target device is online and server is reachable.</small>
-        </div>
-    </div>
-</div>
-<div id="downloadProgress" style="display: none; background: #fff; border: 1px solid #1976ff; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+     <div id="downloadProgress" style="display: none; background: #fff; border: 1px solid #1976ff; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
         <span id="progressFileName">Downloading...</span>
         <span id="progressPercent">0%</span>
@@ -670,7 +665,14 @@
     <div style="width: 100%; background: #e0e0e0; border-radius: 4px;">
         <div id="progressBar" style="width: 0%; height: 10px; background: #1976ff; border-radius: 4px;"></div>
     </div>
+    </div>
+    <div id="content">
+        <div id="main-panel">
+            🔌 Initializing connection... <br><small>Ensure the target device is online and server is reachable.</small>
+        </div>
+    </div>
 </div>
+
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

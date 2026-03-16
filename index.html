@@ -1715,11 +1715,8 @@
         } else if (msg.startsWith("ERROR:")) {
             panel.innerHTML = `<div style="color:#d32f2f;">❌ Error: ${msg.substring(6)}</div>`;
             pendingCommand = null;
-        } 
-            
         } else if (msg.startsWith("I_AM_DEVICE")) {
             console.log('Device identified');
-            
         } else if (msg.startsWith('[') || msg.startsWith('{')) {
             try {
                 const parsed = JSON.parse(msg);
@@ -1727,7 +1724,6 @@
             } catch (err) {
                 console.error('Failed to parse JSON in plain text:', err);
             }
-            
         } else {
             console.log('Unhandled plain text:', msg);
         }

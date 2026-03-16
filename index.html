@@ -1194,52 +1194,58 @@
                 console.log(`📁 Receiving file: ${json.fileName} (${json.totalChunks} chunks)`);
                 pendingCommand = null;
                 break;
-        case 'FILE_CHUNK':
+            case 'FILE_CHUNK':
                 const transfer = fileTransfers[json.transferId];
                 if (!transfer) {
                     console.warn('Unknown transfer ID:', json.transferId);
                     return;
                 }
             
-                // Decode the base64 chunk to a Uint8Array
-                try {
-                    const binaryString = atob(json.data);
-                    const bytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) {
-                        bytes[i] = binaryString.charCodeAt(i);
+                // Defer the heavy decoding and UI update to avoid blocking the event loop
+                setTimeout(() => {
+                    try {
+                        // Decode base64 chunk to binary
+                        const binaryString = atob(json.data);
+                        const bytes = new Uint8Array(binaryString.length);
+                        for (let i = 0; i < binaryString.length; i++) {
+                            bytes[i] = binaryString.charCodeAt(i);
+                        }
+            
+                        // Store the decoded chunk
+                        transfer.chunks[json.chunkIndex] = bytes;
+                        transfer.received++;
+            
+                        // Update progress bar
+                        const percent = Math.round((transfer.received / transfer.totalChunks) * 100);
+                        document.getElementById('progressPercent').innerText = percent + '%';
+                        document.getElementById('progressBar').style.width = percent + '%';
+            
+                        // If all chunks received, assemble and download
+                        if (transfer.received === transfer.totalChunks) {
+                            console.log(`✅ All chunks received for ${transfer.fileName}`);
+            
+                            // Create a Blob from the array of Uint8Arrays and trigger download
+                            const blob = new Blob(transfer.chunks, { type: 'application/octet-stream' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = transfer.fileName;
+                            a.click();
+                            URL.revokeObjectURL(url);
+            
+                            // Clean up
+                            delete fileTransfers[json.transferId];
+                            document.getElementById('downloadProgress').style.display = 'none';
+                            showNotification(`✅ Downloaded: ${transfer.fileName}`);
+                        }
+                    } catch (e) {
+                        console.error('Chunk decode error:', e);
+                        showNotification('❌ Chunk decode error');
+                        delete fileTransfers[json.transferId];
+                        document.getElementById('downloadProgress').style.display = 'none';
                     }
-                    transfer.chunks[json.chunkIndex] = bytes;
-                } catch (e) {
-                    console.error('Chunk decode error:', e);
-                    showNotification('❌ Chunk decode error');
-                    // Optionally abort the transfer
-                    delete fileTransfers[json.transferId];
-                    document.getElementById('downloadProgress').style.display = 'none';
-                    return;
-                }
+                }, 0);
             
-                transfer.received++;
-                const percent = Math.round((transfer.received / transfer.totalChunks) * 100);
-                document.getElementById('progressPercent').innerText = percent + '%';
-                document.getElementById('progressBar').style.width = percent + '%';
-            
-                if (transfer.received === transfer.totalChunks) {
-                    console.log(`✅ All chunks received for ${transfer.fileName}`);
-            
-                    // Combine all Uint8Array chunks into one Blob
-                    const blob = new Blob(transfer.chunks, { type: 'application/octet-stream' });
-                    const url = URL.createObjectURL(blob);
-            
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = transfer.fileName;
-                    a.click();
-            
-                    URL.revokeObjectURL(url);
-                    delete fileTransfers[json.transferId];
-                    document.getElementById('downloadProgress').style.display = 'none';
-                    showNotification(`✅ Downloaded: ${transfer.fileName}`);
-                }
                 pendingCommand = null;
                 break;
                         

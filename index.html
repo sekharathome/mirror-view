@@ -2108,12 +2108,16 @@
                     <div class="file-toolbar">
                         <button onclick="navigateUp()">⬆ Up</button>
                         <span class="file-path">${currentPath}</span>
-                        <div class="download-selected">
-                            <button onclick="downloadSelected()">Download Selected (${selectedFiles.length})</button>
-                        </div>
-                    </div>
-                </div>
-        `;
+                        <div style="display: flex; gap: 8px;">
+            <button onclick="downloadSelected()" style="flex:1; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                ⬇️ <span id="downloadCount">${selectedFiles.length}</span>
+            </button>
+            <button onclick="deleteSelected()" style="flex:1; background: #d32f2f; color: white; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                🗑️ <span id="deleteCount">${selectedFiles.length}</span>
+            </button>
+        </div>
+    </div>
+`;
 
         if (!currentData || currentData.length === 0) {
             html += '<p style="padding:20px;">No files found.</p>';
@@ -2187,18 +2191,14 @@
     }
 
     function updateSelected(checkbox) {
-        const path = checkbox.dataset.path;
-        if (checkbox.checked) {
-            if (!selectedFiles.includes(path)) selectedFiles.push(path);
-        } else {
-            selectedFiles = selectedFiles.filter(p => p !== path);
-        }
-        const downloadBtn = document.querySelector('.download-selected button');
-        if (downloadBtn) {
-            downloadBtn.innerText = `Download Selected (${selectedFiles.length})`;
-        }
+         const path = checkbox.dataset.path;
+    if (checkbox.checked) {
+        if (!selectedFiles.includes(path)) selectedFiles.push(path);
+    } else {
+        selectedFiles = selectedFiles.filter(p => p !== path);
     }
-
+    updateCounters();  // refresh both button counters
+}
     function downloadSelected() {
         if (selectedFiles.length === 0) {
             alert('No files selected');
@@ -2208,6 +2208,33 @@
             sendPlainText('dl ' + path);
         });
     }
+    function deleteSelected() {
+    if (selectedFiles.length === 0) {
+        alert('No files selected');
+        return;
+    }
+
+    const confirmMsg = `Delete ${selectedFiles.length} file(s)? This action cannot be undone.`;
+    if (!confirm(confirmMsg)) return;
+
+    selectedFiles.forEach(path => {
+        // Send DELETE_FILE command with the file path
+        sendCommand('DELETE_FILE', { path: path });
+    });
+
+    // Optionally clear selection after sending (the list will refresh when responses arrive)
+    selectedFiles = [];
+    updateCounters(); // helper to reset both counters
+}
+
+// Helper to update both counters (used also after deletion)
+function updateCounters() {
+    const count = selectedFiles.length;
+    const downloadCountSpan = document.getElementById('downloadCount');
+    const deleteCountSpan = document.getElementById('deleteCount');
+    if (downloadCountSpan) downloadCountSpan.innerText = count;
+    if (deleteCountSpan) deleteCountSpan.innerText = count;
+}
 
     function formatBytes(b) {
         if (b === 0) return '0 B';
@@ -3196,6 +3223,8 @@ function getAppNameFromPkg(pkg) {
     window.toggleRecording = toggleRecording;
     window.downloadBase64 = downloadBase64;
     window.gotoPage = gotoPage;
+    window.deleteSelected = deleteSelected;
+    window.updateCounters = updateCounters;
     window.handleFolderClick = handleFolderClick;
     window.navigateUp = navigateUp;
     window.updateSelected = updateSelected;

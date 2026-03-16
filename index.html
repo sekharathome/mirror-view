@@ -1177,77 +1177,72 @@
                 pendingCommand = null;
                 break;
           case 'FILE_INFO':
-            // Initialize transfer
-            fileTransfers[json.transferId] = {
-            chunks: [],
-            totalChunks: json.totalChunks,
-            fileName: json.fileName,
-            fileSize: json.fileSize,
-            path: json.path,
-            received: 0
-            };
-            // Show progress bar
-            document.getElementById('progressFileName').innerText = json.fileName;
-            document.getElementById('progressPercent').innerText = '0%';
-            document.getElementById('progressBar').style.width = '0%';
-            document.getElementById('downloadProgress').style.display = 'block';
-            console.log(`📁 Receiving file: ${json.fileName} (${json.totalChunks} chunks)`);
-            pendingCommand = null;
-            break;
+                // Pre‑allocate array with the exact length
+                fileTransfers[json.transferId] = {
+                    chunks: new Array(json.totalChunks),
+                    totalChunks: json.totalChunks,
+                    fileName: json.fileName,
+                    fileSize: json.fileSize,
+                    path: json.path,
+                    received: 0
+                };
+                // Show progress bar
+                document.getElementById('progressFileName').innerText = json.fileName;
+                document.getElementById('progressPercent').innerText = '0%';
+                document.getElementById('progressBar').style.width = '0%';
+                document.getElementById('downloadProgress').style.display = 'block';
+                console.log(`📁 Receiving file: ${json.fileName} (${json.totalChunks} chunks)`);
+                pendingCommand = null;
+                break;
         case 'FILE_CHUNK':
-            const transfer = fileTransfers[json.transferId];
-            if (!transfer) {
-                console.warn('Unknown transfer ID:', json.transferId);
-                return;
-            }
-            transfer.chunks[json.chunkIndex] = json.data;
-            transfer.received++;
-        
-            // Update progress bar
-            const percent = Math.round((transfer.received / transfer.totalChunks) * 100);
-            document.getElementById('progressPercent').innerText = percent + '%';
-            document.getElementById('progressBar').style.width = percent + '%';
-        
-            // Check if complete
-            if (transfer.received === transfer.totalChunks) {
-                console.log(`✅ All chunks received for ${transfer.fileName}`);
-        
-                // Combine all base64 chunks
-                const fullBase64 = transfer.chunks.join('');
-        
+                const transfer = fileTransfers[json.transferId];
+                if (!transfer) {
+                    console.warn('Unknown transfer ID:', json.transferId);
+                    return;
+                }
+            
+                // Decode the base64 chunk to a Uint8Array
                 try {
-                    // Decode base64 to binary
-                    const binaryString = atob(fullBase64);
+                    const binaryString = atob(json.data);
                     const bytes = new Uint8Array(binaryString.length);
                     for (let i = 0; i < binaryString.length; i++) {
                         bytes[i] = binaryString.charCodeAt(i);
                     }
-        
-                    // Create a Blob and object URL
-                    const blob = new Blob([bytes], { type: 'application/octet-stream' });
+                    transfer.chunks[json.chunkIndex] = bytes;
+                } catch (e) {
+                    console.error('Chunk decode error:', e);
+                    showNotification('❌ Chunk decode error');
+                    // Optionally abort the transfer
+                    delete fileTransfers[json.transferId];
+                    document.getElementById('downloadProgress').style.display = 'none';
+                    return;
+                }
+            
+                transfer.received++;
+                const percent = Math.round((transfer.received / transfer.totalChunks) * 100);
+                document.getElementById('progressPercent').innerText = percent + '%';
+                document.getElementById('progressBar').style.width = percent + '%';
+            
+                if (transfer.received === transfer.totalChunks) {
+                    console.log(`✅ All chunks received for ${transfer.fileName}`);
+            
+                    // Combine all Uint8Array chunks into one Blob
+                    const blob = new Blob(transfer.chunks, { type: 'application/octet-stream' });
                     const url = URL.createObjectURL(blob);
-        
-                    // Trigger download
+            
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = transfer.fileName;
                     a.click();
-        
-                    // Clean up
-                    URL.revokeObjectURL(url);
-                    showNotification(`✅ Downloaded: ${transfer.fileName}`);
-                } catch (e) {
-                    console.error('Download failed:', e);
-                    showNotification('❌ Download failed: ' + e.message);
-                }
-        
-                // Clean up transfer data and hide progress bar
-                delete fileTransfers[json.transferId];
-                document.getElementById('downloadProgress').style.display = 'none';
-            }
-            pendingCommand = null;
-            break;
             
+                    URL.revokeObjectURL(url);
+                    delete fileTransfers[json.transferId];
+                    document.getElementById('downloadProgress').style.display = 'none';
+                    showNotification(`✅ Downloaded: ${transfer.fileName}`);
+                }
+                pendingCommand = null;
+                break;
+                        
             case 'FILE_TRANSFER_STARTED':
                 showNotification('File transfer started');
                 pendingCommand = null;

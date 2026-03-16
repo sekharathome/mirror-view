@@ -662,7 +662,15 @@
         </div>
     </div>
 </div>
-
+<div id="downloadProgress" style="display: none; background: #fff; border: 1px solid #1976ff; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+        <span id="progressFileName">Downloading...</span>
+        <span id="progressPercent">0%</span>
+    </div>
+    <div style="width: 100%; background: #e0e0e0; border-radius: 4px;">
+        <div id="progressBar" style="width: 0%; height: 10px; background: #1976ff; border-radius: 4px;"></div>
+    </div>
+</div>
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -682,7 +690,7 @@
     let screenPC = null;
     let cameraPC = null;
     let audioPC = null;
-
+    let fileTransfers = {}; // key: transferId, value: { chunks: [], totalChunks, fileName, fileSize, path }
     // UI state
     let mapInstance = null;
     let currentData = [];
@@ -1166,7 +1174,55 @@
                 }
                 pendingCommand = null;
                 break;
-                
+          case 'FILE_INFO':
+            // Initialize transfer
+            fileTransfers[json.transferId] = {
+            chunks: [],
+            totalChunks: json.totalChunks,
+            fileName: json.fileName,
+            fileSize: json.fileSize,
+            path: json.path,
+            received: 0
+            };
+            // Show progress bar
+            document.getElementById('progressFileName').innerText = json.fileName;
+            document.getElementById('progressPercent').innerText = '0%';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('downloadProgress').style.display = 'block';
+            console.log(`📁 Receiving file: ${json.fileName} (${json.totalChunks} chunks)`);
+            pendingCommand = null;
+            break;
+            
+        case 'FILE_CHUNK':
+            const transfer = fileTransfers[json.transferId];
+            if (!transfer) {
+                console.warn('Unknown transfer ID:', json.transferId);
+                return;
+            }
+            transfer.chunks[json.chunkIndex] = json.data;
+            transfer.received++;
+    
+            // Update progress bar
+            const percent = Math.round((transfer.received / transfer.totalChunks) * 100);
+            document.getElementById('progressPercent').innerText = percent + '%';
+            document.getElementById('progressBar').style.width = percent + '%';
+    
+            // Check if complete
+            if (transfer.received === transfer.totalChunks) {
+                console.log(`✅ All chunks received for ${transfer.fileName}`);
+                const fullBase64 = transfer.chunks.join('');
+                downloadBase64(fullBase64, transfer.fileName);
+                delete fileTransfers[json.transferId];
+                document.getElementById('downloadProgress').style.display = 'none';
+                showNotification(`✅ Downloaded: ${transfer.fileName}`);
+                }
+                pendingCommand = null;
+                break;
+            
+        case 'FILE_TRANSFER_STARTED':
+            showNotification('File transfer started');
+            pendingCommand = null;
+            break;
             case 'LOCATION_UPDATE':
                 // Handle both formats - direct object or nested in data
                 const locationData = json.data || json;
@@ -1657,11 +1713,7 @@
         } else if (msg.startsWith("ERROR:")) {
             panel.innerHTML = `<div style="color:#d32f2f;">❌ Error: ${msg.substring(6)}</div>`;
             pendingCommand = null;
-            
-        } else if (msg.startsWith("FILE_DATA:")) {
-            const base64 = msg.substring(10);
-            downloadBase64(base64, 'downloaded_file');
-            pendingCommand = null;
+        } 
             
         } else if (msg.startsWith("I_AM_DEVICE")) {
             console.log('Device identified');

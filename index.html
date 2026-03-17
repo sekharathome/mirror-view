@@ -436,7 +436,7 @@
         .phone-frame video{
             width:100%;
             height:100%;
-            object-fit:fill;
+            object-fit:cover;
         }
 
         .popup-controls{
@@ -449,21 +449,20 @@
             align-items:center;
         }
         .popup-controls button {
-            flex: none;
+            width: 60px;        /* fixed width */
+            height: 28px;       /* fixed height */
+            font-size: 12px;    /* fixed font size */
+            flex: none;         /* prevents flex resizing */
             background: #1e1e1e;
             color: white;
             border: none;
-            padding: 5px 0;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: background 0.15s;
-            width: 50px;        /* fixed width */
-            height: 40px;       /* fixed height */
-        }
+  }
         .popup-controls button:hover {
             background: #3a3a3c;
             transform: scale(1.05);

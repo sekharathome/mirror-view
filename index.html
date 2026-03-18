@@ -438,7 +438,7 @@
 .phone-frame video{
     width: 100%;
     height: 100%;
-    object-fit: contain;  /* shows entire video, adds black bars if needed */
+    object-fit: cover;    /* fills the frame completely, may crop edges */
     background: black;
 }
 
@@ -463,7 +463,7 @@
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 20px;
     display: flex;
     align-items: center;
     justify-content: center;

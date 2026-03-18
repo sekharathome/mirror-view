@@ -411,17 +411,18 @@
 .modal-overlay.show {
     display: flex;
 }
+.video-fit {
+    object-fit: contain;
+}
 
+.video-fill {
+    object-fit: cover;
+}
 .mobile-popup{
-    width: min(92vw, calc(92vh * 9 / 16));
-    height: 92vh;
-    display: flex;
-    flex-direction: column;
-    background: #0f0f0f;
-    border-radius: 26px;
-    border: 6px solid #2e2e2e;
-    box-shadow: 0 40px 120px rgba(0,0,0,0.9);
-    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
 }
 
 .phone-frame{
@@ -431,14 +432,14 @@
     align-items: center;
     background: black;
     overflow: hidden;
-    aspect-ratio: 9 / 16;
     width: 100%;
+    height: 100%;
 }
 
 .phone-frame video{
     width: 100%;
     height: 100%;
-    object-fit: cover;    /* fills the frame completely, may crop edges */
+    object-fit: contain;    /* fills the frame completely, may crop edges */
     background: black;
 }
 

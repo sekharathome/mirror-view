@@ -398,86 +398,99 @@
             object-fit:contain;
         }
         
-/* ---------- MODAL / POPUP STYLES ---------- */
-.modal-overlay{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.9);
-    display:none;
-    justify-content:center;
-    align-items:center;
-    z-index:10000;
-}
-.modal-overlay.show {
-    display: flex;
-}
+        /* ---------- MODAL / POPUP STYLES ---------- */
+        .modal-overlay{
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,0.9);
+            display:none;
+            justify-content:center;
+            align-items:center;
+            z-index:10000;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
 
+        .mobile-popup{
+            width:min(92vw, calc(92vh * 9 / 16));
+            height:92vh;
+            display:flex;
+            flex-direction:column;
+            background:#0f0f0f;
+            border-radius:26px;
+            border:6px solid #2e2e2e;
+            box-shadow:0 40px 120px rgba(0,0,0,0.9);
+            overflow:hidden;
+        }
+        .phone-frame{
+            flex:1;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background:black;
+            overflow:hidden;
+            aspect-ratio: 9 / 16;   /* enforce 9:16 ratio */
+       }
 
-.phone-frame{
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: black;
-    overflow: hidden;
-    width: 100%;
-    height: 100%;
-}
+        .phone-frame video{
+            width:100%;
+            height:100%;
+            object-fit:cover;
+        }
 
-.phone-frame video{
-    width: 100%;
-    height: 100%;
-    object-fit: contain;    /* fills the frame completely, may crop edges */
-    background: black;
-}
+        .popup-controls{
+            flex-shrink:0;
+            background:#111;
+            padding:8px;
+            display:flex;
+            gap:6px;
+            justify-content:space-around;
+            align-items:center;
+        }
+        .popup-controls button {
+            width: 60px;        /* fixed width */
+            height: 28px;       /* fixed height */
+            font-size: 12px;    /* fixed font size */
+            flex: none;         /* prevents flex resizing */
+            background: #1e1e1e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+  }
+        .popup-controls button:hover {
+            background: #3a3a3c;
+            transform: scale(1.05);
+        }
+        .popup-controls button:active {
+            transform: scale(0.96);
+        }
+        .popup-controls button.close-btn {
+            background: #c0392b;
+            flex: 1.3;
+        }
+        .popup-controls button.close-btn:hover {
+            background: #e74c3c;
+        }
+        .popup-controls button.fullscreen-btn {
+            background: #3a3a3c;
+        }
+        .popup-controls button.fullscreen-btn:hover {
+            background: #505052;
+        }
 
-.popup-controls{
-    flex-shrink: 0;
-    height: 8vh;
-    min-height: 50px;
-    background: #111;
-    padding: 8px 12px;
-    display: flex;
-    gap: 8px;
-    justify-content: space-around;
-    align-items: center;
-    box-sizing: border-box;
-}
-
-.popup-controls button{
-    flex: 1;
-    height: 100%;
-    background: #1e1e1e;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s;
-}
-
-.popup-controls button:hover{
-    background: #3a3a3c;
-    transform: scale(1.02);
-}
-
-.popup-controls button.close-btn{
-    background: #c0392b;
-}
-
-.popup-controls button.fullscreen-btn{
-    background: #3a3a3c;
-}
-
-body.modal-open #sidebar,
-body.modal-open #main {
-    pointer-events: none;
-    filter: blur(4px);
-    transition: filter 0.3s;
-}
+        body.modal-open #sidebar,
+        body.modal-open #main {
+            pointer-events: none;
+            filter: blur(4px);
+            transition: filter 0.3s;
+        }
+        
         .ws-debug {
             font-size: 11px;
             color: #666;
@@ -486,7 +499,7 @@ body.modal-open #main {
         }
         
         .progress-bar {
-            width: 70%;
+            width: 100%;
             height: 20px;
             background-color: #f0f0f0;
             border-radius: 10px;
@@ -1962,8 +1975,8 @@ body.modal-open #main {
 
     // ---------- APP ICON TOGGLE ----------
     function toggleAppIcon() {
-        if (iconHidden) sendCommand('SHOW_APP');
-        else sendCommand('HIDE_APP');
+        if (iconHidden) sendPlainText('showApp');
+        else sendPlainText('hideApp');
     }
 
     // ---------- FLASH TOGGLE ----------

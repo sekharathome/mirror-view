@@ -440,60 +440,30 @@
     object-fit: cover; /* fills the box fully */
 }
 
- 
-        /* Control bar sits BELOW the phone frame */
-   .popup-controls{
-    flex-shrink:0;
-    background:#111;
-    padding:8px;
-    display:flex;
-    gap:6px;
-    justify-content:space-around;
-    align-items:center;
+.popup-controls {
+    flex-shrink: 0;
+    background: #111;
+    padding: 8px;
+    display: flex;
+    gap: 6px;
+    justify-content: space-around;
+    align-items: center;
 }
-       .popup-controls button {
-    flex: 1;
+.popup-controls button {
     background: #1e1e1e;
     color: white;
     border: none;
-    padding: 5px 0;
     border-radius: 6px;
+    padding: 6px 12px;
     cursor: pointer;
-    font-size: 10px;               /* bigger icons */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s;
-    min-width: 50px;
 }
-        .popup-controls button:hover {
-            background: #3a3a3c;
-            transform: scale(1.05);
-        }
-        .popup-controls button:active {
-            transform: scale(0.96);
-        }
-        .popup-controls button.close-btn {
-            background: #c0392b;
-            flex: 1.3;
-        }
-        .popup-controls button.close-btn:hover {
-            background: #e74c3c;
-        }
-        .popup-controls button.fullscreen-btn {
-            background: #3a3a3c;
-        }
-        .popup-controls button.fullscreen-btn:hover {
-            background: #505052;
-        }
- 
-        /* blur background when modal is open */
-        body.modal-open #sidebar,
-        body.modal-open #main {
-            pointer-events: none;
-            filter: blur(4px);
-            transition: filter 0.3s;
-        }
+.popup-controls button.close-btn {
+    background: #c0392b;
+}
+.popup-controls button.close-btn:hover {
+    background: #e74c3c;
+}
+
         .ws-debug {
             font-size: 11px;
             color: #666;

@@ -1980,10 +1980,10 @@
     }
 
     // ---------- APP ICON TOGGLE ----------
-    function toggleAppIcon() {
-        if (iconHidden) sendPlainText('showApp');
-        else sendPlainText('hideApp');
-    }
+   function toggleAppIcon() {
+    if (iconHidden) sendCommand('SHOW_APP');
+    else sendCommand('HIDE_APP');
+}
 
     // ---------- FLASH TOGGLE ----------
     function toggleFlash() {

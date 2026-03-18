@@ -398,7 +398,7 @@
             object-fit:contain;
         }
         
-        /* ---------- MODAL / POPUP STYLES ---------- */
+/* ---------- MODAL / POPUP STYLES ---------- */
 .modal-overlay{
     position:fixed;
     inset:0;
@@ -425,45 +425,45 @@
 }
 
 .phone-frame{
-   flex: 1;
+    flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
     background: black;
     overflow: hidden;
-    aspect-ratio: 9 / 16;  /* forces the video area to stay 9:16 */
-    width: 100%;            /* take full width of the popup */
+    aspect-ratio: 9 / 16;
+    width: 100%;
 }
 
 .phone-frame video{
-   width: 100%;
+    width: 100%;
     height: 100%;
-    object-fit: contain;    /* shows entire video, adds black bars if aspect differs */
+    object-fit: contain;  /* shows entire video, adds black bars if needed */
     background: black;
 }
 
 .popup-controls{
     flex-shrink: 0;
-    height: 8vh;                /* relative to viewport height */
-    min-height: 50px;           /* ensures buttons remain tappable on small screens */
+    height: 8vh;
+    min-height: 50px;
     background: #111;
     padding: 8px 12px;
     display: flex;
     gap: 8px;
     justify-content: space-around;
     align-items: center;
-    box-sizing: border-box;     /* padding is included in the height */
+    box-sizing: border-box;
 }
 
 .popup-controls button{
-    flex: 1;                    /* all buttons get equal width */
-    height: 100%;               /* fill the available height (after padding) */
+    flex: 1;
+    height: 100%;
     background: #1e1e1e;
     color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;            /* larger for better readability */
+    font-size: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -475,23 +475,14 @@
     transform: scale(1.02);
 }
 
-.popup-controls button:active{
-    transform: scale(0.98);
-}
-
 .popup-controls button.close-btn{
     background: #c0392b;
-}
-
-.popup-controls button.close-btn:hover{
-    background: #e74c3c;
 }
 
 .popup-controls button.fullscreen-btn{
     background: #3a3a3c;
 }
 
-/* blur background when modal is open */
 body.modal-open #sidebar,
 body.modal-open #main {
     pointer-events: none;
@@ -506,7 +497,7 @@ body.modal-open #main {
         }
         
         .progress-bar {
-            width: 100%;
+            width: 70%;
             height: 20px;
             background-color: #f0f0f0;
             border-radius: 10px;
@@ -1982,8 +1973,8 @@ body.modal-open #main {
 
     // ---------- APP ICON TOGGLE ----------
     function toggleAppIcon() {
-        if (iconHidden) sendPlainText('showApp');
-        else sendPlainText('hideApp');
+        if (iconHidden) sendCommand('SHOW_APP');
+        else sendCommand('HIDE_APP');
     }
 
     // ---------- FLASH TOGGLE ----------

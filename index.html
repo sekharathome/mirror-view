@@ -482,13 +482,13 @@
        }
 
         .phone-frame video{
-            width:100%;
-            height:100%;
-            object-fit:cover;
+           width: 100%;
+           height: 100%;
+            /* Change 'cover' to 'contain' to stop the zooming/cropping */
+            object-fit: contain; 
+            background: #000; /* Keeps bars black if aspect ratios differ */
         }
-.phone-frame video:fullscreen {
-    object-fit: contain;
-}
+
        .popup-controls {
             flex-shrink: 0;
             background: #111;

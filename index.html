@@ -4,6 +4,68 @@
     <title>SystemSync Console · Reliable</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
+        /* ---------- NEW AUTH STYLES (extended) ---------- */
+        #authContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #f5f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20000;
+        }
+        #authBox {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            width: 350px;
+            max-width: 90%;
+        }
+        #authBox h2 {
+            margin-top: 0;
+            color: #1976ff;
+        }
+        #authBox input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        #authBox button {
+            width: 100%;
+            padding: 10px;
+            background: #1976ff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        #authBox button:hover {
+            background: #0d5bca;
+        }
+        #authBox .toggle-link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #1976ff;
+            cursor: pointer;
+        }
+        #authBox .toggle-link:hover {
+            text-decoration: underline;
+        }
+        #authError {
+            color: #d32f2f;
+            font-size: 13px;
+            margin-top: 8px;
+        }
         /* ---------- YOUR EXISTING STYLES (unchanged) ---------- */
         body{
             margin:0;
@@ -784,8 +846,8 @@
         <button onclick="toggleFlash()"><span>🔦</span> <span id="flashBtn">Flash On</span></button>
         <!-- Flash Timed and Flash Blink remain separate -->
         <button onclick="sendCommand('FLASH_TIMED', { duration: 5000 })"><span>⏱️</span> Flash 5s</button>
-        <button onclick="sendCommand('FLASH_BLINK', { duration: 10000, interval: 500 })"><span>✨</span> Flash Blink</button>
-        <button onclick="showFirebaseSettingsPanel()" style="border-left:3px solid #ff6f00"><span>🔥</span> Firebase Setup</button>
+        <!-- <button onclick="sendCommand('FLASH_BLINK', { duration: 10000, interval: 500 })"><span>✨</span> Flash Blink</button> -->
+        <!--  <button onclick="showFirebaseSettingsPanel()" style="border-left:3px solid #ff6f00"><span>🔥</span> Firebase Setup</button> -->
     </div>
 
     <div id="alertsBadge" style="margin:10px 0;display:none;">
@@ -846,6 +908,8 @@
     const db = firebase.firestore();
 
     // ---------- GLOBALS ----------
+    let currentUser = null;
+    let selectedDeviceId = null;
     const WS_URL = "wss://mirror-view.onrender.com";
     let ws = null;
     let reconnectTimer = null;
@@ -868,14 +932,16 @@
     let screenActive = false;
     let iconHidden = false;
     let flashOn = false;
-
+    // ---------- AUTH UI STATE ----------
+    let isLoginMode = true; // true = login, false = signup
+    
     // Live camera recording state
     let mediaRecorder = null;
     let recordedChunks = [];
 
     // Track the last command sent to interpret raw responses
     let pendingCommand = null;
-    let selectedDeviceId = null;   // replaces currentDeviceId
+    
 
     const panel = document.getElementById('main-panel');
     const statusEl = document.getElementById('status');
@@ -899,7 +965,35 @@
         const pad = (n) => n.toString().padStart(2, '0');
         return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}-${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
     }
+ // ---------- RENDER AUTH FORM ----------
+    function renderAuthForm() {
+        const container = document.getElementById('authBox');
+        if (isLoginMode) {
+            container.innerHTML = `
+                <h2>🔐 SystemSync Login</h2>
+                <input type="email" id="authEmail" placeholder="Email" />
+                <input type="password" id="authPassword" placeholder="Password" />
+                <button onclick="handleAuth()">Sign In</button>
+                <div class="toggle-link" onclick="toggleAuthMode()">Don't have an account? Sign up</div>
+                <div id="authError"></div>
+            `;
+        } else {
+            container.innerHTML = `
+                <h2>📝 Create Account</h2>
+                <input type="email" id="authEmail" placeholder="Email" />
+                <input type="password" id="authPassword" placeholder="Password" />
+                <input type="password" id="authConfirmPassword" placeholder="Confirm Password" />
+                <button onclick="handleAuth()">Sign Up</button>
+                <div class="toggle-link" onclick="toggleAuthMode()">Already have an account? Sign in</div>
+                <div id="authError"></div>
+            `;
+        }
+    }
 
+    function toggleAuthMode() {
+        isLoginMode = !isLoginMode;
+        renderAuthForm();
+    }
     // ---------- ICE SERVERS ----------
     const ICE_SERVERS = [
         { urls: "stun:stun.relay.metered.ca:80" },
@@ -937,7 +1031,47 @@
             selectedDeviceId = null;
         });
     }
+ // ---------- HANDLE AUTH (LOGIN / SIGNUP) ----------
+    function handleAuth() {
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value.trim();
+        const errorDiv = document.getElementById('authError');
+        errorDiv.innerText = '';
 
+        if (!email || !password) {
+            errorDiv.innerText = 'Please fill all fields';
+            return;
+        }
+
+        if (!isLoginMode) {
+            const confirm = document.getElementById('authConfirmPassword').value.trim();
+            if (password !== confirm) {
+                errorDiv.innerText = 'Passwords do not match';
+                return;
+            }
+            // Sign up
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    currentUser = userCredential.user;
+                    document.getElementById('authContainer').style.display = 'none';
+                    loadDevices();
+                })
+                .catch(error => {
+                    errorDiv.innerText = error.message;
+                });
+        } else {
+            // Login
+            auth.signInWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    currentUser = userCredential.user;
+                    document.getElementById('authContainer').style.display = 'none';
+                    loadDevices();
+                })
+                .catch(error => {
+                    errorDiv.innerText = error.message;
+                });
+        }
+    }
     function loadDevices() {
         if (!currentUser) return;
         db.collection('devices').where('userId', '==', currentUser.uid).get()
@@ -3495,7 +3629,8 @@ function getAppNameFromPkg(pkg) {
     window.toggleFlash = toggleFlash; // add flash toggle
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
-
+ // ---------- INITIAL RENDER ----------
+    renderAuthForm();
     // ---------- DO NOT AUTO-CONNECT – waiting for device selection ----------
     // connectWebSocket();  <-- removed
 </script>

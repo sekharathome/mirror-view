@@ -237,98 +237,146 @@ tr:hover {
     background: #f5f9ff;
 }
 
-/* ==================== FILE MANAGER ==================== */
+/* ==================== FILE MANAGER (TREE-VIEW) ==================== */
 .file-manager {
     display: flex;
     flex-direction: column;
     height: 100%;
+    background: #ffffff; /* Or #0f0f0f if you prefer the dark theme from the video */
 }
 
 .file-toolbar-sticky {
     position: sticky;
     top: 0;
-    background: white;
-    z-index: 10;
-    padding-bottom: 10px;
-    margin-bottom: 10px;
+    background: inherit;
+    z-index: 100;
+    padding: 12px;
     border-bottom: 1px solid #eef2f5;
-}
-
-.file-toolbar {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.file-toolbar button {
-    width: auto;
-    padding: 6px 12px;
-    margin: 0;
+    gap: 12px;
 }
 
 .file-path {
     background: #f0f2f5;
-    padding: 6px 12px;
-    border-radius: 20px;
+    padding: 6px 14px;
+    border-radius: 6px;
     font-size: 13px;
+    font-family: monospace;
+    color: #2c3e50;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- Tree Structure Containers --- */
+.tree-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.tree-root, .nested-tree {
+    list-style: none;
+    padding-left: 24px;
+    margin: 0;
+    position: relative;
+}
+
+/* Vertical Connecting Lines */
+.tree-root::before, .nested-tree::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 8px;
+    width: 1px;
+    height: 100%;
+    background: #d1d9e0; /* Subtle line color */
+}
+
+.tree-item {
+    position: relative;
+    margin: 4px 0;
+}
+
+/* Horizontal Connecting Lines */
+.tree-item::before {
+    content: "";
+    position: absolute;
+    top: 15px;
+    left: -16px;
+    width: 16px;
+    height: 1px;
+    background: #d1d9e0;
+}
+
+/* --- Row Styles --- */
+.folder-header, .file-row {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.folder-header:hover, .file-row:hover {
+    background: #f5f7fa;
+}
+
+.folder-header:active, .file-row:active {
+    transform: scale(0.99);
+}
+
+.folder-icon, .file-icon {
+    font-size: 18px;
+    margin-right: 10px;
+    display: inline-block;
+    width: 24px;
+    text-align: center;
+}
+
+.item-name {
+    font-size: 14px;
     color: #2c3e50;
     flex: 1;
 }
 
-.file-panes {
-    display: flex;
-    gap: 20px;
-    flex: 1;
-    overflow: hidden;
-    min-height: 300px;
-}
-
-.folder-pane, .file-pane {
-    flex: 1;
-    background: #fafbfc;
-    border-radius: 8px;
-    padding: 10px;
-    overflow-y: auto;
-    border: 1px solid #eef2f5;
-}
-
-.pane-title {
-    font-size: 12px;
-    font-weight: 600;
-    color: #7b8a9b;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-}
-
-.folder-item, .file-item {
-    display: flex;
-    align-items: center;
-    padding: 6px 8px;
-    border-radius: 6px;
-    gap: 8px;
-    margin-bottom: 2px;
-}
-
-.folder-item {
-    cursor: pointer;
-}
-
-.folder-item:hover {
-    background: #e3f2fd;
-}
-
-.file-checkbox {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    margin-right: 8px;
-}
-
 .file-size {
-    color: #7b8a9b;
-    font-size: 12px;
+    font-size: 11px;
+    color: #94a3b8;
     margin-left: 10px;
+}
+
+/* --- Checkbox Styling --- */
+.file-checkbox {
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+/* --- Animation & Interactivity --- */
+.nested-tree {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, opacity 0.3s;
+    opacity: 0;
+}
+
+/* Toggle this class via JS to expand */
+.nested-tree.show {
+    max-height: 2000px; /* Large value to allow growth */
+    opacity: 1;
+}
+
+/* UI for empty folders */
+.empty-msg {
+    padding: 20px;
+    color: #94a3b8;
+    font-style: italic;
+    font-size: 13px;
 }
 
 /* ==================== PAGINATION ==================== */

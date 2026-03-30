@@ -1,75 +1,109 @@
-// ==================== FILE MANAGER MODULE ====================
+// ==================== TREE-VIEW FILE MANAGER MODULE ====================
+
+/**
+ * Renders the file manager using a recursive tree-view structure.
+ * This replaces the previous folder-pane/file-pane split.
+ */
 function renderFiles() {
+    const panel = document.getElementById('main-panel'); // Assuming this is your target container
+    
     let html = `
-        <div class="file-manager">
+        <div class="file-manager tree-view-container">
             <div class="file-toolbar-sticky">
                 <div class="file-toolbar">
-                    <button onclick="navigateUp()">⬆ Up</button>
+                    <button onclick="navigateUp()">⬆ Back to Root</button>
                     <span class="file-path">${escapeHtml(currentPath)}</span>
-                    <div style="display: flex; gap: 8px;">
-                        <button onclick="downloadSelected()" style="flex:1; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                    <div class="toolbar-actions">
+                        <button onclick="downloadSelected()" class="btn-download">
                             ⬇️ <span id="downloadCount">${selectedFiles.length}</span>
-                        </button>
-                        <button onclick="deleteSelected()" style="flex:1; background: #d32f2f; color: white; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                            🗑️ <span id="deleteCount">${selectedFiles.length}</span>
                         </button>
                     </div>
                 </div>
             </div>
+            <div class="tree-content">
     `;
 
     if (!currentData || currentData.length === 0) {
-        html += '<p style="padding:20px;">No files found.</p>';
+        html += '<p class="empty-msg">No files or folders found in this directory.</p>';
     } else {
-        const folders = currentData.filter(item => item.isDir);
-        const files = currentData.filter(item => !item.isDir);
+        // Reset selection on re-render
         selectedFiles = [];
-
-        html += `
-            <div class="file-panes">
-                <div class="folder-pane">
-                    <div class="pane-title">Folders</div>
-                    <div id="folderList">
-        `;
-
+        
+        // Start the root list
+        html += '<ul class="tree-root">';
+        
+        // 1. Render Folders first (Collapsible)
+        const folders = currentData.filter(item => item.isDir);
         folders.forEach(f => {
             html += `
-                <div class="folder-item" onclick="handleFolderClick('${escapeHtml(f.path)}')">
-                    <span class="folder-icon">📁</span>
-                    <span class="folder-name">${escapeHtml(f.name)}</span>
-                </div>
+                <li class="tree-item folder-item">
+                    <div class="folder-header" onclick="handleFolderClick('${escapeHtml(f.path)}', this)">
+                        <span class="folder-icon">📁</span>
+                        <span class="item-name">${escapeHtml(f.name)}</span>
+                    </div>
+                    <ul class="nested-tree" id="nested-${btoa(f.path).replace(/=/g, '')}"></ul>
+                </li>
             `;
         });
 
-        html += `
-                    </div>
-                </div>
-                <div class="file-pane">
-                    <div class="pane-title">Files</div>
-                    <div id="fileList">
-        `;
-
+        // 2. Render Files
+        const files = currentData.filter(item => !item.isDir);
         files.forEach(f => {
-            const path = f.path;
-            const name = f.name;
-            const size = formatBytes(f.size);
+            const extension = f.name.split('.').pop().toLowerCase();
+            const icon = getFileIcon(extension);
+            
             html += `
-                <div class="file-item">
-                    <input type="checkbox" class="file-checkbox" data-path="${escapeHtml(path)}" onchange="updateSelected(this)">
-                    <span class="file-icon">📄</span>
-                    <span class="file-name">${escapeHtml(name)}</span>
-                    <span class="file-size">${size}</span>
-                </div>
+                <li class="tree-item file-item">
+                    <div class="file-row">
+                        <input type="checkbox" class="file-checkbox" data-path="${escapeHtml(f.path)}" onchange="updateSelected(this)">
+                        <span class="file-icon">${icon}</span>
+                        <span class="item-name">${escapeHtml(f.name)}</span>
+                        <span class="file-size">${formatBytes(f.size)}</span>
+                    </div>
+                </li>
             `;
         });
 
-        html += `
-                    </div>
-                </div>
-            </div>
-        `;
+        html += '</ul>';
     }
 
-    html += '</div>';
+    html += '</div></div>';
     panel.innerHTML = html;
+}
+
+/**
+ * Helper to get icons based on file type
+ */
+function getFileIcon(ext) {
+    switch(ext) {
+        case 'pdf': return '📕';
+        case 'kml': return '🌍';
+        case 'xlsx': case 'xls': return '📊';
+        case 'jpg': case 'png': return '🖼️';
+        case 'mp4': return '🎬';
+        default: return '📄';
+    }
+}
+
+/**
+ * Updated Folder Click: Toggles the "Open" state and triggers your data fetch
+ */
+function handleFolderClick(path, element) {
+    // Toggle the visual "Open" folder icon
+    const icon = element.querySelector('.folder-icon');
+    if (icon.innerText === '📁') {
+        icon.innerText = '📂';
+    } else {
+        icon.innerText = '📁';
+    }
+
+    // Call your existing navigation logic to fetch new data for this path
+    // In your existing setup, this likely triggers a WebSocket 'LIST_FILES' command
+    if (typeof navigateToPath === "function") {
+        navigateToPath(path); 
+    } else {
+        // Fallback to your global path update
+        currentPath = path;
+        sendCommand('LIST_FILES', { path: path });
+    }
 }

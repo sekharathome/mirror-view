@@ -252,99 +252,148 @@
             background: #f5f9ff;
         }
 
-        /* ==================== FILE MANAGER ==================== */
-        .file-manager {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
+      /* ==================== FILE MANAGER (TREE-VIEW) ==================== */
+.file-manager {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #ffffff; /* Or #0f0f0f if you prefer the dark theme from the video */
+}
 
-        .file-toolbar-sticky {
-            position: sticky;
-            top: 0;
-            background: white;
-            z-index: 10;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #eef2f5;
-        }
+.file-toolbar-sticky {
+    position: sticky;
+    top: 0;
+    background: inherit;
+    z-index: 100;
+    padding: 12px;
+    border-bottom: 1px solid #eef2f5;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
 
-        .file-toolbar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+.file-path {
+    background: #f0f2f5;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: monospace;
+    color: #2c3e50;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
-        .file-toolbar button {
-            width: auto;
-            padding: 6px 12px;
-            margin: 0;
-        }
+/* --- Tree Structure Containers --- */
+.tree-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
 
-        .file-path {
-            background: #f0f2f5;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            color: #2c3e50;
-            flex: 1;
-        }
+.tree-root, .nested-tree {
+    list-style: none;
+    padding-left: 24px;
+    margin: 0;
+    position: relative;
+}
 
-        .file-panes {
-            display: flex;
-            gap: 20px;
-            flex: 1;
-            overflow: hidden;
-            min-height: 300px;
-        }
+/* Vertical Connecting Lines */
+.tree-root::before, .nested-tree::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 8px;
+    width: 1px;
+    height: 100%;
+    background: #d1d9e0; /* Subtle line color */
+}
 
-        .folder-pane, .file-pane {
-            flex: 1;
-            background: #fafbfc;
-            border-radius: 8px;
-            padding: 10px;
-            overflow-y: auto;
-            border: 1px solid #eef2f5;
-        }
+.tree-item {
+    position: relative;
+    margin: 4px 0;
+}
 
-        .pane-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: #7b8a9b;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
+/* Horizontal Connecting Lines */
+.tree-item::before {
+    content: "";
+    position: absolute;
+    top: 15px;
+    left: -16px;
+    width: 16px;
+    height: 1px;
+    background: #d1d9e0;
+}
 
-        .folder-item, .file-item {
-            display: flex;
-            align-items: center;
-            padding: 6px 8px;
-            border-radius: 6px;
-            gap: 8px;
-            margin-bottom: 2px;
-        }
+/* --- Row Styles --- */
+.folder-header, .file-row {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
 
-        .folder-item {
-            cursor: pointer;
-        }
+.folder-header:hover, .file-row:hover {
+    background: #f5f7fa;
+}
 
-        .folder-item:hover {
-            background: #e3f2fd;
-        }
+.folder-header:active, .file-row:active {
+    transform: scale(0.99);
+}
 
-        .file-checkbox {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            margin-right: 8px;
-        }
+.folder-icon, .file-icon {
+    font-size: 18px;
+    margin-right: 10px;
+    display: inline-block;
+    width: 24px;
+    text-align: center;
+}
 
-        .file-size {
-            color: #7b8a9b;
-            font-size: 12px;
-            margin-left: 10px;
-        }
+.item-name {
+    font-size: 14px;
+    color: #2c3e50;
+    flex: 1;
+}
+
+.file-size {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 10px;
+}
+
+/* --- Checkbox Styling --- */
+.file-checkbox {
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+/* --- Animation & Interactivity --- */
+.nested-tree {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, opacity 0.3s;
+    opacity: 0;
+}
+
+/* Toggle this class via JS to expand */
+.nested-tree.show {
+    max-height: 2000px; /* Large value to allow growth */
+    opacity: 1;
+}
+
+/* UI for empty folders */
+.empty-msg {
+    padding: 20px;
+    color: #94a3b8;
+    font-style: italic;
+    font-size: 13px;
+}
+
 
         /* ==================== PAGINATION ==================== */
         .pagination {
@@ -1491,24 +1540,48 @@
 
     function gotoPage(p) { currentPage = p; renderTable(); }
 
-    function renderFiles() {
-        let html = `<div class="file-manager"><div class="file-toolbar-sticky"><div class="file-toolbar"><button onclick="navigateUp()">⬆ Up</button><span class="file-path">${escapeHtml(currentPath)}</span><div style="display:flex;gap:8px;"><button onclick="downloadSelected()" style="flex:1;">⬇️ <span id="downloadCount">${selectedFiles.length}</span></button><button onclick="deleteSelected()" style="flex:1; background:#d32f2f; color:white;">🗑️ <span id="deleteCount">${selectedFiles.length}</span></button></div></div></div>`;
-        if (!currentData || !currentData.length) html += '<p>No files found.</p>';
-        else {
-            const folders = currentData.filter(f=>f.isDir);
-            const files = currentData.filter(f=>!f.isDir);
-            selectedFiles = [];
-            html += `<div class="file-panes"><div class="folder-pane"><div class="pane-title">Folders</div><div id="folderList">`;
-            folders.forEach(f => html += `<div class="folder-item" onclick="handleFolderClick('${escapeHtml(f.path)}')"><span>📁</span><span>${escapeHtml(f.name)}</span></div>`);
-            html += `</div></div><div class="file-pane"><div class="pane-title">Files</div><div id="fileList">`;
-            files.forEach(f => {
-                html += `<div class="file-item"><input type="checkbox" class="file-checkbox" data-path="${escapeHtml(f.path)}" onchange="updateSelected(this)"><span>📄</span><span>${escapeHtml(f.name)}</span><span class="file-size">${formatBytes(f.size)}</span></div>`;
-            });
-            html += `</div></div></div>`;
-        }
-        html += '</div>';
-        panel.innerHTML = html;
-    }
+  function renderFiles() {
+    const panel = document.getElementById('main-panel');
+    if (!panel) return;
+
+    let html = `
+        <div class="file-manager">
+            <div class="file-toolbar-sticky">
+                <div class="file-toolbar">
+                    <button onclick="navigateUp()">⬆ Back</button>
+                    <span class="file-path">${currentPath}</span>
+                </div>
+            </div>
+            <div class="tree-content">
+                <ul class="tree-root">
+    `;
+
+    // Folders
+    currentData.filter(i => i.isDir).forEach(f => {
+        html += `
+            <li class="tree-item">
+                <div class="folder-header" onclick="handleFolderClick('${f.path}', this)">
+                    <span class="folder-icon">📁</span>
+                    <span class="item-name">${f.name}</span>
+                </div>
+            </li>`;
+    });
+
+    // Files
+    currentData.filter(i => !i.isDir).forEach(f => {
+        html += `
+            <li class="tree-item">
+                <div class="file-row">
+                    <span class="folder-icon">📄</span>
+                    <span class="item-name">${f.name}</span>
+                    <span class="file-size">${formatBytes(f.size)}</span>
+                </div>
+            </li>`;
+    });
+
+    html += `</ul></div></div>`;
+    panel.innerHTML = html;
+}
 
     function handleFolderClick(path) { currentPath = path; sendCommand('LIST_FILES', { path: path }); }
     function navigateUp() {

@@ -13,7 +13,685 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     
     <style>
-        /* ... (all styles remain unchanged, keep as in your file) ... */
+        /* ==================== BASE STYLES ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f5f7fa;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ==================== SIDEBAR ==================== */
+        #sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #e0e4e8;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.02);
+            display: none;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1976ff;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #7b8a9b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px 12px;
+            margin: 4px 0;
+            background: white;
+            color: #1a2634;
+            border: 1px solid #d0d9e2;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: #1976ff;
+            color: white;
+            border-color: #1976ff;
+        }
+
+        /* ==================== CAMERA PANELS ==================== */
+        .camera-panel {
+            background: #f0f2f5;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            display: none;
+        }
+
+        .camera-panel.show {
+            display: block;
+        }
+
+        .camera-option {
+            margin: 8px 0;
+        }
+
+        .camera-option label {
+            margin-right: 15px;
+            color: #1a2634;
+        }
+
+        .capture-btn, .live-btn {
+            background: #1976ff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .capture-btn:hover, .live-btn:hover {
+            background: #0d5bca;
+        }
+
+        .live-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .live-controls button {
+            flex: 1;
+            background: #1976ff;
+            color: white;
+            border: none;
+            padding: 8px 3px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: auto;
+        }
+
+        .live-controls button.stop {
+            background: #d32f2f;
+        }
+
+        /* ==================== MAIN CONTENT ==================== */
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            background: #f5f7fa;
+            display: none;
+        }
+
+        #header {
+            height: 60px;
+            background: white;
+            border-bottom: 1px solid #e0e4e8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+            font-weight: 600;
+            color: #1a2634;
+        }
+
+        #status {
+            padding: 6px 16px;
+            border-radius: 30px;
+            background: #e8f0fe;
+            color: #1976ff;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        #status.offline {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .reconnect-btn {
+            background: #1976ff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        #content {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        #main-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            padding: 20px;
+            min-height: 100%;
+            position: relative;
+        }
+
+        /* ==================== MAP ==================== */
+        #map {
+            height: 400px;
+            border-radius: 10px;
+        }
+
+        .map-info {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(255,255,255,0.95);
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            font-size: 13px;
+            color: #1a2634;
+            z-index: 1000;
+            pointer-events: none;
+            border-left: 4px solid #1976ff;
+        }
+
+        /* ==================== TABLES ==================== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8fafd;
+            color: #1a2634;
+            font-weight: 600;
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 2px solid #e0e4e8;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #eef2f5;
+            color: #2c3e50;
+            word-break: break-word;
+        }
+
+        tr:hover {
+            background: #f5f9ff;
+        }
+
+      /* ==================== FILE MANAGER (TREE-VIEW) ==================== */
+.file-manager {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #ffffff; /* Or #0f0f0f if you prefer the dark theme from the video */
+}
+
+.file-toolbar-sticky {
+    position: sticky;
+    top: 0;
+    background: inherit;
+    z-index: 100;
+    padding: 12px;
+    border-bottom: 1px solid #eef2f5;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.file-path {
+    background: #f0f2f5;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: monospace;
+    color: #2c3e50;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- Tree Structure Containers --- */
+.tree-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.tree-root, .nested-tree {
+    list-style: none;
+    padding-left: 24px;
+    margin: 0;
+    position: relative;
+}
+
+/* Vertical Connecting Lines */
+.tree-root::before, .nested-tree::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 8px;
+    width: 1px;
+    height: 100%;
+    background: #d1d9e0; /* Subtle line color */
+}
+
+.tree-item {
+    position: relative;
+    margin: 4px 0;
+}
+
+/* Horizontal Connecting Lines */
+.tree-item::before {
+    content: "";
+    position: absolute;
+    top: 15px;
+    left: -16px;
+    width: 16px;
+    height: 1px;
+    background: #d1d9e0;
+}
+
+/* --- Row Styles --- */
+.folder-header, .file-row {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.folder-header:hover, .file-row:hover {
+    background: #f5f7fa;
+}
+
+.folder-header:active, .file-row:active {
+    transform: scale(0.99);
+}
+
+.folder-icon, .file-icon {
+    font-size: 18px;
+    margin-right: 10px;
+    display: inline-block;
+    width: 24px;
+    text-align: center;
+}
+
+.item-name {
+    font-size: 14px;
+    color: #2c3e50;
+    flex: 1;
+}
+
+.file-size {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 10px;
+}
+
+/* --- Checkbox Styling --- */
+.file-checkbox {
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+/* --- Animation & Interactivity --- */
+.nested-tree {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, opacity 0.3s;
+    opacity: 0;
+}
+
+/* Toggle this class via JS to expand */
+.nested-tree.show {
+    max-height: 2000px; /* Large value to allow growth */
+    opacity: 1;
+}
+
+/* UI for empty folders */
+.empty-msg {
+    padding: 20px;
+    color: #94a3b8;
+    font-style: italic;
+    font-size: 13px;
+}
+
+
+        /* ==================== PAGINATION ==================== */
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #d0d9e2;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #1a2634;
+        }
+
+        .page-btn:hover {
+            background: #1976ff;
+            color: white;
+            border-color: #1976ff;
+        }
+
+        /* ==================== MODAL / POPUP ==================== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .mobile-popup {
+            width: min(92vw, calc(92vh * 9 / 16));
+            height: 92vh;
+            display: flex;
+            flex-direction: column;
+            background: #0f0f0f;
+            border-radius: 26px;
+            border: 6px solid #2e2e2e;
+            box-shadow: 0 40px 120px rgba(0,0,0,0.9);
+            overflow: hidden;
+        }
+
+        .phone-frame {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: black;
+            overflow: hidden;
+            aspect-ratio: 9 / 16;
+        }
+
+        .phone-frame video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: black;
+        }
+
+        .popup-controls {
+            flex-shrink: 0;
+            background: #111;
+            padding: 8px;
+            display: flex;
+            gap: 6px;
+            justify-content: space-around;
+            align-items: center;
+            overflow-x: auto;
+        }
+
+        .popup-controls button {
+            width: 60px;
+            min-width: 60px;
+            max-width: 60px;
+            height: 28px;
+            min-height: 28px;
+            max-height: 28px;
+            box-sizing: border-box;
+            flex-shrink: 0;
+            font-size: 12px;
+            background: #1e1e1e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .popup-controls button:hover {
+            background: #3a3a3c;
+            transform: scale(1.05);
+        }
+
+        .popup-controls button.close-btn {
+            background: #c0392b;
+        }
+
+        .popup-controls button.fullscreen-btn {
+            background: #3a3a3c;
+        }
+
+        body.modal-open #sidebar,
+        body.modal-open #main {
+            pointer-events: none;
+            filter: blur(4px);
+            transition: filter 0.3s;
+        }
+
+        /* ==================== AUTH & DEVICE LIST ==================== */
+        #authContainer, #deviceListContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #f5f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20000;
+        }
+
+        #authBox, #deviceListBox {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            width: 350px;
+            max-width: 90%;
+        }
+
+        #deviceListBox {
+            width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        #authBox h2, #deviceListBox h2 {
+            margin-top: 0;
+            color: #1976ff;
+        }
+
+        #authBox input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        #authBox button, #logoutBtn {
+            width: 100%;
+            padding: 10px;
+            background: #1976ff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        #logoutBtn {
+            background: #d32f2f;
+            margin-top: 16px;
+        }
+
+        .toggle-link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #1976ff;
+            cursor: pointer;
+        }
+
+        .toggle-link:hover {
+            text-decoration: underline;
+        }
+
+        #authError {
+            color: #d32f2f;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        .device-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #e0e4e8;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .device-item:hover {
+            background: #e3f2fd;
+        }
+
+        .device-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+
+        .device-info {
+            flex: 1;
+        }
+
+        .device-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .device-id {
+            font-size: 12px;
+            color: #7b8a9b;
+        }
+
+        /* ==================== PROGRESS & DOWNLOAD ==================== */
+        #downloadProgress {
+            background: #fff;
+            border: 1px solid #1976ff;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        #progressBar {
+            width: 0%;
+            height: 10px;
+            background: #1976ff;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* ==================== UTILITIES ==================== */
+        .ws-debug {
+            font-size: 11px;
+            color: #666;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .usage-bar {
+            height: 10px;
+            border-radius: 5px;
+            background-color: #1976ff;
+        }
+
+        .app-usage-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eef2f5;
+        }
+
+        .app-usage-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .app-usage-time {
+            width: 80px;
+            text-align: right;
+            color: #666;
+        }
+
+        img, video {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        /* ==================== HIDE MAIN INTERFACE INITIALLY ==================== */
+        #sidebar, #main {
+            display: none;
+        }
     </style>
 </head>
 <body>

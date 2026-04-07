@@ -833,6 +833,77 @@
         #main {
             display: none;
         }
+        /* ----- Premium Glass & Responsive ----- */
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            white-space: nowrap; /* Prevents cell crunching on mobile */
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        /* 📱 Mobile Version (<= 768px) */
+        @media (max-width: 768px) {
+            #sidebar {
+                position: fixed;
+                left: -320px;
+                top: 0;
+                bottom: 0;
+                z-index: 10000;
+                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            #sidebar.open {
+                left: 0;
+            }
+            #menuToggle {
+                display: flex !important;
+            }
+            .mobile-popup {
+                width: 96vw;
+            }
+            .glass-panel {
+                padding: 16px; /* Less spacious padding */
+            }
+            #map {
+                height: 300px !important;
+            }
+        }
+
+        /* 💻 Desktop Version (> 768px) */
+        @media (min-width: 769px) {
+            #map {
+                height: 400px !important; /* Spans smoothly on desktop */
+            }
+        }
     </style>
 </head>
 
@@ -874,6 +945,9 @@
             </div>
         </div>
     </div>
+
+    <!-- HIDDEN OVERLAY FOR MOBILE SIDEBAR -->
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <div id="sidebar">
         <div class="logo">SystemSync 🔗</div>
@@ -971,8 +1045,11 @@
 
     <div id="main">
         <div id="header">
-            <div>Control Panel <span style="font-size:12px; margin-left:8px; color:#1976ff;"
-                    id="serverInfo">mirror-view.onrender.com</span></div>
+            <div style="display:flex; align-items:center;">
+                <button id="menuToggle" onclick="toggleSidebar()" style="display:none; border:none; background:none; font-size:24px; cursor:pointer; padding:0 12px 0 0; color:#1a2634; line-height:1;">☰</button>
+                Control Panel 
+                <span style="font-size:12px; margin-left:12px; padding:4px 10px; background:#e8f0fe; color:#1976ff; border-radius:12px; font-weight:600;" id="serverInfo">mirror-view.onrender.com</span>
+            </div>
             <div style="display: flex; align-items: center;">
                 <span id="status">CONNECTING</span>
                 <button class="reconnect-btn" onclick="manualReconnect()">⟲ Reconnect</button>
@@ -1038,6 +1115,25 @@
         let mapInstance = null;
         let currentData = [];
         let currentPage = 0;
+
+        // Toggles mobile sidebar visibility and blur overlay
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sb && overlay) {
+                const isOpen = sb.classList.contains('open');
+                if (isOpen) {
+                    sb.classList.remove('open');
+                    overlay.classList.remove('active');
+                    setTimeout(() => overlay.style.display = 'none', 300); // fade out wait
+                } else {
+                    overlay.style.display = 'block';
+                    void overlay.offsetWidth; // Force reflow
+                    sb.classList.add('open');
+                    overlay.classList.add('active');
+                }
+            }
+        }
         let dataType = null;
         let currentPath = "root";
         let selectedFiles = [];

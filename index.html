@@ -2373,7 +2373,7 @@
             sendCommand('CAMERA_SNAPSHOT', { camera, flash: useFlash });
         }
 
-        function displayCapturedImage(b64){ 
+        function displayCapturedImage(b64) {
             const modalHtml = `
             <div id="photoModalOverlay" class="modal-overlay show">
                 <div class="mobile-popup">
@@ -2740,14 +2740,14 @@
             return (b / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
         }
 
-        function displaySMS(data){
-            if(!Array.isArray(data)||!data.length){ panel.innerHTML='<div style="padding:24px; text-align:center; color:var(--text-sec);">No SMS messages found.</div>'; return; }
-            
+        function displaySMS(data) {
+            if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<div style="padding:24px; text-align:center; color:var(--text-sec);">No SMS messages found.</div>'; return; }
+
             let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <h3 style="margin:0;">💬 SMS Inbox (${data.length})</h3>
             </div>
             <div style="display:flex; flex-direction:column; gap:12px;">`;
-            
+
             data.forEach(m => {
                 const isIncoming = (m.type === 'inbox' || m.type === 1);
                 const icon = isIncoming ? '📥' : '📤';
@@ -2755,16 +2755,16 @@
                 html += `
                 <div style="background:#fff; border-radius:12px; padding:16px; border:1px solid #e0e4e8; border-left:4px solid ${color}; transition:transform 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
                     <div style="display:flex; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-                        <span style="font-weight:600; color:#333; font-size:15px;">${icon} ${m.address||m.number||'Unknown'}</span>
-                        <span style="font-size:12px; color:#666; padding-top:2px;">${m.date||m.timeFmt||''}</span>
+                        <span style="font-weight:600; color:#333; font-size:15px;">${icon} ${m.address || m.number || 'Unknown'}</span>
+                        <span style="font-size:12px; color:#666; padding-top:2px;">${m.date || m.timeFmt || ''}</span>
                     </div>
-                    <div style="color:#333; font-size:14px; line-height:1.5; word-wrap:break-word;">${m.body||m.msg||m.message||''}</div>
+                    <div style="color:#333; font-size:14px; line-height:1.5; word-wrap:break-word;">${m.body || m.msg || m.message || ''}</div>
                 </div>`;
             });
-            
+
             html += `</div>`;
-            currentData=data; dataType='sms'; 
-            panel.innerHTML=html;
+            currentData = data; dataType = 'sms';
+            panel.innerHTML = html;
         }
 
         // ---------- DATA DISPLAY FUNCTIONS ----------
@@ -2857,35 +2857,46 @@
             panel.appendChild(btnRow);
         }
 
-            panel.innerHTML = '';
-            if (!Array.isArray(data) || data.length === 0) {
-                panel.innerHTML = '<h3>📊 Screen Time</h3><p style="color:#999">No data available. Enable Usage Access in device Settings.</p>';
-                return;
-            }
-            const h3 = document.createElement('h3');
-            h3.textContent = '📊 Screen Time (' + data.length + ' apps)';
-            panel.appendChild(h3);
+        function displayAppUsage(data) {
+            if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>📊 Screen Time</h3><p style="color:#999">No data found. Ensure Usage Access is given.</p>'; return; }
+            const max = Math.max(...data.map(a => a.totalTimeMs || 0));
 
-            data.forEach(function (app) {
+            let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0;">📊 Screen Time Insights</h3>
+                <span style="font-size:13px; padding:6px 12px; background:#eff6ff; color:#1d4ed8; border-radius:12px; font-weight:600;">${data.length} Apps</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px;">`;
+
+            data.forEach(app => {
                 const totalMs = app.totalTimeMs || 0;
+                const pct = max ? Math.round(totalMs / max * 100) : 0;
+                const color = totalMs > 3600000 ? '#d32f2f' : totalMs > 1800000 ? '#ff9800' : '#4caf50';
+
                 const hours = Math.floor(totalMs / 3600000);
                 const minutes = Math.floor((totalMs % 3600000) / 60000);
                 const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 
-                const maxMs = Math.max(...data.map(a => a.totalTimeMs || 0));
-                const pct = maxMs > 0 ? Math.round((totalMs / maxMs) * 100) : 0;
+                const appName = app.appName || app.packageName || 'Unknown';
+                // Safe string extraction for initial
+                let initial = '';
+                try { initial = (typeof appName === 'string') ? appName.replace(/[^a-zA-Z]/g, '').charAt(0).toUpperCase() || '?' : '?'; } catch (e) { initial = '?'; }
 
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'app-usage-item';
-                itemDiv.innerHTML = `
-                <div class="app-usage-name">${app.appName || app.packageName || 'Unknown'}</div>
-                <div class="app-usage-time">${timeStr}</div>
-                <div style="flex:0.5; margin-left:10px;">
-                    <div class="usage-bar" style="width:${pct}%; background-color:${totalMs > 3600000 ? '#d32f2f' : totalMs > 1800000 ? '#ff9800' : '#4caf50'};"></div>
-                </div>
-            `;
-                panel.appendChild(itemDiv);
+                html += `
+                <div style="display:flex; align-items:center; gap:16px; padding:16px; background:#fff; border-radius:12px; border:1px solid #eef2f5; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
+                    <div style="width:44px; height:44px; border-radius:10px; background:${color}15; color:${color}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:20px; flex-shrink:0;">${initial}</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+                            <span style="font-weight:600; font-size:15px; color:#2c3e50; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${appName}</span>
+                            <span style="font-family:monospace; font-size:13px; color:#7b8a9b; font-weight:500;">${timeStr}</span>
+                        </div>
+                        <div style="height:6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
+                            <div style="height:100%; width:${pct}%; background:${color}; border-radius:3px; transition:width 0.4s ease-out;"></div>
+                        </div>
+                    </div>
+                </div>`;
             });
+            html += `</div>`;
+            panel.innerHTML = html;
         }
 
         function displayNotifications(data) {

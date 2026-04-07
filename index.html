@@ -373,7 +373,8 @@
         }
 
         /* Lists without default bullets */
-        ul.tree, ul.tree ul {
+        ul.tree,
+        ul.tree ul {
             list-style-type: none;
             margin: 0;
             padding: 0;
@@ -410,21 +411,29 @@
             transform: rotate(90deg);
         }
 
-        .nested {
+        ul.tree ul.nested {
             display: none;
-            padding-left: 48px; /* Increased indent for subfolders */
+            padding-left: 32px;
+            /* Increased indent for subfolders */
             border-left: 1px dashed #76b4f3;
-            margin-left: 30px;
+            margin-left: 20px;
         }
 
-        .nested.active {
+        ul.tree ul.nested.active {
             display: block;
             animation: slideDown 0.3s ease-out;
         }
 
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-5px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .folder-icon,
@@ -843,17 +852,19 @@
         #main {
             display: none;
         }
+
         /* ----- Premium Glass & Responsive ----- */
         .sidebar-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.4);
+            background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(4px);
             z-index: 9999;
             display: none;
             opacity: 0;
             transition: opacity 0.3s;
         }
+
         .sidebar-overlay.active {
             display: block;
             opacity: 1;
@@ -864,10 +875,12 @@
             overflow-x: auto;
             display: block;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            white-space: nowrap; /* Prevents cell crunching on mobile */
+            white-space: nowrap;
+            /* Prevents cell crunching on mobile */
         }
 
         .glass-panel {
@@ -891,18 +904,24 @@
                 z-index: 10000;
                 transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
+
             #sidebar.open {
                 left: 0;
             }
+
             #menuToggle {
                 display: flex !important;
             }
+
             .mobile-popup {
                 width: 96vw;
             }
+
             .glass-panel {
-                padding: 16px; /* Less spacious padding */
+                padding: 16px;
+                /* Less spacious padding */
             }
+
             #map {
                 height: 300px !important;
             }
@@ -911,7 +930,8 @@
         /* 💻 Desktop Version (> 768px) */
         @media (min-width: 769px) {
             #map {
-                height: 400px !important; /* Spans smoothly on desktop */
+                height: 400px !important;
+                /* Spans smoothly on desktop */
             }
         }
     </style>
@@ -923,9 +943,10 @@
     <div id="authContainer">
         <div id="authBox">
             <h2>🔐 SystemSync Login</h2>
-            <input type="email" id="loginEmail" placeholder="Email" />
-            <input type="password" id="loginPassword" placeholder="Password" />
-            <button onclick="login()">Sign In</button>
+            <input type="email" id="authEmail" placeholder="Email" />
+            <input type="password" id="authPassword" placeholder="Password" />
+            <button onclick="handleAuth()">Sign In</button>
+            <div class="toggle-link" onclick="toggleAuthMode()">DONT HAVE ACCOUNT, SIGNUP NOW</div>
             <div id="authError"></div>
         </div>
     </div>
@@ -1056,13 +1077,17 @@
     <div id="main">
         <div id="header">
             <div style="display:flex; align-items:center;">
-                <button id="menuToggle" onclick="toggleSidebar()" style="display:none; border:none; background:none; font-size:24px; cursor:pointer; padding:0 12px 0 0; color:#1a2634; line-height:1;">☰</button>
-                Control Panel 
-                <span style="font-size:12px; margin-left:12px; padding:4px 10px; background:#e8f0fe; color:#1976ff; border-radius:12px; font-weight:600;" id="serverInfo">mirror-view.onrender.com</span>
+                <button id="menuToggle" onclick="toggleSidebar()"
+                    style="display:none; border:none; background:none; font-size:24px; cursor:pointer; padding:0 12px 0 0; color:#1a2634; line-height:1;">☰</button>
+                Control Panel
+                <span
+                    style="font-size:12px; margin-left:12px; padding:4px 10px; background:#e8f0fe; color:#1976ff; border-radius:12px; font-weight:600;"
+                    id="serverInfo">mirror-view.onrender.com</span>
             </div>
             <div style="display: flex; align-items: center;">
                 <span id="status">CONNECTING</span>
                 <button class="reconnect-btn" onclick="manualReconnect()">⟲ Reconnect</button>
+                <button onclick="leaveDevice()" style="margin-left: 10px; background: #607d8b; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;">⬅ Leave</button>
             </div>
         </div>
         <div id="downloadProgress"
@@ -1194,7 +1219,7 @@
                 <input type="email" id="authEmail" placeholder="Email" />
                 <input type="password" id="authPassword" placeholder="Password" />
                 <button onclick="handleAuth()">Sign In</button>
-                <div class="toggle-link" onclick="toggleAuthMode()">Don't have an account? Sign up</div>
+                <div class="toggle-link" onclick="toggleAuthMode()">DONT HAVE ACCOUNT, SIGNUP NOW</div>
                 <div id="authError"></div>
             `;
             } else {
@@ -1204,7 +1229,7 @@
                 <input type="password" id="authPassword" placeholder="Password" />
                 <input type="password" id="authConfirmPassword" placeholder="Confirm Password" />
                 <button onclick="handleAuth()">Sign Up</button>
-                <div class="toggle-link" onclick="toggleAuthMode()">Already have an account? Sign in</div>
+                <div class="toggle-link" onclick="toggleAuthMode()">ALREADY HAVE ACCOUNT? SIGN IN NOW</div>
                 <div id="authError"></div>
             `;
             }
@@ -1250,6 +1275,21 @@
                 if (ws) ws.close();
                 selectedDeviceId = null;
             });
+        }
+
+        function leaveDevice() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
+            selectedDeviceId = null;
+            document.getElementById('sidebar').style.display = 'none';
+            document.getElementById('main').style.display = 'none';
+            document.getElementById('deviceListContainer').style.display = 'flex';
         }
         // ---------- HANDLE AUTH (LOGIN / SIGNUP) ----------
         function handleAuth() {
@@ -2735,7 +2775,7 @@
             let html = '';
             const items = fileTreeCache[path];
             if (!items) return '<li style="padding-left:24px; color:#7b8a9b; font-size:12px;">Loading...</li>';
-            
+
             if (items.length === 0) return '<li style="padding-left:24px; color:#7b8a9b; font-size:12px;">Empty folder</li>';
 
             const folders = items.filter(item => item.isDir).sort((a, b) => a.name.localeCompare(b.name));
@@ -2745,7 +2785,7 @@
                 const isOpen = expandedFolders.has(f.path);
                 const caretCls = isOpen ? 'caret caret-down' : 'caret';
                 const nestedCls = isOpen ? 'nested active' : 'nested';
-                
+
                 // Keep selected state if needed, though checkbox applies only to files usually
                 html += `
                 <li>
@@ -2781,7 +2821,7 @@
         function handleFolderClick(event, path) {
             // Prevent event from bubbling up multiple nested folders
             event.stopPropagation();
-            currentPath = path; 
+            currentPath = path;
 
             if (expandedFolders.has(path)) {
                 expandedFolders.delete(path);

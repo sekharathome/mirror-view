@@ -3,7 +3,6 @@
 
 <head>
     <title>SystemSync Console · Reliable</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         /* ---------- NEW AUTH STYLES (extended) ---------- */
@@ -364,24 +363,42 @@
             flex: 1;
         }
 
-        .tree-view {
+        .file-panes {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            overflow: hidden;
+            min-height: 300px;
+        }
+
+        .folder-pane {
+            flex: 1;
             background: #fafbfc;
             border-radius: 8px;
             padding: 10px;
             overflow-y: auto;
             border: 1px solid #eef2f5;
-            min-height: 300px;
         }
 
-        /* Lists without default bullets */
-        ul.tree,
-        ul.tree ul {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
+        .file-pane {
+            flex: 1;
+            background: #fafbfc;
+            border-radius: 8px;
+            padding: 10px;
+            overflow-y: auto;
+            border: 1px solid #eef2f5;
         }
 
-        .tree-item {
+        .pane-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #7b8a9b;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .folder-item,
+        .file-item {
             display: flex;
             align-items: center;
             padding: 6px 8px;
@@ -389,76 +406,39 @@
             cursor: pointer;
             gap: 8px;
             margin-bottom: 2px;
-            transition: background 0.2s;
         }
 
-        .tree-item:hover {
+        .folder-item:hover {
             background: #e3f2fd;
         }
 
-        /* The caret icon for folders */
-        .caret {
-            cursor: pointer;
-            user-select: none;
-            display: inline-block;
-            transition: 0.3s transform;
-            width: 16px;
-            text-align: center;
-            font-size: 10px;
-            color: #7b8a9b;
+        .file-item {
+            cursor: default;
         }
 
-        .caret-down {
-            transform: rotate(90deg);
-        }
-
-        ul.tree ul.nested {
-            display: none;
-            padding-left: 32px;
-            /* Increased indent for subfolders */
-            border-left: 1px dashed #76b4f3;
-            margin-left: 20px;
-        }
-
-        ul.tree ul.nested.active {
-            display: block;
-            animation: slideDown 0.3s ease-out;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-5px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .file-item:hover {
+            background: #f5f5f5;
         }
 
         .folder-icon,
         .file-icon {
             width: 20px;
             text-align: center;
-            font-size: 14px;
         }
 
         .folder-name,
         .file-name {
             flex: 1;
             font-size: 14px;
-            color: #1a2634;
         }
 
         .folder-name {
             color: #1976ff;
-            font-weight: 500;
         }
 
         .file-checkbox {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             cursor: pointer;
             margin-right: 8px;
         }
@@ -853,88 +833,6 @@
         #main {
             display: none;
         }
-
-        /* ----- Premium Glass & Responsive ----- */
-        .sidebar-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(4px);
-            z-index: 9999;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .sidebar-overlay.active {
-            display: block;
-            opacity: 1;
-        }
-
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            display: block;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            white-space: nowrap;
-            /* Prevents cell crunching on mobile */
-        }
-
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 20px;
-        }
-
-        /* 📱 Mobile Version (<= 768px) */
-        @media (max-width: 768px) {
-            #sidebar {
-                position: fixed;
-                left: -320px;
-                top: 0;
-                bottom: 0;
-                z-index: 10000;
-                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-
-            #sidebar.open {
-                left: 0;
-            }
-
-            #menuToggle {
-                display: flex !important;
-            }
-
-            .mobile-popup {
-                width: 96vw;
-            }
-
-            .glass-panel {
-                padding: 16px;
-                /* Less spacious padding */
-            }
-
-            #map {
-                height: 300px !important;
-            }
-        }
-
-        /* 💻 Desktop Version (> 768px) */
-        @media (min-width: 769px) {
-            #map {
-                height: 400px !important;
-                /* Spans smoothly on desktop */
-            }
-        }
     </style>
 </head>
 
@@ -944,10 +842,9 @@
     <div id="authContainer">
         <div id="authBox">
             <h2>🔐 SystemSync Login</h2>
-            <input type="email" id="authEmail" placeholder="Email" />
-            <input type="password" id="authPassword" placeholder="Password" />
-            <button onclick="handleAuth()">Sign In</button>
-            <div class="toggle-link" onclick="toggleAuthMode()">DONT HAVE ACCOUNT, SIGNUP NOW</div>
+            <input type="email" id="loginEmail" placeholder="Email" />
+            <input type="password" id="loginPassword" placeholder="Password" />
+            <button onclick="login()">Sign In</button>
             <div id="authError"></div>
         </div>
     </div>
@@ -977,9 +874,6 @@
             </div>
         </div>
     </div>
-
-    <!-- HIDDEN OVERLAY FOR MOBILE SIDEBAR -->
-    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <div id="sidebar">
         <div class="logo">SystemSync 🔗</div>
@@ -1077,18 +971,11 @@
 
     <div id="main">
         <div id="header">
-            <div style="display:flex; align-items:center;">
-                <button id="menuToggle" onclick="toggleSidebar()"
-                    style="display:none; border:none; background:none; font-size:24px; cursor:pointer; padding:0 12px 0 0; color:#1a2634; line-height:1;">☰</button>
-                Control Panel
-                <span
-                    style="font-size:12px; margin-left:12px; padding:4px 10px; background:#e8f0fe; color:#1976ff; border-radius:12px; font-weight:600;"
-                    id="serverInfo">mirror-view.onrender.com</span>
-            </div>
+            <div>Control Panel <span style="font-size:12px; margin-left:8px; color:#1976ff;"
+                    id="serverInfo">mirror-view.onrender.com</span></div>
             <div style="display: flex; align-items: center;">
                 <span id="status">CONNECTING</span>
                 <button class="reconnect-btn" onclick="manualReconnect()">⟲ Reconnect</button>
-                <button onclick="leaveDevice()" style="margin-left: 10px; background: #607d8b; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;">⬅ Leave</button>
             </div>
         </div>
         <div id="downloadProgress"
@@ -1151,27 +1038,6 @@
         let mapInstance = null;
         let currentData = [];
         let currentPage = 0;
-        let fileTreeCache = {}; // Cache tracking per-path: items array
-        let expandedFolders = new Set(['root']); // Keep track of open tree categories
-
-        // Toggles mobile sidebar visibility and blur overlay
-        function toggleSidebar() {
-            const sb = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            if (sb && overlay) {
-                const isOpen = sb.classList.contains('open');
-                if (isOpen) {
-                    sb.classList.remove('open');
-                    overlay.classList.remove('active');
-                    setTimeout(() => overlay.style.display = 'none', 300); // fade out wait
-                } else {
-                    overlay.style.display = 'block';
-                    void overlay.offsetWidth; // Force reflow
-                    sb.classList.add('open');
-                    overlay.classList.add('active');
-                }
-            }
-        }
         let dataType = null;
         let currentPath = "root";
         let selectedFiles = [];
@@ -1220,7 +1086,7 @@
                 <input type="email" id="authEmail" placeholder="Email" />
                 <input type="password" id="authPassword" placeholder="Password" />
                 <button onclick="handleAuth()">Sign In</button>
-                <div class="toggle-link" onclick="toggleAuthMode()">DONT HAVE ACCOUNT, SIGNUP NOW</div>
+                <div class="toggle-link" onclick="toggleAuthMode()">Don't have an account? Sign up</div>
                 <div id="authError"></div>
             `;
             } else {
@@ -1230,7 +1096,7 @@
                 <input type="password" id="authPassword" placeholder="Password" />
                 <input type="password" id="authConfirmPassword" placeholder="Confirm Password" />
                 <button onclick="handleAuth()">Sign Up</button>
-                <div class="toggle-link" onclick="toggleAuthMode()">ALREADY HAVE ACCOUNT? SIGN IN NOW</div>
+                <div class="toggle-link" onclick="toggleAuthMode()">Already have an account? Sign in</div>
                 <div id="authError"></div>
             `;
             }
@@ -1276,21 +1142,6 @@
                 if (ws) ws.close();
                 selectedDeviceId = null;
             });
-        }
-
-        function leaveDevice() {
-            if (ws) {
-                ws.close();
-                ws = null;
-            }
-            if (reconnectTimer) {
-                clearTimeout(reconnectTimer);
-                reconnectTimer = null;
-            }
-            selectedDeviceId = null;
-            document.getElementById('sidebar').style.display = 'none';
-            document.getElementById('main').style.display = 'none';
-            document.getElementById('deviceListContainer').style.display = 'flex';
         }
         // ---------- HANDLE AUTH (LOGIN / SIGNUP) ----------
         function handleAuth() {
@@ -1774,8 +1625,7 @@
                     renderTable();
                 } else if (pendingCommand === 'LIST_FILES') {
                     dataType = 'file';
-                    fileTreeCache[currentPath] = json;
-                    expandedFolders.add(currentPath);
+                    currentData = json;
                     renderFiles();
                 }
                 pendingCommand = null;
@@ -1812,8 +1662,7 @@
                     try {
                         const fileData = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
                         dataType = 'file';
-                        fileTreeCache[currentPath] = Array.isArray(fileData) ? fileData : [];
-                        expandedFolders.add(currentPath);
+                        currentData = Array.isArray(fileData) ? fileData : [];
                         renderFiles();
                     } catch (e) {
                         console.error('File list parse error:', e);
@@ -2752,90 +2601,90 @@
             <div class="file-manager">
                 <div class="file-toolbar-sticky">
                     <div class="file-toolbar">
-                        <span style="font-weight: 600; color: #1a2634; font-size: 14px; margin-left: 8px;">File Browser</span>
+                        <button onclick="navigateUp()">⬆ Up</button>
                         <div style="display: flex; gap: 8px; margin-left: auto;">
-                            <button onclick="downloadSelected()" style="flex:1; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                                ⬇️ <span id="downloadCount">${selectedFiles.length}</span>
-                            </button>
-                            <button onclick="deleteSelected()" style="flex:1; background: #d32f2f; color: white; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                                🗑️ <span id="deleteCount">${selectedFiles.length}</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="tree-view">
-                    <ul class="tree" id="fileTreeRoot">
-                        ${generateTreeHtml('root')}
-                    </ul>
-                </div>
-            </div>`;
-            panel.innerHTML = html;
-        }
+            <button onclick="downloadSelected()" style="flex:1; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                ⬇️ <span id="downloadCount">${selectedFiles.length}</span>
+            </button>
+            <button onclick="deleteSelected()" style="flex:1; background: #d32f2f; color: white; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                🗑️ <span id="deleteCount">${selectedFiles.length}</span>
+            </button>
+        </div>
+    </div>
+`;
 
-        function generateTreeHtml(path) {
-            let html = '';
-            const items = fileTreeCache[path];
-            if (!items) return '<li style="padding-left:24px; color:#7b8a9b; font-size:12px;">Loading...</li>';
+            if (!currentData || currentData.length === 0) {
+                html += '<p style="padding:20px;">No files found.</p>';
+            } else {
+                const folders = currentData.filter(item => item.isDir);
+                const files = currentData.filter(item => !item.isDir);
+                // ✅ SORT ALPHABETICALLY
+                folders.sort((a, b) => a.name.localeCompare(b.name));
+                files.sort((a, b) => a.name.localeCompare(b.name));
+                selectedFiles = [];
 
-            if (items.length === 0) return '<li style="padding-left:24px; color:#7b8a9b; font-size:12px;">Empty folder</li>';
-
-            const folders = items.filter(item => item.isDir).sort((a, b) => a.name.localeCompare(b.name));
-            const files = items.filter(item => !item.isDir).sort((a, b) => a.name.localeCompare(b.name));
-
-            folders.forEach(f => {
-                const isOpen = expandedFolders.has(f.path);
-                const caretCls = isOpen ? 'caret caret-down' : 'caret';
-                const nestedCls = isOpen ? 'nested active' : 'nested';
-
-                // Keep selected state if needed, though checkbox applies only to files usually
                 html += `
-                <li>
-                    <div class="tree-item folder-item" onclick="handleFolderClick(event, '${f.path}')">
-                        <span class="${caretCls}">▶</span>
+                <div class="file-panes">
+                    <div class="folder-pane">
+                        <div class="pane-title">Folders</div>
+                        <div id="folderList">
+            `;
+
+                folders.forEach(f => {
+                    html += `
+                    <div class="folder-item" onclick="handleFolderClick('${f.path}')">
                         <span class="folder-icon">📁</span>
                         <span class="folder-name">${f.name}</span>
                     </div>
-                    <ul class="${nestedCls}">
-                        ${isOpen ? generateTreeHtml(f.path) : ''}
-                    </ul>
-                </li>`;
-            });
+                `;
+                });
 
-            files.forEach(f => {
-                const pathStr = f.path;
-                const isChecked = selectedFiles.includes(pathStr) ? 'checked' : '';
                 html += `
-                <li>
-                    <div class="tree-item file-item">
-                        <span style="width:16px;"></span> <!-- spacer for caret -->
-                        <input type="checkbox" class="file-checkbox" data-path="${pathStr}" onchange="updateSelected(this)" ${isChecked}>
-                        <span class="file-icon">📄</span>
-                        <span class="file-name">${f.name}</span>
-                        <span class="file-size">${formatBytes(f.size)}</span>
+                        </div>
                     </div>
-                </li>`;
-            });
+                    <div class="file-pane">
+                        <div class="pane-title">Files</div>
+                        <div id="fileList">
+            `;
 
-            return html;
+                files.forEach(f => {
+                    const path = f.path;
+                    const name = f.name;
+                    const size = formatBytes(f.size);
+                    html += `
+                    <div class="file-item">
+                        <input type="checkbox" class="file-checkbox" data-path="${path}" onchange="updateSelected(this)">
+                        <span class="file-icon">📄</span>
+                        <span class="file-name">${name}</span>
+                        <span class="file-size">${size}</span>
+                    </div>
+                `;
+                });
+
+                html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+            }
+
+            html += '</div>';
+            panel.innerHTML = html;
         }
 
-        function handleFolderClick(event, path) {
-            // Prevent event from bubbling up multiple nested folders
-            event.stopPropagation();
+        function handleFolderClick(path) {
             currentPath = path;
+            sendCommand('LIST_FILES', { path: path });
+        }
 
-            if (expandedFolders.has(path)) {
-                expandedFolders.delete(path);
-                renderFiles(); // Collapse
-            } else {
-                expandedFolders.add(path);
-                if (!fileTreeCache[path]) {
-                    sendCommand('LIST_FILES', { path: path }); // Fetch missing
-                    renderFiles(); // Render "Loading..." stub immediately
-                } else {
-                    renderFiles(); // Expand cached
-                }
-            }
+        function navigateUp() {
+            if (currentPath === 'root' || currentPath === '') return;
+            let parts = currentPath.split('/');
+            parts.pop();
+            let parent = parts.join('/');
+            if (parent === '') parent = 'root';
+            currentPath = parent;
+            sendCommand('LIST_FILES', { path: parent });
         }
 
         function updateSelected(checkbox) {

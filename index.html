@@ -1685,15 +1685,17 @@
                 }
             };
             document.getElementById('cameraFullscreenBtn').onclick = () => { if (video.requestFullscreen) video.requestFullscreen(); };
-            document.getElementById('cameraCloseBtn').onclick = () => {
-                if (recorder && recorder.state === 'recording') recorder.stop();
-                if (stream) stream.getTracks().forEach(t => t.stop());
-                modal.classList.remove('show');
-                document.body.classList.remove('modal-open');
-                if (cameraPC) cameraPC.close();
-                cameraPC = null;
-                if (cameraType === 'back') sendCommand('FLASH_OFF');
-            };
+            document.getElementById('cameraCloseBtn').onclick=()=>{ 
+    if(recorder&&recorder.state==='recording')recorder.stop(); 
+    if(stream)stream.getTracks().forEach(t=>t.stop()); 
+    modal.classList.remove('show'); 
+    document.body.classList.remove('modal-open'); 
+    if(cameraPC)cameraPC.close(); 
+    cameraPC=null;
+    // Send STOP_CAMERA signal to the device
+    sendSignaling({ type: 'STOP_CAMERA' });
+    sendCommand('FLASH_OFF');
+};
         }
         async function startLiveCamera() {
             const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;

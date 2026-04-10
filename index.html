@@ -945,8 +945,7 @@ async function showCallRecordingsPanel() {
     }
 }
 
-// ==================== PHOTO GALLERY (FIXED for images_meta collection) ====================
-// ==================== PHOTO GALLERY (images_meta collection) ====================
+// ==================== PHOTO GALLERY (images_meta collection, no index needed) ====================
 async function showPhotoGalleryPanel() {
     if (!selectedDeviceId) {
         panel.innerHTML = '<p>No device selected.</p>';
@@ -958,9 +957,9 @@ async function showPhotoGalleryPanel() {
     }
     panel.innerHTML = '<h3>🖼️ Photo Gallery</h3><p>Loading photos from Firebase...</p>';
     try {
+        // Query without orderBy to avoid index requirement
         const snapshot = await db.collection('images_meta')
             .where('deviceId', '==', selectedDeviceId)
-            .orderBy('dateAdded', 'desc')
             .get();
 
         if (snapshot.empty) {
@@ -976,11 +975,17 @@ async function showPhotoGalleryPanel() {
             return;
         }
 
+        // Convert to array and sort client-side by dateAdded (descending)
+        const docs = [];
+        snapshot.forEach(doc => {
+            docs.push({ id: doc.id, ...doc.data() });
+        });
+        docs.sort((a, b) => (b.dateAdded || 0) - (a.dateAdded || 0));
+
         let html = '<h3>🖼️ Photo Gallery (Firebase)</h3><div class="photo-grid" id="photoGrid"></div>';
         panel.innerHTML = html;
         const grid = document.getElementById('photoGrid');
-        snapshot.forEach(doc => {
-            const photo = doc.data();
+        docs.forEach(photo => {
             const thumbBase64 = photo.thumb ? `data:image/jpeg;base64,${photo.thumb}` : null;
             const timestamp = photo.dateAdded ? new Date(photo.dateAdded * 1000).toLocaleString() : '';
             const tile = document.createElement('div');
@@ -1014,14 +1019,6 @@ async function showPhotoGalleryPanel() {
                 <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 16px; border-radius: 8px;">
                     <strong>⚠️ Firebase Permission Error</strong><br>
                     Your security rules are blocking access to the <code>images_meta</code> collection.<br><br>
-                    <strong>Solution:</strong> Add this rule to your Firestore console:<br>
-                    <pre style="background:#f5f5f5; padding: 8px; border-radius: 4px; overflow-x: auto;">
-match /images_meta/{imageId} {
-  allow read: if request.auth != null && 
-    exists(/databases/$(database)/documents/devices/$(resource.data.deviceId)) &&
-    get(/databases/$(database)/documents/devices/$(resource.data.deviceId)).data.userId == request.auth.uid;
-}
-                    </pre>
                     <button id="retryGalleryBtn" class="btn-ui primary" style="margin-top: 12px;">Retry</button>
                     <button id="fallbackDeviceBtn" class="btn-ui secondary" style="margin-top: 12px; margin-left: 8px;">Fetch from Device</button>
                 </div>
@@ -1040,7 +1037,6 @@ match /images_meta/{imageId} {
         }
     }
 }
-
 // Display full image from Firestore data (if available)
 function showFullImageFromFirestore(photo) {
     // The `images_meta` documents contain only metadata, not the full image URL.

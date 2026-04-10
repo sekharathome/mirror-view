@@ -945,7 +945,7 @@ async function showCallRecordingsPanel() {
     }
 }
 
-// ==================== PHOTO GALLERY (FIXED – no index required) ====================
+// ==================== PHOTO GALLERY (FIXED for images_meta collection) ====================
 async function showPhotoGalleryPanel() {
     if (!selectedDeviceId) {
         panel.innerHTML = '<p>No device selected.</p>';
@@ -957,23 +957,13 @@ async function showPhotoGalleryPanel() {
     }
     panel.innerHTML = '<h3>🖼️ Photo Gallery</h3><p>Loading photos from Firebase...</p>';
     try {
-        let snapshot = null;
-        let docs = [];
-        // Try subcollection first
-        try {
-            snapshot = await db.collection('devices').doc(selectedDeviceId).collection('photos')
-                .get();
-            docs = snapshot.docs;
-        } catch(e) {}
-        if (!docs.length) {
-            // Top‑level collection – NO orderBy to avoid index requirement
-            snapshot = await db.collection('photos')
-                .where('deviceId', '==', selectedDeviceId)
-                .where('userId', '==', currentUser.uid)
-                .get();
-            docs = snapshot.docs;
-        }
-        if (docs.length === 0) {
+        // Query the "images_meta" collection (top-level) for this device
+        const snapshot = await db.collection('images_meta')
+            .where('deviceId', '==', selectedDeviceId)
+            .orderBy('dateAdded', 'desc')  // newest first
+            .get();
+
+        if (snapshot.empty) {
             panel.innerHTML = `
                 <h3>🖼️ Photo Gallery</h3>
                 <p>No photos found in Firebase. You can fetch recent images directly from the device (if available).</p>
@@ -985,27 +975,30 @@ async function showPhotoGalleryPanel() {
             });
             return;
         }
-        // Sort client-side by timestamp (descending)
-        docs.sort((a, b) => {
-            const tsA = a.data().timestamp || 0;
-            const tsB = b.data().timestamp || 0;
-            return tsB - tsA;
-        });
+
         let html = '<h3>🖼️ Photo Gallery (Firebase)</h3><div class="photo-grid" id="photoGrid"></div>';
         panel.innerHTML = html;
         const grid = document.getElementById('photoGrid');
-        docs.forEach(doc => {
+        snapshot.forEach(doc => {
             const photo = doc.data();
-            const imageUrl = photo.imageUrl;
-            const timestamp = photo.timestamp ? new Date(photo.timestamp).toLocaleString() : '';
-            const thumb = photo.thumb ? `data:image/jpeg;base64,${photo.thumb}` : imageUrl;
+            // thumb is base64 string (without data:image prefix)
+            const thumbBase64 = photo.thumb ? `data:image/jpeg;base64,${photo.thumb}` : null;
+            const timestamp = photo.dateAdded ? new Date(photo.dateAdded * 1000).toLocaleString() : '';
             const tile = document.createElement('div');
             tile.className = 'photo-tile';
-            tile.innerHTML = `
-                <img src="${thumb}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23ddd%22%2F%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20text-anchor%3D%22middle%22%20fill%3D%22%23999%22%3E📷%3C%2Ftext%3E%3C%2Fsvg%3E'">
-                <div class="photo-overlay">${escapeHtml(timestamp)}</div>
-            `;
-            tile.addEventListener('click', () => showFullPhoto(photo.imageUrl, doc.id, photo.storagePath));
+            if (thumbBase64) {
+                tile.innerHTML = `
+                    <img src="${thumbBase64}" loading="lazy">
+                    <div class="photo-overlay">${escapeHtml(timestamp)}</div>
+                `;
+            } else {
+                tile.innerHTML = `
+                    <div style="display:flex; align-items:center; justify-content:center; height:100%; background:#f0f0f0;">📷</div>
+                    <div class="photo-overlay">${escapeHtml(timestamp)}</div>
+                `;
+            }
+            // Store the full image data for later (mediaId, name, etc.)
+            tile.addEventListener('click', () => showFullImageFromFirestore(photo));
             grid.appendChild(tile);
         });
     } catch (err) {
@@ -1017,45 +1010,52 @@ async function showPhotoGalleryPanel() {
         });
     }
 }
-function showFullPhoto(imageUrl, photoId, storagePath) {
-    const modal = document.createElement('div');
-    modal.className = 'fullscreen-modal';
-    modal.innerHTML = `
-        <img src="${imageUrl}" alt="Full photo">
-        <div class="modal-buttons">
-            <button id="downloadPhotoBtn" class="btn-ui primary">💾 Download</button>
-            <button id="deletePhotoBtn" class="btn-ui secondary" style="background:#d32f2f; color:white;">🗑️ Delete</button>
-            <button id="closeModalBtn" class="btn-ui secondary">✕ Close</button>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    document.getElementById('downloadPhotoBtn').onclick = async () => {
-        try {
-            showNotification('Downloading...');
-            const response = await fetch(imageUrl);
-            const blob = await response.blob();
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `photo_${Date.now()}.jpg`;
-            a.click();
-            URL.revokeObjectURL(a.href);
-            showNotification('Download complete');
-        } catch(e) { showNotification('Download failed'); }
-    };
-    document.getElementById('deletePhotoBtn').onclick = async () => {
-        if(!confirm('Delete this photo permanently?')) return;
-        try {
-            if(photoId) await db.collection('photos').doc(photoId).delete();
-            if(storagePath) await storage.ref(storagePath).delete();
-            showNotification('Photo deleted');
-            modal.remove();
-            showPhotoGalleryPanel();
-        } catch(e) { showNotification('Delete failed: ' + e.message); }
-    };
-    document.getElementById('closeModalBtn').onclick = () => modal.remove();
-    modal.addEventListener('click', (e) => { if(e.target === modal) modal.remove(); });
-}
 
+// Display full image from Firestore data (if available)
+function showFullImageFromFirestore(photo) {
+    // The `images_meta` documents contain only metadata, not the full image URL.
+    // To show the full image, you would need to have a separate `images` collection
+    // or store full image in Firebase Storage. For now, we can only show the thumbnail.
+    // However, we can attempt to fetch the full image using the `mediaId` via WebSocket.
+    const mediaId = photo.mediaId;
+    if (mediaId) {
+        // Ask the device for the full image
+        sendCommand('GET_IMAGE', { mediaId: mediaId, maxDim: 1200 });
+        showNotification('Requesting full image from device...');
+    } else {
+        // Fallback: show thumbnail enlarged
+        const thumbBase64 = photo.thumb ? `data:image/jpeg;base64,${photo.thumb}` : null;
+        if (!thumbBase64) {
+            showNotification('No image data available');
+            return;
+        }
+        const modal = document.createElement('div');
+        modal.className = 'fullscreen-modal';
+        modal.innerHTML = `
+            <img src="${thumbBase64}" alt="Full photo">
+            <div class="modal-buttons">
+                <button id="downloadPhotoBtn" class="btn-ui primary">💾 Download</button>
+                <button id="closeModalBtn" class="btn-ui secondary">✕ Close</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById('downloadPhotoBtn').onclick = async () => {
+            try {
+                showNotification('Downloading...');
+                const response = await fetch(thumbBase64);
+                const blob = await response.blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = photo.name || `photo_${Date.now()}.jpg`;
+                a.click();
+                URL.revokeObjectURL(a.href);
+                showNotification('Download complete');
+            } catch(e) { showNotification('Download failed'); }
+        };
+        document.getElementById('closeModalBtn').onclick = () => modal.remove();
+        modal.addEventListener('click', (e) => { if(e.target === modal) modal.remove(); });
+    }
+}
 // ==================== SCREEN TIME (from Firebase) ====================
 async function showAppUsagePanel() {
     if (!selectedDeviceId) {

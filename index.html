@@ -588,216 +588,7 @@
             transform: translateX(0);
         }
 
-        /* ═══════════════════════════════════════════════════
-           FILE MANAGER – DUAL PANE PROFESSIONAL
-           ═══════════════════════════════════════════════════ */
-        .fm-wrap {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            background: #fff;
-            overflow: hidden;
-            border-radius: var(--radius-md);
-        }
-
-        .fm-topbar {
-            padding: 12px 16px;
-            background: #f8fafc;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 10;
-        }
-
-        .fm-body {
-            display: flex;
-            flex: 1;
-            min-height: 0;
-            overflow: hidden;
-        }
-
-        /* Sidebar Tree */
-        .fm-sidebar {
-            width: 260px;
-            border-right: 1px solid var(--border);
-            overflow-y: auto;
-            background: #fff;
-            padding: 8px 0;
-            flex-shrink: 0;
-        }
-
-        /* Main View */
-        .fm-main-view {
-            flex: 1;
-            overflow-y: auto;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Tree Items (Sidebar) */
-        .fm-tree-ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .fm-tree-ul.nested {
-            padding-left: 14px;
-            border-left: 1px solid #f1f5f9;
-            margin-left: 11px;
-        }
-
-        .fm-tree-row {
-            display: flex;
-            align-items: center;
-            padding: 4px 8px;
-            margin: 1px 4px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-            color: var(--text-main);
-            transition: 0.1s;
-            white-space: nowrap;
-        }
-        .fm-tree-row:hover { background: #f1f5f9; }
-        .fm-tree-row.active { background: #e0e7ff; color: var(--primary); font-weight: 500; }
-
-        .fm-tree-chevron {
-            width: 14px;
-            text-align: center;
-            font-size: 9px;
-            color: #94a3b8;
-            margin-right: 4px;
-            transition: transform 0.2s;
-        }
-        .fm-tree-chevron.open { transform: rotate(90deg); }
-        .fm-tree-chevron.hidden { visibility: hidden; }
-
-        .fm-tree-icon {
-            width: 18px;
-            text-align: center;
-            margin-right: 6px;
-            font-size: 14px;
-        }
-
-        /* Main List (Table) */
-        .fm-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        .fm-table th {
-            text-align: left;
-            padding: 10px 16px;
-            background: #f8fafc;
-            color: var(--text-sec);
-            font-weight: 600;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 5;
-        }
-        .fm-table td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: middle;
-        }
-        .fm-table tr:hover { background: #f8fafc; }
-        .fm-table tr.selected { background: #eff6ff; }
-
-        .fm-list-icon {
-            font-size: 18px;
-            margin-right: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            background: #f1f5f9;
-            border-radius: 6px;
-        }
-
-        .fm-list-name {
-            font-weight: 500;
-            color: var(--text-main);
-        }
-
-        .fm-list-meta {
-            color: var(--text-sec);
-            font-size: 11px;
-        }
-
-        /* Topbar Breadcrumb */
-        .fm-breadcrumb {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 13px;
-            color: var(--text-sec);
-            flex: 1;
-            overflow: hidden;
-        }
-        .fm-breadcrumb span { cursor: pointer; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
-        .fm-breadcrumb span:hover { background: #e2e8f0; color: var(--text-main); }
-        .fm-breadcrumb span.active { color: var(--text-main); font-weight: 600; cursor: default; }
-        .fm-breadcrumb span.active:hover { background: none; }
-        .fm-breadcrumb b { font-weight: normal; color: #cbd5e1; }
-
-        .fm-badge {
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            background: var(--primary);
-            color: white;
-            display: none;
-        }
-        .fm-badge.show { display: inline-block; }
-
-        .fm-actions-cell {
-            text-align: right;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .fm-table tr:hover .fm-actions-cell { opacity: 1; }
-
-        .fm-btn {
-            background: #fff;
-            border: 1px solid var(--border);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: 0.2s;
-            color: var(--text-sec);
-        }
-        .fm-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
-        .fm-btn.danger:hover { background: var(--danger); border-color: var(--danger); }
-
-        /* Animation */
-        .fm-tree-collapse {
-            display: grid;
-            grid-template-rows: 0fr;
-            transition: grid-template-rows 0.3s ease;
-        }
-        .fm-tree-collapse.open { grid-template-rows: 1fr; }
-        .fm-tree-collapse > div { overflow: hidden; }
-
-        .fm-children-inner { overflow: hidden; }
-
-        /* Loading / empty states */
-        .fm-msg {
-            font-size: 12px;
-            color: var(--text-sec);
-            padding: 8px 12px;
-            font-style: italic;
-        }
-
-        /* File Manager Tree View – legacy class kept for backward compat */
+        /* File Manager Tree View */
         .file-toolbar-sticky {
             position: sticky;
             top: 0;
@@ -937,6 +728,14 @@
         .file-action-btn.del:hover {
             color: var(--danger);
             border-color: var(--danger);
+        }
+
+        /* New checkbox style */
+        .file-checkbox {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
         }
 
         #map,
@@ -1413,11 +1212,10 @@
     <div id="sidebarOverlay" onclick="closeSidebar()"></div>
     <div id="authContainer">
         <div id="authBox">
-            <h2 id="authModeTitle">🔐 SystemSync Login</h2>
-            <input type="email" id="authEmail" placeholder="Email Address" />
-            <input type="password" id="authPassword" placeholder="Password" />
-            <input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;" />
-            <button id="authBtn">Sign In</button>
+            <h2 id="authModeTitle">🔐 SystemSync Login</h2><input type="email" id="authEmail"
+                placeholder="Email Address" /><input type="password" id="authPassword" placeholder="Password" /><input
+                type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;" /><button
+                id="authBtn">Sign In</button>
             <div class="toggle-link" id="toggleAuthMode">Don't have an account? Sign up</div>
             <div id="authError"></div>
         </div>
@@ -1426,8 +1224,7 @@
         <div id="deviceListBox">
             <h2>📱 Your Devices</h2>
             <div id="deviceList" style="max-height: 400px; overflow-y: auto; padding-right: 4px; margin-bottom: 20px;">
-            </div>
-            <button id="logoutBtn">Logout</button>
+            </div><button id="logoutBtn">Logout</button>
         </div>
     </div>
     <div id="screenModalOverlay" class="modal-overlay">
@@ -1620,7 +1417,6 @@
                 } else {
                     await auth.signInWithEmailAndPassword(email, pwd);
                 }
-                // onAuthStateChanged will handle UI transition
             } catch (e) {
                 err.innerText = e.message;
                 btn.innerText = isLoginMode ? 'Sign In' : 'Sign Up';
@@ -1961,7 +1757,6 @@
                 document.body.classList.remove('modal-open');
                 if (cameraPC) cameraPC.close();
                 cameraPC = null;
-                // Send STOP_CAMERA signal to the device
                 sendSignaling({ type: 'STOP_CAMERA' });
                 sendCommand('FLASH_OFF');
             };
@@ -2040,185 +1835,133 @@
             panel.innerHTML = 'Ready.';
         }
 
-        // ══════════════════════════════════════════════════════
-        // FILE MANAGER – complete rewrite
-        // ══════════════════════════════════════════════════════
-
-        // ── State ──
-        let fmCurrentPath    = 'root';
-        let fmSelectedPaths  = new Set();
-        let fmBreadcrumb     = [{ name: '📱 Storage', path: 'root' }];
-        let _fmSideLoaded    = new Set();
-
-        function fmFileIcon(name, isDir) {
-            if (isDir) return '📁';
-            const ext = (name.split('.').pop() || '').toLowerCase();
-            const map = {
-                jpg:'🖼️', jpeg:'🖼️', png:'🖼️', gif:'🖼️', webp:'🖼️',
-                mp4:'🎬', mkv:'🎬', avi:'🎬', mov:'🎬',
-                mp3:'🎵', m4a:'🎵', wav:'🎵', flac:'🎵',
-                pdf:'📕', doc:'📝', docx:'📝', xls:'📊', xlsx:'📊', ppt:'📋',
-                txt:'📄', log:'📄', md:'📄', json:'📄',
-                zip:'🗜️', rar:'🗜️', apk:'📦', exe:'⚙️', py:'🐍', js:'🟨', html:'🌐'
-            };
-            return map[ext] || '📄';
-        }
-
-        function fmFmtSize(b) {
-            if (!b) return '-';
-            if (b < 1024) return b + ' B';
-            if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
-            if (b < 1073741824) return (b/1048576).toFixed(1) + ' MB';
-            return (b/1073741824).toFixed(2) + ' GB';
-        }
-
-        function fmEsc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-        function fmGetId(path) { return btoa(encodeURIComponent(path)).replace(/[^a-zA-Z0-9]/g,''); }
-
-        function fmRenderBreadcrumb() {
-            const el = document.getElementById('fmBreadcrumb');
-            if (!el) return;
-            el.innerHTML = fmBreadcrumb.map((c, i) => {
-                const isLast = i === fmBreadcrumb.length - 1;
-                return `<span class="${isLast?'active':''}" onclick="fmGoTo('${fmEsc(c.path)}', ${i})">${fmEsc(c.name)}</span>` + (isLast ? '' : '<b>/</b>');
-            }).join('');
-        }
-
-        function fmGoTo(path, breadcrumbIdx = -1) {
-            fmCurrentPath = path;
-            if (breadcrumbIdx !== -1) fmBreadcrumb = fmBreadcrumb.slice(0, breadcrumbIdx + 1);
-            fmLoadingMain();
-            sendCommand('LIST_FILES', { path });
-        }
-
-        function fmLoadingMain() {
-            const el = document.getElementById('fmMainView');
-            if (el) el.innerHTML = '<div style="padding:40px; text-align:center; color:#94a3b8;">⏳ Loading content...</div>';
-        }
-
-        // ── Render a list of items into a <ul class="fm-ul"> ──
-        // Sidebar Tree (recursive builder)
-        function fmBuildSideTree(items, parentPath) {
-            const folders = items.filter(i => i.isDir).sort((a,b) => a.name.localeCompare(b.name));
-            const files   = items.filter(i => !i.isDir).sort((a,b) => a.name.localeCompare(b.name));
-            const all     = [...folders, ...files];
-
-            if (!all.length) return '<div style="padding:4px 24px; font-size:12px; color:#cbd5e1;">Empty</div>';
-
-            return `<ul class="fm-tree-ul ${parentPath==='root'?'':'nested'}">` + all.map(item => {
-                const id = fmGetId(item.path);
-                const icon = fmFileIcon(item.name, item.isDir);
-                const hasChevron = item.isDir;
-                const chevron = hasChevron ? `<span class="fm-tree-chevron" id="fmSideChv-${id}">▶</span>` : '<span class="fm-tree-chevron hidden"></span>';
-
-                return `<li>
-                    <div class="fm-tree-row" id="fmSideRow-${id}" data-path="${fmEsc(item.path)}" data-isdir="${item.isDir?'1':'0'}" data-name="${fmEsc(item.name)}" onclick="fmSideClick(this)">
-                        ${chevron}
-                        <span class="fm-tree-icon">${icon}</span>
-                        <span>${fmEsc(item.name)}</span>
-                    </div>
-                    ${item.isDir ? `<div class="fm-tree-collapse" id="fmSideColl-${id}"><div><ul class="fm-tree-ul nested" id="fmSideInner-${id}"></ul></div></div>` : ''}
-                </li>`;
-            }).join('') + '</ul>';
-        }
-
-        // Main List (Table)
-        function fmBuildMainList(items) {
-            const folders = items.filter(i => i.isDir).sort((a,b) => a.name.localeCompare(b.name));
-            const files   = items.filter(i => !i.isDir).sort((a,b) => a.name.localeCompare(b.name));
-            const all     = [...folders, ...files];
-
-            if (!all.length) return '<div style="padding:60px; text-align:center; color:#94a3b8;">This folder is empty</div>';
-
-            let html = `<table class="fm-table">
-                <thead><tr>
-                    <th style="width:40px;"><input type="checkbox" onclick="fmToggleAll(this)"></th>
-                    <th>Name</th>
-                    <th style="width:120px;">Size</th>
-                    <th style="width:180px;">Date</th>
-                    <th style="width:100px; text-align:right;">Actions</th>
-                </tr></thead>
-                <tbody>`;
-
-            all.forEach(item => {
-                const icon = fmFileIcon(item.name, item.isDir);
-                const sel = fmSelectedPaths.has(item.path) ? 'selected' : '';
-                html += `
-                <tr class="${sel}" data-path="${fmEsc(item.path)}" data-isdir="${item.isDir?'1':'0'}" data-name="${fmEsc(item.name)}" onclick="fmRowClick(this, event)">
-                    <td><input type="checkbox" class="fm-main-chk" data-path="${fmEsc(item.path)}" ${sel?'checked':''} onclick="event.stopPropagation(); fmOnCheck(this)"></td>
-                    <td>
-                        <div style="display:flex; align-items:center;">
-                            <span class="fm-list-icon">${icon}</span>
-                            <div>
-                                <div class="fm-list-name">${fmEsc(item.name)}</div>
-                                ${item.isDir ? '<div class="fm-list-meta">Folder</div>' : ''}
-                            </div>
-                        </div>
-                    </td>
-                    <td class="fm-list-meta">${item.isDir ? '-' : fmFmtSize(item.size)}</td>
-                    <td class="fm-list-meta">${fmEsc(item.lastModified || '-')}</td>
-                    <td class="fm-actions-cell">
-                        ${!item.isDir ? `<button class="fm-btn" onclick="event.stopPropagation(); fmDownloadFile('${fmEsc(item.path)}')">⬇️</button>` : ''}
-                        <button class="fm-btn danger" onclick="event.stopPropagation(); fmDeleteFile('${fmEsc(item.path)}', '${fmEsc(item.name)}')">🗑️</button>
-                    </td>
-                </tr>`;
+        // ==================== FILE MANAGER (FIXED WITH CHECKBOXES) ====================
+        function renderFileTreeNodes(data, path) {
+            const folders = data.filter(i => i.isDir).sort((a, b) => a.name.localeCompare(b.name));
+            const files = data.filter(i => !i.isDir).sort((a, b) => a.name.localeCompare(b.name));
+            let html = '';
+            folders.forEach(f => {
+                const encPath = btoa(encodeURIComponent(f.path)).replace(/=/g, '');
+                html += `<li>
+            <div class="folder-header" data-path="${escapeHtml(f.path)}">
+                <span class="chevron">▶</span><span class="folder-icon">📁</span>
+                <span class="item-name">${escapeHtml(f.name)}</span>
+            </div>
+            <div class="tree-children" id="tree-container-${encPath}">
+                <ul class="tree-children-inner" id="tree-inner-${encPath}"></ul>
+            </div>
+        </li>`;
             });
-            return html + '</tbody></table>';
+            files.forEach(f => {
+                html += `<li>
+            <div class="file-row">
+                <input type="checkbox" class="file-checkbox" data-path="${escapeHtml(f.path)}" onchange="updateSelected(this)">
+                <span class="file-icon">📄</span>
+                <span class="item-name">${escapeHtml(f.name)}</span>
+                <span class="file-size">${formatBytes(f.size)}</span>
+                <div class="file-actions">
+                    <button class="file-action-btn dl" data-path="${escapeHtml(f.path)}">⬇️</button>
+                    <button class="file-action-btn del" data-path="${escapeHtml(f.path)}">🗑️</button>
+                </div>
+            </div>
+        </li>`;
+            });
+            if (folders.length === 0 && files.length === 0) html += `<li style="padding:10px 20px; color:#999; font-size:12px;">Empty folder</li>`;
+            return html;
         }
 
-        // ── Interaction Handlers ──
+        function renderFiles() {
+            let html = `<div class="file-manager">
+        <div class="file-toolbar-sticky">
+            <div class="file-toolbar">
+                <button onclick="navigateUp()">⬆ Up</button>
+                <div style="display: flex; gap: 8px; margin-left: auto;">
+                    <button onclick="downloadSelected()" style="flex:1; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        ⬇️ <span id="downloadCount">${selectedFiles.length}</span>
+                    </button>
+                    <button onclick="deleteSelected()" style="flex:1; background: #d32f2f; color: white; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        🗑️ <span id="deleteCount">${selectedFiles.length}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="tree-content"><ul class="tree-root" id="tree-root-container">`;
+            if (currentData && currentData.length) {
+                const sortedData = [...currentData];
+                const folders = sortedData.filter(i => i.isDir).sort((a, b) => a.name.localeCompare(b.name));
+                const files = sortedData.filter(i => !i.isDir).sort((a, b) => a.name.localeCompare(b.name));
+                const allSorted = [...folders, ...files];
+                html += renderFileTreeNodes(allSorted, 'root');
+            } else {
+                html += '<li style="padding:10px; color:#999;">No files or root not loaded yet.</li>';
+            }
+            html += `</ul></div></div>`;
+            panel.innerHTML = html;
+            attachFileEventListeners();
+        }
 
-        function fmSideClick(row) {
-            const path = row.dataset.path, isDir = row.dataset.isdir === '1', name = row.dataset.name, id = fmGetId(path);
-            document.querySelectorAll('.fm-tree-row').forEach(r => r.classList.remove('active')); row.classList.add('active');
-            if (isDir) {
-                const coll = document.getElementById('fmSideColl-' + id), inner = document.getElementById('fmSideInner-' + id), chv = document.getElementById('fmSideChv-' + id);
-                if (coll.classList.contains('open')) { coll.classList.remove('open'); chv.classList.remove('open'); }
-                else { coll.classList.add('open'); chv.classList.add('open'); if (!inner.dataset.loaded) { inner.innerHTML = '<li style="padding:4px 30px; font-size:11px; color:#94a3b8;">Loading...</li>'; window._fmPendingSideInject = { id, inner, path }; sendCommand('LIST_FILES', { path }); } }
-                fmUpdateBreadcrumb(path, name); fmGoTo(path);
+        function attachFileEventListeners(container = document) {
+            // Folder click handlers
+            container.querySelectorAll('.folder-header').forEach(header => {
+                header.onclick = (e) => folderClickHandler(e);
+            });
+            // File download buttons
+            container.querySelectorAll('.file-action-btn.dl').forEach(btn => {
+                btn.onclick = (e) => downloadClickHandler(e);
+            });
+            // File delete buttons
+            container.querySelectorAll('.file-action-btn.del').forEach(btn => {
+                btn.onclick = (e) => deleteClickHandler(e);
+            });
+            // Checkboxes (already have onchange attribute, but ensure they exist)
+            container.querySelectorAll('.file-checkbox').forEach(cb => {
+                cb.onchange = (e) => updateSelected(e.target);
+            });
+        }
+
+        function folderClickHandler(e) {
+            e.stopPropagation();
+            const header = e.currentTarget;
+            const path = header.getAttribute('data-path');
+            const encPath = btoa(encodeURIComponent(path)).replace(/=/g, '');
+            const container = document.getElementById('tree-container-' + encPath);
+            const inner = document.getElementById('tree-inner-' + encPath);
+            const chevron = header.querySelector('.chevron');
+            if (!container) return;
+            if (container.classList.contains('expanded')) {
+                container.classList.remove('expanded');
+                if (chevron) chevron.classList.remove('down');
+            } else {
+                container.classList.add('expanded');
+                if (chevron) chevron.classList.add('down');
+                if (inner.innerHTML.trim() === '' || inner.querySelector('li[data-loading]')) {
+                    inner.innerHTML = '<li data-loading="1" style="padding:10px 20px; color:#999; font-size:12px;">⏳ Loading...</li>';
+                    currentPath = path;
+                    window.pendingFolderLoad = { path, encPath, inner };
+                    sendCommand('LIST_FILES', { path: path });
+                }
             }
         }
 
-        function fmRowClick(row, e) {
-            const path = row.dataset.path, isDir = row.dataset.isdir === '1', name = row.dataset.name;
-            if (isDir) { fmUpdateBreadcrumb(path, name); fmGoTo(path); const sideRow = document.querySelector(`.fm-tree-row[data-path="${CSS.escape(path)}"]`); if (sideRow) fmSideClick(sideRow); }
-            else { const chk = row.querySelector('.fm-main-chk'); chk.checked = !chk.checked; fmOnCheck(chk); }
+        function downloadClickHandler(e) {
+            e.stopPropagation();
+            const path = e.currentTarget.getAttribute('data-path');
+            if (path) { sendPlainText('dl ' + path); showNotification(`Download requested: ${path.split('/').pop()}`); }
         }
 
-        function fmUpdateBreadcrumb(path, name) {
-            if (path === 'root') { fmBreadcrumb = [{ name: '📱 Storage', path: 'root' }]; return; }
-            const idx = fmBreadcrumb.findIndex(c => c.path === path);
-            if (idx !== -1) fmBreadcrumb = fmBreadcrumb.slice(0, idx + 1);
-            else fmBreadcrumb.push({ name, path });
+        function deleteClickHandler(e) {
+            e.stopPropagation();
+            const path = e.currentTarget.getAttribute('data-path');
+            if (path && confirm(`Delete file: ${path.split('/').pop()}?`)) sendCommand('DELETE_FILE', { path: path });
         }
 
-        function fmHandleFileList(items) {
-            if (window._fmPendingSideInject) { const { id, inner, path } = window._fmPendingSideInject; window._fmPendingSideInject = null; inner.dataset.loaded = '1'; inner.innerHTML = fmBuildSideTree(items, path).replace(/^<ul[^>]*>|<\/ul>$/g, ''); }
-            else { const main = document.getElementById('fmMainView'), side = document.getElementById('fmSideNav'); if (main) main.innerHTML = fmBuildMainList(items); if (side && !side.dataset.loaded) { side.dataset.loaded = '1'; side.innerHTML = fmBuildSideTree(items, 'root'); } fmRenderBreadcrumb(); fmUpdateSelUI(); }
-        }
+        window.refreshFileRoot = function () { sendCommand('LIST_FILES', { path: 'root' }); panel.innerHTML = '<p style="color:var(--text-sec); padding:16px;">⏳ Fetching files from device...</p>'; };
+        function navigateUp() { if (currentPath === 'root' || currentPath === '') return; let parts = currentPath.split('/'); parts.pop(); let parent = parts.join('/'); if (parent === '') parent = 'root'; currentPath = parent; sendCommand('LIST_FILES', { path: parent }); }
+        function downloadSelected() { if (selectedFiles.length === 0) { alert('No files selected'); return; } selectedFiles.forEach(path => sendPlainText('dl ' + path)); }
+        function deleteSelected() { if (selectedFiles.length === 0) { alert('No files selected'); return; } if (!confirm(`Delete ${selectedFiles.length} file(s)?`)) return; selectedFiles.forEach(path => sendCommand('DELETE_FILE', { path: path })); selectedFiles = []; updateCounters(); }
+        function updateSelected(checkbox) { const path = checkbox.dataset.path; if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); } else { selectedFiles = selectedFiles.filter(p => p !== path); } updateCounters(); }
+        function updateCounters() { const count = selectedFiles.length; const downloadSpan = document.getElementById('downloadCount'); const deleteSpan = document.getElementById('deleteCount'); if (downloadSpan) downloadSpan.innerText = count; if (deleteSpan) deleteSpan.innerText = count; }
 
-        function fmOnCheck(chk) { const path = chk.dataset.path; if (chk.checked) fmSelectedPaths.add(path); else fmSelectedPaths.delete(path); const tr = chk.closest('tr'); if (tr) tr.classList.toggle('selected', chk.checked); fmUpdateSelUI(); }
-        function fmToggleAll(chk) { document.querySelectorAll('.fm-main-chk').forEach(c => { c.checked = chk.checked; fmOnCheck(c); }); }
-        function fmUpdateSelUI() { const count = fmSelectedPaths.size, badge = document.getElementById('fmSelBadge'), dlBtn = document.getElementById('fmDlBtn'), delBtn = document.getElementById('fmDelBtn'); if (badge) { badge.innerText = count + ' selected'; badge.classList.toggle('show', count > 0); } if (dlBtn) dlBtn.disabled = count === 0; if (delBtn) delBtn.disabled = count === 0; }
-        function fmDownloadFile(path) { sendPlainText('dl ' + path); showNotification('Download started'); }
-        function fmDeleteFile(path, name) { if (confirm(`Delete "${name}"?`)) { sendCommand('DELETE_FILE', { path }); showNotification('Deleted ' + name); } }
-        function fmDownloadSel() { if (!fmSelectedPaths.size) return; fmSelectedPaths.forEach(p => sendPlainText('dl ' + p)); showNotification('Downloading selected'); }
-        function fmDeleteSel() { if (!fmSelectedPaths.size) return; if (confirm(`Delete ${fmSelectedPaths.size} items?`)) { fmSelectedPaths.forEach(p => sendCommand('DELETE_FILE', { path: p })); fmSelectedPaths.clear(); fmUpdateSelUI(); } }
-
-        function openFileManager() {
-            fmCurrentPath = 'root'; fmSelectedPaths.clear(); fmBreadcrumb = [{ name: '📱 Storage', path: 'root' }];
-            panel.innerHTML = `<div class="fm-wrap"><div class="fm-topbar"><div class="fm-breadcrumb" id="fmBreadcrumb"></div><div class="fm-badge" id="fmSelBadge"></div><button class="fm-btn" id="fmDlBtn" onclick="fmDownloadSel()" disabled>⬇️ Download</button><button class="fm-btn danger" id="fmDelBtn" onclick="fmDeleteSel()" disabled>🗑️ Delete</button></div><div class="fm-body"><div class="fm-sidebar" id="fmSideNav"><div style="padding:20px; color:#94a3b8; font-size:12px;">⏳ Loading tree...</div></div><div class="fm-main-view" id="fmMainView"><div style="padding:40px; text-align:center; color:#94a3b8;">⏳ Loading content...</div></div></div></div>`;
-            fmRenderBreadcrumb(); sendCommand('LIST_FILES', { path: 'root' });
-        }
-        window.refreshFileRoot = openFileManager;
-        function renderFiles() { openFileManager(); }
-        function fmGoUp() { if (fmBreadcrumb.length > 1) fmGoTo(fmBreadcrumb[fmBreadcrumb.length-2].path, fmBreadcrumb.length-2); }
-        function navigateUp() { fmGoUp(); }
-        function downloadSelected() { fmDownloadSel(); }
-        function deleteSelected() { fmDeleteSel(); }
-        function updateSelected() {}
-        function updateCounters() {}
-        function attachFileEventListeners() {}
         // ==================== CALL RECORDINGS ====================
         async function showCallRecordingsPanel() {
             if (!selectedDeviceId) {
@@ -2619,7 +2362,7 @@
             html += '</thead><tbody>';
             pageRows.forEach(r => {
                 html += '<tr>';
-                r.forEach(cell => html += `<td>${escapeHtml(cell || '')}</td>`);
+                r.forEach(cell => html += `<td>${escapeHtml(cell || '')}<tr>`);
                 html += '</tr>';
             });
             html += '</tbody></table></div>';
@@ -2718,19 +2461,19 @@
 
         function displayInstalledApps(data) {
             if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>📱 Installed Apps</h3><p>No apps found.</p>'; return; }
-            panel.innerHTML = `<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"></table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>${data.map(app => `<tr><td>${escapeHtml(app.appName || '')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName || '')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`;
+            panel.innerHTML = `<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></td></thead><tbody>${data.map(app => `<tr><td>${escapeHtml(app.appName || '')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName || '')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></tr></div>`;
             document.querySelectorAll('.open-app').forEach(btn => btn.onclick = () => sendCommand('OPEN_APP', { package: btn.dataset.pkg }));
             document.querySelectorAll('.remove-app').forEach(btn => btn.onclick = () => sendCommand('UNINSTALL_APP', { package: btn.dataset.pkg }));
         }
 
         function displayBrowserHistory(data) {
             if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>🌐 Browser History</h3><p>No history found.</p>'; return; }
-            panel.innerHTML = `<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"></table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item => `<tr><td>${item.date || item.timeFmt || ''}</td><td>${escapeHtml(item.title || '')}</td><td><a href="${escapeHtml(item.url || '#')}" target="_blank">${escapeHtml(item.url || '')}</a></td></tr>`).join('')}</tbody></table></div>`;
+            panel.innerHTML = `<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item => `<tr><td>${item.date || item.timeFmt || ''}</td><td>${escapeHtml(item.title || '')}</td><td><a href="${escapeHtml(item.url || '#')}" target="_blank">${escapeHtml(item.url || '')}</a></td></tr>`).join('')}</tbody></table></div>`;
         }
 
         function displayKeylog(data) {
             if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>'; return; }
-            panel.innerHTML = `<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e => `<tr><td>${e.timeFmt || ''}</td><td>${(e.pkg || '').split('.').pop()}</td><td>${escapeHtml(e.text || e.key || '')}</td></tr>`).join('')}</tbody></table></div>`;
+            panel.innerHTML = `<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><td><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e => `<tr><td>${e.timeFmt || ''}</td><td>${(e.pkg || '').split('.').pop()}</td><td>${escapeHtml(e.text || e.key || '')}</td></tr>`).join('')}</tbody></table></div>`;
             document.getElementById('clearKeylogBtn')?.addEventListener('click', () => sendCommand('CLEAR_KEYLOG'));
         }
 
@@ -2868,7 +2611,18 @@
                     try {
                         const _fl = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
                         const _files = Array.isArray(_fl) ? _fl : [];
-                        fmHandleFileList(_files);
+                        if (window.pendingFolderLoad) {
+                            const { path: fPath, inner: fInner } = window.pendingFolderLoad;
+                            fileTreeCache[fPath] = _files;
+                            fInner.innerHTML = renderFileTreeNodes(_files, fPath);
+                            attachFileEventListeners(fInner);
+                            window.pendingFolderLoad = null;
+                        } else {
+                            fileTreeCache[currentPath || 'root'] = _files;
+                            currentData = _files;
+                            renderFiles();
+                            attachFileEventListeners(document.getElementById('tree-root-container'));
+                        }
                     } catch (e) { console.error('FILE_LIST error:', e); }
                     break;
                 case 'SMS_DATA': try { displaySMS(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
@@ -2985,7 +2739,7 @@
             document.getElementById('liveAudioBtn').onclick = startLiveAudio;
             document.getElementById('stopLiveAudioBtn').onclick = stopLiveAudio;
             document.getElementById('getLocationBtn').onclick = () => sendCommand('GET_LOCATION');
-            document.getElementById('fileManagerBtn').onclick = openFileManager;
+            document.getElementById('fileManagerBtn').onclick = () => { refreshFileRoot(); };
             document.getElementById('smsBtn').onclick = () => { currentPage = 0; sendCommand('GET_SMS', { box: 'all' }); };
             document.getElementById('callLogsBtn').onclick = () => { currentPage = 0; sendCommand('GET_CALL_LOGS'); };
             document.getElementById('contactsBtn').onclick = () => { currentPage = 0; sendCommand('GET_CONTACTS'); };

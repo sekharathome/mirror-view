@@ -1389,34 +1389,76 @@
             document.getElementById('liveFlashContainer').style.display = (liveCam === 'back') ? 'inline-block' : 'none';
         }
 
-        function renderAuthForm() {
-            const c = document.getElementById('authBox');
-            if (isLoginMode) c.innerHTML = `<h2>🔐 SystemSync Login</h2><input type="email" id="authEmail" placeholder="Email Address" /><input type="password" id="authPassword" placeholder="Password" /><input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;" /><button id="authBtn">Sign In</button><div class="toggle-link" id="toggleAuthMode" tabindex="0">Don't have an account? Sign up</div><div id="authError"></div>`;
-            else c.innerHTML = `<h2>✨ Create Account</h2><input type="email" id="authEmail" placeholder="Email Address" /><input type="password" id="authPassword" placeholder="Password" /><input type="password" id="authConfirmPassword" placeholder="Confirm Password" /><button id="authBtn">Sign Up</button><div class="toggle-link" id="toggleAuthMode" tabindex="0">Already have an account? Sign in</div><div id="authError"></div>`;
-            document.getElementById('authBtn').onclick = handleAuth;
-            document.getElementById('toggleAuthMode').onclick = (e) => { e.preventDefault(); isLoginMode = !isLoginMode; renderAuthForm(); };
-        }
+function renderAuthForm() {
+    const box = document.getElementById('authBox');
+    if (isLoginMode) {
+        box.innerHTML = `
+            <h2>🔐 SystemSync Login</h2>
+            <input type="email" id="authEmail" placeholder="Email Address" />
+            <input type="password" id="authPassword" placeholder="Password" />
+            <input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;" />
+            <button id="authBtn">Sign In</button>
+            <div class="toggle-link" id="toggleAuthMode" tabindex="0">Don't have an account? Sign up</div>
+            <div id="authError" style="color:#d32f2f; margin-top:12px;"></div>
+        `;
+    } else {
+        box.innerHTML = `
+            <h2>✨ Create Account</h2>
+            <input type="email" id="authEmail" placeholder="Email Address" />
+            <input type="password" id="authPassword" placeholder="Password" />
+            <input type="password" id="authConfirmPassword" placeholder="Confirm Password" />
+            <button id="authBtn">Sign Up</button>
+            <div class="toggle-link" id="toggleAuthMode" tabindex="0">Already have an account? Sign in</div>
+            <div id="authError" style="color:#d32f2f; margin-top:12px;"></div>
+        `;
+    }
 
-        async function handleAuth() {
-            const email = document.getElementById('authEmail').value.trim();
-            const pwd = document.getElementById('authPassword').value.trim();
-            const err = document.getElementById('authError');
-            if (!email || !pwd) { err.innerText = 'Please fill all fields'; return; }
-            const btn = document.getElementById('authBtn');
-            btn.innerText = 'Processing...';
-            try {
-                if (!isLoginMode) {
-                    const cf = document.getElementById('authConfirmPassword').value.trim();
-                    if (pwd !== cf) { err.innerText = 'Passwords do not match'; btn.innerText = 'Sign Up'; return; }
-                    await auth.createUserWithEmailAndPassword(email, pwd);
-                } else {
-                    await auth.signInWithEmailAndPassword(email, pwd);
-                }
-            } catch (e) {
-                err.innerText = e.message;
-                btn.innerText = isLoginMode ? 'Sign In' : 'Sign Up';
-            }
+    document.getElementById('authBtn').onclick = handleAuth;
+    document.getElementById('toggleAuthMode').onclick = (e) => {
+        e.preventDefault();
+        isLoginMode = !isLoginMode;
+        renderAuthForm();
+    };
+}
+
+async function handleAuth() {
+    const email = document.getElementById('authEmail')?.value.trim();
+    const password = document.getElementById('authPassword')?.value.trim();
+    const confirmPassword = document.getElementById('authConfirmPassword')?.value.trim();
+    const errorDiv = document.getElementById('authError');
+    const btn = document.getElementById('authBtn');
+
+    if (!email || !password) {
+        errorDiv.innerText = '❌ Email and password are required.';
+        return;
+    }
+
+    if (!isLoginMode && password !== confirmPassword) {
+        errorDiv.innerText = '❌ Passwords do not match.';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = isLoginMode ? 'Signing In...' : 'Creating Account...';
+    errorDiv.innerText = '';
+
+    try {
+        if (isLoginMode) {
+            console.log('Attempting sign in with:', email);
+            await auth.signInWithEmailAndPassword(email, password);
+            console.log('Sign in successful');
+        } else {
+            console.log('Creating account for:', email);
+            await auth.createUserWithEmailAndPassword(email, password);
+            console.log('Account created');
         }
+    } catch (error) {
+        console.error('Auth error:', error.code, error.message);
+        errorDiv.innerText = `❌ ${error.message}`;
+        btn.disabled = false;
+        btn.innerText = isLoginMode ? 'Sign In' : 'Sign Up';
+    }
+}
 
         function logout() {
             auth.signOut();

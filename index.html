@@ -1740,123 +1740,149 @@
         function stopLiveAudio() { if (audioPC) audioPC.close(); audioPC = null; sendSignaling({ type: 'STOP_AUDIO' }); document.getElementById('liveAudioBtn').style.display = 'block'; document.getElementById('stopLiveAudioBtn').style.display = 'none'; panel.innerHTML = 'Ready.'; }
 
         // ==================== FILE MANAGER ====================
-        function renderFileTreeNodes(data, path) {
-            const folders = data.filter(i => i.isDir).sort((a, b) => a.name.localeCompare(b.name));
-            const files = data.filter(i => !i.isDir).sort((a, b) => a.name.localeCompare(b.name));
-            let html = '';
-            folders.forEach(f => {
-                const encPath = btoa(encodeURIComponent(f.path)).replace(/=/g, '');
-                html += `<li>
-            <div class="folder-header" data-path="${escapeHtml(f.path)}">
-                <span class="chevron">▶</span><span class="folder-icon">📁</span>
-                <span class="item-name">${escapeHtml(f.name)}</span>
-            </div>
-            <div class="tree-children" id="tree-container-${encPath}">
-                <ul class="tree-children-inner" id="tree-inner-${encPath}"></ul>
-            </div>
-        </li>`;
-            });
-            files.forEach(f => {
-                html += `<li>
-            <div class="file-row">
-                <span class="file-icon">📄</span><span class="item-name">${escapeHtml(f.name)}</span>
-                <span class="file-size">${formatBytes(f.size)}</span>
-                <div class="file-actions">
-                    <button class="file-action-btn dl" data-path="${escapeHtml(f.path)}">⬇️</button>
-                    <button class="file-action-btn del" data-path="${escapeHtml(f.path)}">🗑️</button>
+        function renderFiles() {
+            let html = `
+            <div class="file-manager">
+                <div class="file-toolbar-sticky">
+                    <div class="file-toolbar">
+                        <span style="font-weight: 600; color: #1a2634; font-size: 14px; margin-left: 8px;">File Browser</span>
+                        <div style="display: flex; gap: 8px; margin-left: auto;">
+                            <button onclick="downloadSelected()" style="flex:1; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                ⬇️ <span id="downloadCount">${selectedFiles.length}</span>
+                            </button>
+                            <button onclick="deleteSelected()" style="flex:1; background: #d32f2f; color: white; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                🗑️ <span id="deleteCount">${selectedFiles.length}</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </li>`;
+                <div class="tree-view">
+                    <ul class="tree" id="fileTreeRoot">
+                        ${generateTreeHtml('root')}
+                    </ul>
+                </div>
+            </div>`;
+            panel.innerHTML = html;
+        }
+
+        function generateTreeHtml(path) {
+            let html = '';
+            const items = fileTreeCache[path];
+            if (!items) return '<li style="padding-left:24px; color:#7b8a9b; font-size:12px;">Loading...</li>';
+
+            if (items.length === 0) return '<li style="padding-left:24px; color:#7b8a9b; font-size:12px;">Empty folder</li>';
+
+            const folders = items.filter(item => item.isDir).sort((a, b) => a.name.localeCompare(b.name));
+            const files = items.filter(item => !item.isDir).sort((a, b) => a.name.localeCompare(b.name));
+
+            folders.forEach(f => {
+                const isOpen = expandedFolders.has(f.path);
+                const caretCls = isOpen ? 'caret caret-down' : 'caret';
+                const nestedCls = isOpen ? 'nested active' : 'nested';
+
+                // Keep selected state if needed, though checkbox applies only to files usually
+                html += `
+                <li>
+                    <div class="tree-item folder-item" onclick="handleFolderClick(event, '${f.path}')">
+                        <span class="${caretCls}">▶</span>
+                        <span class="folder-icon">📁</span>
+                        <span class="folder-name">${f.name}</span>
+                    </div>
+                    <ul class="${nestedCls}">
+                        ${isOpen ? generateTreeHtml(f.path) : ''}
+                    </ul>
+                </li>`;
             });
-            if (folders.length === 0 && files.length === 0) html += `<li style="padding:10px 20px; color:#999; font-size:12px;">Empty folder</li>`;
+
+            files.forEach(f => {
+                const pathStr = f.path;
+                const isChecked = selectedFiles.includes(pathStr) ? 'checked' : '';
+                html += `
+                <li>
+                    <div class="tree-item file-item">
+                        <span style="width:16px;"></span> <!-- spacer for caret -->
+                        <input type="checkbox" class="file-checkbox" data-path="${pathStr}" onchange="updateSelected(this)" ${isChecked}>
+                        <span class="file-icon">📄</span>
+                        <span class="file-name">${f.name}</span>
+                        <span class="file-size">${formatBytes(f.size)}</span>
+                    </div>
+                </li>`;
+            });
+
             return html;
         }
-        function renderFiles() {
-            let html = `<div class="file-manager">
-        <div class="file-toolbar-sticky">
-            <div class="file-toolbar">
-                <button onclick="navigateUp()">⬆ Up</button>
-                <div style="display: flex; gap: 8px; margin-left: auto;">
-                    <button onclick="downloadSelected()" style="flex:1; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                        ⬇️ <span id="downloadCount">${selectedFiles.length}</span>
-                    </button>
-                    <button onclick="deleteSelected()" style="flex:1; background: #d32f2f; color: white; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                        🗑️ <span id="deleteCount">${selectedFiles.length}</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div class="tree-content"><ul class="tree-root" id="tree-root-container">`;
-            if (currentData && currentData.length) {
-                const sortedData = [...currentData];
-                const folders = sortedData.filter(i => i.isDir).sort((a, b) => a.name.localeCompare(b.name));
-                const files = sortedData.filter(i => !i.isDir).sort((a, b) => a.name.localeCompare(b.name));
-                const allSorted = [...folders, ...files];
-                html += renderFileTreeNodes(allSorted, 'root');
+
+        function handleFolderClick(event, path) {
+            // Prevent event from bubbling up multiple nested folders
+            event.stopPropagation();
+            currentPath = path;
+
+            if (expandedFolders.has(path)) {
+                expandedFolders.delete(path);
+                renderFiles(); // Collapse
             } else {
-                html += '<li style="padding:10px; color:#999;">No files or root not loaded yet.</li>';
-            }
-            html += `</ul></div></div>`;
-            panel.innerHTML = html;
-            attachFileEventListeners();
-        }
-        function attachFileEventListeners() {
-            document.querySelectorAll('.folder-header').forEach(header => {
-                header.removeEventListener('click', folderClickHandler);
-                header.addEventListener('click', folderClickHandler);
-            });
-            document.querySelectorAll('.file-action-btn.dl').forEach(btn => {
-                btn.removeEventListener('click', downloadClickHandler);
-                btn.addEventListener('click', downloadClickHandler);
-            });
-            document.querySelectorAll('.file-action-btn.del').forEach(btn => {
-                btn.removeEventListener('click', deleteClickHandler);
-                btn.addEventListener('click', deleteClickHandler);
-            });
-        }
-        function folderClickHandler(e) {
-            e.stopPropagation();
-            const header = e.currentTarget;
-            const path = header.getAttribute('data-path');
-            const encPath = btoa(encodeURIComponent(path)).replace(/=/g, '');
-            const container = document.getElementById('tree-container-' + encPath);
-            const inner = document.getElementById('tree-inner-' + encPath);
-            const chevron = header.querySelector('.chevron');
-            if (!container) return;
-            if (container.classList.contains('open')) {
-                // Collapse
-                container.classList.remove('open');
-                if (chevron) chevron.style.transform = '';
-            } else {
-                // Expand
-                container.classList.add('open');
-                if (chevron) chevron.style.transform = 'rotate(90deg)';
-                if (inner.innerHTML.trim() !== '' && !inner.querySelector('li[data-loading]')) {
-                    // Already populated — just show
+                expandedFolders.add(path);
+                if (!fileTreeCache[path]) {
+                    sendCommand('LIST_FILES', { path: path }); // Fetch missing
+                    renderFiles(); // Render "Loading..." stub immediately
                 } else {
-                    inner.innerHTML = '<li data-loading="1" style="padding:10px 20px; color:#999; font-size:12px;">⏳ Loading...</li>';
-                    currentPath = path;
-                    sendCommand('LIST_FILES', { path: path });
-                    window.pendingFolderLoad = { path, encPath, inner };
+                    renderFiles(); // Expand cached
                 }
             }
         }
-        function downloadClickHandler(e) {
-            e.stopPropagation();
-            const path = e.currentTarget.getAttribute('data-path');
-            if (path) { sendPlainText('dl ' + path); showNotification(`Download requested: ${path.split('/').pop()}`); }
+
+        function updateSelected(checkbox) {
+            const path = checkbox.dataset.path;
+            if (checkbox.checked) {
+                if (!selectedFiles.includes(path)) selectedFiles.push(path);
+            } else {
+                selectedFiles = selectedFiles.filter(p => p !== path);
+            }
+            updateCounters();  // refresh both button counters
         }
-        function deleteClickHandler(e) {
-            e.stopPropagation();
-            const path = e.currentTarget.getAttribute('data-path');
-            if (path && confirm(`Delete file: ${path.split('/').pop()}?`)) sendCommand('DELETE_FILE', { path: path });
+        function downloadSelected() {
+            if (selectedFiles.length === 0) {
+                alert('No files selected');
+                return;
+            }
+            selectedFiles.forEach(path => {
+                sendPlainText('dl ' + path);
+            });
         }
-        window.refreshFileRoot = function () { sendCommand('LIST_FILES', { path: 'root' }); panel.innerHTML = '<p style="color:var(--text-sec); padding:16px;">⏳ Fetching files from device...</p>'; };
-        function navigateUp() { if (currentPath === 'root' || currentPath === '') return; let parts = currentPath.split('/'); parts.pop(); let parent = parts.join('/'); if (parent === '') parent = 'root'; currentPath = parent; sendCommand('LIST_FILES', { path: parent }); }
-        function downloadSelected() { if (selectedFiles.length === 0) { alert('No files selected'); return; } selectedFiles.forEach(path => sendPlainText('dl ' + path)); }
-        function deleteSelected() { if (selectedFiles.length === 0) { alert('No files selected'); return; } if (!confirm(`Delete ${selectedFiles.length} file(s)?`)) return; selectedFiles.forEach(path => sendCommand('DELETE_FILE', { path: path })); selectedFiles = []; updateCounters(); }
-        function updateSelected(checkbox) { const path = checkbox.dataset.path; if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); } else { selectedFiles = selectedFiles.filter(p => p !== path); } updateCounters(); }
-        function updateCounters() { const count = selectedFiles.length; const downloadSpan = document.getElementById('downloadCount'); const deleteSpan = document.getElementById('deleteCount'); if (downloadSpan) downloadSpan.innerText = count; if (deleteSpan) deleteSpan.innerText = count; }
+        function deleteSelected() {
+            if (selectedFiles.length === 0) {
+                alert('No files selected');
+                return;
+            }
+
+            const confirmMsg = `Delete ${selectedFiles.length} file(s)? This action cannot be undone.`;
+            if (!confirm(confirmMsg)) return;
+
+            selectedFiles.forEach(path => {
+                // Send DELETE_FILE command with the file path
+                sendCommand('DELETE_FILE', { path: path });
+            });
+
+            // Optionally clear selection after sending (the list will refresh when responses arrive)
+            selectedFiles = [];
+            updateCounters(); // helper to reset both counters
+        }
+
+        // Helper to update both counters (used also after deletion)
+        function updateCounters() {
+            const count = selectedFiles.length;
+            const downloadCountSpan = document.getElementById('downloadCount');
+            const deleteCountSpan = document.getElementById('deleteCount');
+            if (downloadCountSpan) downloadCountSpan.innerText = count;
+            if (deleteCountSpan) deleteCountSpan.innerText = count;
+        }
+
+        function formatBytes(b) {
+            if (b === 0) return '0 B';
+            const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(b) / Math.log(k));
+            return (b / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+        }
 
         // ==================== CALL RECORDINGS ====================
         async function showCallRecordingsPanel() {

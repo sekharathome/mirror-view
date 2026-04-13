@@ -1330,7 +1330,6 @@
             </div>
             <button id="liveAudioBtn"><span>🎤</span> Live Audio</button>
             <button id="stopLiveAudioBtn" style="display:none;">⏹ Stop</button>
-            <button id="getLocationBtn"><span>📍</span> GPS Location</button>
         </div>
         <div class="section">
             <div class="section-title">Data</div>
@@ -2301,17 +2300,28 @@
 
         function displayGeofenceInfo(data) {
             const statusDiv = document.getElementById('fenceStatus');
-            if (statusDiv && data && data.active) statusDiv.innerHTML = `<div style="margin-top:12px;padding:12px;background:#e8f5e9;border-radius:8px;"><strong>✅ Active Geofence</strong><br>📍 ${data.lat.toFixed(5)}, ${data.lon.toFixed(5)}<br>📏 Radius: ${data.radius}m</div>`;
-            else if (statusDiv) statusDiv.innerHTML = `<div style="margin-top:12px;padding:12px;background:#fff3e0;border-radius:8px;">⚠️ No active geofence</div>`;
+            if (statusDiv && data && data.active) {
+                statusDiv.innerHTML = `<div style="margin-top:12px;padding:12px;background:#e8f5e9;border-radius:8px;"><strong>✅ Active Geofence</strong><br>📍 ${data.lat.toFixed(5)}, ${data.lon.toFixed(5)}<br>📏 Radius: ${data.radius}m</div>`;
+            } else if (statusDiv) {
+                statusDiv.innerHTML = `<div style="margin-top:12px;padding:12px;background:#fff3e0;border-radius:8px;">⚠️ No active geofence</div>`;
+            }
         }
-
         function toggleLiveGps() {
             liveGpsActive = !liveGpsActive;
             sendCommand(liveGpsActive ? 'START_GPS_UPDATES' : 'STOP_GPS_UPDATES');
             const btn = document.getElementById('liveGpsBtn');
-            if (btn) { btn.style.background = liveGpsActive ? '#d32f2f' : ''; btn.querySelector('span:last-child').textContent = liveGpsActive ? 'Stop GPS Track' : 'Live GPS Track'; }
-            if (liveGpsActive && currentLocation) renderLiveMap(currentLocation.lat, currentLocation.lon, currentLocation.acc);
-            else if (!liveGpsActive) { panel.innerHTML = '<p>Live GPS tracking stopped.</p>'; liveMap = null; liveMarker = null; liveCircle = null; }
+            if (btn) {
+                btn.style.background = liveGpsActive ? '#d32f2f' : '';
+                btn.querySelector('span:last-child').textContent = liveGpsActive ? 'Stop GPS Track' : 'Live GPS Track';
+            }
+            if (liveGpsActive && currentLocation) {
+                renderLiveMap(currentLocation.lat, currentLocation.lon, currentLocation.acc);
+            } else if (!liveGpsActive) {
+                panel.innerHTML = '<p>Live GPS tracking stopped.</p>';
+                liveMap = null;
+                liveMarker = null;
+                liveCircle = null;
+            }
         }
 
         function showLocationHistoryPanel() {

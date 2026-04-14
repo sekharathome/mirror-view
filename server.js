@@ -125,6 +125,9 @@ wss.on('connection', (ws, req) => {
                     if (json.batteryLevel !== undefined) dev.info.batteryLevel = json.batteryLevel;
                     if (json.batteryCharging !== undefined) dev.info.batteryCharging = json.batteryCharging;
                     if (json.networkType) dev.info.networkType = json.networkType;
+                    if (json.latitude) dev.info.latitude = json.latitude;
+                    if (json.longitude) dev.info.longitude = json.longitude;
+                    if (json.accuracy) dev.info.accuracy = json.accuracy;
                 }
             }
 

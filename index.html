@@ -3270,7 +3270,8 @@
         function updateDashboardStats(info) {
             if (info.batteryLevel !== undefined) {
                 const el = document.getElementById('statBattery');
-                if (el) el.innerText = info.batteryLevel + '%';
+                const charging = info.batteryCharging !== undefined ? info.batteryCharging : false;
+                if (el) el.innerText = charging ? info.batteryLevel + '% (Charging ⚡)' : info.batteryLevel + '%';
             }
             if (info.networkType !== undefined) {
                 const el = document.getElementById('statSignal');
@@ -3279,13 +3280,18 @@
             if (info.latitude && info.longitude) {
                 const lat = parseFloat(info.latitude);
                 const lon = parseFloat(info.longitude);
-                currentLocation = { lat, lon, acc: info.accuracy || 20 };
+                const spd = info.speed ? Math.round(parseFloat(info.speed) * 3.6) : 0;
+                currentLocation = { lat, lon, acc: info.accuracy || 20, speed: spd };
+                
+                const spdEl = document.getElementById('locSpeed');
+                if (spdEl) spdEl.innerText = `${spd} km/h`;
+
                 // If map exists on this page, update it
                 const mapEl = document.getElementById('overviewMap');
                 if (mapEl && window._overviewMapObject) {
                     window._overviewMapObject.setView([lat, lon], 16);
                     if (window._overviewMarker) window._overviewMarker.setLatLng([lat, lon]);
-                    else window._overviewMarker = L.marker([lat, lon]).addTo(window._overviewMapObject).bindPopup('<b>Active Device</b><br>Updated location.').openPopup();
+                    else window._overviewMarker = L.marker([lat, lon]).addTo(window._overviewMapObject).bindPopup(`<b>Active Device</b><br>Updated location.<br>Speed: ${spd} km/h`).openPopup();
                 }
             }
         }
@@ -3298,7 +3304,9 @@
                 
                 // Fallback field mapping for different android versions/schemes
                 const battery = data.batteryLevel || data.level || data.battery || '??';
-                const signal = data.signalStrength || data.signal || data.rssi || '??';
+                const isCharging = data.batteryCharging || false;
+                const batteryText = isCharging && battery !== '??' ? `${battery}% (Charging ⚡)` : `${battery}%`;
+                const signal = data.networkType || data.signalStrength || data.signal || data.rssi || '??';
                 const model = data.name || data.deviceModel || data.model || 'Connected Device';
                 const platform = data.platform || 'Android';
                 const lastSeen = data.lastSeen ? new Date(data.lastSeen).toLocaleString() : 'Recently';
@@ -3307,8 +3315,9 @@
                 const docLat = data.lat || data.latitude;
                 const docLon = data.lon || data.longitude;
                 const docAcc = data.accuracy || 20;
+                const docSpeed = data.speed ? Math.round(parseFloat(data.speed) * 3.6) : 0;
                 if (!currentLocation && docLat && docLon) {
-                    currentLocation = { lat: parseFloat(docLat), lon: parseFloat(docLon), acc: parseFloat(docAcc) };
+                    currentLocation = { lat: parseFloat(docLat), lon: parseFloat(docLon), acc: parseFloat(docAcc), speed: docSpeed };
                 }
 
                 panel.innerHTML = `
@@ -3329,7 +3338,7 @@
                                 <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; opacity:0.6;">⚡ Battery</div>
                                 <button onclick="sendCommand('GET_DEVICE_STATUS')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:12px; padding:0;">🔄 Sync</button>
                             </div>
-                            <div id="statBattery" style="font-size:36px; font-weight:700; color:var(--primary);">${battery}%</div>
+                            <div id="statBattery" style="font-size:30px; font-weight:700; color:var(--primary);">${batteryText}</div>
                         </div>
                         <div class="stat-card-premium">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -3348,7 +3357,10 @@
                     </div>
 
                     <div class="premium-panel" style="margin-top:24px; padding:0; overflow:hidden;">
-                        <div style="padding:20px 24px; border-bottom:1px solid var(--border); font-weight:700; font-size:15px;">📍 Recent Connectivity Map</div>
+                        <div style="padding:20px 24px; border-bottom:1px solid var(--border); font-weight:700; font-size:15px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>📍 Recent Connectivity Map</span>
+                            <span id="locSpeed" style="background:var(--primary); color:white; padding:4px 10px; border-radius:12px; font-size:12px;">${currentLocation && currentLocation.speed !== undefined ? currentLocation.speed : docSpeed} km/h</span>
+                        </div>
                         <div id="overviewMap" style="height:400px; background:#f1f5f9;"></div>
                     </div>
                 </div>

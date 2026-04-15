@@ -3268,120 +3268,141 @@
         function displayCapturedImage(b64) { panel.innerHTML = `<img src="data:image/jpeg;base64,${b64}" style="max-width:100%;border-radius:8px;"><div style="margin-top:12px;"><button onclick="downloadBase64('${b64}','snapshot_${Date.now()}.jpeg')" style="background:#1976ff;color:white;border:none;padding:8px 16px;border-radius:6px;">💾 SAVE IMAGE</button></div>`; }
 
         function updateDashboardStats(info) {
-            if (info.batteryLevel !== undefined) {
-                const el = document.getElementById('statBattery');
-                const charging = info.batteryCharging !== undefined ? info.batteryCharging : false;
-                if (el) el.innerText = charging ? info.batteryLevel + '% (Charging ⚡)' : info.batteryLevel + '%';
-            }
-            if (info.networkType !== undefined) {
-                const el = document.getElementById('statSignal');
-                if (el) el.innerText = info.networkType;
-            }
-            if (info.latitude && info.longitude) {
-                const lat = parseFloat(info.latitude);
-                const lon = parseFloat(info.longitude);
-                const spd = info.speed ? Math.round(parseFloat(info.speed) * 3.6) : 0;
-                currentLocation = { lat, lon, acc: info.accuracy || 20, speed: spd };
-                
-                const spdEl = document.getElementById('locSpeed');
-                if (spdEl) spdEl.innerText = `${spd} km/h`;
+    // Battery
+    if (info.batteryLevel !== undefined) {
+        const el = document.getElementById('statBattery');
+        const charging = info.batteryCharging !== undefined ? info.batteryCharging : false;
+        const level = info.batteryLevel;
+        let battIcon = '🔋';
+        if (level >= 90) battIcon = '🔋';
+        else if (level >= 70) battIcon = '🔋';
+        else if (level >= 50) battIcon = '🔋';
+        else if (level >= 30) battIcon = '🪫';
+        else battIcon = '🪫⚠️';
+        if (charging) battIcon = '⚡🔋';
+        if (el) el.innerText = `${battIcon} ${level}%` + (charging ? ' ⚡' : '');
+    }
+    // Signal
+    if (info.networkType !== undefined) {
+        const el = document.getElementById('statSignal');
+        if (el) el.innerText = info.networkType;
+    }
+    // Location & Map
+    if (info.latitude && info.longitude) {
+        const lat = parseFloat(info.latitude);
+        const lon = parseFloat(info.longitude);
+        const acc = info.accuracy || 20;
+        const spd = info.speed ? Math.round(parseFloat(info.speed) * 3.6) : 0;
+        currentLocation = { lat, lon, acc, speed: spd };
+        
+        const spdEl = document.getElementById('locSpeed');
+        if (spdEl) spdEl.innerText = `${spd} km/h`;
 
-                // If map exists on this page, update it
-                const mapEl = document.getElementById('overviewMap');
-                if (mapEl && window._overviewMapObject) {
-                    window._overviewMapObject.setView([lat, lon], 16);
-                    if (window._overviewMarker) window._overviewMarker.setLatLng([lat, lon]);
-                    else window._overviewMarker = L.marker([lat, lon]).addTo(window._overviewMapObject).bindPopup(`<b>Active Device</b><br>Updated location.<br>Speed: ${spd} km/h`).openPopup();
-                }
+        if (window._overviewMapObject) {
+            window._overviewMapObject.setView([lat, lon], 16);
+            if (window._overviewMarker) {
+                window._overviewMarker.setLatLng([lat, lon]);
+                window._overviewMarker.setPopupContent(`<b>Active Device</b><br>Speed: ${spd} km/h`).openPopup();
+            } else {
+                window._overviewMarker = L.marker([lat, lon]).addTo(window._overviewMapObject)
+                    .bindPopup(`<b>Active Device</b><br>Speed: ${spd} km/h`).openPopup();
             }
         }
+    }
+}
 
         async function renderDeviceOverview(isRefresh = false) {
-            if (!isRefresh) panel.innerHTML = '<div style="padding:24px;">⏳ Building dashboard view...</div>';
-            try {
-                const doc = await db.collection('devices').doc(selectedDeviceId).get();
-                const data = doc.exists ? doc.data() : {};
-                
-                // Fallback field mapping for different android versions/schemes
-                const battery = data.batteryLevel || data.level || data.battery || '??';
-                const isCharging = data.batteryCharging || false;
-                const batteryText = isCharging && battery !== '??' ? `${battery}% (Charging ⚡)` : `${battery}%`;
-                const signal = data.networkType || data.signalStrength || data.signal || data.rssi || '??';
-                const model = data.name || data.deviceModel || data.model || 'Connected Device';
-                const platform = data.platform || 'Android';
-                const lastSeen = data.lastSeen ? new Date(data.lastSeen).toLocaleString() : 'Recently';
-                
-                // Location Recovery: Use document location if global currentLocation is empty
-                const docLat = data.lat || data.latitude;
-                const docLon = data.lon || data.longitude;
-                const docAcc = data.accuracy || 20;
-                const docSpeed = data.speed ? Math.round(parseFloat(data.speed) * 3.6) : 0;
-                if (!currentLocation && docLat && docLon) {
-                    currentLocation = { lat: parseFloat(docLat), lon: parseFloat(docLon), acc: parseFloat(docAcc), speed: docSpeed };
-                }
-
-                panel.innerHTML = `
-                <div style="padding:32px; animation: fadeIn 0.5s ease-out;">
-                    <div style="margin-bottom:40px; border-bottom:1px solid var(--border); padding-bottom:20px;">
-                        <h1 style="font-size:32px; font-weight:700; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center;">
-                            <span class="live-pulse"></span>${escapeHtml(model)}
-                        </h1>
-                        <div style="display:flex; gap:16px; align-items:center;">
-                            <span style="color:var(--text-sec); font-size:14px;">📡 Status: Online</span>
-                            <span style="color:var(--text-sec); font-size:14px;">🕒 Last Log: ${lastSeen}</span>
-                        </div>
-                    </div>
-
-                    <div class="overview-grid">
-                        <div class="stat-card-premium">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                                <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; opacity:0.6;">⚡ Battery</div>
-                                <button onclick="sendCommand('GET_DEVICE_STATUS')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:12px; padding:0;">🔄 Sync</button>
-                            </div>
-                            <div id="statBattery" style="font-size:30px; font-weight:700; color:var(--primary);">${batteryText}</div>
-                        </div>
-                        <div class="stat-card-premium">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                                <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; opacity:0.6;">📶 Signal</div>
-                                <button onclick="sendCommand('GET_DEVICE_STATUS')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:12px; padding:0;">🔄 Sync</button>
-                            </div>
-                            <div id="statSignal" style="font-size:36px; font-weight:700; color:var(--primary);">${signal} dBm</div>
-                        </div>
-                        <div class="stat-card-premium">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                                <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; opacity:0.6;">🏷 Model</div>
-                                <button id="pingBtn" onclick="sendPing()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:12px; padding:0;">⚡ Ping</button>
-                            </div>
-                            <div id="statModel" style="font-size:24px; font-weight:700; color:var(--primary);">${platform}</div>
-                        </div>
-                    </div>
-
-                    <div class="premium-panel" style="margin-top:24px; padding:0; overflow:hidden;">
-                        <div style="padding:20px 24px; border-bottom:1px solid var(--border); font-weight:700; font-size:15px; display:flex; justify-content:space-between; align-items:center;">
-                            <span>📍 Recent Connectivity Map</span>
-                            <span id="locSpeed" style="background:var(--primary); color:white; padding:4px 10px; border-radius:12px; font-size:12px;">${currentLocation && currentLocation.speed !== undefined ? currentLocation.speed : docSpeed} km/h</span>
-                        </div>
-                        <div id="overviewMap" style="height:400px; background:#f1f5f9;"></div>
-                    </div>
-                </div>
-                `;
-
-                // Check for active Geofence violation to show popup alert
-                checkGeofenceAlertOnLogin(data);
-
-                setTimeout(() => {
-                    const center = currentLocation ? [currentLocation.lat, currentLocation.lon] : [20.0, 0.0];
-                    const map = L.map('overviewMap').setView(center, currentLocation ? 16 : 2);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                    window._overviewMapObject = map;
-                    if (currentLocation) {
-                        window._overviewMarker = L.marker([currentLocation.lat, currentLocation.lon]).addTo(map).bindPopup('<b>Active Device</b><br>Last reported location.').openPopup();
-                    }
-                }, 100);
-
-            } catch (e) { console.error(e); panel.innerHTML = '<div style="padding:24px;color:red;">Failed to build dashboard.</div>'; }
+    if (!isRefresh) panel.innerHTML = '<div style="padding:24px;">⏳ Building dashboard view...</div>';
+    try {
+        const doc = await db.collection('devices').doc(selectedDeviceId).get();
+        const data = doc.exists ? doc.data() : {};
+        
+        const battery = data.batteryLevel || data.level || data.battery || '??';
+        const isCharging = data.batteryCharging || false;
+        const batteryText = isCharging ? `${battery}% ⚡` : `${battery}%`;
+        // Battery icon based on level
+        let battIcon = '🔋';
+        if (battery !== '??') {
+            const level = parseInt(battery);
+            if (level >= 90) battIcon = '🔋';
+            else if (level >= 70) battIcon = '🔋';
+            else if (level >= 50) battIcon = '🔋';
+            else if (level >= 30) battIcon = '🪫';
+            else battIcon = '🪫⚠️';
+            if (isCharging) battIcon = '⚡🔋';
+        }
+        
+        const signal = data.networkType || data.signalStrength || data.signal || data.rssi || '??';
+        const model = data.name || data.deviceModel || data.model || 'Connected Device';
+        const platform = data.platform || 'Android';
+        const lastSeen = data.lastSeen ? new Date(data.lastSeen).toLocaleString() : 'Recently';
+        
+        const docLat = data.lat || data.latitude;
+        const docLon = data.lon || data.longitude;
+        const docAcc = data.accuracy || 20;
+        const docSpeed = data.speed ? Math.round(parseFloat(data.speed) * 3.6) : 0;
+        if (!currentLocation && docLat && docLon) {
+            currentLocation = { lat: parseFloat(docLat), lon: parseFloat(docLon), acc: parseFloat(docAcc), speed: docSpeed };
         }
 
+        panel.innerHTML = `
+        <div style="padding:32px; animation: fadeIn 0.5s ease-out;">
+            <div style="margin-bottom:40px; border-bottom:1px solid var(--border); padding-bottom:20px;">
+                <h1 style="font-size:32px; font-weight:700; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center;">
+                    <span class="live-pulse"></span>${escapeHtml(model)}
+                </h1>
+                <div style="display:flex; gap:16px; align-items:center;">
+                    <span style="color:var(--text-sec); font-size:14px;">📡 Status: Online</span>
+                    <span style="color:var(--text-sec); font-size:14px;">🕒 Last Log: ${lastSeen}</span>
+                </div>
+            </div>
+
+            <div class="overview-grid">
+                <div class="stat-card-premium">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; opacity:0.6;">🔋 Battery</div>
+                        <button onclick="sendCommand('GET_DEVICE_STATUS')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:12px; padding:0;">🔄 Sync</button>
+                    </div>
+                    <div id="statBattery" style="font-size:30px; font-weight:700; color:var(--primary);">${battIcon} ${batteryText}</div>
+                </div>
+                <div class="stat-card-premium">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; opacity:0.6;">📶 Signal</div>
+                        <button onclick="sendCommand('GET_DEVICE_STATUS')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:12px; padding:0;">🔄 Sync</button>
+                    </div>
+                    <div id="statSignal" style="font-size:36px; font-weight:700; color:var(--primary);">${signal} dBm</div>
+                </div>
+                <div class="stat-card-premium">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div style="font-size:11px; font-weight:700; color:var(--text-sec); text-transform:uppercase; opacity:0.6;">🏷 Model</div>
+                        <button id="pingBtn" onclick="sendPing()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:12px; padding:0;">⚡ Ping</button>
+                    </div>
+                    <div id="statModel" style="font-size:24px; font-weight:700; color:var(--primary);">${platform}</div>
+                </div>
+            </div>
+
+            <div class="premium-panel" style="margin-top:24px; padding:0; overflow:hidden;">
+                <div style="padding:20px 24px; border-bottom:1px solid var(--border); font-weight:700; font-size:15px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>📍 Recent Connectivity Map</span>
+                    <span id="locSpeed" style="background:var(--primary); color:white; padding:4px 10px; border-radius:12px; font-size:12px;">${currentLocation?.speed || docSpeed} km/h</span>
+                </div>
+                <div id="overviewMap" style="height:400px; background:#f1f5f9;"></div>
+            </div>
+        </div>
+        `;
+
+        setTimeout(() => {
+            const center = currentLocation ? [currentLocation.lat, currentLocation.lon] : [20.0, 0.0];
+            const map = L.map('overviewMap').setView(center, currentLocation ? 16 : 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            window._overviewMapObject = map;
+            if (currentLocation) {
+                window._overviewMarker = L.marker([currentLocation.lat, currentLocation.lon]).addTo(map)
+                    .bindPopup(`<b>Active Device</b><br>Speed: ${currentLocation.speed || 0} km/h`).openPopup();
+            }
+        }, 100);
+    } catch (e) { console.error(e); panel.innerHTML = '<div style="padding:24px;color:red;">Failed to build dashboard.</div>'; }
+}
         async function checkGeofenceAlertOnLogin(deviceData) {
             try {
                 // Check if device is currently marked as OUT in its main document or settings
@@ -3476,25 +3497,38 @@
                 case 'SOCIAL_MESSAGES_DATA': try { displaySocialMessages(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
                 case 'CAMERA_IMAGE': displayCapturedImage(json.data); break;
                 case 'LOCATION_UPDATE':
-                    try {
-                        const loc = typeof json.data === 'string' ? JSON.parse(json.data) : (json.data || json);
-                        const lat = loc.lat || loc.latitude;
-                        const lon = loc.lon || loc.longitude;
-                        const acc = loc.accuracy || 10;
-                        currentLocation = { lat, lon, acc };
-
-                        if (liveGpsActive) {
-                            renderLiveMap(lat, lon, acc);
-                        } else {
-                            renderMap(loc);
-                        }
-
-                        // Also update geofence blue dot if panel is open
-                        if (window._geofenceMap) {
-                            updateGeofenceDeviceMarker(lat, lon, acc);
-                        }
-                    } catch (e) { console.error('Error parsing location update:', e); }
-                    break;
+                        try {
+                            const loc = typeof json.data === 'string' ? JSON.parse(json.data) : (json.data || json);
+                            const lat = loc.lat || loc.latitude;
+                            const lon = loc.lon || loc.longitude;
+                            const acc = loc.accuracy || 10;
+                            const spd = loc.speed ? Math.round(parseFloat(loc.speed) * 3.6) : 0;
+                            currentLocation = { lat, lon, acc, speed: spd };
+                    
+                            if (liveGpsActive) {
+                                renderLiveMap(lat, lon, acc);
+                            } else {
+                                renderMap(loc);
+                            }
+                    
+                            // Update dashboard map if it's visible
+                            if (window._overviewMapObject) {
+                                window._overviewMapObject.setView([lat, lon], 16);
+                                if (window._overviewMarker) {
+                                    window._overviewMarker.setLatLng([lat, lon]);
+                                    window._overviewMarker.setPopupContent(`<b>Active Device</b><br>Speed: ${spd} km/h`).openPopup();
+                                } else {
+                                    window._overviewMarker = L.marker([lat, lon]).addTo(window._overviewMapObject)
+                                        .bindPopup(`<b>Active Device</b><br>Speed: ${spd} km/h`).openPopup();
+                                }
+                                document.getElementById('locSpeed') && (document.getElementById('locSpeed').innerText = `${spd} km/h`);
+                            }
+                    
+                            if (window._geofenceMap) {
+                                updateGeofenceDeviceMarker(lat, lon, acc);
+                            }
+                        } catch (e) { console.error('Error parsing location update:', e); }
+                        break;
                 case 'PONG':
                     clearTimeout(window._pingTimeout);
                     const pBtn = document.getElementById('pingBtn');

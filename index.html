@@ -3243,14 +3243,17 @@
         function displaySocialMessages(data) {
             let msgs = typeof data === 'string' ? JSON.parse(data) : data;
             if (!Array.isArray(msgs) || !msgs.length) { panel.innerHTML = '<h3>💬 Social Messages</h3><p>No messages yet. Make sure Notification Access is enabled.</p>'; return; }
-            msgs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-            const rows = msgs.map(m => [
-                (m.type || 'incoming').toLowerCase().includes('incoming') ? '📥 Incoming' : '📤 Outgoing',
-                escapeHtml(m.app || getAppNameFromPkg(m.pkg) || 'Unknown'),
-                escapeHtml(m.title || ''),
-                escapeHtml(m.text || m.body || ''),
-                m.timeFmt || ''
-            ]);
+            const rows = msgs.map(m => {
+                const dir = (m.direction || m.type || 'incoming').toLowerCase();
+                const icon = (dir.includes('incoming') || dir === 'viewed') ? '📥 Incoming' : '📤 Outgoing';
+                return [
+                    icon,
+                    escapeHtml(m.app || getAppNameFromPkg(m.pkg) || 'Unknown'),
+                    escapeHtml(m.title || ''),
+                    escapeHtml(m.text || m.body || ''),
+                    m.timeFmt || ''
+                ];
+            });
             currentData = rows;
             dataType = 'social';
             renderTable(rows, ['Type', 'App', 'From/Title', 'Message', 'Date']);

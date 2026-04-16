@@ -3004,7 +3004,7 @@
             html += '</tr></thead><tbody>';
             pageRows.forEach(r => {
                 let rowBg = '';
-                if (dataType === 'call' || dataType === 'sms') {
+                if (dataType === 'call' || dataType === 'sms' || dataType === 'social') {
                     const t = (r[0] || '').toLowerCase();
                     if (t.includes('incoming')) rowBg = 'style="background-color: #e8f5e9 !important;"';
                     else if (t.includes('outgoing')) rowBg = 'style="background-color: #ffebee !important;"';
@@ -3069,7 +3069,7 @@
                 'call': ['Type', 'Number', 'Name', 'Date', 'Duration'],
                 'contacts': ['Name', 'Number', 'Times Contacted'],
                 'wifi': ['SSID', 'Signal', 'Status'],
-                'social': ['App', 'From/Title', 'Message', 'Date']
+                'social': ['Type', 'App', 'From/Title', 'Message', 'Date']
             };
             return map[type] || [];
         }
@@ -3245,6 +3245,7 @@
             if (!Array.isArray(msgs) || !msgs.length) { panel.innerHTML = '<h3>💬 Social Messages</h3><p>No messages yet. Make sure Notification Access is enabled.</p>'; return; }
             msgs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
             const rows = msgs.map(m => [
+                (m.type || 'incoming').toLowerCase().includes('incoming') ? '📥 Incoming' : '📤 Outgoing',
                 escapeHtml(m.app || getAppNameFromPkg(m.pkg) || 'Unknown'),
                 escapeHtml(m.title || ''),
                 escapeHtml(m.text || m.body || ''),
@@ -3252,7 +3253,7 @@
             ]);
             currentData = rows;
             dataType = 'social';
-            renderTable(rows, ['App', 'From/Title', 'Message', 'Date']);
+            renderTable(rows, ['Type', 'App', 'From/Title', 'Message', 'Date']);
         }
     
         function getAppNameFromPkg(pkg) { const map = { 'com.whatsapp': 'WhatsApp', 'org.telegram.messenger': 'Telegram', 'com.instagram.android': 'Instagram', 'com.facebook.orca': 'Messenger', 'com.facebook.katana': 'Facebook', 'com.snapchat.android': 'Snapchat' }; return map[pkg] || pkg; }

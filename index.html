@@ -2681,6 +2681,7 @@
 
                     html += `
                         <tr>
+                            <td>
                                  ${r.audioUrl ? 
                                     `<button class="play-btn" onclick="playAudio('${r.audioUrl}', '${escapeHtml(name)}')">▶️</button>` : 
                                     (r.filePath ? `<button class="play-btn" onclick="fetchLocalAudio('${r.filePath.replace(/\\/g, '\\\\')}', '${escapeHtml(name)}')">📲 Fetch</button>` : '⏳')}
